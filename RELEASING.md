@@ -185,7 +185,7 @@ After the first release, add the concept DOI to the citation files and the READM
 ## 5. Documentation site
 
 The site is MkDocs Material, built from `docs/` and `mkdocs.yml` and served by GitHub Pages from the
-`gh-pages` branch at <https://lightsmith-photonics.github.io/lightsmith/>.
+`gh-pages` branch at <https://docs.lightsmith.dev/>.
 
 Preview locally:
 
@@ -200,10 +200,17 @@ uv run --group docs mkdocs gh-deploy --strict --force -m "Deploy docs for {sha}"
 ```
 
 `gh-deploy` builds the site, commits it to the `gh-pages` branch and pushes that branch to `origin`.
-The first time, enable Pages in GitHub:
+`docs/CNAME` puts the custom domain into every build, so a deploy never resets it.
 
-1. Open **Settings → Pages** for `lightsmith-photonics/lightsmith`.
-2. Set **Source** to *Deploy from a branch*, then choose branch `gh-pages`, folder `/ (root)`.
+How the site is wired (one-time setup, already done on 2026-11-01):
+
+- **GitHub:** under **Settings → Pages** for `lightsmith-photonics/lightsmith`, the source is the `gh-pages`
+  branch, folder `/ (root)`. The custom domain is `docs.lightsmith.dev`, with *Enforce HTTPS* on.
+- **Cloudflare DNS** (`lightsmith.dev` zone): `CNAME docs → lightsmith-photonics.github.io`, **DNS only**
+  (grey cloud). GitHub issues the TLS certificate itself, and the Cloudflare proxy would get in the way of
+  that.
+- **Old links:** the PyPI page for 0.1.0 links to `lightsmith-photonics.github.io/lightsmith/`. GitHub
+  redirects that address to the custom domain.
 
 Re-run `gh-deploy` after each release, or whenever the docs on `main` change.
 

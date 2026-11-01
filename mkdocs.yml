@@ -1,7 +1,7 @@
 site_name: Lightsmith
 site_description: The open photonics suite — GPU-native, differentiable, and built for AI agents.
 site_author: Alexander Feghali
-site_url: https://lightsmith-photonics.github.io/lightsmith/
+site_url: https://docs.lightsmith.dev/
 repo_url: https://github.com/lightsmith-photonics/lightsmith
 repo_name: lightsmith-photonics/lightsmith
 edit_uri: edit/main/docs/

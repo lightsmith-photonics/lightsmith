@@ -4,7 +4,7 @@
 
 Describe a photonics problem once, as typed JSON, and solve it with the method that fits: from nanoparticles and thin films to metasurfaces, waveguides, photonic crystals, devices and circuits. Every result comes back in the same units and conventions, with provenance, so methods can be cross-checked directly. Many solvers run on GPU and can be differentiated, which is what powers inverse design.
 
-Documentation: <https://lightsmith-photonics.github.io/lightsmith/>
+Documentation: <https://docs.lightsmith.dev/>
 
 > Status: pre-alpha (v0.1). Validation numbers for every solver are in `tests/` and in the technical report (`lightsmith-paper` repository).
 

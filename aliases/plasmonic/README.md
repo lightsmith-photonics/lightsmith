@@ -16,7 +16,7 @@ pip install "lightsmith[gpu]"     # + PyTorch for the GPU solvers
 import lightsmith as ls
 ```
 
-- Documentation: <https://lightsmith-photonics.github.io/lightsmith/>
+- Documentation: <https://docs.lightsmith.dev/>
 - Source: <https://github.com/lightsmith-photonics/lightsmith>
 
 MIT licence.

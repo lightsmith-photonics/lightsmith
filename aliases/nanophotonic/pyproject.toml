@@ -27,8 +27,8 @@ layout = ["lightsmith[layout]"]
 xarray = ["lightsmith[xarray]"]
 
 [project.urls]
-Homepage = "https://lightsmith-photonics.github.io/lightsmith/"
-Documentation = "https://lightsmith-photonics.github.io/lightsmith/"
+Homepage = "https://lightsmith.dev/"
+Documentation = "https://docs.lightsmith.dev/"
 Repository = "https://github.com/lightsmith-photonics/lightsmith"
 "PyPI (lightsmith)" = "https://pypi.org/project/lightsmith/"
 

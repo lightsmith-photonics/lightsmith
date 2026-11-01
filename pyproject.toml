@@ -54,8 +54,8 @@ lightsmith = "lightsmith.cli:main"
 lightsmith-mcp = "lightsmith.mcp_server:main"
 
 [project.urls]
-Homepage = "https://lightsmith-photonics.github.io/lightsmith/"
-Documentation = "https://lightsmith-photonics.github.io/lightsmith/"
+Homepage = "https://lightsmith.dev/"
+Documentation = "https://docs.lightsmith.dev/"
 Repository = "https://github.com/lightsmith-photonics/lightsmith"
 Issues = "https://github.com/lightsmith-photonics/lightsmith/issues"
 Changelog = "https://github.com/lightsmith-photonics/lightsmith/blob/main/CHANGELOG.md"

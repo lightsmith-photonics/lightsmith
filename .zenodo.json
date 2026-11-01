@@ -29,7 +29,7 @@
       "scheme": "url"
     },
     {
-      "identifier": "https://lightsmith-photonics.github.io/lightsmith/",
+      "identifier": "https://docs.lightsmith.dev/",
       "relation": "isDocumentedBy",
       "resource_type": "publication-softwaredocumentation",
       "scheme": "url"
