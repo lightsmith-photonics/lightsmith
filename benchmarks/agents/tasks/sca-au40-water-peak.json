@@ -1,0 +1,139 @@
+{
+ "id": "sca-au40-water-peak",
+ "kind": "scattering",
+ "prompt": "I'm working with 40 nm gold nanospheres (that's the diameter) dispersed in water. At what wavelength does the extinction peak, somewhere between 450 and 650 nm? Johnson & Christy optical data for the gold is fine.",
+ "answer_fields": [
+  {
+   "key": "peak_wavelength_nm",
+   "unit": "nm",
+   "description": "vacuum wavelength of maximum extinction"
+  }
+ ],
+ "targets": {
+  "peak_wavelength_nm": {
+   "extract": {
+    "kind": "peak_wavelength",
+    "quantity": "c_ext_nm2"
+   },
+   "tol": {
+    "abs": 2.0
+   }
+  }
+ },
+ "checks": [
+  {
+   "type": "spec",
+   "path": "particles[0].shape.radius_nm",
+   "approx": 20.0,
+   "abs": 0.5
+  },
+  {
+   "type": "spec",
+   "path": "medium_index",
+   "approx": 1.33,
+   "abs": 0.01
+  }
+ ],
+ "naive_spec": {
+  "kind": "scattering",
+  "particles": [
+   {
+    "shape": {
+     "kind": "sphere",
+     "radius_nm": 40.0
+    },
+    "material": {
+     "kind": "library",
+     "name": "Au",
+     "dataset": "Johnson-Christy"
+    },
+    "position_nm": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "medium_index": 1.0,
+  "illumination": {
+   "kind": "plane_wave",
+   "direction": [
+    0,
+    0,
+    1
+   ],
+   "polarization": [
+    1,
+    0,
+    0
+   ]
+  },
+  "wavelengths": {
+   "start_nm": 450.0,
+   "stop_nm": 650.0,
+   "num": 201
+  }
+ },
+ "category": "standard",
+ "traps": [],
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "oracle": {},
+ "reference_spec": {
+  "kind": "scattering",
+  "particles": [
+   {
+    "shape": {
+     "kind": "sphere",
+     "radius_nm": 20.0
+    },
+    "material": {
+     "kind": "library",
+     "name": "Au",
+     "dataset": "Johnson-Christy"
+    },
+    "position_nm": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "medium_index": 1.33,
+  "illumination": {
+   "kind": "plane_wave",
+   "direction": [
+    0,
+    0,
+    1
+   ],
+   "polarization": [
+    1,
+    0,
+    0
+   ]
+  },
+  "wavelengths": {
+   "start_nm": 450.0,
+   "stop_nm": 650.0,
+   "num": 201
+  }
+ },
+ "reference": {
+  "values": {
+   "peak_wavelength_nm": 524.4219335912999
+  },
+  "method": "mie",
+  "backend": "miepython",
+  "device": "cpu",
+  "runtime_s": 18.262,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "oracle_extract": {
+  "peak_wavelength_nm": {
+   "kind": "peak_wavelength",
+   "quantity": "c_ext_nm2"
+  }
+ }
+}

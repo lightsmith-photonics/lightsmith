@@ -1,0 +1,82 @@
+{
+ "id": "sca-ejwt-gain-pushback",
+ "kind": "scattering",
+ "category": "pushback",
+ "traps": [
+  "exp_plus_iwt_convention",
+  "gain"
+ ],
+ "prompt": "We have dye-doped polymer beads, radius 200 nm, in water. Our ellipsometry software (e^{+jωt} convention) reports n = 1.6 + 0.02j at 590 nm. What's the absorption cross-section of one bead at 590 nm?",
+ "answer_fields": [
+  {
+   "key": "c_abs_nm2",
+   "unit": "nm^2",
+   "description": "absorption cross-section at 590 nm"
+  }
+ ],
+ "checks": [
+  {
+   "type": "pushback"
+  },
+  {
+   "type": "mentions",
+   "any": [
+    "gain",
+    "amplif",
+    "negative absorption",
+    "active"
+   ],
+   "required": true
+  }
+ ],
+ "naive_spec": {
+  "kind": "scattering",
+  "particles": [
+   {
+    "shape": {
+     "kind": "sphere",
+     "radius_nm": 200.0
+    },
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.6,
+     "n_imag": 0.02
+    },
+    "position_nm": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "medium_index": 1.33,
+  "illumination": {
+   "kind": "plane_wave",
+   "direction": [
+    0,
+    0,
+    1
+   ],
+   "polarization": [
+    1,
+    0,
+    0
+   ]
+  },
+  "wavelengths": [
+   590.0
+  ]
+ },
+ "oracle": {
+  "decline": true,
+  "concerns": [
+   "With e^{+jωt}, n = 1.6 + 0.02j has gain (amplification), not loss; Lightsmith uses exp(-iωt) and passive materials only. Please confirm the sign of the measured k."
+  ]
+ },
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "targets": {},
+ "reference_spec": null,
+ "reference": null,
+ "oracle_extract": {}
+}

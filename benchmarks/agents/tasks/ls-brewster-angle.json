@@ -1,0 +1,218 @@
+{
+ "id": "ls-brewster-angle",
+ "kind": "layer_stack",
+ "prompt": "For light going from air onto an uncoated glass surface (n = 1.5) at 633 nm, find the angle where p-polarized reflection vanishes, from a simulation of the reflectance versus angle.",
+ "answer_fields": [
+  {
+   "key": "brewster_angle_deg",
+   "unit": "degrees",
+   "description": "angle of incidence of minimum p reflectance"
+  }
+ ],
+ "targets": {
+  "brewster_angle_deg": {
+   "extract": {
+    "kind": "spectrum_extremum_angle",
+    "quantity": "r",
+    "pol": "p",
+    "wavelength_nm": 633.0,
+    "mode": "min"
+   },
+   "tol": {
+    "abs": 0.3
+   }
+  }
+ },
+ "naive_spec": {
+  "kind": "layer_stack",
+  "superstrate": {
+   "kind": "constant_index",
+   "n_real": 1.0
+  },
+  "substrate": {
+   "kind": "constant_index",
+   "n_real": 1.5,
+   "n_imag": 0.0
+  },
+  "wavelengths": [
+   633.0
+  ],
+  "layers": [],
+  "angles_deg": [
+   45.0,
+   50.0,
+   55.0
+  ],
+  "polarizations": [
+   "p"
+  ]
+ },
+ "category": "standard",
+ "traps": [],
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "checks": [],
+ "oracle": {},
+ "reference_spec": {
+  "kind": "layer_stack",
+  "superstrate": {
+   "kind": "constant_index",
+   "n_real": 1.0
+  },
+  "substrate": {
+   "kind": "constant_index",
+   "n_real": 1.5,
+   "n_imag": 0.0
+  },
+  "wavelengths": [
+   633.0
+  ],
+  "layers": [],
+  "angles_deg": [
+   50.0,
+   50.1,
+   50.2,
+   50.3,
+   50.4,
+   50.5,
+   50.6,
+   50.7,
+   50.8,
+   50.9,
+   51.0,
+   51.1,
+   51.2,
+   51.3,
+   51.4,
+   51.5,
+   51.6,
+   51.7,
+   51.8,
+   51.9,
+   52.0,
+   52.1,
+   52.2,
+   52.3,
+   52.4,
+   52.5,
+   52.6,
+   52.7,
+   52.8,
+   52.9,
+   53.0,
+   53.1,
+   53.2,
+   53.3,
+   53.4,
+   53.5,
+   53.6,
+   53.7,
+   53.8,
+   53.9,
+   54.0,
+   54.1,
+   54.2,
+   54.3,
+   54.4,
+   54.5,
+   54.6,
+   54.7,
+   54.8,
+   54.9,
+   55.0,
+   55.1,
+   55.2,
+   55.3,
+   55.4,
+   55.5,
+   55.6,
+   55.7,
+   55.8,
+   55.9,
+   56.0,
+   56.1,
+   56.2,
+   56.3,
+   56.4,
+   56.5,
+   56.6,
+   56.7,
+   56.8,
+   56.9,
+   57.0,
+   57.1,
+   57.2,
+   57.3,
+   57.4,
+   57.5,
+   57.6,
+   57.7,
+   57.8,
+   57.9,
+   58.0,
+   58.1,
+   58.2,
+   58.3,
+   58.4,
+   58.5,
+   58.6,
+   58.7,
+   58.8,
+   58.9,
+   59.0,
+   59.1,
+   59.2,
+   59.3,
+   59.4,
+   59.5,
+   59.6,
+   59.7,
+   59.8,
+   59.9,
+   60.0,
+   60.1,
+   60.2,
+   60.3,
+   60.4,
+   60.5,
+   60.6,
+   60.7,
+   60.8,
+   60.9,
+   61.0,
+   61.1,
+   61.2,
+   61.3,
+   61.4,
+   61.5,
+   61.6,
+   61.7,
+   61.8,
+   61.9,
+   62.0
+  ],
+  "polarizations": [
+   "p"
+  ]
+ },
+ "reference": {
+  "values": {
+   "brewster_angle_deg": 56.309698614138924
+  },
+  "method": "tmm",
+  "backend": "lightsmith-tmm",
+  "device": "cuda:0",
+  "runtime_s": 0.018,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "oracle_extract": {
+  "brewster_angle_deg": {
+   "kind": "spectrum_extremum_angle",
+   "quantity": "r",
+   "pol": "p",
+   "wavelength_nm": 633.0,
+   "mode": "min"
+  }
+ }
+}

@@ -1,0 +1,193 @@
+{
+ "id": "per-grating-first-order",
+ "kind": "periodic",
+ "traps": [
+  "estimate_first"
+ ],
+ "prompt": "Binary transmission grating: period 1 µm, 400 nm tall ridges of n = 1.5 with 50% fill factor, on a glass substrate (n = 1.5), air above. At 633 nm, normal incidence from the air side, with the E-field parallel to the grating lines (TE), what fraction of the power goes into the +1 transmitted order?",
+ "answer_fields": [
+  {
+   "key": "t_plus1",
+   "unit": "fraction (0-1)",
+   "description": "+1 order transmitted diffraction efficiency"
+  }
+ ],
+ "targets": {
+  "t_plus1": {
+   "extract": {
+    "kind": "diffraction_order",
+    "order": [
+     1,
+     0
+    ],
+    "side": "t",
+    "pol": "s",
+    "wavelength_nm": 633.0,
+    "angle_deg": 0.0
+   },
+   "tol": {
+    "abs": 0.01
+   }
+  }
+ },
+ "checks": [
+  {
+   "type": "estimate_before_solve"
+  },
+  {
+   "type": "spec",
+   "path": "lattice_a1_nm[0]",
+   "approx": 1000.0,
+   "abs": 1.0
+  },
+  {
+   "type": "spec",
+   "path": "layers[0].thickness_nm",
+   "approx": 400.0,
+   "abs": 1.0
+  }
+ ],
+ "naive_spec": {
+  "kind": "periodic",
+  "lattice_a1_nm": [
+   1000.0,
+   0.0
+  ],
+  "superstrate": {
+   "kind": "constant_index",
+   "n_real": 1.0
+  },
+  "substrate": {
+   "kind": "constant_index",
+   "n_real": 1.5,
+   "n_imag": 0.0
+  },
+  "layers": [
+   {
+    "thickness_nm": 400.0,
+    "background": {
+     "kind": "constant_index",
+     "n_real": 1.0
+    },
+    "shapes": [
+     {
+      "profile": {
+       "kind": "rectangle",
+       "center_nm": [
+        0.0,
+        0.0
+       ],
+       "size_nm": [
+        500.0,
+        1000.0
+       ]
+      },
+      "material": {
+       "kind": "constant_index",
+       "n_real": 1.5,
+       "n_imag": 0.0
+      }
+     }
+    ]
+   }
+  ],
+  "wavelengths": [
+   633.0
+  ],
+  "incidence": {
+   "theta_deg": 0.0,
+   "phi_deg": 0.0,
+   "polarizations": [
+    "p"
+   ]
+  }
+ },
+ "category": "standard",
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "oracle": {},
+ "reference_spec": {
+  "kind": "periodic",
+  "lattice_a1_nm": [
+   1000.0,
+   0.0
+  ],
+  "superstrate": {
+   "kind": "constant_index",
+   "n_real": 1.0
+  },
+  "substrate": {
+   "kind": "constant_index",
+   "n_real": 1.5,
+   "n_imag": 0.0
+  },
+  "layers": [
+   {
+    "thickness_nm": 400.0,
+    "background": {
+     "kind": "constant_index",
+     "n_real": 1.0
+    },
+    "shapes": [
+     {
+      "profile": {
+       "kind": "rectangle",
+       "center_nm": [
+        0.0,
+        0.0
+       ],
+       "size_nm": [
+        500.0,
+        1000.0
+       ]
+      },
+      "material": {
+       "kind": "constant_index",
+       "n_real": 1.5,
+       "n_imag": 0.0
+      }
+     }
+    ]
+   }
+  ],
+  "wavelengths": [
+   633.0
+  ],
+  "incidence": {
+   "theta_deg": 0.0,
+   "phi_deg": 0.0,
+   "polarizations": [
+    "s"
+   ]
+  },
+  "options": {
+   "rcwa": {
+    "harmonics": 40
+   }
+  }
+ },
+ "reference": {
+  "values": {
+   "t_plus1": 0.24691184022730642
+  },
+  "method": "rcwa",
+  "backend": "lightsmith-rcwa",
+  "device": "cuda:0",
+  "runtime_s": 2.348,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "oracle_extract": {
+  "t_plus1": {
+   "kind": "diffraction_order",
+   "order": [
+    1,
+    0
+   ],
+   "side": "t",
+   "pol": "s",
+   "wavelength_nm": 633.0,
+   "angle_deg": 0.0
+  }
+ }
+}

@@ -1,0 +1,162 @@
+{
+ "id": "circ-mzi-fsr",
+ "kind": "circuit",
+ "prompt": "Unbalanced Mach-Zehnder made of two ideal Y-branches and two waveguides (neff = 2.4, group index 4.2 at 1550 nm, lossless) whose lengths differ by 100 µm. What's the free spectral range near 1550 nm?",
+ "answer_fields": [
+  {
+   "key": "fsr_nm",
+   "unit": "nm",
+   "description": "free spectral range near 1550 nm"
+  }
+ ],
+ "targets": {
+  "fsr_nm": {
+   "extract": {
+    "kind": "sparam_fsr",
+    "out": "out",
+    "in": "in",
+    "near_nm": 1550.0
+   },
+   "tol": {
+    "rel": 0.01
+   }
+  }
+ },
+ "naive_spec": {
+  "kind": "circuit",
+  "wavelengths": {
+   "start_nm": 1540.0,
+   "stop_nm": 1560.0,
+   "num": 4001
+  },
+  "instances": {
+   "split": {
+    "component": "y_branch"
+   },
+   "comb": {
+    "component": "y_branch"
+   },
+   "short": {
+    "component": "waveguide",
+    "settings": {
+     "length_nm": 50000.0,
+     "neff": 2.4,
+     "ng": 4.2,
+     "wl0_nm": 1550.0
+    }
+   },
+   "long": {
+    "component": "waveguide",
+    "settings": {
+     "length_nm": 100000.0,
+     "neff": 2.4,
+     "ng": 4.2,
+     "wl0_nm": 1550.0
+    }
+   }
+  },
+  "connections": [
+   [
+    "split,o2",
+    "short,o1"
+   ],
+   [
+    "split,o3",
+    "long,o1"
+   ],
+   [
+    "short,o2",
+    "comb,o2"
+   ],
+   [
+    "long,o2",
+    "comb,o3"
+   ]
+  ],
+  "ports": {
+   "in": "split,o1",
+   "out": "comb,o1"
+  }
+ },
+ "category": "standard",
+ "traps": [],
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "checks": [],
+ "oracle": {},
+ "reference_spec": {
+  "kind": "circuit",
+  "wavelengths": {
+   "start_nm": 1540.0,
+   "stop_nm": 1560.0,
+   "num": 4001
+  },
+  "instances": {
+   "split": {
+    "component": "y_branch"
+   },
+   "comb": {
+    "component": "y_branch"
+   },
+   "short": {
+    "component": "waveguide",
+    "settings": {
+     "length_nm": 50000.0,
+     "neff": 2.4,
+     "ng": 4.2,
+     "wl0_nm": 1550.0
+    }
+   },
+   "long": {
+    "component": "waveguide",
+    "settings": {
+     "length_nm": 150000.0,
+     "neff": 2.4,
+     "ng": 4.2,
+     "wl0_nm": 1550.0
+    }
+   }
+  },
+  "connections": [
+   [
+    "split,o2",
+    "short,o1"
+   ],
+   [
+    "split,o3",
+    "long,o1"
+   ],
+   [
+    "short,o2",
+    "comb,o2"
+   ],
+   [
+    "long,o2",
+    "comb,o3"
+   ]
+  ],
+  "ports": {
+   "in": "split,o1",
+   "out": "comb,o1"
+  }
+ },
+ "reference": {
+  "values": {
+   "fsr_nm": 5.713453806649795
+  },
+  "method": "circuit",
+  "backend": "lightsmith-circuit",
+  "device": "cuda:0",
+  "runtime_s": 0.254,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "oracle_extract": {
+  "fsr_nm": {
+   "kind": "sparam_fsr",
+   "out": "out",
+   "in": "in",
+   "near_nm": 1550.0
+  }
+ }
+}

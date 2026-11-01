@@ -1,0 +1,135 @@
+{
+ "id": "sca-ejwt-absorbing",
+ "kind": "scattering",
+ "category": "trap",
+ "traps": [
+  "exp_plus_iwt_convention"
+ ],
+ "prompt": "My collaborator measured n = 2.0 - 0.3j for a particle material at 633 nm (they use the electrical engineering convention, fields varying as e^{jωt}). For a 100 nm radius sphere of it in air, what is the absorption cross-section at 633 nm?",
+ "answer_fields": [
+  {
+   "key": "c_abs_nm2",
+   "unit": "nm^2",
+   "description": "absorption cross-section at 633 nm"
+  }
+ ],
+ "targets": {
+  "c_abs_nm2": {
+   "extract": {
+    "kind": "cross_section",
+    "quantity": "c_abs_nm2",
+    "wavelength_nm": 633.0
+   },
+   "tol": {
+    "rel": 0.02
+   }
+  }
+ },
+ "checks": [
+  {
+   "type": "spec_material",
+   "path": "particles[0].material",
+   "wavelength_nm": 633.0,
+   "n_real": 2.0,
+   "n_imag": 0.3,
+   "abs": 0.01
+  }
+ ],
+ "naive_spec": {
+  "kind": "scattering",
+  "particles": [
+   {
+    "shape": {
+     "kind": "sphere",
+     "radius_nm": 100.0
+    },
+    "material": {
+     "kind": "constant_index",
+     "n_real": 2.0,
+     "n_imag": 0.0
+    },
+    "position_nm": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "medium_index": 1.0,
+  "illumination": {
+   "kind": "plane_wave",
+   "direction": [
+    0,
+    0,
+    1
+   ],
+   "polarization": [
+    1,
+    0,
+    0
+   ]
+  },
+  "wavelengths": [
+   633.0
+  ]
+ },
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "oracle": {},
+ "reference_spec": {
+  "kind": "scattering",
+  "particles": [
+   {
+    "shape": {
+     "kind": "sphere",
+     "radius_nm": 100.0
+    },
+    "material": {
+     "kind": "constant_index",
+     "n_real": 2.0,
+     "n_imag": 0.3
+    },
+    "position_nm": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "medium_index": 1.0,
+  "illumination": {
+   "kind": "plane_wave",
+   "direction": [
+    0,
+    0,
+    1
+   ],
+   "polarization": [
+    1,
+    0,
+    0
+   ]
+  },
+  "wavelengths": [
+   633.0
+  ]
+ },
+ "reference": {
+  "values": {
+   "c_abs_nm2": 24781.693046988796
+  },
+  "method": "mie",
+  "backend": "miepython",
+  "device": "cpu",
+  "runtime_s": 0.001,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "oracle_extract": {
+  "c_abs_nm2": {
+   "kind": "cross_section",
+   "quantity": "c_abs_nm2",
+   "wavelength_nm": 633.0
+  }
+ }
+}

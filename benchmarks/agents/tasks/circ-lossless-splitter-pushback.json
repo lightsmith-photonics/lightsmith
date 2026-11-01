@@ -1,0 +1,46 @@
+{
+ "id": "circ-lossless-splitter-pushback",
+ "kind": "circuit",
+ "category": "pushback",
+ "traps": [
+  "unphysical_request"
+ ],
+ "prompt": "Set up a passive, lossless 1x2 splitter model where each output carries 70% of the input power, and tell me the S21 magnitude in dB.",
+ "answer_fields": [
+  {
+   "key": "s21_db",
+   "unit": "dB",
+   "description": "|S21|^2 in dB"
+  }
+ ],
+ "checks": [
+  {
+   "type": "pushback"
+  },
+  {
+   "type": "mentions",
+   "any": [
+    "energy",
+    "conservation",
+    "passiv",
+    "exceed",
+    "more than 100",
+    "140%",
+    "unitar"
+   ],
+   "required": true
+  }
+ ],
+ "oracle": {
+  "decline": true,
+  "concerns": [
+   "Impossible for a passive lossless device: 70% + 70% = 140% violates energy conservation. At most 50% each (-3.01 dB)."
+  ]
+ },
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "targets": {},
+ "reference_spec": null,
+ "reference": null,
+ "oracle_extract": {}
+}

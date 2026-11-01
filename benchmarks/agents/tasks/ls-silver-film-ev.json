@@ -1,0 +1,124 @@
+{
+ "id": "ls-silver-film-ev",
+ "kind": "layer_stack",
+ "category": "trap",
+ "traps": [
+  "photon_energy_units"
+ ],
+ "prompt": "How much of the incident light is absorbed by a 30 nm silver film on glass (n = 1.52) at a photon energy of 2.0 eV? Light comes from air at normal incidence. Johnson & Christy silver.",
+ "answer_fields": [
+  {
+   "key": "absorptance",
+   "unit": "fraction (0-1)",
+   "description": "absorbed fraction"
+  }
+ ],
+ "targets": {
+  "absorptance": {
+   "extract": {
+    "kind": "spectrum",
+    "quantity": "a",
+    "pol": "avg",
+    "wavelength_nm": 619.920992,
+    "angle_deg": 0.0
+   },
+   "tol": {
+    "abs": 0.005
+   }
+  }
+ },
+ "checks": [
+  {
+   "type": "spec_wavelength",
+   "wavelength_nm": 619.92,
+   "abs": 0.5
+  }
+ ],
+ "naive_spec": {
+  "kind": "layer_stack",
+  "superstrate": {
+   "kind": "constant_index",
+   "n_real": 1.0
+  },
+  "substrate": {
+   "kind": "constant_index",
+   "n_real": 1.52,
+   "n_imag": 0.0
+  },
+  "wavelengths": [
+   400.0
+  ],
+  "layers": [
+   {
+    "thickness_nm": 30.0,
+    "material": {
+     "kind": "library",
+     "name": "Ag",
+     "dataset": "Johnson-Christy"
+    }
+   }
+  ],
+  "angles_deg": [
+   0.0
+  ],
+  "polarizations": [
+   "s",
+   "p"
+  ]
+ },
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "oracle": {},
+ "reference_spec": {
+  "kind": "layer_stack",
+  "superstrate": {
+   "kind": "constant_index",
+   "n_real": 1.0
+  },
+  "substrate": {
+   "kind": "constant_index",
+   "n_real": 1.52,
+   "n_imag": 0.0
+  },
+  "wavelengths": [
+   619.920992
+  ],
+  "layers": [
+   {
+    "thickness_nm": 30.0,
+    "material": {
+     "kind": "library",
+     "name": "Ag",
+     "dataset": "Johnson-Christy"
+    }
+   }
+  ],
+  "angles_deg": [
+   0.0
+  ],
+  "polarizations": [
+   "s",
+   "p"
+  ]
+ },
+ "reference": {
+  "values": {
+   "absorptance": 0.01736376571537706
+  },
+  "method": "tmm",
+  "backend": "lightsmith-tmm",
+  "device": "cuda:0",
+  "runtime_s": 0.013,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "oracle_extract": {
+  "absorptance": {
+   "kind": "spectrum",
+   "quantity": "a",
+   "pol": "avg",
+   "wavelength_nm": 619.920992,
+   "angle_deg": 0.0
+  }
+ }
+}

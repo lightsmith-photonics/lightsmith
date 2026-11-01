@@ -1,0 +1,132 @@
+{
+ "id": "sca-au-midir-dataset",
+ "kind": "scattering",
+ "category": "trap",
+ "traps": [
+  "material_range"
+ ],
+ "prompt": "What's the extinction cross-section of a 30 nm radius gold sphere in air at 2.5 µm wavelength? Use measured/fitted gold optical constants rather than a toy Drude model.",
+ "answer_fields": [
+  {
+   "key": "c_ext_nm2",
+   "unit": "nm^2",
+   "description": "extinction cross-section at 2.5 um"
+  }
+ ],
+ "targets": {
+  "c_ext_nm2": {
+   "extract": {
+    "kind": "cross_section",
+    "quantity": "c_ext_nm2",
+    "wavelength_nm": 2500.0
+   },
+   "tol": {
+    "rel": 0.15
+   }
+  }
+ },
+ "checks": [
+  {
+   "type": "spec_wavelength",
+   "wavelength_nm": 2500.0,
+   "abs": 0.5
+  }
+ ],
+ "naive_spec": {
+  "kind": "scattering",
+  "particles": [
+   {
+    "shape": {
+     "kind": "sphere",
+     "radius_nm": 30.0
+    },
+    "material": {
+     "kind": "library",
+     "name": "Au",
+     "dataset": "Johnson-Christy"
+    },
+    "position_nm": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "medium_index": 1.0,
+  "illumination": {
+   "kind": "plane_wave",
+   "direction": [
+    0,
+    0,
+    1
+   ],
+   "polarization": [
+    1,
+    0,
+    0
+   ]
+  },
+  "wavelengths": [
+   1900.0
+  ]
+ },
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "oracle": {},
+ "reference_spec": {
+  "kind": "scattering",
+  "particles": [
+   {
+    "shape": {
+     "kind": "sphere",
+     "radius_nm": 30.0
+    },
+    "material": {
+     "kind": "library",
+     "name": "Au",
+     "dataset": "Rakic-LD"
+    },
+    "position_nm": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "medium_index": 1.0,
+  "illumination": {
+   "kind": "plane_wave",
+   "direction": [
+    0,
+    0,
+    1
+   ],
+   "polarization": [
+    1,
+    0,
+    0
+   ]
+  },
+  "wavelengths": [
+   2500.0
+  ]
+ },
+ "reference": {
+  "values": {
+   "c_ext_nm2": 6.826853171139829
+  },
+  "method": "mie",
+  "backend": "miepython",
+  "device": "cpu",
+  "runtime_s": 0.002,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "oracle_extract": {
+  "c_ext_nm2": {
+   "kind": "cross_section",
+   "quantity": "c_ext_nm2",
+   "wavelength_nm": 2500.0
+  }
+ }
+}

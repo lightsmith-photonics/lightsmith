@@ -1,0 +1,328 @@
+[
+ {
+  "id": "sca-au40-water-peak",
+  "kind": "scattering",
+  "category": "standard",
+  "traps": []
+ },
+ {
+  "id": "sca-au80-vendor-size-abs",
+  "kind": "scattering",
+  "category": "trap",
+  "traps": [
+   "diameter_vs_radius"
+  ]
+ },
+ {
+  "id": "sca-au-medium-wavelength",
+  "kind": "scattering",
+  "category": "trap",
+  "traps": [
+   "medium_vs_vacuum_wavelength"
+  ]
+ },
+ {
+  "id": "sca-si-sphere-ev",
+  "kind": "scattering",
+  "category": "trap",
+  "traps": [
+   "photon_energy_units",
+   "diameter_vs_radius"
+  ]
+ },
+ {
+  "id": "sca-au-oil-peak",
+  "kind": "scattering",
+  "category": "standard",
+  "traps": []
+ },
+ {
+  "id": "sca-coreshell-nir",
+  "kind": "scattering",
+  "category": "standard",
+  "traps": []
+ },
+ {
+  "id": "sca-au-spheroid-dda",
+  "kind": "scattering",
+  "category": "standard",
+  "traps": [
+   "estimate_first"
+  ]
+ },
+ {
+  "id": "sca-quasistatic-too-big",
+  "kind": "scattering",
+  "category": "warning",
+  "traps": [
+   "check_warnings"
+  ]
+ },
+ {
+  "id": "sca-ejwt-absorbing",
+  "kind": "scattering",
+  "category": "trap",
+  "traps": [
+   "exp_plus_iwt_convention"
+  ]
+ },
+ {
+  "id": "sca-ejwt-gain-pushback",
+  "kind": "scattering",
+  "category": "pushback",
+  "traps": [
+   "exp_plus_iwt_convention",
+   "gain"
+  ]
+ },
+ {
+  "id": "sca-au-midir-dataset",
+  "kind": "scattering",
+  "category": "trap",
+  "traps": [
+   "material_range"
+  ]
+ },
+ {
+  "id": "sca-ps-bead-wavenumber",
+  "kind": "scattering",
+  "category": "trap",
+  "traps": [
+   "wavenumber_units",
+   "diameter_vs_radius"
+  ]
+ },
+ {
+  "id": "ls-quarter-wave-ar",
+  "kind": "layer_stack",
+  "category": "standard",
+  "traps": []
+ },
+ {
+  "id": "ls-brewster-angle",
+  "kind": "layer_stack",
+  "category": "standard",
+  "traps": []
+ },
+ {
+  "id": "ls-bragg-mirror",
+  "kind": "layer_stack",
+  "category": "standard",
+  "traps": []
+ },
+ {
+  "id": "ls-gold-film-glass-side",
+  "kind": "layer_stack",
+  "category": "trap",
+  "traps": [
+   "incidence_side"
+  ]
+ },
+ {
+  "id": "ls-silver-film-ev",
+  "kind": "layer_stack",
+  "category": "trap",
+  "traps": [
+   "photon_energy_units"
+  ]
+ },
+ {
+  "id": "ls-tir-glass-air",
+  "kind": "layer_stack",
+  "category": "standard",
+  "traps": []
+ },
+ {
+  "id": "ls-si-film-wavenumber",
+  "kind": "layer_stack",
+  "category": "trap",
+  "traps": [
+   "wavenumber_units",
+   "um_units"
+  ]
+ },
+ {
+  "id": "ls-thick-slide-incoherent",
+  "kind": "layer_stack",
+  "category": "trap",
+  "traps": [
+   "incoherent_layer"
+  ]
+ },
+ {
+  "id": "per-grating-first-order",
+  "kind": "periodic",
+  "category": "standard",
+  "traps": [
+   "estimate_first"
+  ]
+ },
+ {
+  "id": "per-subwavelength-orders",
+  "kind": "periodic",
+  "category": "standard",
+  "traps": [
+   "estimate_first"
+  ]
+ },
+ {
+  "id": "per-tio2-metasurface",
+  "kind": "periodic",
+  "category": "standard",
+  "traps": [
+   "estimate_first"
+  ]
+ },
+ {
+  "id": "per-grating-oblique-r0",
+  "kind": "periodic",
+  "category": "standard",
+  "traps": [
+   "estimate_first"
+  ]
+ },
+ {
+  "id": "mode-si-strip-te0",
+  "kind": "mode",
+  "category": "standard",
+  "traps": []
+ },
+ {
+  "id": "mode-si-strip-ng",
+  "kind": "mode",
+  "category": "trap",
+  "traps": [
+   "group_vs_phase_index"
+  ]
+ },
+ {
+  "id": "mode-si-strip-tm0",
+  "kind": "mode",
+  "category": "standard",
+  "traps": []
+ },
+ {
+  "id": "mode-sin-thz",
+  "kind": "mode",
+  "category": "trap",
+  "traps": [
+   "frequency_units"
+  ]
+ },
+ {
+  "id": "mode-guided-count",
+  "kind": "mode",
+  "category": "warning",
+  "traps": [
+   "check_warnings"
+  ]
+ },
+ {
+  "id": "mode-neff-above-core-pushback",
+  "kind": "mode",
+  "category": "pushback",
+  "traps": [
+   "unphysical_request"
+  ]
+ },
+ {
+  "id": "mode-fiber-fundamental",
+  "kind": "mode",
+  "category": "standard",
+  "traps": [
+   "um_units"
+  ]
+ },
+ {
+  "id": "dev-mmi-1x2-2d",
+  "kind": "device",
+  "category": "standard",
+  "traps": [
+   "estimate_first"
+  ]
+ },
+ {
+  "id": "dev-width-step-2d",
+  "kind": "device",
+  "category": "standard",
+  "traps": [
+   "estimate_first"
+  ]
+ },
+ {
+  "id": "bands-rods-tm-gap",
+  "kind": "bands",
+  "category": "standard",
+  "traps": [
+   "estimate_first"
+  ]
+ },
+ {
+  "id": "bands-gap-wavelengths",
+  "kind": "bands",
+  "category": "trap",
+  "traps": [
+   "normalized_frequency",
+   "estimate_first"
+  ]
+ },
+ {
+  "id": "bands-triangular-holes-complete",
+  "kind": "bands",
+  "category": "standard",
+  "traps": [
+   "estimate_first"
+  ]
+ },
+ {
+  "id": "bands-no-contrast",
+  "kind": "bands",
+  "category": "trap",
+  "traps": [
+   "trivial_physics"
+  ]
+ },
+ {
+  "id": "circ-mzi-fsr",
+  "kind": "circuit",
+  "category": "standard",
+  "traps": []
+ },
+ {
+  "id": "circ-ring-fsr",
+  "kind": "circuit",
+  "category": "standard",
+  "traps": []
+ },
+ {
+  "id": "circ-splitter-tree",
+  "kind": "circuit",
+  "category": "standard",
+  "traps": []
+ },
+ {
+  "id": "circ-link-budget-units",
+  "kind": "circuit",
+  "category": "trap",
+  "traps": [
+   "length_units"
+  ]
+ },
+ {
+  "id": "circ-lossless-splitter-pushback",
+  "kind": "circuit",
+  "category": "pushback",
+  "traps": [
+   "unphysical_request"
+  ]
+ },
+ {
+  "id": "opt-bend-topology",
+  "kind": "optimization",
+  "category": "standard",
+  "traps": [
+   "estimate_first",
+   "self_consistency"
+  ]
+ }
+]

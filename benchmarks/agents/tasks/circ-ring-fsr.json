@@ -1,0 +1,100 @@
+{
+ "id": "circ-ring-fsr",
+ "kind": "circuit",
+ "prompt": "All-pass ring resonator, radius 20 µm, power coupling 5%, waveguide neff 2.4 and ng 4.2 at 1550 nm, 3 dB/cm propagation loss. What FSR do I get around 1550 nm?",
+ "answer_fields": [
+  {
+   "key": "fsr_nm",
+   "unit": "nm",
+   "description": "free spectral range near 1550 nm"
+  }
+ ],
+ "targets": {
+  "fsr_nm": {
+   "extract": {
+    "kind": "sparam_fsr",
+    "out": "out",
+    "in": "in",
+    "near_nm": 1550.0
+   },
+   "tol": {
+    "rel": 0.01
+   }
+  }
+ },
+ "naive_spec": {
+  "kind": "circuit",
+  "wavelengths": {
+   "start_nm": 1540.0,
+   "stop_nm": 1560.0,
+   "num": 8001
+  },
+  "instances": {
+   "ring": {
+    "component": "ring_single",
+    "settings": {
+     "radius_nm": 10000.0,
+     "coupling": 0.05,
+     "loss_db_per_cm": 3.0,
+     "neff": 2.4,
+     "ng": 4.2,
+     "wl0_nm": 1550.0
+    }
+   }
+  },
+  "ports": {
+   "in": "ring,o1",
+   "out": "ring,o2"
+  }
+ },
+ "category": "standard",
+ "traps": [],
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "checks": [],
+ "oracle": {},
+ "reference_spec": {
+  "kind": "circuit",
+  "wavelengths": {
+   "start_nm": 1540.0,
+   "stop_nm": 1560.0,
+   "num": 8001
+  },
+  "instances": {
+   "ring": {
+    "component": "ring_single",
+    "settings": {
+     "radius_nm": 20000.0,
+     "coupling": 0.05,
+     "loss_db_per_cm": 3.0,
+     "neff": 2.4,
+     "ng": 4.2,
+     "wl0_nm": 1550.0
+    }
+   }
+  },
+  "ports": {
+   "in": "ring,o1",
+   "out": "ring,o2"
+  }
+ },
+ "reference": {
+  "values": {
+   "fsr_nm": 4.5540727822094595
+  },
+  "method": "circuit",
+  "backend": "lightsmith-circuit",
+  "device": "cuda:0",
+  "runtime_s": 0.056,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "oracle_extract": {
+  "fsr_nm": {
+   "kind": "sparam_fsr",
+   "out": "out",
+   "in": "in",
+   "near_nm": 1550.0
+  }
+ }
+}

@@ -1,0 +1,363 @@
+{
+ "id": "ls-bragg-mirror",
+ "kind": "layer_stack",
+ "prompt": "Dielectric mirror for 1550 nm: 8 pairs of quarter-wave TiO2 (n = 2.35) / SiO2 (n = 1.45), TiO2 first on the air side, deposited on a silicon wafer (n = 3.48). Reflectance at 1550 nm, normal incidence?",
+ "answer_fields": [
+  {
+   "key": "reflectance",
+   "unit": "fraction (0-1)",
+   "description": "reflectance at 1550 nm"
+  }
+ ],
+ "targets": {
+  "reflectance": {
+   "extract": {
+    "kind": "spectrum",
+    "quantity": "r",
+    "pol": "avg",
+    "wavelength_nm": 1550.0,
+    "angle_deg": 0.0
+   },
+   "tol": {
+    "abs": 0.003
+   }
+  }
+ },
+ "checks": [
+  {
+   "type": "spec",
+   "path": "layers[0].thickness_nm",
+   "approx": 164.89361702127658,
+   "abs": 1.0
+  }
+ ],
+ "naive_spec": {
+  "kind": "layer_stack",
+  "superstrate": {
+   "kind": "constant_index",
+   "n_real": 1.0
+  },
+  "substrate": {
+   "kind": "constant_index",
+   "n_real": 3.48,
+   "n_imag": 0.0
+  },
+  "wavelengths": [
+   1550.0
+  ],
+  "layers": [
+   {
+    "thickness_nm": 387.5,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 2.35,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 387.5,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.45,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 387.5,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 2.35,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 387.5,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.45,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 387.5,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 2.35,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 387.5,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.45,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 387.5,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 2.35,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 387.5,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.45,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 387.5,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 2.35,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 387.5,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.45,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 387.5,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 2.35,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 387.5,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.45,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 387.5,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 2.35,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 387.5,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.45,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 387.5,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 2.35,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 387.5,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.45,
+     "n_imag": 0.0
+    }
+   }
+  ],
+  "angles_deg": [
+   0.0
+  ],
+  "polarizations": [
+   "s",
+   "p"
+  ]
+ },
+ "category": "standard",
+ "traps": [],
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "oracle": {},
+ "reference_spec": {
+  "kind": "layer_stack",
+  "superstrate": {
+   "kind": "constant_index",
+   "n_real": 1.0
+  },
+  "substrate": {
+   "kind": "constant_index",
+   "n_real": 3.48,
+   "n_imag": 0.0
+  },
+  "wavelengths": [
+   1550.0
+  ],
+  "layers": [
+   {
+    "thickness_nm": 164.89361702127658,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 2.35,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 267.2413793103448,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.45,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 164.89361702127658,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 2.35,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 267.2413793103448,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.45,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 164.89361702127658,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 2.35,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 267.2413793103448,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.45,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 164.89361702127658,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 2.35,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 267.2413793103448,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.45,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 164.89361702127658,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 2.35,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 267.2413793103448,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.45,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 164.89361702127658,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 2.35,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 267.2413793103448,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.45,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 164.89361702127658,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 2.35,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 267.2413793103448,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.45,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 164.89361702127658,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 2.35,
+     "n_imag": 0.0
+    }
+   },
+   {
+    "thickness_nm": 267.2413793103448,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.45,
+     "n_imag": 0.0
+    }
+   }
+  ],
+  "angles_deg": [
+   0.0
+  ],
+  "polarizations": [
+   "s",
+   "p"
+  ]
+ },
+ "reference": {
+  "values": {
+   "reflectance": 0.9994928074912398
+  },
+  "method": "tmm",
+  "backend": "lightsmith-tmm",
+  "device": "cuda:0",
+  "runtime_s": 0.232,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "oracle_extract": {
+  "reflectance": {
+   "kind": "spectrum",
+   "quantity": "r",
+   "pol": "avg",
+   "wavelength_nm": 1550.0,
+   "angle_deg": 0.0
+  }
+ }
+}
