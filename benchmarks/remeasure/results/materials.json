@@ -1,0 +1,118 @@
+{
+  "script": "benchmarks/remeasure/materials.py",
+  "env": {
+    "python": "3.12.2",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "numpy": "2.4.6",
+    "lightsmith_commit": "53452c49a97ea3f1bbbe360d90b9385b1f6121c2"
+  },
+  "lightsmith_version": "0.1.0",
+  "rows": [
+    {
+      "row": "Au (Johnson-Christy), 450-900 nm",
+      "table": "Materials (tests/test_materials.py)",
+      "configuration": "fit_drude_lorentz(JC data, linspace(450, 900, 91), automatic pole count); fit_quality on linspace(450, 900, 451); error = |eps_fit - eps_JC| / |eps_JC| (JC linearly interpolated in n, k)",
+      "device": "cpu",
+      "precision": "double",
+      "n_poles": 4,
+      "drude": true,
+      "model": {
+        "kind": "drude_lorentz",
+        "eps_inf": 2.4135894773446624,
+        "wp_ev": 8.581886138293957,
+        "gamma_ev": 0.005000000000000001,
+        "poles": [
+          {
+            "delta_eps": 0.5419365763571846,
+            "omega0_ev": 1.4011478874778511,
+            "gamma_ev": 0.514784567632248
+          },
+          {
+            "delta_eps": 0.05639733270364762,
+            "omega0_ev": 2.1528842915137436,
+            "gamma_ev": 0.3606232124491753
+          },
+          {
+            "delta_eps": 1.2042487080185131,
+            "omega0_ev": 2.7295487400113574,
+            "gamma_ev": 0.6486882630285341
+          },
+          {
+            "delta_eps": 2.1514056622864404,
+            "omega0_ev": 3.411487663942205,
+            "gamma_ev": 0.0001000000204563027
+          }
+        ]
+      },
+      "measured_rms_rel_error": 0.012382198642134383,
+      "measured_max_rel_error": 0.039413678256969426,
+      "measured_rms_imag_error": 0.015110580892727916,
+      "measured_max_imag_error": 0.05057499941147068,
+      "on_fit_samples": {
+        "rms_rel_error": 0.01280760823796216,
+        "max_rel_error": 0.039413678256969426,
+        "rms_imag_error": 0.015522835248948519,
+        "max_imag_error": 0.04499185476317164,
+        "rms_abs_error": 0.21511555152943077,
+        "max_abs_error": 0.7077141273864394
+      },
+      "reference": "tabulated Johnson-Christy data (bundled refractiveindex.info file)",
+      "test_bound": {
+        "rms_rel_error": 0.02,
+        "max_rel_error": 0.05,
+        "rms_imag_error": 0.03,
+        "max_imag_error": 0.08
+      },
+      "previously_reported": "1.2% RMS",
+      "reproduced": true
+    },
+    {
+      "row": "Ag (Johnson-Christy), 450-900 nm",
+      "table": "Materials (tests/test_materials.py)",
+      "configuration": "fit_drude_lorentz(JC data, linspace(450, 900, 91), automatic pole count); fit_quality on linspace(450, 900, 451); error = |eps_fit - eps_JC| / |eps_JC| (JC linearly interpolated in n, k)",
+      "device": "cpu",
+      "precision": "double",
+      "n_poles": 2,
+      "drude": true,
+      "model": {
+        "kind": "drude_lorentz",
+        "eps_inf": 4.227017272998228,
+        "wp_ev": 9.275941543134918,
+        "gamma_ev": 0.013279870562559547,
+        "poles": [
+          {
+            "delta_eps": 0.02311632330667207,
+            "omega0_ev": 1.96874152447686,
+            "gamma_ev": 0.2766636387857747
+          },
+          {
+            "delta_eps": 0.11611686131395996,
+            "omega0_ev": 2.3911880408619415,
+            "gamma_ev": 1.0889603245306771
+          }
+        ]
+      },
+      "measured_rms_rel_error": 0.011480455485284985,
+      "measured_max_rel_error": 0.031020479730319014,
+      "measured_rms_imag_error": 0.01590320535872152,
+      "measured_max_imag_error": 0.0438146933289655,
+      "on_fit_samples": {
+        "rms_rel_error": 0.01162924506161042,
+        "max_rel_error": 0.031020479730319014,
+        "rms_imag_error": 0.015814665172839075,
+        "max_imag_error": 0.04197910615864493,
+        "rms_abs_error": 0.2463493639776835,
+        "max_abs_error": 0.4949052967024928
+      },
+      "reference": "tabulated Johnson-Christy data (bundled refractiveindex.info file)",
+      "test_bound": {
+        "rms_rel_error": 0.02,
+        "max_rel_error": 0.05,
+        "rms_imag_error": 0.03,
+        "max_imag_error": 0.08
+      },
+      "previously_reported": "1.2% RMS",
+      "reproduced": true
+    }
+  ]
+}

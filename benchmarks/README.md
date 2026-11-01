@@ -38,6 +38,8 @@ Useful options of `run.py`:
 | `--max-mem-gb 6` | Skip runs whose `estimate()` memory exceeds this. |
 | `--extra-options '{"dda":{"precision":"double"}}'` | Options merged into every run (keyed by method or backend). |
 | `--dry-run` | Plan and estimate only: writes `plan.csv` and `skips.csv`, solves nothing. |
+| `--max-run-s 90` | Skip a run whose wall time, extrapolated from the previous run of the same ladder (backend, device, variant), exceeds this: linear in cells × steps for FDTD, dipoles^1.3 for DDA. Logged in `skips.csv` as `time: ...`. |
+| `--resume` | Continue an interrupted run in `--out`: problems already in `references.csv` are kept, the rest are rerun. A problem's rows are written only when all its runs are done, so a crash loses at most one problem. A problem that killed the runner twice is skipped and logged. |
 
 ## What a run records
 
@@ -55,6 +57,7 @@ Useful options of `run.py`:
 | `convergence.csv` | Per resolution ladder: fitted order p in err ∝ res^-p, staircase noise (std of log10 error about the fit, in decades), fraction of refinements that reduced the error. |
 | `cheapest.csv` | Per problem, metric (headline, extinction only) and target accuracy (10%, 5%, 1%, 0.1%): the fastest run that meets it, excluding Mie and copies of the reference run on another device. |
 | `summary.md` | Human-readable digest. |
+| `progress.json`, `run.log`, `driver.log` | Resumable runs only: attempts per problem and wall time per session; console log; restarts. |
 | `figures/` | Written by `plots.py`. |
 
 ### Definitions
@@ -95,6 +98,14 @@ Useful options of `run.py`:
 * **smoke-extended** — the first smoke definition: every DDA variant on every problem, `max_iter`
   10 000, CPU budget 1200 dipoles. 154 runs in 44 min, mostly `weighted` DDA stalling at the
   iteration cap. Kept run: `results/20261101-012216-smoke-extended/` (see its `NOTE.md`).
+* **full-paper** — the 145 problems of `full` at a cost one shared consumer GPU finishes in about a
+  day, used for the technical report: wavelength grids thinned to 9 points; experimental DDA variants
+  (`weighted`, `extrapolate`) only on the dielectric spheres, the Drude staircase study and four
+  representative metal problems (Au and Ag spheres r = 40 nm in water, SiO2@Au c30-s8, Au dimer gap
+  5 nm); DDA `max_iter` 3000; CPU runs only up to 1000 dipoles and 3e8 FDTD cell-steps (they serve
+  the CPU/GPU comparison); GPU 2e6 dipoles and 5e11 cell-steps; `--max-run-s 90`. Run it with
+  `bash benchmarks/run_full_paper.sh [out_dir]`, which restarts `run.py --resume` after a crash.
+  Kept run: `results/20261101-full-paper/`.
 * **full** — 145 problems: dielectric spheres (x = 0.5–10, m = 1.2–3.5, lossless and lossy, vacuum
   and water), Au/Ag spheres (r = 10–100 nm, vacuum and water, 41 wavelengths), a dense Drude
   staircase study, 8 core–shell particles, Au/Ag spheroids (aspect ratio 1–5), rods (2–5) and

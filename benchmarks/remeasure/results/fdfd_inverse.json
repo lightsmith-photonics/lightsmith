@@ -1,0 +1,1002 @@
+{
+ "script": "benchmarks/remeasure/fdfd_inverse.py",
+ "git_commit": "8c77224449e33dc32a8ae001d218a9a1e4272119",
+ "cpu": "AMD Ryzen 5 5600X (AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD)",
+ "gpu": "NVIDIA GeForce RTX 5070",
+ "precision": "double (complex128) unless stated",
+ "versions": {
+  "python": "3.12.2",
+  "numpy": "2.4.6",
+  "scipy": "1.15.3",
+  "torch": "2.11.0+cu128",
+  "lightsmith": "0.1.0"
+ },
+ "note": "Timings provisional: a long benchmark was running on the same GPU and the CPU was at ~100% load from other jobs (see snapshots: gpu_util_percent, cpu_load_percent); repeat on an idle machine before quoting speedups.",
+ "entries": {
+  "1": {
+   "row": "Straight guide, |S21| | 1 | 1e-4 bound; 2e-9 reported",
+   "configuration": "tests/test_fdfd.py::test_straight_waveguide_transmits: Si (n=3.48) 500 nm guide in SiO2 (n=1.44), port planes 2400 nm apart, domain 3000x2500 nm, dl=25 nm, 16 PML cells, TE and TM, 1500/1550/1600 nm, CPU SciPy SuperLU, double precision",
+   "measured": {
+    "max_abs_|S21|_minus_1_over_pols_wavelengths_and_directions": 2.0723581739545693e-09,
+    "per_polarization": {
+     "te": {
+      "wavelengths_nm": [
+       1500.0,
+       1550.0,
+       1600.0
+      ],
+      "abs_S21_minus_1": [
+       3.127652581369489e-10,
+       8.365867998350041e-10,
+       2.0723543991962856e-09
+      ],
+      "abs_S12_minus_1": [
+       3.127643699585292e-10,
+       8.365863557457942e-10,
+       2.0723581739545693e-09
+      ],
+      "max_abs_S11_S22": 5.82103589482586e-10,
+      "phase_error_rad": [
+       1.0019710009271035e-08,
+       2.1952173819330264e-08,
+       4.5994657788932683e-08
+      ],
+      "solver": "scipy-superlu",
+      "warnings": [],
+      "grid": [
+       152,
+       132
+      ]
+     },
+     "tm": {
+      "wavelengths_nm": [
+       1500.0,
+       1550.0,
+       1600.0
+      ],
+      "abs_S21_minus_1": [
+       2.802523768608012e-10,
+       5.768308053433202e-10,
+       1.4255522318151748e-09
+      ],
+      "abs_S12_minus_1": [
+       2.802585941097391e-10,
+       5.768334698785793e-10,
+       1.4255570057741807e-09
+      ],
+      "max_abs_S11_S22": 1.3209619583881207e-09,
+      "phase_error_rad": [
+       1.1583339707326136e-08,
+       2.36415572255436e-08,
+       4.6194628244083924e-08
+      ],
+      "solver": "scipy-superlu",
+      "warnings": [],
+      "grid": [
+       152,
+       132
+      ]
+     }
+    }
+   },
+   "reference": "|S21| = 1 (lossless straight guide)",
+   "previously_reported": 2e-09,
+   "reproduced": true,
+   "error_column": "2e-09",
+   "timestamp": "2026-11-01T15:38:12-05:00",
+   "script_runtime_s": 19.27711900000577
+  },
+  "2": {
+   "row": "Closed guide with scatterers | power conservation; reciprocity | 1e-6; 1e-8 bound; 2e-8 (power) reported",
+   "configuration": "tests/test_fdfd.py::test_power_conservation_closed_guide: SiO2 parallel-plate guide (PEC/PMC walls in y, 16 PML cells in x), SiN 300x400 and Si 200x300 nm scatterers, domain 2800x1000 nm, two 2-mode ports 2200 nm apart, dl=20 nm, TE and TM, 1200/1300 nm, CPU",
+   "measured": {
+    "power_conservation_max_|sum_i|S_ij|^2-1|": 1.9969114806173138e-08,
+    "reciprocity_max_|S-S^T|": 7.965040219927674e-15,
+    "per_polarization": {
+     "te": {
+      "wavelengths_nm": [
+       1200.0,
+       1300.0
+      ],
+      "power_error": [
+       1.9969114806173138e-08,
+       3.475415955023209e-09
+      ],
+      "reciprocity_error": [
+       6.3241918036299975e-15,
+       7.965040219927674e-15
+      ],
+      "real_scattering_check": [
+       true,
+       true
+      ]
+     },
+     "tm": {
+      "wavelengths_nm": [
+       1200.0,
+       1300.0
+      ],
+      "power_error": [
+       5.452820528439872e-09,
+       8.964244679887656e-09
+      ],
+      "reciprocity_error": [
+       4.412001715084738e-15,
+       5.275385075650455e-15
+      ],
+      "real_scattering_check": [
+       true,
+       true
+      ]
+     }
+    }
+   },
+   "reference": "S unitary (column power sums = 1) and symmetric",
+   "previously_reported": {
+    "power": 2e-08,
+    "reciprocity": null
+   },
+   "reproduced": {
+    "power": true
+   },
+   "error_column": "2e-08 (power); 8e-15 (reciprocity)",
+   "timestamp": "2026-11-01T12:39:02-05:00",
+   "script_runtime_s": 1.2878822999773547
+  },
+  "3": {
+   "row": "Adjoint gradient | finite differences | 1e-3 relative bound; 1e-6 reported",
+   "configuration": "tests/test_fdfd.py::test_adjoint_gradient_matches_finite_differences: straight guide, dl=40 nm, port planes 1200 nm apart, 1500/1600 nm, TE and TM; objective sum|S21|^2 + 0.5 sum|Hz or Ez(35,35)|^2; random pixel perturbation (seed 1) in mask [25:45, 20:50]; central differences h=1e-4 at pixels (30,30),(35,37),(40,25),(28,45); CPU, double",
+   "measured": {
+    "max_rel_err_h1e-4": 2.62192759052077e-05,
+    "per_polarization": {
+     "te": {
+      "max_rel_err_h1e-4": 2.62192759052077e-05,
+      "max_rel_err_by_h": {
+       "0.001": 2.3001583281437136e-06,
+       "0.0001": 2.62192759052077e-05,
+       "1e-05": 8.168948418647973e-06
+      },
+      "points_h1e-4": [
+       {
+        "point": [
+         30,
+         30
+        ],
+        "adjoint": 1.8692755719918722e-06,
+        "fd": 1.869241428309465e-06,
+        "rel_err": 1.826606338282571e-05
+       },
+       {
+        "point": [
+         35,
+         37
+        ],
+        "adjoint": -0.00031809150519152696,
+        "fd": -0.0003180915275624585,
+        "rel_err": 7.032859919844692e-08
+       },
+       {
+        "point": [
+         40,
+         25
+        ],
+        "adjoint": 1.9030987261946508e-06,
+        "fd": 1.9030488296323256e-06,
+        "rel_err": 2.62192759052077e-05
+       },
+       {
+        "point": [
+         28,
+         45
+        ],
+        "adjoint": -0.00011456768749379829,
+        "fd": -0.00011456767534667733,
+        "rel_err": 1.0602572600713466e-07
+       }
+      ]
+     },
+     "tm": {
+      "max_rel_err_h1e-4": 1.2834103495106175e-05,
+      "max_rel_err_by_h": {
+       "0.001": 4.6133549241262885e-07,
+       "0.0001": 1.2834103495106175e-05,
+       "1e-05": 1.534504534138633e-05
+      },
+      "points_h1e-4": [
+       {
+        "point": [
+         30,
+         30
+        ],
+        "adjoint": -2.55418966630596e-06,
+        "fd": -2.5541568859921426e-06,
+        "rel_err": 1.2834103495106175e-05
+       },
+       {
+        "point": [
+         35,
+         37
+        ],
+        "adjoint": -1.1662969253444596e-05,
+        "fd": -1.1662976140414116e-05,
+        "rel_err": 5.904984660478648e-07
+       },
+       {
+        "point": [
+         40,
+         25
+        ],
+        "adjoint": 2.496080938836569e-06,
+        "fd": 2.496076678681902e-06,
+        "rel_err": 1.7067403029374416e-06
+       },
+       {
+        "point": [
+         28,
+         45
+        ],
+        "adjoint": -0.0004450743344839972,
+        "fd": -0.0004450743629202947,
+        "rel_err": 6.389111539131155e-08
+       }
+      ]
+     }
+    }
+   },
+   "reference": "central finite differences (h = 1e-4; h = 1e-3 and 1e-5 also listed)",
+   "previously_reported": 1e-06,
+   "reproduced": false,
+   "error_column": "3e-05",
+   "timestamp": "2026-11-01T12:39:56-05:00",
+   "script_runtime_s": 54.356740499992156
+  },
+  "4": {
+   "row": "GPU block-tridiagonal LU vs. CPU SuperLU | CPU | 1e-10 bound; 2-5x faster on large grids reported",
+   "previously_reported": {
+    "agreement_bound": 1e-10,
+    "speedup": "2-5x on large grids"
+   },
+   "reference": "CPU SciPy SuperLU (double)",
+   "block_lu_on_cpu_vs_superlu": [
+    {
+     "domain_nm": [
+      1600,
+      1000
+     ],
+     "max_abs_diff_solve": 1.444239287477971e-13,
+     "max_rel_diff_solve": 2.6937965675091586e-15,
+     "max_abs_diff_solve_t": 1.3202526486155396e-13
+    },
+    {
+     "domain_nm": [
+      1000,
+      1600
+     ],
+     "max_abs_diff_solve": 1.653062060445882e-13,
+     "max_rel_diff_solve": 3.972345032515102e-15,
+     "max_abs_diff_solve_t": 2.323651967439448e-13
+    }
+   ],
+   "gpu_snapshot_before": {
+    "time": "2026-11-01T12:48:47-05:00",
+    "gpu_util_percent": 2.0,
+    "mem_used_mib": 2485.0,
+    "mem_total_mib": 12227.0
+   },
+   "agreement_test_config": {
+    "configuration": "tests/test_fdfd.py::test_gpu_matches_cpu: straight TE guide, dl=30 nm, port planes 1200 nm apart, 1550 nm; GPU solver torch-block-tridiagonal, double precision",
+    "max_abs_S_gpu_minus_S_cpu": 6.9664054716454475e-15,
+    "max_abs_grad_diff_over_max_abs_grad": 6.351817137056335e-15,
+    "grid": [
+     92,
+     115
+    ]
+   },
+   "timings": {
+    "configuration": "straight TE guide of tests/test_fdfd.py (3000x2500 nm domain + 16 PML cells), 1550 nm, dl 25/15/10/7.5/6 nm; wall time of ls.solve (rasterisation, port modes, factorisation, solves, S extraction); 1 warm-up + repeats, median",
+    "repeats": 3,
+    "precision": "double (complex128) on both devices",
+    "cpu": "AMD Ryzen 5 5600X, SciPy SuperLU (single-threaded factorisation)",
+    "gpu": "NVIDIA GeForce RTX 5070, torch block-tridiagonal LU",
+    "provisional": "GPU shared with a long background benchmark during the measurement; speedups provisional",
+    "cases": [
+     {
+      "dl_nm": 25.0,
+      "grid": [
+       152,
+       132
+      ],
+      "unknowns": 20064,
+      "block_lu_memory_bytes_estimate": 84750336,
+      "cpu_wall_s": [
+       2.2995642000169028,
+       2.8713338999950793,
+       2.854607799992664
+      ],
+      "cpu_solver": "scipy-superlu",
+      "cpu_solver_runtime_s": 2.854193100007251,
+      "gpu_snapshot": {
+       "time": "2026-11-01T12:49:15-05:00",
+       "gpu_util_percent": 8.0,
+       "mem_used_mib": 2936.0,
+       "mem_total_mib": 12227.0
+      },
+      "gpu_wall_s": [
+       1.1955758999974933,
+       1.31262670000433,
+       1.2483358999888878
+      ],
+      "gpu_solver": "torch-block-tridiagonal",
+      "gpu_solver_runtime_s": 1.2478483000013512,
+      "cpu_wall_median_s": 2.854607799992664,
+      "gpu_wall_median_s": 1.2483358999888878,
+      "speedup_wall_median": 2.286730518619287,
+      "max_abs_S_gpu_minus_S_cpu": 4.717729110522484e-15,
+      "gpu_peak_mem_bytes": 162985984
+     },
+     {
+      "dl_nm": 15.0,
+      "grid": [
+       232,
+       199
+      ],
+      "unknowns": 46168,
+      "block_lu_memory_bytes_estimate": 293997824,
+      "cpu_wall_s": [
+       8.542906000016956,
+       10.028310699999565,
+       9.246852100011893
+      ],
+      "cpu_solver": "scipy-superlu",
+      "cpu_solver_runtime_s": 9.246411600004649,
+      "gpu_snapshot": {
+       "time": "2026-11-01T12:50:01-05:00",
+       "gpu_util_percent": 22.0,
+       "mem_used_mib": 2272.0,
+       "mem_total_mib": 12227.0
+      },
+      "gpu_wall_s": [
+       1.8194640000001527,
+       2.216551499994239,
+       2.9419943999964744
+      ],
+      "gpu_solver": "torch-block-tridiagonal",
+      "gpu_solver_runtime_s": 2.9414892999920994,
+      "cpu_wall_median_s": 9.246852100011893,
+      "gpu_wall_median_s": 2.216551499994239,
+      "speedup_wall_median": 4.171728967288117,
+      "max_abs_S_gpu_minus_S_cpu": 3.349140077038837e-14,
+      "gpu_peak_mem_bytes": 480200704
+     },
+     {
+      "dl_nm": 10.0,
+      "grid": [
+       332,
+       282
+      ],
+      "unknowns": 93624,
+      "block_lu_memory_bytes_estimate": 844862976,
+      "cpu_wall_s": [
+       33.971792299998924,
+       41.56653290000395,
+       40.692218999989564
+      ],
+      "cpu_solver": "scipy-superlu",
+      "cpu_solver_runtime_s": 40.690166300017154,
+      "gpu_snapshot": {
+       "time": "2026-11-01T12:52:38-05:00",
+       "gpu_util_percent": 2.0,
+       "mem_used_mib": 2812.0,
+       "mem_total_mib": 12227.0
+      },
+      "gpu_wall_s": [
+       5.606086599989794,
+       6.549008500005584,
+       7.253193799988367
+      ],
+      "gpu_solver": "torch-block-tridiagonal",
+      "gpu_solver_runtime_s": 7.252409599983366,
+      "cpu_wall_median_s": 40.692218999989564,
+      "gpu_wall_median_s": 6.549008500005584,
+      "speedup_wall_median": 6.213493080663259,
+      "max_abs_S_gpu_minus_S_cpu": 4.585799016419591e-14,
+      "gpu_peak_mem_bytes": 1312572416
+     },
+     {
+      "dl_nm": 7.5,
+      "grid": [
+       432,
+       365
+      ],
+      "unknowns": 157680,
+      "block_lu_memory_bytes_estimate": 1841702400,
+      "cpu_wall_s": [
+       81.82188550001592,
+       79.48810399998911,
+       75.72902030000114
+      ],
+      "cpu_solver": "scipy-superlu",
+      "cpu_solver_runtime_s": 75.72823959999369,
+      "gpu_snapshot": {
+       "time": "2026-11-01T12:58:27-05:00",
+       "gpu_util_percent": 0.0,
+       "mem_used_mib": 2554.0,
+       "mem_total_mib": 12227.0
+      },
+      "gpu_wall_s": [
+       4.896783400006825,
+       6.043799700011732,
+       5.956086299993331
+      ],
+      "gpu_solver": "torch-block-tridiagonal",
+      "gpu_solver_runtime_s": 5.954615299997386,
+      "cpu_wall_median_s": 79.48810399998911,
+      "gpu_wall_median_s": 5.956086299993331,
+      "speedup_wall_median": 13.34569379897637,
+      "max_abs_S_gpu_minus_S_cpu": 2.198731041692348e-13,
+      "gpu_peak_mem_bytes": 2817390592
+     },
+     {
+      "dl_nm": 6.0,
+      "grid": [
+       532,
+       449
+      ],
+      "unknowns": 238868,
+      "block_lu_memory_bytes_estimate": 3432055424,
+      "cpu_wall_s": [
+       80.92150209998363,
+       86.02335440000752,
+       83.93876579997595
+      ],
+      "cpu_solver": "scipy-superlu",
+      "cpu_solver_runtime_s": 83.93439720000606,
+      "gpu_snapshot": {
+       "time": "2026-11-01T13:04:14-05:00",
+       "gpu_util_percent": 33.0,
+       "mem_used_mib": 9762.0,
+       "mem_total_mib": 12227.0
+      },
+      "gpu_wall_s": [
+       49.22454359999392,
+       21.59492139998474,
+       15.68172280001454
+      ],
+      "gpu_solver": "torch-block-tridiagonal",
+      "gpu_solver_runtime_s": 15.68051479998394,
+      "cpu_wall_median_s": 83.93876579997595,
+      "gpu_wall_median_s": 21.59492139998474,
+      "speedup_wall_median": 3.886967877550842,
+      "max_abs_S_gpu_minus_S_cpu": 1.4788112342838141e-13,
+      "gpu_peak_mem_bytes": 5213179392
+     }
+    ]
+   },
+   "gpu_snapshot_after": {
+    "time": "2026-11-01T13:06:36-05:00",
+    "gpu_util_percent": 0.0,
+    "mem_used_mib": 1511.0,
+    "mem_total_mib": 12227.0
+   },
+   "measured": {
+    "max_abs_S_gpu_minus_S_cpu_all_cases": 2.198731041692348e-13,
+    "speedup_by_unknowns": {
+     "20064": 2.287,
+     "46168": 4.172,
+     "93624": 6.213,
+     "157680": 13.346,
+     "238868": 3.887
+    }
+   },
+   "configuration": "agreement: test_gpu_matches_cpu config + all timing grids; timings: see 'timings'",
+   "reproduced": {
+    "agreement_1e-10": true,
+    "speedup_2-5x_on_large_grids": true
+   },
+   "error_column": "2e-13; speedup 2.3x (20k), 4.2x (46k), 6.2x (94k), 13x (158k), 3.9x (239k) (provisional)",
+   "timestamp": "2026-11-01T13:06:36-05:00",
+   "script_runtime_s": 1374.5129650000017
+  },
+  "5": {
+   "row": "Inverse design: 2x2 um Si bend | --- | objective rises monotonically, final >0.8, exported polygons within 0.15 (bound); |S21|^2=0.98 with 100 nm minimum features reported",
+   "caption_note": "|S21|^2=0.987 (0.981-0.987 after export), |S11|^2<=2.5e-4 and reciprocity 8e-15 are not recorded in the repository",
+   "previously_reported": {
+    "|S21|^2": 0.987,
+    "|S21|^2_after_export_range": [
+     0.981,
+     0.987
+    ],
+    "|S11|^2_max": 0.00025,
+    "reciprocity": 8e-15,
+    "min_feature_nm": 100
+   },
+   "test_configuration_run": {
+    "label": "test_bend_1.2um",
+    "device": "cpu (SciPy SuperLU), double",
+    "runtime_s": 14.742239700019127,
+    "grid": [
+     85,
+     85
+    ],
+    "dl_nm": 40.0,
+    "evaluations": 18,
+    "final_beta": 4.0,
+    "iterations": 12,
+    "objective_history": [
+     0.014383955588596148,
+     0.3277853633705049,
+     0.5633391719539187,
+     0.6384930590625519,
+     0.7426904266144623,
+     0.777175204722495,
+     0.7773606189702476,
+     0.798476157094135,
+     0.8138114589522544,
+     0.8637665505157416,
+     0.8743395309239025,
+     0.8894485972554195
+    ],
+    "callback_matches_history": true,
+    "min_step_objective_diff": 0.00018541424775253557,
+    "monotone_within_1e-9": true,
+    "beta_history": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0
+    ],
+    "penalty_history": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "objective_monotone_within_fixed_beta_segments": true,
+    "loss_monotone_within_fixed_beta_segments": true,
+    "largest_objective_drop_within_fixed_beta": 0.0,
+    "largest_loss_rise_within_fixed_beta": 0.0,
+    "objective_initial": 0.014383955588596148,
+    "objective_final": 0.8894485972554195,
+    "objective_binary": 0.7178212889934305,
+    "final_terms": {
+     "0:sparameter": 0.8894485972554195
+    },
+    "final_binarization": 0.5971539789380385,
+    "pixel_design": {
+     "final_beta": {
+      "beta": 4.0,
+      "|S21|^2": [
+       0.8894485972554195
+      ],
+      "|S11|^2": [
+       0.0023864629993830613
+      ]
+     },
+     "binary": {
+      "beta": "inf",
+      "|S21|^2": [
+       0.7178212889934305
+      ],
+      "|S11|^2": [
+       0.012808363569394196
+      ]
+     }
+    },
+    "exported_polygons": {
+     "wavelengths_nm": [
+      1550.0
+     ],
+     "|S21|^2": [
+      0.6756111141956302
+     ],
+     "|S11|^2": [
+      0.00778458712590866
+     ],
+     "|S22|^2": [
+      0.007807502711701882
+     ],
+     "reciprocity_|S21-S12|": [
+      1.1069437979457617e-07
+     ]
+    },
+    "abs_exported_|S21|^2_minus_objective_binary": 0.042210174797800204,
+    "min_feature_setting_nm": null,
+    "filter_radius_nm": 80.0,
+    "measured_min_feature_pixel_estimate": {
+     "solid": {
+      "largest_disc_diameter_preserving_all_features_nm": 40.0,
+      "pixels_changed_by_opening_with_disc_diameter": {
+       "120nm": 21,
+       "200nm": 113,
+       "280nm": 168,
+       "360nm": 187,
+       "440nm": 246,
+       "520nm": 340,
+       "600nm": 497,
+       "680nm": 536
+      }
+     },
+     "void": {
+      "largest_disc_diameter_preserving_all_features_nm": 40.0,
+      "pixels_changed_by_opening_with_disc_diameter": {
+       "120nm": 18,
+       "200nm": 52,
+       "280nm": 172,
+       "360nm": 242,
+       "440nm": 425,
+       "520nm": 425,
+       "600nm": 425,
+       "680nm": 425
+      }
+     }
+    },
+    "warnings": [
+     "final design is only 60% binary; raise beta_max or max_iter (objective_binary is the thresholded performance)"
+    ],
+    "configuration": "tests/test_inverse.py::test_bend_topology_optimisation_improves_monotonically: 1.2x1.2 um design region, 400 nm guides, 1550 nm only, TE, dl=40 nm, 10 PML cells, filter radius 80 nm, no minimum-feature constraint, MMA 12 iterations, beta fixed (beta_every=1000), objective |S21|^2, CPU"
+   },
+   "full_configuration_run": {
+    "label": "example_bend_2um",
+    "device": "cpu (SciPy SuperLU), double",
+    "runtime_s": 1394.0228665999894,
+    "grid": [
+     156,
+     156
+    ],
+    "dl_nm": 25.0,
+    "evaluations": 137,
+    "final_beta": 64.0,
+    "iterations": 60,
+    "objective_history": [
+     0.005760566829836651,
+     0.0223979494684399,
+     0.17133003498629634,
+     0.5378387178567112,
+     0.6077582631557914,
+     0.7084481921113852,
+     0.7229885717106248,
+     0.8020078412846886,
+     0.8470837055730827,
+     0.882662422123643,
+     0.9048677664815362,
+     0.9209991217909301,
+     0.8822586307947742,
+     0.9042030366052766,
+     0.9162261480511222,
+     0.9392882570677785,
+     0.9479142466116697,
+     0.9528246421009309,
+     0.9556957955671105,
+     0.9587920039505302,
+     0.9635754984168158,
+     0.9668503144697277,
+     0.9702411034023622,
+     0.9721326421845863,
+     0.8895845789616775,
+     0.9538497167359042,
+     0.9622520314030478,
+     0.9540963503606318,
+     0.9600071545595459,
+     0.9636069121539769,
+     0.968931054562011,
+     0.9720145106096342,
+     0.9726266736545122,
+     0.9760660336354737,
+     0.9776198205529049,
+     0.9796367667977033,
+     0.9790130952689229,
+     0.979676864618234,
+     0.9803347826972609,
+     0.9809681248911525,
+     0.9815810722746936,
+     0.9823379274758344,
+     0.9827417956431284,
+     0.983400271142754,
+     0.9837180759938888,
+     0.9839568939444476,
+     0.9847406968532275,
+     0.9849835430184191,
+     0.9850183150770101,
+     0.9852748279900592,
+     0.9855463662101578,
+     0.985820611343159,
+     0.9859592187855885,
+     0.9860702919796824,
+     0.9861874827033665,
+     0.9862504374024991,
+     0.9862997900737808,
+     0.9866115451180616,
+     0.9867094737475364,
+     0.9873036266747865
+    ],
+    "callback_matches_history": true,
+    "min_step_objective_diff": -0.08254806322290875,
+    "monotone_within_1e-9": false,
+    "beta_history": [
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     4.0,
+     8.0,
+     8.0,
+     8.0,
+     8.0,
+     8.0,
+     8.0,
+     8.0,
+     8.0,
+     8.0,
+     8.0,
+     8.0,
+     8.0,
+     16.0,
+     16.0,
+     16.0,
+     16.0,
+     16.0,
+     16.0,
+     16.0,
+     16.0,
+     16.0,
+     16.0,
+     16.0,
+     16.0,
+     32.0,
+     32.0,
+     32.0,
+     32.0,
+     32.0,
+     32.0,
+     32.0,
+     32.0,
+     32.0,
+     32.0,
+     32.0,
+     32.0,
+     64.0,
+     64.0,
+     64.0,
+     64.0,
+     64.0,
+     64.0,
+     64.0,
+     64.0,
+     64.0,
+     64.0,
+     64.0,
+     64.0
+    ],
+    "penalty_history": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.08502634969190073,
+     0.07095874172861985,
+     0.0524454694497603,
+     0.03156328430464492,
+     0.02163741427972263,
+     0.014432880295628092,
+     0.009723639579979673,
+     0.0077719644716035974,
+     0.006308425504784735,
+     0.005751087022998968,
+     0.004930948922698597,
+     0.004728438668963853,
+     0.004471054934289646,
+     0.004398030643690614,
+     0.00427383411533344,
+     0.004269406046850417,
+     0.0040821833285078265,
+     0.004109559236997218,
+     0.0038638468961915318,
+     0.0038534358090427556,
+     0.0033876750965048433,
+     0.0032735090468858394,
+     0.0030546871859245114,
+     0.002865171864012404,
+     0.0027938716427493926,
+     0.0028050434100251732,
+     0.002765148351116375,
+     0.0027412608802800755,
+     0.002617584120485934,
+     0.002666225962390037,
+     0.0026001066140299185,
+     0.0025834078600287737,
+     0.00245450234714508,
+     0.0024179536781410082,
+     0.0018943810408048216,
+     0.0019066284543757638
+    ],
+    "objective_monotone_within_fixed_beta_segments": false,
+    "loss_monotone_within_fixed_beta_segments": true,
+    "largest_objective_drop_within_fixed_beta": 0.00815568104241604,
+    "largest_loss_rise_within_fixed_beta": 0.0,
+    "objective_initial": 0.005760566829836651,
+    "objective_final": 0.9873036266747865,
+    "objective_binary": 0.9869473176050337,
+    "final_terms": {
+     "0:sparameter": 0.9874180705744329,
+     "1:sparameter": 0.00022888779929258163
+    },
+    "final_binarization": 0.9794700705098004,
+    "pixel_design": {
+     "final_beta": {
+      "beta": 64.0,
+      "|S21|^2": [
+       0.9874622878244859,
+       0.9898074226381662,
+       0.9852442892195772
+      ],
+      "|S11|^2": [
+       5.822014592721645e-05,
+       0.00017570248946366873,
+       0.0004527407624868597
+      ]
+     },
+     "binary": {
+      "beta": "inf",
+      "|S21|^2": [
+       0.9875355282278881,
+       0.98925109007904,
+       0.9849812622876478
+      ],
+      "|S11|^2": [
+       0.0005044127527359014,
+       0.0006797974411996747,
+       0.0002032782612023466
+      ]
+     }
+    },
+    "exported_polygons": {
+     "wavelengths_nm": [
+      1500.0,
+      1550.0,
+      1600.0
+     ],
+     "|S21|^2": [
+      0.9853515762557188,
+      0.9866860070313147,
+      0.9807928336137725
+     ],
+     "|S11|^2": [
+      0.00024514153949110315,
+      5.751189768637653e-05,
+      0.00010729975886445126
+     ],
+     "|S22|^2": [
+      0.00024974429327154863,
+      9.11416953880921e-05,
+      0.00023185276588412194
+     ],
+     "reciprocity_|S21-S12|": [
+      1.0558635150909646e-06,
+      6.593892377217334e-07,
+      4.84116311254324e-07
+     ]
+    },
+    "abs_exported_|S21|^2_minus_objective_binary": null,
+    "min_feature_setting_nm": 100.0,
+    "filter_radius_nm": 100.0,
+    "measured_min_feature_pixel_estimate": {
+     "solid": {
+      "largest_disc_diameter_preserving_all_features_nm": 25.0,
+      "pixels_changed_by_opening_with_disc_diameter": {
+       "75nm": 14,
+       "125nm": 101,
+       "175nm": 665,
+       "225nm": 1383,
+       "275nm": 1555,
+       "325nm": 1586,
+       "375nm": 1672,
+       "425nm": 1712
+      }
+     },
+     "void": {
+      "largest_disc_diameter_preserving_all_features_nm": 25.0,
+      "pixels_changed_by_opening_with_disc_diameter": {
+       "75nm": 21,
+       "125nm": 75,
+       "175nm": 207,
+       "225nm": 559,
+       "275nm": 1114,
+       "325nm": 1504,
+       "375nm": 1766,
+       "425nm": 1974
+      }
+     }
+    },
+    "warnings": [],
+    "configuration": "examples/inverse_design_bend.py (default --iters 60): 2x2 um design region, 450 nm guides, TE, 1500/1550/1600 nm, dl=25 nm, 14 PML cells, filter radius 100 nm, min_feature_nm=100, MMA 60 iterations, beta 4->64 (x2 every 12), objective min_lambda |S21|^2 - 0.5 |S11|^2, CPU (the example defaults to --device auto)"
+   },
+   "configuration": "test (1.2 um, 12 it.) and full example (2 um, 3 wavelengths, 100 nm min feature)",
+   "measured": {
+    "test_monotone": true,
+    "test_objective_final": 0.8894485972554195,
+    "test_objective_binary": 0.7178212889934305,
+    "test_exported_|S21|^2": 0.6756111141956302,
+    "test_|exported - binary|": 0.042210174797800204,
+    "full_pixel_final_beta_|S21|^2_per_wl": [
+     0.9874622878244859,
+     0.9898074226381662,
+     0.9852442892195772
+    ],
+    "full_pixel_binary_|S21|^2_per_wl": [
+     0.9875355282278881,
+     0.98925109007904,
+     0.9849812622876478
+    ],
+    "full_exported_|S21|^2_per_wl": [
+     0.9853515762557188,
+     0.9866860070313147,
+     0.9807928336137725
+    ],
+    "full_exported_|S11|^2_max": 0.00024514153949110315,
+    "full_exported_reciprocity_max": 1.0558635150909646e-06,
+    "full_min_feature_setting_nm": 100.0,
+    "full_min_feature_pixel_estimate_nm": {
+     "solid": 25.0,
+     "void": 25.0
+    }
+   },
+   "reproduced": {
+    "test_bounds (monotone, final>0.8, export within 0.15)": true,
+    "|S21|^2=0.987": true,
+    "after export 0.981-0.987": true,
+    "|S11|^2<=2.5e-4": true,
+    "reciprocity ~8e-15": false,
+    "objective rises monotonically (full run, within fixed-beta segments)": false
+   },
+   "reference": "test bounds; exported polygons re-solved with FDFD (CPU)",
+   "notes": "min feature: 100 nm is a soft lengthscale penalty (weight 100, from beta>=16); the pixel check is a coarse morphological opening on the dl grid (also counts rounded corners), not a proof. Reciprocity of the open bend (PML, ports on orthogonal axes) is limited by discretisation; 8e-15 matches the closed-guide reciprocity (row 2), not the bend.",
+   "error_column": "|S21|^2 = 0.987 (worst case over 1500-1600 nm; 0.981-0.987 after export), |S11|^2 <= 2.5e-04, reciprocity 1e-06",
+   "timestamp": "2026-11-01T15:35:26-05:00",
+   "script_runtime_s": 1433.1997147999937
+  }
+ },
+ "timestamp": "2026-11-01T15:38:12-05:00"
+}

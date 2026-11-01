@@ -241,6 +241,33 @@ def budget_violation(est: dict, budget: dict) -> str | None:
     return None
 
 
+def run_cost(run) -> float | None:
+    """Relative cost of a run from its estimate: DDA dipoles x solves, FDTD cells x time steps."""
+    e = run["estimate"]
+    if e.get("cells") and e.get("steps_estimate"):
+        return float(e["cells"]) * float(e["steps_estimate"])
+    if e.get("dipoles"):
+        return float(e["dipoles"]) * float(e.get("solves") or 1)
+    return None
+
+
+def ladder_key(run) -> tuple:
+    return (run["backend"].name, run["device"], run["variant"])
+
+
+def predicted_wall(run, finished: dict) -> float | None:
+    """Wall time of `run` extrapolated from the most expensive finished run of the same ladder
+    (backend, device, variant): linear in cells x steps for FDTD; dipoles^1.3 for DDA, whose
+    iteration count also grows with the lattice."""
+    prev = finished.get(ladder_key(run))
+    cost = run_cost(run)
+    if not prev or cost is None or not prev[0]:
+        return None
+    prev_cost, prev_wall = prev
+    power = 1.0 if run["estimate"].get("steps_estimate") else 1.3
+    return prev_wall * max(1.0, cost / prev_cost) ** power
+
+
 def plan_problem(problem, backends, devices, budgets, max_mem_gb, extra_options):
     """List of run dicts (not yet executed) and skips for one problem."""
     sim = ls.Simulation.model_validate(problem["simulation"])
@@ -377,16 +404,20 @@ RUN_COLUMNS = [
 
 
 class Writer:
-    def __init__(self, out: Path):
+    def __init__(self, out: Path, append: bool = False):
         self.out = out
+        self.append = append
         self.files = {}
         self.writers = {}
 
     def row(self, name, columns, row):
         if name not in self.writers:
-            f = open(self.out / name, "w", newline="", encoding="utf-8")
+            path = self.out / name
+            resume = self.append and path.exists() and path.stat().st_size > 0
+            f = open(path, "a" if resume else "w", newline="", encoding="utf-8")
             w = csv.DictWriter(f, fieldnames=columns, extrasaction="ignore")
-            w.writeheader()
+            if not resume:
+                w.writeheader()
             self.files[name], self.writers[name] = f, w
         self.writers[name].writerow({k: _fmt(row.get(k)) for k in columns})
         self.files[name].flush()
@@ -455,6 +486,12 @@ def main(argv=None):
     ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--dry-run", action="store_true", help="plan and estimate only; no solves")
     ap.add_argument("--no-analyze", action="store_true")
+    ap.add_argument("--max-run-s", type=float, default=0.0,
+                    help="skip a run whose wall time, extrapolated from the previous run of its ladder, exceeds this "
+                    "(0: no limit)")
+    ap.add_argument("--resume", action="store_true",
+                    help="continue an interrupted run in --out: problems already in references.csv are kept, the "
+                    "rest are (re)run; a problem that killed the runner twice is skipped")
     args = ap.parse_args(argv)
 
     suite = build_suite(args.suite)
@@ -474,27 +511,57 @@ def main(argv=None):
         problems = [p for p in problems if any(p["id"].startswith(q) for q in pats)]
 
     stamp = _dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    if args.resume and args.out is None:
+        ap.error("--resume needs --out")
     out = args.out or HERE / "results" / f"{stamp}-{suite['suite']}{'-dryrun' if args.dry_run else ''}"
     out.mkdir(parents=True, exist_ok=True)
     args.out = out
-    (out / "suite.json").write_text(json.dumps({**suite, "problems": problems}, indent=1), encoding="utf-8")
-    (out / "environment.json").write_text(json.dumps(environment(args, backends), indent=1, default=str),
-                                          encoding="utf-8")
-    print(f"[run] suite={suite['suite']} problems={len(problems)} devices={devices} "
+    progress_path = out / "progress.json"
+    progress = {"attempts": {}, "sessions": []}
+    done = set()
+    if args.resume and progress_path.exists():
+        progress = json.loads(progress_path.read_text(encoding="utf-8"))
+    if args.resume and (out / "references.csv").exists():
+        with open(out / "references.csv", newline="", encoding="utf-8") as f:
+            done = {r["problem_id"] for r in csv.DictReader(f)}
+    if not (args.resume and (out / "suite.json").exists()):
+        (out / "suite.json").write_text(json.dumps({**suite, "problems": problems}, indent=1), encoding="utf-8")
+    env_name = "environment.json" if not (out / "environment.json").exists() else \
+        f"environment-resume{len(progress['sessions'])}.json"
+    (out / env_name).write_text(json.dumps(environment(args, backends), indent=1, default=str), encoding="utf-8")
+    print(f"[run] suite={suite['suite']} problems={len(problems)} ({len(done)} already done) devices={devices} "
           f"backends={[b.name for b in backends]} -> {out}", flush=True)
 
-    w = Writer(out)
+    def save_progress():
+        progress_path.write_text(json.dumps(progress, indent=1), encoding="utf-8")
+
+    w = Writer(out, append=args.resume)
     if not args.dry_run:
         warmup(devices, backends)
     t_suite = time.perf_counter()
+    progress["sessions"].append({"started": _dt.datetime.now().isoformat(timespec="seconds"), "wall_s": 0.0})
     totals = {"runs": 0, "ok": 0, "error": 0, "skipped": 0}
+    skip_cols = ["problem_id", "backend", "device", "variant", "resolution", "reason"]
+    ref_cols = ["problem_id", "family", "reference_kind", "reference_label", "reference_self_change"]
     for pi, problem in enumerate(problems):
+        if problem["id"] in done:
+            continue
+        attempts = progress["attempts"].get(problem["id"], 0)
+        if attempts >= 2 and not args.dry_run:
+            print(f"[run] {problem['id']}: skipped, the runner died on it {attempts} times", flush=True)
+            w.row("skips.csv", skip_cols, {"problem_id": problem["id"], "backend": "*", "device": "*",
+                                           "reason": f"runner died on this problem {attempts} times"})
+            w.row("references.csv", ref_cols, {"problem_id": problem["id"], "family": problem["family"],
+                                               "reference_kind": "none", "reference_label": "not run (runner died)"})
+            continue
+        progress["attempts"][problem["id"]] = attempts + 1
+        progress["sessions"][-1]["wall_s"] = time.perf_counter() - t_suite
+        save_progress()
         runs, skips = plan_problem(problem, backends, devices, budgets, args.max_mem_gb, extra)
-        for s in skips:
-            w.row("skips.csv", ["problem_id", "backend", "device", "variant", "resolution", "reason"],
-                  {"problem_id": problem["id"], **s})
         totals["skipped"] += len(skips)
         if args.dry_run:
+            for s in skips:
+                w.row("skips.csv", skip_cols, {"problem_id": problem["id"], **s})
             for r in runs:
                 e = r["estimate"]
                 w.row("plan.csv", ["problem_id", "backend", "device", "variant", "resolution", "dipoles",
@@ -508,17 +575,31 @@ def main(argv=None):
 
         t_p = time.perf_counter()
         records = []
+        finished = {}  # ladder -> (cost, wall) of its most expensive successful run
         for r in runs:
+            pred = predicted_wall(r, finished) if args.max_run_s else None
+            if pred is not None and pred > args.max_run_s:
+                skips.append({"backend": r["backend"].name, "device": r["device"], "variant": r["variant"],
+                              "resolution": r["resolution"],
+                              "reason": f"time: predicted {pred:.0f} s > max-run-s {args.max_run_s:g}"})
+                totals["skipped"] += 1
+                continue
             rec = execute(r)
+            cost = run_cost(r)
+            if rec["status"] == "ok" and cost is not None:
+                prev = finished.get(ladder_key(r))
+                if prev is None or cost >= prev[0]:
+                    finished[ladder_key(r)] = (cost, rec["wall_s"])
             records.append(rec)
             totals["runs"] += 1
             totals[rec["status"]] += 1
             tag = f"{rec['backend']}/{rec['variant']}/{rec['device']}@{rec['resolution']}"
             print(f"  {problem['id']} {tag}: {rec['status']} "
                   f"{rec.get('wall_s', 0):.2f}s {rec.get('message', '')[:120]}", flush=True)
+        for s in skips:
+            w.row("skips.csv", skip_cols, {"problem_id": problem["id"], **s})
         ref, ref_kind, ref_label, ref_change = pick_reference(records, problem)
-        w.row("references.csv", ["problem_id", "family", "reference_kind", "reference_label",
-                                 "reference_self_change"],
+        w.row("references.csv", ref_cols,
               {"problem_id": problem["id"], "family": problem["family"], "reference_kind": ref_kind,
                "reference_label": ref_label, "reference_self_change": ref_change})
         for i, rec in enumerate(records):
@@ -554,9 +635,18 @@ def main(argv=None):
         print(f"[run] ({pi + 1}/{len(problems)}) {problem['id']}: {len(records)} runs in "
               f"{time.perf_counter() - t_p:.1f}s; reference = {ref_label}", flush=True)
 
-    totals["suite_wall_s"] = time.perf_counter() - t_suite
-    (out / "totals.json").write_text(json.dumps(totals, indent=1), encoding="utf-8")
+    progress["sessions"][-1]["wall_s"] = time.perf_counter() - t_suite
+    save_progress()
     w.close()
+    if args.resume and not args.dry_run:  # totals over every session of this directory
+        with open(out / "runs.csv", newline="", encoding="utf-8") as f:
+            st = [r["status"] for r in csv.DictReader(f)]
+        if (out / "skips.csv").exists():
+            with open(out / "skips.csv", newline="", encoding="utf-8") as f:
+                totals["skipped"] = sum(1 for _ in csv.DictReader(f))
+        totals.update(runs=len(st), ok=st.count("ok"), error=st.count("error"))
+    totals["suite_wall_s"] = sum(x["wall_s"] for x in progress["sessions"])
+    (out / "totals.json").write_text(json.dumps(totals, indent=1), encoding="utf-8")
     print(f"[run] done: {json.dumps(totals)}", flush=True)
     if not args.dry_run and not args.no_analyze:
         import analyze

@@ -1,0 +1,138 @@
+{
+  "script": "benchmarks/remeasure/tmatrix.py",
+  "env": {
+    "python": "3.12.2",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "processor": "AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD",
+    "cpu_count": 12,
+    "numpy": "2.4.6",
+    "treams": "0.4.7",
+    "blas": "unknown",
+    "lightsmith_commit": "b01e7ff996820c48097a64e3d955fce42050f15c",
+    "blas_threads_env": "1",
+    "cpu_load_note": "shared machine: other jobs (incl. the full-paper benchmark) kept the CPU at ~100% load; absolute times are inflated, ratios are the quantity of interest"
+  },
+  "rows": [
+    {
+      "row": "Speed vs. treams' own path",
+      "table": "T-matrix via treams (tests/test_tmatrix_treams.py)",
+      "configuration": "cluster T-matrix at one wavelength incl. single-sphere T-matrices; wrapper _Solver.tmatrix vs treams TMatrix.cluster(...).interaction.solve() at the same lmax; median of repeats after a warm-up; CPU (NumPy/SciPy, double), BLAS threads = 1",
+      "device": "cpu",
+      "precision": "double",
+      "measured_value": {
+        "dimer": 16.02,
+        "trimer": 3.32,
+        "tetramer": 12.02
+      },
+      "measured_value_min_time_ratio": {
+        "dimer": 27.3,
+        "trimer": 11.88,
+        "tetramer": 14.11
+      },
+      "headline_dimer_speedup": 16.02157866543311,
+      "note": "repeat-to-repeat spread was up to ~7x under the shared CPU load, so the ratio is only known to within a factor ~2; re-run on an idle machine before quoting a single number",
+      "reference": "treams' own cluster path (same lmax, same positions)",
+      "previously_reported": "~7x",
+      "reproduced": false,
+      "runs": [
+        {
+          "cluster": "dimer (test_gold_dimer_redshifts_for_axial_polarization)",
+          "particles": 2,
+          "wavelength_nm": 520.0,
+          "lmax": [
+            12,
+            12
+          ],
+          "modes": 672,
+          "repeats": 7,
+          "tmatrix_rel_diff": 1.622527682411197e-08,
+          "wrapper_s": [
+            1.6173374999780208,
+            1.531308799982071,
+            1.4108496999833733,
+            2.2178442000003997,
+            2.4999477000092156,
+            0.8330640000058338,
+            0.8652208000130486
+          ],
+          "treams_s": [
+            22.940462500002468,
+            22.743260100018233,
+            28.74020970001584,
+            34.79855690000113,
+            27.14983999999822,
+            22.92631199999596,
+            24.533984399982728
+          ],
+          "wrapper_median_s": 1.531308799982071,
+          "treams_median_s": 24.533984399982728,
+          "speedup_median": 16.02157866543311,
+          "speedup_min_time": 27.300735717614693
+        },
+        {
+          "cluster": "trimer (test_cluster_matches_treams_reference_path)",
+          "particles": 3,
+          "wavelength_nm": 520.0,
+          "lmax": [
+            7,
+            8,
+            4
+          ],
+          "modes": 334,
+          "repeats": 7,
+          "tmatrix_rel_diff": 2.523164780742259e-13,
+          "wrapper_s": [
+            0.22045960000832565,
+            1.1372574999986682,
+            1.3662219000107143,
+            1.182635900011519,
+            1.0464858999766875,
+            1.3381626000045799,
+            1.5371571999858133
+          ],
+          "treams_s": [
+            3.9287661999987904,
+            3.4128217000106815,
+            4.3384447999997064,
+            4.228918100008741,
+            3.2462349999987055,
+            4.248187499993946,
+            2.61915479999152
+          ],
+          "wrapper_median_s": 1.182635900011519,
+          "treams_median_s": 3.9287661999987904,
+          "speedup_median": 3.3220420587270554,
+          "speedup_min_time": 11.880429792545245
+        },
+        {
+          "cluster": "tetramer (test_tetrahedral_cluster_converges_and_conserves)",
+          "particles": 4,
+          "wavelength_nm": 1000.0,
+          "lmax": [
+            15,
+            14,
+            10,
+            9
+          ],
+          "modes": 1396,
+          "repeats": 3,
+          "tmatrix_rel_diff": 3.4771413662948955e-10,
+          "wrapper_s": [
+            21.256691999995383,
+            10.788824099989142,
+            14.280492799996864
+          ],
+          "treams_s": [
+            152.22971710001002,
+            208.68066250000265,
+            171.5885147000081
+          ],
+          "wrapper_median_s": 14.280492799996864,
+          "treams_median_s": 171.5885147000081,
+          "speedup_median": 12.015587774397098,
+          "speedup_min_time": 14.109945225649126
+        }
+      ]
+    }
+  ]
+}

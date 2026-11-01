@@ -1,0 +1,594 @@
+{
+  "row": "GPU vs. CPU | CPU | 1e-12 (TMM), 1e-9 (RCWA) bound; GPU 2-8x faster reported",
+  "reference": "CPU (NumPy) solution of the same problem",
+  "previously_reported": "GPU 2-8x faster",
+  "timestamp": "2026-11-01T15:05:42-05:00",
+  "provisional": true,
+  "provisional_reason": "A long benchmark run (benchmarks/run.py --suite full-paper) and several other workloads were using the GPU and CPU (system CPU load ~100%, see machine_load_*) during these timings; speedups are provisional and should be re-timed on an idle machine. benchmarks/remeasure/fde_eme.py (CPU only) also ran concurrently for part of the 2026-11-01 run. Agreement (max |dR|) values are not affected.",
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "cpu": "AMD Ryzen 5 5600X (6C/12T)",
+    "platform": "Windows-11-10.0.26300-SP0"
+  },
+  "software": {
+    "python": "3.12.2",
+    "numpy": "2.4.6",
+    "torch": "2.11.0+cu128",
+    "torch_cuda": "12.8",
+    "lightsmith": "0.1.0",
+    "cpu_backend": "numpy (OpenBLAS)",
+    "gpu_backend": "torch cuda:0",
+    "cpu_threads": 6,
+    "OPENBLAS_NUM_THREADS": "6",
+    "torch_num_threads": 6
+  },
+  "precision": "double (complex128) on both devices",
+  "timing_method": "time.perf_counter around the call, torch.cuda.synchronize before/after; warm-up runs discarded; median over repeats",
+  "measured": {
+    "max_abs_diff_R_tmm": 4.901634653720066e-13,
+    "max_abs_diff_R_rcwa": 3.684719196428432e-12,
+    "speedup_end_to_end_by_case": {
+      "tmm_test_config": 0.33,
+      "tmm_20L_2001wl_46ang": 4.39,
+      "tmm_100L_2001wl_91ang": 18.9,
+      "rcwa_test_config_hole_slab_m4": 5.17,
+      "rcwa_test_config_lamellar_metal_m20": 0.79,
+      "rcwa_hole_slab_m6_8wl": 2.18,
+      "rcwa_lamellar_metal_m50_51wl": 5.13
+    },
+    "speedup_kernel_by_case": {
+      "tmm_test_config": 0.05,
+      "tmm_20L_2001wl_46ang": 11.69,
+      "tmm_100L_2001wl_91ang": 45.53,
+      "rcwa_test_config_hole_slab_m4": 5.24,
+      "rcwa_test_config_lamellar_metal_m20": 1.05
+    },
+    "speedup_end_to_end_range_large_problems": [
+      2.1803109326107455,
+      18.89826821191704
+    ],
+    "speedup_kernel_range_large_problems": [
+      11.688845015466262,
+      45.526596295425826
+    ]
+  },
+  "agreement_within_bounds": true,
+  "cases": [
+    {
+      "name": "tmm_test_config",
+      "method": "tmm",
+      "test_config": "tests/test_tmm.py::test_tmm_gpu_matches_cpu",
+      "state_size": {
+        "layers": 20,
+        "wavelengths": 101,
+        "angles": 9,
+        "polarizations": 2,
+        "points": 1818
+      },
+      "precision": "double",
+      "max_abs_diff_R_gpu_vs_cpu": 3.9968028886505635e-15,
+      "agreement_bound": 1e-12,
+      "within_bound": true,
+      "timings": {
+        "cpu_end_to_end": {
+          "median_s": 0.041537550001521595,
+          "min_s": 0.007817900012014434,
+          "max_s": 0.3200353999854997,
+          "all_s": [
+            0.04320809998898767,
+            0.008972300012828782,
+            0.06395370000973344,
+            0.011701500014169142,
+            0.007817900012014434,
+            0.03986700001405552,
+            0.047222299996064976,
+            0.3200353999854997,
+            0.025666299974545836,
+            0.08264139998937026
+          ]
+        },
+        "gpu_end_to_end": {
+          "median_s": 0.1275273999926867,
+          "min_s": 0.06128049999824725,
+          "max_s": 0.39770600001793355,
+          "all_s": [
+            0.39770600001793355,
+            0.13217969998368062,
+            0.196456700010458,
+            0.10384880000492558,
+            0.12287510000169277,
+            0.08978989999741316,
+            0.07964540002285503,
+            0.19452669998281635,
+            0.1426987999875564,
+            0.06128049999824725
+          ]
+        },
+        "cpu_kernel": {
+          "median_s": 0.008468499989248812,
+          "min_s": 0.0063452000031247735,
+          "max_s": 0.037421699991682544,
+          "all_s": [
+            0.017325200024060905,
+            0.008757299976423383,
+            0.007805700006429106,
+            0.007799500017426908,
+            0.012464900006307289,
+            0.011513100005686283,
+            0.008179700002074242,
+            0.007092999992892146,
+            0.0063452000031247735,
+            0.037421699991682544
+          ]
+        },
+        "gpu_kernel": {
+          "median_s": 0.18248549998679664,
+          "min_s": 0.10532819997752085,
+          "max_s": 0.30704729998251423,
+          "all_s": [
+            0.30704729998251423,
+            0.27909480000380427,
+            0.1515337000018917,
+            0.15438079999876209,
+            0.12079190000076778,
+            0.10532819997752085,
+            0.14676500001223758,
+            0.22033620000001974,
+            0.2105901999748312,
+            0.30170800001360476
+          ]
+        }
+      },
+      "speedup_end_to_end": 0.32571470918330997,
+      "speedup_kernel": 0.04640642675643562,
+      "repeats": 10,
+      "warmup_runs": 1,
+      "cpu_threads": 6,
+      "machine_load_before": {
+        "utilization_pct": 0.0,
+        "memory_used_mib": 11379.0,
+        "memory_total_mib": 12227.0,
+        "system_cpu_load_pct": 100.0
+      },
+      "machine_load_after": {
+        "utilization_pct": 11.0,
+        "memory_used_mib": 11474.0,
+        "memory_total_mib": 12227.0,
+        "system_cpu_load_pct": 100.0
+      },
+      "attempts": 1
+    },
+    {
+      "name": "tmm_20L_2001wl_46ang",
+      "method": "tmm",
+      "test_config": null,
+      "state_size": {
+        "layers": 20,
+        "wavelengths": 2001,
+        "angles": 46,
+        "polarizations": 2,
+        "points": 184092
+      },
+      "precision": "double",
+      "max_abs_diff_R_gpu_vs_cpu": 8.992806499463768e-15,
+      "agreement_bound": 1e-12,
+      "within_bound": true,
+      "timings": {
+        "cpu_end_to_end": {
+          "median_s": 3.008007800002815,
+          "min_s": 2.529214600013802,
+          "max_s": 3.554351000027964,
+          "all_s": [
+            2.529214600013802,
+            3.554351000027964,
+            3.1013092000212055,
+            3.008007800002815,
+            2.9067535999929532
+          ]
+        },
+        "gpu_end_to_end": {
+          "median_s": 0.6844572000263724,
+          "min_s": 0.5044381000043359,
+          "max_s": 1.1855986999871675,
+          "all_s": [
+            0.6545122000097763,
+            0.5044381000043359,
+            0.6844572000263724,
+            1.1855986999871675,
+            0.8992347000166774
+          ]
+        },
+        "cpu_kernel": {
+          "median_s": 2.087564600020414,
+          "min_s": 1.919813599990448,
+          "max_s": 3.4915272999787703,
+          "all_s": [
+            3.4915272999787703,
+            2.062794600002235,
+            2.64046279998729,
+            1.919813599990448,
+            2.087564600020414
+          ]
+        },
+        "gpu_kernel": {
+          "median_s": 0.1785946000018157,
+          "min_s": 0.07044340000720695,
+          "max_s": 0.23910430000978522,
+          "all_s": [
+            0.07044340000720695,
+            0.1785946000018157,
+            0.1580141000158619,
+            0.230748300004052,
+            0.23910430000978522
+          ]
+        }
+      },
+      "speedup_end_to_end": 4.394734688870122,
+      "speedup_kernel": 11.688845015466262,
+      "repeats": 5,
+      "warmup_runs": 1,
+      "cpu_threads": 6,
+      "machine_load_before": {
+        "utilization_pct": 0.0,
+        "memory_used_mib": 11500.0,
+        "memory_total_mib": 12227.0,
+        "system_cpu_load_pct": 100.0
+      },
+      "machine_load_after": {
+        "utilization_pct": 58.0,
+        "memory_used_mib": 10370.0,
+        "memory_total_mib": 12227.0,
+        "system_cpu_load_pct": 100.0
+      },
+      "attempts": 1
+    },
+    {
+      "name": "tmm_100L_2001wl_91ang",
+      "method": "tmm",
+      "test_config": null,
+      "state_size": {
+        "layers": 100,
+        "wavelengths": 2001,
+        "angles": 91,
+        "polarizations": 2,
+        "points": 364182
+      },
+      "precision": "double",
+      "max_abs_diff_R_gpu_vs_cpu": 4.901634653720066e-13,
+      "agreement_bound": 1e-12,
+      "within_bound": true,
+      "timings": {
+        "cpu_end_to_end": {
+          "median_s": 23.783088800002588,
+          "min_s": 23.044997999997577,
+          "max_s": 25.651627499988535,
+          "all_s": [
+            23.783088800002588,
+            23.044997999997577,
+            25.651627499988535
+          ]
+        },
+        "gpu_end_to_end": {
+          "median_s": 1.258479800017085,
+          "min_s": 1.1836449999827892,
+          "max_s": 1.5039242999919225,
+          "all_s": [
+            1.5039242999919225,
+            1.258479800017085,
+            1.1836449999827892
+          ]
+        },
+        "cpu_kernel": {
+          "median_s": 22.863183500012383,
+          "min_s": 18.876210999995237,
+          "max_s": 28.186858199973358,
+          "all_s": [
+            22.863183500012383,
+            28.186858199973358,
+            18.876210999995237
+          ]
+        },
+        "gpu_kernel": {
+          "median_s": 0.5021940000005998,
+          "min_s": 0.30111530001158826,
+          "max_s": 0.5375584999856073,
+          "all_s": [
+            0.30111530001158826,
+            0.5021940000005998,
+            0.5375584999856073
+          ]
+        }
+      },
+      "speedup_end_to_end": 18.89826821191704,
+      "speedup_kernel": 45.526596295425826,
+      "repeats": 3,
+      "warmup_runs": 1,
+      "cpu_threads": 6,
+      "machine_load_before": {
+        "utilization_pct": 1.0,
+        "memory_used_mib": 10556.0,
+        "memory_total_mib": 12227.0,
+        "system_cpu_load_pct": 100.0
+      },
+      "machine_load_after": {
+        "utilization_pct": 85.0,
+        "memory_used_mib": 11394.0,
+        "memory_total_mib": 12227.0,
+        "system_cpu_load_pct": 100.0
+      },
+      "attempts": 1
+    },
+    {
+      "name": "rcwa_test_config_hole_slab_m4",
+      "method": "rcwa",
+      "test_config": "tests/test_rcwa.py::test_rcwa_gpu_matches_cpu (part 1)",
+      "state_size": {
+        "harmonic_order_M": 4,
+        "lattice_dim": 2,
+        "harmonics_N": 81,
+        "matrix_size_2N": 162,
+        "wavelengths": 5,
+        "polarizations": 1
+      },
+      "precision": "double",
+      "max_abs_diff_R_gpu_vs_cpu": 1.6686652060116103e-13,
+      "agreement_bound": 1e-09,
+      "within_bound": true,
+      "timings": {
+        "cpu_end_to_end": {
+          "median_s": 10.572019300016109,
+          "min_s": 3.351370299991686,
+          "max_s": 14.569859199982602,
+          "all_s": [
+            10.572019300016109,
+            3.351370299991686,
+            14.569859199982602
+          ]
+        },
+        "gpu_end_to_end": {
+          "median_s": 2.0460583999811206,
+          "min_s": 1.7411008999915794,
+          "max_s": 3.0042706999811344,
+          "all_s": [
+            1.7411008999915794,
+            3.0042706999811344,
+            2.0460583999811206
+          ]
+        },
+        "cpu_kernel": {
+          "median_s": 11.433535799995298,
+          "min_s": 6.913552300014999,
+          "max_s": 16.21634779998567,
+          "all_s": [
+            16.21634779998567,
+            6.913552300014999,
+            11.433535799995298
+          ]
+        },
+        "gpu_kernel": {
+          "median_s": 2.182727400009753,
+          "min_s": 1.6072155000001658,
+          "max_s": 3.534672200010391,
+          "all_s": [
+            3.534672200010391,
+            2.182727400009753,
+            1.6072155000001658
+          ]
+        }
+      },
+      "speedup_end_to_end": 5.1670173735576945,
+      "speedup_kernel": 5.23818769120881,
+      "repeats": 3,
+      "warmup_runs": 1,
+      "cpu_threads": 6,
+      "machine_load_before": {
+        "utilization_pct": 1.0,
+        "memory_used_mib": 2187.0,
+        "memory_total_mib": 12227.0,
+        "system_cpu_load_pct": 100.0
+      },
+      "machine_load_after": {
+        "utilization_pct": 0.0,
+        "memory_used_mib": 3949.0,
+        "memory_total_mib": 12227.0,
+        "system_cpu_load_pct": 100.0
+      },
+      "attempts": 1
+    },
+    {
+      "name": "rcwa_test_config_lamellar_metal_m20",
+      "method": "rcwa",
+      "test_config": "tests/test_rcwa.py::test_rcwa_gpu_matches_cpu (part 2)",
+      "state_size": {
+        "harmonic_order_M": 20,
+        "lattice_dim": 1,
+        "harmonics_N": 41,
+        "matrix_size_2N": 82,
+        "wavelengths": 2,
+        "polarizations": 2
+      },
+      "precision": "double",
+      "max_abs_diff_R_gpu_vs_cpu": 8.415490526658687e-14,
+      "agreement_bound": 1e-09,
+      "within_bound": true,
+      "timings": {
+        "cpu_end_to_end": {
+          "median_s": 0.2841671999776736,
+          "min_s": 0.20068710000487044,
+          "max_s": 0.8453532000130508,
+          "all_s": [
+            0.2841671999776736,
+            0.8453532000130508,
+            0.20068710000487044
+          ]
+        },
+        "gpu_end_to_end": {
+          "median_s": 0.35833389998879284,
+          "min_s": 0.32434719998855144,
+          "max_s": 0.4141746000095736,
+          "all_s": [
+            0.35833389998879284,
+            0.4141746000095736,
+            0.32434719998855144
+          ]
+        },
+        "cpu_kernel": {
+          "median_s": 0.3212790999969002,
+          "min_s": 0.2091814000159502,
+          "max_s": 0.5148118000070099,
+          "all_s": [
+            0.5148118000070099,
+            0.2091814000159502,
+            0.3212790999969002
+          ]
+        },
+        "gpu_kernel": {
+          "median_s": 0.3070417999988422,
+          "min_s": 0.19369680000818335,
+          "max_s": 0.46028820000356063,
+          "all_s": [
+            0.46028820000356063,
+            0.3070417999988422,
+            0.19369680000818335
+          ]
+        }
+      },
+      "speedup_end_to_end": 0.793023490064884,
+      "speedup_kernel": 1.0463692565576144,
+      "repeats": 3,
+      "warmup_runs": 1,
+      "cpu_threads": 6,
+      "machine_load_before": {
+        "utilization_pct": 0.0,
+        "memory_used_mib": 2286.0,
+        "memory_total_mib": 12227.0,
+        "system_cpu_load_pct": 100.0
+      },
+      "machine_load_after": {
+        "utilization_pct": 0.0,
+        "memory_used_mib": 2227.0,
+        "memory_total_mib": 12227.0,
+        "system_cpu_load_pct": 100.0
+      },
+      "attempts": 1
+    },
+    {
+      "name": "rcwa_hole_slab_m6_8wl",
+      "method": "rcwa",
+      "test_config": null,
+      "state_size": {
+        "harmonic_order_M": 6,
+        "lattice_dim": 2,
+        "harmonics_N": 169,
+        "matrix_size_2N": 338,
+        "wavelengths": 8,
+        "polarizations": 1
+      },
+      "precision": "double",
+      "max_abs_diff_R_gpu_vs_cpu": 1.1986245329609346e-13,
+      "agreement_bound": 1e-09,
+      "within_bound": true,
+      "timings": {
+        "cpu_end_to_end": {
+          "median_s": 111.38252750001266,
+          "min_s": 111.13949089997914,
+          "max_s": 113.45253940002294,
+          "all_s": [
+            111.13949089997914,
+            113.45253940002294,
+            111.38252750001266
+          ]
+        },
+        "gpu_end_to_end": {
+          "median_s": 51.085616199998185,
+          "min_s": 48.14465279999422,
+          "max_s": 54.82498390000546,
+          "all_s": [
+            51.085616199998185,
+            54.82498390000546,
+            48.14465279999422
+          ]
+        }
+      },
+      "speedup_end_to_end": 2.1803109326107455,
+      "speedup_kernel": null,
+      "repeats": 3,
+      "warmup_runs": 0,
+      "warmup_note": "the CPU and GPU solves used for the agreement check run first and also warm up both devices; kernel-only timing skipped for this (slow) case, RCWA end-to-end and kernel times agree within a few % on the test cases",
+      "cpu_threads": 6,
+      "machine_load_before": {
+        "utilization_pct": 61.0,
+        "memory_used_mib": 9914.0,
+        "memory_total_mib": 12227.0,
+        "system_cpu_load_pct": 100.0
+      },
+      "machine_load_after": {
+        "utilization_pct": 2.0,
+        "memory_used_mib": 11608.0,
+        "memory_total_mib": 12227.0,
+        "system_cpu_load_pct": 100.0
+      },
+      "attempts": 1
+    },
+    {
+      "name": "rcwa_lamellar_metal_m50_51wl",
+      "method": "rcwa",
+      "test_config": null,
+      "state_size": {
+        "harmonic_order_M": 50,
+        "lattice_dim": 1,
+        "harmonics_N": 101,
+        "matrix_size_2N": 202,
+        "wavelengths": 51,
+        "polarizations": 2
+      },
+      "precision": "double",
+      "max_abs_diff_R_gpu_vs_cpu": 3.684719196428432e-12,
+      "agreement_bound": 1e-09,
+      "within_bound": true,
+      "timings": {
+        "cpu_end_to_end": {
+          "median_s": 145.09984450001502,
+          "min_s": 134.3344286000065,
+          "max_s": 215.1290435999981,
+          "all_s": [
+            215.1290435999981,
+            145.09984450001502,
+            134.3344286000065
+          ]
+        },
+        "gpu_end_to_end": {
+          "median_s": 28.30530439998256,
+          "min_s": 27.54244600000675,
+          "max_s": 30.51801119997981,
+          "all_s": [
+            30.51801119997981,
+            27.54244600000675,
+            28.30530439998256
+          ]
+        }
+      },
+      "speedup_end_to_end": 5.126242150573884,
+      "speedup_kernel": null,
+      "repeats": 3,
+      "warmup_runs": 0,
+      "warmup_note": "the CPU and GPU solves used for the agreement check run first and also warm up both devices; kernel-only timing skipped for this (slow) case, RCWA end-to-end and kernel times agree within a few % on the test cases",
+      "cpu_threads": 6,
+      "machine_load_before": {
+        "utilization_pct": 2.0,
+        "memory_used_mib": 11619.0,
+        "memory_total_mib": 12227.0,
+        "system_cpu_load_pct": 100.0
+      },
+      "machine_load_after": {
+        "utilization_pct": 49.0,
+        "memory_used_mib": 10661.0,
+        "memory_total_mib": 12227.0,
+        "system_cpu_load_pct": 100.0
+      },
+      "attempts": 1
+    }
+  ],
+  "reproduced": false,
+  "reproduced_note": "agreement bounds are checked strictly; the 2-8x speedup claim is judged against the end-to-end range on the large (non-test) problems with 20% slack, and is provisional because of the background GPU/CPU load"
+}
