@@ -192,7 +192,7 @@ class NativeBEM(Backend):
                 diag = 1 / xp.linalg.diagonal(Z) if hasattr(xp.linalg, "diagonal") else 1 / xp.diagonal(Z)
                 cols = []
                 for j in range(b.shape[1]):
-                    xj, it, res = gmres(lambda v: xp.matmul(Z, v), bd[:, j], xp, opts.tol, opts.restart,
+                    xj, it, res = gmres(lambda v, Z=Z: xp.matmul(Z, v), bd[:, j], xp, opts.tol, opts.restart,
                                         opts.max_iter, precond=lambda v: diag * v)
                     cols.append(Device.to_numpy(xj))
                     iterations.append(it)
