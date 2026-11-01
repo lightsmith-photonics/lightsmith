@@ -164,7 +164,9 @@ class ModeData(BaseModel):
 class ModeResult(_ResultBase):
     kind: Literal["modes"] = "modes"
     wavelengths_nm: list[float]
-    modes: list[list[ModeData]] = Field(description="[wavelength][mode], sorted by decreasing neff_real.")
+    modes: list[list[ModeData]] = Field(
+        description="[wavelength][mode], sorted by decreasing neff_real (by overlap with the previous wavelength "
+        "when the solver option track_modes=True).")
 
 
 class SParameterResult(_ResultBase):
