@@ -1876,7 +1876,7 @@ dev = [
 requires-dist = [
     { name = "array-api-compat", specifier = ">=1.11" },
     { name = "gdsfactory", marker = "python_full_version >= '3.11' and extra == 'layout'", specifier = ">=9" },
-    { name = "mcp", marker = "extra == 'mcp'", specifier = ">=1.2" },
+    { name = "mcp", marker = "extra == 'mcp'", specifier = ">=2.3,<3" },
     { name = "miepython", specifier = ">=3.0" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "pydantic", specifier = ">=2.6" },

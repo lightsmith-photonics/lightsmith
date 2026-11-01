@@ -14,7 +14,14 @@ Interfaces, all JSON in / JSON out:
 
 - Python: `import lightsmith as ls`
 - CLI: `lightsmith {doctor,backends,schema,estimate,solve,compare}` — errors are JSON on stderr, exit code 1.
-- MCP: `lightsmith-mcp` (stdio), tools `get_schema`, `list_backends`, `check_environment`, `estimate`, `solve`, `compare`.
+- MCP: `lightsmith-mcp` (stdio; `--http` for streamable HTTP). Tools:
+  - discovery: `list_problem_kinds`, `get_schema(kind)`, `list_backends`, `check_environment`, `validate_problem`;
+  - solving: `estimate`, `solve`, `start_solve`, `compare`;
+  - jobs: `get_job`, `list_jobs`, `cancel_job`, `get_result`;
+  - materials: `search_materials`, `get_material`, `fit_drude_lorentz`.
+
+  Solves over the server's memory/time budget are refused with ways to shrink them. Long solves return a job id.
+  Full results are resources at `lightsmith://jobs/{id}/result` (JSON) and `/result.csv`. See `docs/mcp.md`.
 
 ## Conventions (do not change without a schema version bump)
 

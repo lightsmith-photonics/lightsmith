@@ -9,6 +9,7 @@ Units: nm, vacuum wavelengths. Time convention exp(-i omega t) (Im eps > 0 = los
 - [README](README.md): install, quick start, solver table
 - [AGENTS.md](AGENTS.md): conventions and workflow for agents (estimate -> solve -> check warnings)
 - [Example spec](examples/drude_sphere.json): a complete scattering problem in JSON
+- [MCP server](docs/mcp.md): tools, resources, prompts, jobs, budget, remote mode, client configuration
 - [Library landscape](docs/landscape.md): survey of existing solvers and backend choices
 
 ## API
@@ -19,4 +20,9 @@ Units: nm, vacuum wavelengths. Time convention exp(-i omega t) (Im eps > 0 = los
 - `lightsmith.compare(problem, methods=None, device="auto") -> dict`
 - `lightsmith.doctor() -> dict` (frameworks and GPUs)
 - CLI: `lightsmith {doctor,backends,schema,estimate,solve,compare}`
-- MCP server: `lightsmith-mcp`
+- MCP server: `lightsmith-mcp` (stdio, or `--http`). See [docs/mcp.md](docs/mcp.md).
+  - Tools: `list_problem_kinds`, `get_schema`, `list_backends`, `check_environment`, `validate_problem`,
+    `estimate`, `solve`, `start_solve`, `compare`, `get_job`, `list_jobs`, `cancel_job`, `get_result`,
+    `search_materials`, `get_material`, `fit_drude_lorentz`.
+  - Resources: `lightsmith://schema/{kind}`, `lightsmith://examples/{kind}` and `lightsmith://jobs/{id}/result`
+    (also `.csv` and `/plot.png`).

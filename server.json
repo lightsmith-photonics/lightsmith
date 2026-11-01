@@ -1,0 +1,34 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.lightsmith-photonics/lightsmith",
+  "title": "Lightsmith",
+  "description": "Open photonics simulation: Mie, DDA, FDTD, TMM, RCWA, mode, EME, FDFD, band and circuit solvers.",
+  "repository": {
+    "url": "https://github.com/lightsmith-photonics/lightsmith",
+    "source": "github"
+  },
+  "websiteUrl": "https://github.com/lightsmith-photonics/lightsmith/blob/main/docs/mcp.md",
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "lightsmith",
+      "version": "0.1.0",
+      "runtimeHint": "uvx",
+      "runtimeArguments": [
+        {"type": "named", "name": "--from", "value": "lightsmith[mcp]"}
+      ],
+      "packageArguments": [],
+      "transport": {"type": "stdio"},
+      "environmentVariables": [
+        {"name": "LIGHTSMITH_MCP_MAX_MEMORY_GB", "description": "Refuse solves estimated to need more memory than this (default 8)", "isRequired": false, "isSecret": false},
+        {"name": "LIGHTSMITH_MCP_MAX_RUNTIME_S", "description": "Refuse solves estimated to run longer than this (default 1800)", "isRequired": false, "isSecret": false},
+        {"name": "LIGHTSMITH_MCP_MAX_JOBS", "description": "Concurrent local solver processes (default 1)", "isRequired": false, "isSecret": false},
+        {"name": "LIGHTSMITH_CLOUD_URL", "description": "Run solves on Lightsmith Cloud instead of locally", "isRequired": false, "isSecret": false},
+        {"name": "LIGHTSMITH_API_KEY", "description": "Lightsmith Cloud API key (lsk_...)", "isRequired": false, "isSecret": true},
+        {"name": "LIGHTSMITH_MATERIALS_URL", "description": "Lightsmith Materials API base URL for material search", "isRequired": false, "isSecret": false}
+      ]
+    }
+  ]
+}
