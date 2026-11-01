@@ -1,0 +1,620 @@
+{
+ "script": "benchmarks/remeasure/pwe.py",
+ "timestamp": "2026-11-01T15:09:17-05:00",
+ "git_commit": "b01e7ff996820c48097a64e3d955fce42050f15c",
+ "cpu": "AMD Ryzen 5 5600X (AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD)",
+ "gpu": "NVIDIA GeForce RTX 5070",
+ "torch_cpu_threads": 6,
+ "versions": {
+  "python": "3.12.2",
+  "numpy": "2.4.6",
+  "scipy": "1.15.3",
+  "torch": "2.11.0+cu128"
+ },
+ "repeats": 3,
+ "note": "GPU timings provisional: a long benchmark was running on the same GPU (see gpu snapshots).",
+ "agreement_2d": {
+  "configuration": "tests/test_pwe.py::test_gpu_matches_cpu: square lattice a=400 nm, eps=8.9 rods r=0.2a in air, Gamma-X-M-Gamma, 4 points/segment (13 k), 4 bands, TE+TM, default options",
+  "estimate_cpu": {
+   "backend": "lightsmith-pwe",
+   "method": "pwe",
+   "framework": "numpy",
+   "device": "cpu",
+   "solver": {
+    "te": "lobpcg",
+    "tm": "dense"
+   },
+   "num_plane_waves": {
+    "te": 1024,
+    "tm": 401
+   },
+   "matrix_size": {
+    "te": 1024,
+    "tm": 401
+   },
+   "grid": {
+    "te": [
+     32,
+     32
+    ]
+   },
+   "precision": "double",
+   "k_points": 13,
+   "polarizations": [
+    "te",
+    "tm"
+   ],
+   "memory_bytes": 138932064,
+   "eigensolves": 26
+  },
+  "estimate_gpu": {
+   "backend": "lightsmith-pwe",
+   "method": "pwe",
+   "framework": "torch",
+   "device": "cuda:0",
+   "gpu_name": "NVIDIA GeForce RTX 5070",
+   "solver": {
+    "te": "lobpcg",
+    "tm": "dense"
+   },
+   "num_plane_waves": {
+    "te": 1024,
+    "tm": 401
+   },
+   "matrix_size": {
+    "te": 1024,
+    "tm": 401
+   },
+   "grid": {
+    "te": [
+     32,
+     32
+    ]
+   },
+   "precision": "double",
+   "k_points": 13,
+   "polarizations": [
+    "te",
+    "tm"
+   ],
+   "memory_bytes": 72038848,
+   "eigensolves": 26
+  },
+  "provenance_cpu": {
+   "solver": {
+    "te": "lobpcg",
+    "tm": "dense"
+   },
+   "precision": "double",
+   "matrix_size": {
+    "te": 1024,
+    "tm": 401
+   },
+   "num_plane_waves": {
+    "te": 1024,
+    "tm": 401
+   },
+   "framework": "numpy",
+   "device": "cpu"
+  },
+  "provenance_gpu": {
+   "solver": {
+    "te": "lobpcg",
+    "tm": "dense"
+   },
+   "precision": "single",
+   "matrix_size": {
+    "te": 1024,
+    "tm": 401
+   },
+   "num_plane_waves": {
+    "te": 1024,
+    "tm": 401
+   },
+   "framework": "torch",
+   "device": "cuda:0"
+  },
+  "max_abs_diff_tm_a_over_lambda": 3.857300705975564e-05,
+  "max_abs_diff_te_a_over_lambda": 3.965720937484887e-11,
+  "cpu_wall_s": [
+   50.306740200001514,
+   80.89897020001081,
+   76.39653090000502
+  ],
+  "gpu_wall_s": [
+   19.04903490000288,
+   20.178260299988324,
+   9.908697500010021
+  ],
+  "speedup_wall_median": 4.010519761292131,
+  "gpu_snapshot": {
+   "time": "2026-11-01T14:16:35-05:00",
+   "gpu_util_percent": 100.0,
+   "mem_used_mib": 11688.0,
+   "mem_total_mib": 12227.0,
+   "cpu_load_percent": 100.0
+  }
+ },
+ "cases_3d": [
+  {
+   "resolution": 16,
+   "estimate_cpu": {
+    "backend": "lightsmith-pwe",
+    "method": "pwe",
+    "framework": "numpy",
+    "device": "cpu",
+    "solver": {
+     "all": "lobpcg"
+    },
+    "num_plane_waves": {
+     "all": 4096
+    },
+    "matrix_size": {
+     "all": 8192
+    },
+    "grid": {
+     "all": [
+      16,
+      16,
+      16
+     ]
+    },
+    "precision": "double",
+    "k_points": 19,
+    "polarizations": [
+     "all"
+    ],
+    "memory_bytes": 13139968,
+    "eigensolves": 19
+   },
+   "estimate_gpu": {
+    "backend": "lightsmith-pwe",
+    "method": "pwe",
+    "framework": "torch",
+    "device": "cuda:0",
+    "gpu_name": "NVIDIA GeForce RTX 5070",
+    "solver": {
+     "all": "lobpcg"
+    },
+    "num_plane_waves": {
+     "all": 4096
+    },
+    "matrix_size": {
+     "all": 8192
+    },
+    "grid": {
+     "all": [
+      16,
+      16,
+      16
+     ]
+    },
+    "precision": "double",
+    "k_points": 19,
+    "polarizations": [
+     "all"
+    ],
+    "memory_bytes": 13139968,
+    "eigensolves": 19
+   },
+   "cpu_wall_s": [
+    309.06795739999507,
+    309.03838499999256,
+    254.22685139998794
+   ],
+   "gpu_wall_s": [
+    18.63688100001309,
+    24.216262600006303,
+    26.870913099992322
+   ],
+   "cpu_wall_median_s": 309.03838499999256,
+   "gpu_wall_median_s": 24.216262600006303,
+   "speedup_wall_median": 12.761605294118016,
+   "max_abs_diff_a_over_lambda": 4.6060296740729026e-09,
+   "gap_cpu": [
+    {
+     "bottom": 0.2811490932842861,
+     "top": 0.3153628407875254,
+     "width": 0.0342137475032393,
+     "midgap": 0.29825596703590573,
+     "gap_midgap_ratio": 0.11471270078268193,
+     "between_bands": [
+      2,
+      3
+     ]
+    }
+   ],
+   "gap_gpu": [
+    {
+     "bottom": 0.28114909328428606,
+     "top": 0.31536284078752547,
+     "width": 0.03421374750323941,
+     "midgap": 0.29825596703590573,
+     "gap_midgap_ratio": 0.11471270078268231,
+     "between_bands": [
+      2,
+      3
+     ]
+    }
+   ],
+   "provenance_cpu": {
+    "framework": "numpy",
+    "device": "cpu",
+    "solver": {
+     "3d": "lobpcg"
+    },
+    "num_plane_waves": {
+     "3d": 4096
+    },
+    "matrix_size": {
+     "3d": 8192
+    },
+    "eps_treatment": {
+     "3d": "subpixel_smoothed_tensor"
+    },
+    "precision": "double",
+    "iterations": {
+     "3d": [
+      32,
+      23,
+      21,
+      21,
+      22,
+      25,
+      23,
+      25,
+      27,
+      29,
+      29,
+      25,
+      25,
+      27,
+      24,
+      25,
+      23,
+      24,
+      21
+     ]
+    },
+    "max_residual": {
+     "3d": 9.590941309023003e-07
+    },
+    "reference_wavelength_nm": 707.1067811865476,
+    "a_nm": 353.5533905932738,
+    "k_points": 19,
+    "units": {
+     "frequency": "a/lambda",
+     "k_distance": "2 pi / a"
+    },
+    "runtime_s": 254.22652440000093
+   },
+   "provenance_gpu": {
+    "framework": "torch",
+    "device": "cuda:0",
+    "gpu_name": "NVIDIA GeForce RTX 5070",
+    "solver": {
+     "3d": "lobpcg"
+    },
+    "num_plane_waves": {
+     "3d": 4096
+    },
+    "matrix_size": {
+     "3d": 8192
+    },
+    "eps_treatment": {
+     "3d": "subpixel_smoothed_tensor"
+    },
+    "precision": "double",
+    "iterations": {
+     "3d": [
+      32,
+      23,
+      21,
+      21,
+      22,
+      25,
+      23,
+      25,
+      26,
+      29,
+      28,
+      25,
+      24,
+      27,
+      24,
+      25,
+      23,
+      24,
+      21
+     ]
+    },
+    "max_residual": {
+     "3d": 9.86460351002876e-07
+    },
+    "reference_wavelength_nm": 707.1067811865476,
+    "a_nm": 353.5533905932738,
+    "k_points": 19,
+    "units": {
+     "frequency": "a/lambda",
+     "k_distance": "2 pi / a"
+    },
+    "runtime_s": 26.870448300003773
+   },
+   "gpu_snapshot": {
+    "time": "2026-11-01T14:37:03-05:00",
+    "gpu_util_percent": 0.0,
+    "mem_used_mib": 9741.0,
+    "mem_total_mib": 12227.0,
+    "cpu_load_percent": 100.0
+   }
+  },
+  {
+   "resolution": 24,
+   "estimate_cpu": {
+    "backend": "lightsmith-pwe",
+    "method": "pwe",
+    "framework": "numpy",
+    "device": "cpu",
+    "solver": {
+     "all": "lobpcg"
+    },
+    "num_plane_waves": {
+     "all": 13824
+    },
+    "matrix_size": {
+     "all": 27648
+    },
+    "grid": {
+     "all": [
+      24,
+      24,
+      24
+     ]
+    },
+    "precision": "double",
+    "k_points": 19,
+    "polarizations": [
+     "all"
+    ],
+    "memory_bytes": 44347392,
+    "eigensolves": 19
+   },
+   "estimate_gpu": {
+    "backend": "lightsmith-pwe",
+    "method": "pwe",
+    "framework": "torch",
+    "device": "cuda:0",
+    "gpu_name": "NVIDIA GeForce RTX 5070",
+    "solver": {
+     "all": "lobpcg"
+    },
+    "num_plane_waves": {
+     "all": 13824
+    },
+    "matrix_size": {
+     "all": 27648
+    },
+    "grid": {
+     "all": [
+      24,
+      24,
+      24
+     ]
+    },
+    "precision": "double",
+    "k_points": 19,
+    "polarizations": [
+     "all"
+    ],
+    "memory_bytes": 44347392,
+    "eigensolves": 19
+   },
+   "cpu_wall_s": [
+    804.6750312999939,
+    497.33362540000235,
+    413.2584549000021
+   ],
+   "gpu_wall_s": [
+    25.65605350001715,
+    27.80147209999268,
+    31.119891999987885
+   ],
+   "cpu_wall_median_s": 497.33362540000235,
+   "gpu_wall_median_s": 27.80147209999268,
+   "speedup_wall_median": 17.88875148809596,
+   "max_abs_diff_a_over_lambda": 4.318402158172972e-13,
+   "gap_cpu": [
+    {
+     "bottom": 0.28128855678785847,
+     "top": 0.31431606245384386,
+     "width": 0.03302750566598539,
+     "midgap": 0.2978023096208512,
+     "gap_midgap_ratio": 0.11090412867527642,
+     "between_bands": [
+      2,
+      3
+     ]
+    }
+   ],
+   "gap_gpu": [
+    {
+     "bottom": 0.2812885567878584,
+     "top": 0.3143160624538439,
+     "width": 0.0330275056659855,
+     "midgap": 0.2978023096208512,
+     "gap_midgap_ratio": 0.1109041286752768,
+     "between_bands": [
+      2,
+      3
+     ]
+    }
+   ],
+   "provenance_cpu": {
+    "framework": "numpy",
+    "device": "cpu",
+    "solver": {
+     "3d": "lobpcg"
+    },
+    "num_plane_waves": {
+     "3d": 13824
+    },
+    "matrix_size": {
+     "3d": 27648
+    },
+    "eps_treatment": {
+     "3d": "subpixel_smoothed_tensor"
+    },
+    "precision": "double",
+    "iterations": {
+     "3d": [
+      30,
+      24,
+      21,
+      21,
+      23,
+      26,
+      24,
+      25,
+      29,
+      30,
+      28,
+      25,
+      27,
+      25,
+      23,
+      24,
+      26,
+      24,
+      21
+     ]
+    },
+    "max_residual": {
+     "3d": 9.461019052397952e-07
+    },
+    "reference_wavelength_nm": 707.1067811865476,
+    "a_nm": 353.5533905932738,
+    "k_points": 19,
+    "units": {
+     "frequency": "a/lambda",
+     "k_distance": "2 pi / a"
+    },
+    "runtime_s": 413.2580559999915
+   },
+   "provenance_gpu": {
+    "framework": "torch",
+    "device": "cuda:0",
+    "gpu_name": "NVIDIA GeForce RTX 5070",
+    "solver": {
+     "3d": "lobpcg"
+    },
+    "num_plane_waves": {
+     "3d": 13824
+    },
+    "matrix_size": {
+     "3d": 27648
+    },
+    "eps_treatment": {
+     "3d": "subpixel_smoothed_tensor"
+    },
+    "precision": "double",
+    "iterations": {
+     "3d": [
+      30,
+      24,
+      21,
+      21,
+      23,
+      26,
+      24,
+      25,
+      29,
+      30,
+      28,
+      25,
+      27,
+      25,
+      23,
+      24,
+      25,
+      24,
+      21
+     ]
+    },
+    "max_residual": {
+     "3d": 9.471368585107551e-07
+    },
+    "reference_wavelength_nm": 707.1067811865476,
+    "a_nm": 353.5533905932738,
+    "k_points": 19,
+    "units": {
+     "frequency": "a/lambda",
+     "k_distance": "2 pi / a"
+    },
+    "runtime_s": 31.11957869998878
+   },
+   "gpu_snapshot": {
+    "time": "2026-11-01T15:07:20-05:00",
+    "gpu_util_percent": 92.0,
+    "mem_used_mib": 9652.0,
+    "mem_total_mib": 12227.0,
+    "cpu_load_percent": 100.0
+   }
+  }
+ ],
+ "entries": [
+  {
+   "row": "GPU vs. CPU | CPU | 2e-4 (TM, single) and 1e-6 (TE) bound; ~17x faster in 3D reported",
+   "configuration": "agreement: test_gpu_matches_cpu (2D); timing: test_diamond_lattice_complete_gap_3d (3D diamond, eps=11.56, 19 k-points, 5 bands, LOBPCG double)",
+   "measured": {
+    "agreement_2d_tm_single": 3.857300705975564e-05,
+    "agreement_2d_te_double": 3.965720937484887e-11,
+    "speedup_3d": {
+     "16": 12.761605294118016,
+     "24": 17.88875148809596
+    },
+    "basis_3d": {
+     "16": {
+      "num_plane_waves": {
+       "all": 4096
+      },
+      "matrix_size": {
+       "all": 8192
+      },
+      "solver": {
+       "all": "lobpcg"
+      },
+      "precision_cpu": "double",
+      "precision_gpu": "double"
+     },
+     "24": {
+      "num_plane_waves": {
+       "all": 13824
+      },
+      "matrix_size": {
+       "all": 27648
+      },
+      "solver": {
+       "all": "lobpcg"
+      },
+      "precision_cpu": "double",
+      "precision_gpu": "double"
+     }
+    },
+    "max_abs_diff_3d": {
+     "16": 4.6060296740729026e-09,
+     "24": 4.318402158172972e-13
+    }
+   },
+   "reference": "CPU (NumPy/SciPy) solve of the same problem",
+   "previously_reported": {
+    "speedup_3d": "~17x"
+   },
+   "reproduced": {
+    "agreement_within_bounds": true,
+    "speedup_~17x": true
+   },
+   "provisional": "GPU shared with a long background benchmark; speedups provisional",
+   "error_column": "4e-05 (TM, single); 4e-11 (TE); 3D 12.8x (res 16, N={'all': 8192}), 17.9x (res 24, N={'all': 27648}) (provisional)"
+  }
+ ]
+}
