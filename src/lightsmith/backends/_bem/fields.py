@@ -20,7 +20,7 @@ import math
 import numpy as np
 
 from ...device import Device
-from .operators import FOUR_PI, Geometry, cross, region_wavenumbers
+from .operators import FOUR_PI, Geometry, close_pairs, cross, region_wavenumbers
 
 
 def triangle_moments(geo: Geometry, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -100,7 +100,11 @@ def scattering(geo: Geometry, x: np.ndarray, k: float, device: Device, single: b
 
 def near_field(geo: Geometry, sim, x: np.ndarray, lam: float, pts: np.ndarray, khat, ehat, device: Device,
                single: bool, budget: int) -> np.ndarray:
-    """Total E at points (M, 3) for one solution x (2N,); NaN on points the mesh cannot place."""
+    """Total E at points (M, 3) for one solution x (2N,), inside the particles too.
+
+    Points are assigned to regions by the exact shapes; within ~one triangle of a surface
+    the faceted mesh and the quadrature limit the accuracy (static parts are integrated
+    analytically there, which keeps the error at the percent level)."""
     mesh = geo.mesh
     n0 = sim.medium_index
     ks = region_wavenumbers(mesh, lam, n0)
@@ -152,12 +156,7 @@ def near_field(geo: Geometry, sim, x: np.ndarray, lam: float, pts: np.ndarray, k
             Gd = xp.sum((w * F)[..., None] * D, axis=-2)
             E[idx] += Device.to_numpy(combine(G0, G1, Gd, P[:, None, :] - cdev[None], co_dev, xp))
         # static singular corrections for points close to a triangle (k-independent part of G)
-        from scipy.spatial import cKDTree
-
-        tree = cKDTree(geo.c[t])
-        near = tree.query_ball_point(pts[sel], geo.near_factor * 2 * geo.rad[t].max())
-        pi = np.concatenate([np.full(len(n), i) for i, n in enumerate(near)]).astype(int) if len(near) else np.zeros(0, int)
-        ti = np.concatenate([np.asarray(n, dtype=int) for n in near]) if len(near) else np.zeros(0, int)
+        pi, ti = close_pairs(pts[sel], geo.c[t], 0.0, geo.near_factor * 2 * geo.rad[t])
         if len(pi):
             g0, g1, gd = geo.static_correction(pts[sel][pi][:, None, :], t[ti])
             co = {kk: v[ti][:, None] for kk, v in coefs.items()}

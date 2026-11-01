@@ -1,6 +1,6 @@
 # lightsmith
 
-> The open photonics suite: one typed JSON problem spec solved by Mie, T-matrix, DDA, FDTD, TMM, RCWA, FDE, EME, FDFD, PWE and circuit solvers on CPU or GPU, with differentiable inverse design and JSON-first Python, CLI and MCP interfaces.
+> The open photonics suite: one typed JSON problem spec solved by Mie, T-matrix, BEM, DDA, FDTD, TMM, RCWA, FDE, EME, FDFD, PWE and circuit solvers on CPU or GPU, with differentiable inverse design and JSON-first Python, CLI and MCP interfaces.
 
 Units: nm, vacuum wavelengths. Time convention exp(-i omega t) (Im eps > 0 = loss). Problem kinds: scattering, layer_stack, periodic, mode, device, bands, circuit, optimization.
 
@@ -20,3 +20,4 @@ Units: nm, vacuum wavelengths. Time convention exp(-i omega t) (Im eps > 0 = los
 - `lightsmith.doctor() -> dict` (frameworks and GPUs)
 - CLI: `lightsmith {doctor,backends,schema,estimate,solve,compare}`
 - MCP server: `lightsmith-mcp`
+- Scattering methods (auto order): mie (spheres) > tmatrix (sphere clusters) > bem (surface integral equation: spheroids, cylinders, layered spheres, clusters; accurate for metals; no substrate) > dda > fdtd. BEM options: `{"bem": {"mesh_size_nm": ...}}`; `estimate` reports unknowns and memory (dense, grows as unknowns^2).

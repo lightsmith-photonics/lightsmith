@@ -98,6 +98,19 @@ def pair_blocks(G0, G1, Gd, u, w, delta, a, b, xp):
     return RR, M0, KK
 
 
+def close_pairs(x: np.ndarray, y: np.ndarray, rx, ry, chunk: int = 1024) -> tuple[np.ndarray, np.ndarray]:
+    """Index pairs (i, j) with |x_i - y_j| < rx_i + ry_j (chunked brute force; cheap next to assembly)."""
+    rx = np.broadcast_to(np.asarray(rx, dtype=float), (len(x),))
+    ry = np.broadcast_to(np.asarray(ry, dtype=float), (len(y),))
+    out_i, out_j = [], []
+    for s in range(0, len(x), chunk):
+        d2 = np.sum((x[s:s + chunk, None, :] - y[None, :, :]) ** 2, axis=-1)
+        i, j = np.nonzero(d2 < (rx[s:s + chunk, None] + ry[None, :]) ** 2)
+        out_i.append(i + s)
+        out_j.append(j)
+    return np.concatenate(out_i), np.concatenate(out_j)
+
+
 @dataclass
 class Region:
     index: int
@@ -135,15 +148,8 @@ class Geometry:
     # -- singular corrections ------------------------------------------------
 
     def near_pairs(self) -> tuple[np.ndarray, np.ndarray]:
-        from scipy.spatial import cKDTree
-
-        tree = cKDTree(self.c)
-        pairs = tree.query_pairs(self.near_factor * 2 * self.rad.max(), output_type="ndarray")
-        p, q = pairs[:, 0], pairs[:, 1]
-        keep = np.linalg.norm(self.c[p] - self.c[q], axis=1) < self.near_factor * (self.rad[p] + self.rad[q])
-        p, q = p[keep], q[keep]
-        idx = np.arange(len(self.c))
-        return np.concatenate([idx, p, q]), np.concatenate([idx, q, p])
+        """Ordered triangle pairs (p, q), p == q included, closer than near_factor (rad_p + rad_q)."""
+        return close_pairs(self.c, self.c, self.near_factor * self.rad, self.near_factor * self.rad)
 
     def static_correction(self, X, q):
         """Analytic minus quadrature static inner integrals at points X (n, Qo, 3) over triangles q (n,)."""
@@ -346,7 +352,7 @@ def assemble(dg: DeviceGeometry, lam: float, n0: float, budget: int):
 
 
 def incident_rhs(geo: Geometry, lam: float, n0: float, incidences) -> np.ndarray:
-    """-[<f, E_inc>; <f, eta_0 H_inc>] for unit plane waves, shape (2N, n_inc)."""
+    """-[<f, E_inc>; <f, eta_0 H_inc>] on surfaces facing the host, for unit plane waves; shape (2N, n_inc)."""
     k = 2 * math.pi * n0 / lam
     mesh = geo.mesh
     N = mesh.n_edges
@@ -361,6 +367,10 @@ def incident_rhs(geo: Geometry, lam: float, n0: float, incidences) -> np.ndarray
             out[block * N:(block + 1) * N, col] = -np.bincount(mesh.tri_edge.reshape(-1), weights=val.real.reshape(-1),
                                                                minlength=N) \
                 - 1j * np.bincount(mesh.tri_edge.reshape(-1), weights=val.imag.reshape(-1), minlength=N)
+    # the incident field lives in the host only: surfaces not facing it are not driven
+    inner = ~np.isin(mesh.edge_surface, [s for s, surf in enumerate(mesh.surfaces) if surf.outer == 0])
+    out[:N][inner] = 0
+    out[N:][inner] = 0
     return out
 
 

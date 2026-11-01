@@ -50,7 +50,7 @@ uv run lightsmith solve examples/drude_sphere.json --method dda --device gpu
 
 | Problem kind | Solvers (auto order first) | GPU | Gradients |
 |---|---|---|---|
-| `scattering` — particles, clusters | Mie (native, miepython), T-matrix (treams), DDA, FDTD, quasistatic | ✅ | Mie |
+| `scattering` — particles, clusters | Mie (native, miepython), T-matrix (treams), BEM (surface integral, PMCHWT), DDA, FDTD, quasistatic | ✅ | Mie |
 | `layer_stack` — thin films | TMM, RCWA, FDTD | ✅ | TMM, RCWA |
 | `periodic` — gratings, metasurfaces | RCWA, FDTD (normal incidence) | ✅ | RCWA |
 | `mode` — waveguide cross-sections | FDE (full vector, bends) | — | — |
@@ -58,6 +58,8 @@ uv run lightsmith solve examples/drude_sphere.json --method dda --device gpu
 | `bands` — photonic crystals | PWE (2D TE/TM, 3D) | ✅ | dense path |
 | `circuit` — netlists of compact models | S-matrix circuit solver | ✅ | ✅ |
 | `optimization` — inverse design | topology optimisation on FDFD | ✅ | — |
+
+BEM meshes only the particle surfaces (spheres, spheroids, cylinders, layered spheres, clusters; no substrate), so curved metal particles converge smoothly: a gold sphere of 40 nm radius is within 0.05 % of Mie on and off resonance at a few hundred triangles, where DDA and FDTD staircase (`benchmarks/bem_convergence.py`).
 
 `lightsmith backends` lists what is installed. Materials: bundled CC0 datasets (Au, Ag, Al, Cu, Si, SiO2, TiO2, water) from the refractiveindex.info database, online fetch of any entry, and passive Drude–Lorentz fitting for time-domain solvers.
 

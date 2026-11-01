@@ -68,7 +68,7 @@ class BEMOptions(BaseModel):
     max_unknowns: int = Field(60000, ge=1, description="Refuse problems with more unknowns (2 x edges).")
     orientations: int = Field(32, ge=1, description="Incidence directions (x2 polarizations) for orientation_average.")
     assembly_budget: int | None = Field(
-        None, ge=1000, description="Kernel evaluations per assembly chunk. Default 4e6 on CPU, 3.2e7 on GPU.")
+        None, ge=1000, description="Kernel evaluations per assembly chunk. Default 2e6 on CPU, 8e6 on GPU.")
 
 
 def _orientation_set(n: int) -> list[tuple[np.ndarray, np.ndarray]]:
@@ -121,11 +121,11 @@ class NativeBEM(Backend):
         N = mesh.n_edges
         n = 2 * N
         csize = 8 if opts.precision == "single" else 16
-        budget = opts.assembly_budget or (32_000_000 if device.is_gpu else 4_000_000)
+        budget = opts.assembly_budget or (8_000_000 if device.is_gpu else 2_000_000)
         n_reg = max(len(np.nonzero(np.isin(mesh.edge_surface, [s for s, _ in mesh.region_surfaces(r)]))[0])
                     for r in range(mesh.n_regions))
-        # system matrix + one region's L and K + ~12 complex work arrays of one assembly chunk
-        mem = csize * (n * n + 2 * n_reg**2) + 12 * csize * budget
+        # system matrix + one region's L and K + ~8 complex work arrays of one assembly chunk
+        mem = csize * (n * n + 2 * n_reg**2) + 8 * csize * budget
         solver = cls._solver(opts, n)
         n_inc = 2 * opts.orientations if sim.orientation_average else 1
         return {"unknowns": n, "edges": N, "triangles": int(len(mesh.tris)), "mesh_size_nm": h,
@@ -159,7 +159,7 @@ class NativeBEM(Backend):
                              f"(now {h:.3g} nm) or max_unknowns")
         geo = Geometry(mesh, opts.quadrature, opts.near_factor)
         dg = DeviceGeometry(geo, device, single)
-        budget = opts.assembly_budget or (32_000_000 if device.is_gpu else 4_000_000)
+        budget = opts.assembly_budget or (8_000_000 if device.is_gpu else 2_000_000)
         solver = cls._solver(opts, n)
         khat, ehat = sim.illumination.unit_vectors()
         incidences = _orientation_set(opts.orientations) if sim.orientation_average else [(khat, ehat)]
