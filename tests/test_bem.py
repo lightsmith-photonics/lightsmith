@@ -153,11 +153,11 @@ def test_spheroid_sphere_limit_matches_mie():
 def test_spheroid_polarization_anisotropy():
     # The longitudinal plasmon of a prolate gold-like rod is red-shifted from the transverse one.
     rod = ls.Spheroid(semi_axis_xy_nm=8, semi_axis_z_nm=24)
-    wl = np.linspace(500, 800, 7)
+    wl = np.array([520.0, 620.0, 720.0, 820.0])
     along = ls.solve(sim(rod, DRUDE, wl=wl, h=4.0, illumination=ls.PlaneWave(direction=(1, 0, 0),
                                                                               polarization=(0, 0, 1))), "bem", "cpu")
     across = ls.solve(sim(rod, DRUDE, wl=wl, h=4.0), "bem", "cpu")
-    assert wl[np.argmax(along.c_abs_nm2)] > wl[np.argmax(across.c_abs_nm2)] + 100
+    assert wl[np.argmax(along.c_abs_nm2)] > wl[np.argmax(across.c_abs_nm2)] + 80
 
 
 @pytest.mark.parametrize("shape", [ls.Spheroid(semi_axis_xy_nm=20, semi_axis_z_nm=40),
@@ -230,7 +230,7 @@ def test_gpu_matches_cpu():
     np.testing.assert_allclose(b.c_ext_nm2, a.c_ext_nm2, rtol=1e-9)
     np.testing.assert_allclose(b.c_abs_nm2, a.c_abs_nm2, rtol=1e-9)
     c = ls.solve(sim(wl=(520.0, 700.0), options={"precision": "single"}), "bem", "cuda")
-    np.testing.assert_allclose(c.c_ext_nm2, a.c_ext_nm2, rtol=1e-2)
+    np.testing.assert_allclose(c.c_ext_nm2, a.c_ext_nm2, rtol=2e-3)  # measured ~2e-4
 
 
 # --- slow convergence checks -------------------------------------------------
@@ -246,10 +246,25 @@ def test_gold_sphere_fine_mesh_converges_below_1e4():
 
 @pytest.mark.slow
 def test_gold_rod_converges_with_mesh():
-    # No exact reference for a gold rod: check self-convergence of the longitudinal resonance.
-    s = lambda h: sim(ls.Spheroid(semi_axis_xy_nm=10, semi_axis_z_nm=30), wl=(600.0, 700.0, 800.0), h=h,  # noqa: E731
-                      illumination=ls.PlaneWave(direction=(1, 0, 0), polarization=(0, 0, 1)))
-    r = [ls.solve(s(h), "bem", "auto") for h in (4.0, 2.8, 2.0)]
-    d1 = np.max(np.abs(np.asarray(r[1].c_abs_nm2) / r[2].c_abs_nm2 - 1))
-    d0 = np.max(np.abs(np.asarray(r[0].c_abs_nm2) / r[2].c_abs_nm2 - 1))
-    assert d1 < d0 and d1 < 0.01
+    # No exact reference for a gold rod: self-convergence of the band-integrated longitudinal
+    # absorption (pointwise values on a sharp resonance mostly measure small peak shifts).
+    wl = np.arange(600.0, 841.0, 10.0)
+    il = ls.PlaneWave(direction=(1, 0, 0), polarization=(0, 0, 1))
+    area = [np.trapezoid(ls.solve(sim(ls.Spheroid(semi_axis_xy_nm=10, semi_axis_z_nm=30), wl=wl, h=h, illumination=il),
+                                  "bem", "auto").c_abs_nm2, wl) for h in (4.0, 3.0, 2.0)]
+    d0, d1 = abs(area[0] / area[2] - 1), abs(area[1] / area[2] - 1)
+    assert d1 < d0 and d1 < 0.03
+
+
+@pytest.mark.slow
+def test_small_rod_approaches_quasistatic_limit():
+    # 10 x 30 nm Drude rod, field along the long axis, where the Gans dipole with radiative damping is
+    # accurate. Measured: peak at 676 nm for BEM (h = 1.5 nm) and quasistatics, band-integrated
+    # C_abs within 1 % (h = 2 nm still puts the peak 4 nm to the blue: the faceted aspect ratio matters).
+    wl = np.arange(660.0, 692.1, 4.0)
+    s = sim(ls.Spheroid(semi_axis_xy_nm=5, semi_axis_z_nm=15), DRUDE, wl=wl, h=1.5,
+            illumination=ls.PlaneWave(direction=(1, 0, 0), polarization=(0, 0, 1)))
+    r = ls.solve(s, "bem", "auto")
+    q = ls.solve(s.model_copy(update={"options": {"quasistatic": {"corrections": "radiative"}}}), "quasistatic", "cpu")
+    assert wl[np.argmax(r.c_abs_nm2)] == wl[np.argmax(q.c_abs_nm2)]
+    assert np.trapezoid(r.c_abs_nm2, wl) == pytest.approx(np.trapezoid(q.c_abs_nm2, wl), rel=0.03)

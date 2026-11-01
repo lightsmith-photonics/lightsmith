@@ -1,0 +1,85 @@
+{
+  "command": "benchmarks/bem_convergence.py --device gpu --max-mem-gb 3 --out benchmarks/results/20261101-bem-convergence",
+  "python": "3.12.2",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "doctor": {
+    "numpy": "2.4.6",
+    "torch": "2.11.0+cu128",
+    "cupy": null,
+    "cuda_gpus": [
+      "NVIDIA GeForce RTX 5070"
+    ],
+    "torch_cuda_build": "12.8",
+    "auto_device": {
+      "framework": "torch",
+      "device": "cuda:0",
+      "gpu_name": "NVIDIA GeForce RTX 5070"
+    }
+  },
+  "lightsmith": "0.1.0",
+  "problem": {
+    "kind": "scattering",
+    "schema_version": "0.1",
+    "particles": [
+      {
+        "shape": {
+          "kind": "sphere",
+          "radius_nm": 40.0
+        },
+        "material": {
+          "kind": "library",
+          "name": "Au",
+          "dataset": "Johnson-Christy"
+        },
+        "position_nm": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ],
+    "medium_index": 1.33,
+    "illumination": {
+      "kind": "plane_wave",
+      "direction": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "polarization": [
+        1.0,
+        0.0,
+        0.0
+      ]
+    },
+    "wavelengths": [
+      520.0,
+      600.0,
+      700.0,
+      800.0
+    ],
+    "substrate": null,
+    "orientation_average": false,
+    "outputs": {
+      "cross_sections": true,
+      "near_field": null,
+      "far_field": null
+    },
+    "options": {}
+  },
+  "reference": {
+    "backend": "lightsmith-mie",
+    "c_ext_nm2": [
+      23488.688892102477,
+      13868.502717346752,
+      2606.35873659545,
+      1093.0619462877642
+    ],
+    "c_abs_nm2": [
+      16452.383605839612,
+      5251.950337662496,
+      541.8709035125548,
+      246.26049559852754
+    ]
+  }
+}

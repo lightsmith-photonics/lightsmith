@@ -64,7 +64,8 @@ class BEMOptions(BaseModel):
     restart: int = Field(100, ge=1)
     max_iter: int = Field(3000, ge=1)
     precision: Literal["double", "single"] = Field(
-        "double", description="single halves memory and is faster on consumer GPUs, at ~1e-3 accuracy.")
+        "double", description="single halves memory and is faster on consumer GPUs; measured within ~2e-4 of "
+        "double for gold spheres, but conditioning worsens on very fine meshes.")
     max_unknowns: int = Field(60000, ge=1, description="Refuse problems with more unknowns (2 x edges).")
     orientations: int = Field(32, ge=1, description="Incidence directions (x2 polarizations) for orientation_average.")
     assembly_budget: int | None = Field(

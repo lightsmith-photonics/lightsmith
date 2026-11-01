@@ -268,7 +268,9 @@ class DeviceGeometry:
         uyT = xp.permute_dims(uy, (0, 2, 1))
         wc = xp.astype(w, self.cdt)[..., None]  # (T, Qi, 1)
         wuy = xp.astype(w[..., None] * uy, self.cdt)  # (T, Qi, 3)
-        tol2 = (1e-5 * float(self.geo.rad.min())) ** 2
+        # coincident points (self pairs): R^2 from |u|^2 + |v|^2 - 2u.v carries round-off ~eps rad^2;
+        # distinct quadrature points are >= ~0.2 rad apart
+        tol2 = ((1e-2 if self.rdt == xp.float32 else 1e-5) * float(self.geo.rad.min())) ** 2
         chunk = max(1, budget // (T * Q * Q))
         for p0 in range(0, T, chunk):
             p1 = min(T, p0 + chunk)

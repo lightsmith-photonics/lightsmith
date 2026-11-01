@@ -59,6 +59,6 @@ def test_spheroid_polarization_anisotropy():
 def test_dimer_runs_and_reports_provenance():
     p = lambda x: ls.Particle(shape=ls.Sphere(radius_nm=20), material=DIELECTRIC, position_nm=(x, 0, 0))  # noqa: E731
     s = ls.Simulation(particles=[p(-25), p(25)], wavelengths=[500.0], options={"dda": {"dipoles_per_diameter": 10}})
-    assert ls.choose_method(s)[0].method in ("tmatrix", "dda")  # T-matrix wins for spheres when treams is installed
+    assert ls.choose_method(s)[0].method in ("tmatrix", "bem")  # T-matrix wins for spheres when treams is installed
     r = ls.solve(s, "dda", "cpu")
     assert r.provenance["dipoles"][0] > 0 and r.c_ext_nm2[0] > 0

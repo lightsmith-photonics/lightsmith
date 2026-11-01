@@ -159,7 +159,7 @@ def plot(out: Path) -> None:
         ax.set_xlabel("wall time (s)")
         ax.set_ylabel(f"max relative error, {title}")
         ax.grid(True, which="both", alpha=0.3)
-    axes[0].legend(fontsize=8)
+    axes[0].legend(fontsize=8, loc="center left")
     (out / "figures").mkdir(exist_ok=True)
     fig.savefig(out / "figures" / "bem_convergence.pdf")
     fig.savefig(out / "figures" / "bem_convergence.png", dpi=150)
