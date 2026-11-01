@@ -5,7 +5,9 @@ The engine knows nothing about particles or plane waves. It takes
 * a material description on the Yee grid: per-component update coefficients
   (non-dispersive cells, subpixel-smoothed) plus groups of dispersive cells
   integrated with auxiliary differential equations in D-form;
-* boundaries per axis (CPML with a PEC backstop; Bloch-periodic is a planned addition);
+* boundaries per axis: CPML with a PEC backstop, or periodic. A periodic axis with a nonzero Bloch
+  wavevector k makes the fields complex (one Bloch mode, exp(i k x) times a periodic function: the
+  constant-transverse-wavenumber method); k = 0 keeps them real;
 * sources (objects with ``correct_H``/``advance_H``/``correct_E``/``advance_E`` hooks,
   e.g. the TFSF plane wave in ``tfsf.py``);
 * DFT monitors (flat-index point sets on the stacked E and H arrays).
@@ -108,9 +110,10 @@ class DFTMonitor:
 class Engine:
     def __init__(self, device: Device, *, shape, dx, dt: float, single: bool, inv_eps: np.ndarray,
                  groups: list[DispersiveGroup], pml: PMLSpec, sources: list, monitors: list[DFTMonitor],
-                 dft_stride: int, periodic=(False, False, False)):
+                 dft_stride: int, periodic=(False, False, False), bloch=(0.0, 0.0, 0.0)):
         """dx: cell size, or (dx, dy, dz) for non-cubic cells. periodic: per axis; those axes carry ghost
-        planes (see e_region) and no PML."""
+        planes (see e_region) and no PML. bloch: Bloch wavevector per periodic axis (rad/nm); any nonzero
+        entry makes E, H and all auxiliary fields complex."""
         self.device, self.xp = device, device.namespace()
         xp = self.xp
         self.shape, self.dt, self.single = tuple(int(n) for n in shape), float(dt), single
@@ -118,13 +121,17 @@ class Engine:
         self.uniform = len(set(self.spacing)) == 1
         self.dx = self.spacing[0]
         self.periodic = tuple(bool(p) for p in periodic)
+        self.bloch = tuple(float(k) for k in bloch)
+        if any(k and not per for k, per in zip(self.bloch, self.periodic)):
+            raise ValueError("a Bloch wavevector needs a periodic axis")
+        self.complex = any(self.bloch)
         self.rdt = xp.float32 if single else xp.float64
         self.cdt = xp.complex64 if single else xp.complex128
         self.stride = int(dft_stride)
         dev = device.native_device()
         self._dev = dev
-        self.E = self.zeros((3,) + self.shape)
-        self.H = self.zeros((3,) + self.shape)
+        self.E = self.fzeros((3,) + self.shape)
+        self.H = self.fzeros((3,) + self.shape)
         self.E_flat = xp.reshape(self.E, (-1,))
         self.H_flat = xp.reshape(self.H, (-1,))
         self.n = device.asarray(np.zeros(1, dtype=np.int64))  # completed steps (device counter)
@@ -150,6 +157,10 @@ class Engine:
     # array helpers
     def zeros(self, shape, complex_=False):
         return self.xp.zeros(tuple(shape), dtype=self.cdt if complex_ else self.rdt, device=self._dev)
+
+    def fzeros(self, shape):
+        """Zeros of the field dtype (complex under a Bloch phase, else real)."""
+        return self.zeros(shape, complex_=self.complex)
 
     def asarray(self, a, dtype=None):
         return self.device.asarray(np.asarray(a), dtype=dtype or self.rdt)
@@ -226,7 +237,7 @@ class Engine:
                         kprime = sgn * scale * (1 / kk - 1).reshape(bshape)
                         has_k = bool(np.any(kk > 1))
                         term = (c, src, d, Rs, self.asarray(bb.reshape(bshape)), self.asarray(cprime),
-                                self.asarray(kprime) if has_k else None, self.zeros(cprime.shape))
+                                self.asarray(kprime) if has_k else None, self.fzeros(cprime.shape))
                         (self.pml_E if field_ == "E" else self.pml_H).append(term)
 
     # --- monitors ----------------------------------------------------------------
@@ -255,14 +266,18 @@ class Engine:
                 sh = 0.5 * (hf[m._h1] + hf[m._h2])
                 m.acc_h += self._phase(m, t_h)[:, None] * sh[None, :]
                 if m.energy:
-                    v = xp.sum(se * se) + xp.sum(sh * sh)
+                    if self.complex:
+                        v = xp.sum(xp.real(se * xp.conj(se))) + xp.sum(xp.real(sh * xp.conj(sh)))
+                    else:
+                        v = xp.sum(se * se) + xp.sum(sh * sh)
                     energy = v if energy is None else energy + v
         if energy is not None:
             self.energy[...] = energy
 
     # --- time stepping -----------------------------------------------------------
     def _ghosts(self, F, low: bool):
-        """Refresh periodic ghost planes: E's high ghost (read by the H update), H's low ghost (E update)."""
+        """Refresh periodic ghost planes: E's high ghost (read by the H update), H's low ghost (E update).
+        Under a Bloch wavevector k the ghost is its periodic image times exp(+-i k L), L the period."""
         for a, per in enumerate(self.periodic):
             if not per:
                 continue
@@ -271,7 +286,12 @@ class Engine:
             ix_d = [slice(None)] * 4
             ix_s = [slice(None)] * 4
             ix_d[a + 1], ix_s[a + 1] = slice(dst, dst + 1), slice(src, src + 1)
-            F[tuple(ix_d)] = F[tuple(ix_s)]
+            k = self.bloch[a]
+            if k:
+                kl = k * (n - 2) * self.spacing[a] * (-1 if low else 1)
+                F[tuple(ix_d)] = F[tuple(ix_s)] * complex(np.cos(kl), np.sin(kl))
+            else:
+                F[tuple(ix_d)] = F[tuple(ix_s)]
 
     def _curl(self, F, c, R, sgn: int, coef):
         """coef * curl(F)_c over region R; sgn=+1 forward differences (H update), -1 backward (E update)."""
@@ -388,14 +408,14 @@ class _Group:
         dt = eng.dt
         n = len(g.idx)
         self.idx = eng.index(g.idx)
-        self.D = eng.zeros((n,))
-        self.E_prev = eng.zeros((n,))
+        self.D = eng.fzeros((n,))
+        self.E_prev = eng.fzeros((n,))
         self.pure = g.w is None
         self.coef = [[pole_coefficients(p, dt) for p in m.poles] for m in g.media]
         if self.pure:
             (m,) = g.media
             self.inv_eps_inf = 1.0 / m.eps_inf
-            self.P = [(eng.zeros((n,)), eng.zeros((n,))) for _ in m.poles]
+            self.P = [(eng.fzeros((n,)), eng.fzeros((n,))) for _ in m.poles]
             return
         f = g.frac
         self.disp = [s for s, m in enumerate(g.media) if m.dispersive]
@@ -407,10 +427,10 @@ class _Group:
         self.w = eng.asarray(g.w)
         self.has_h = bool(np.any(g.w > 0))
         self.has_a = bool(np.any(g.w < 1))
-        self.Eh = {s: eng.zeros((n,)) for s in self.disp}
-        self.Ea = eng.zeros((n,))
-        self.Ph = {s: [(eng.zeros((n,)), eng.zeros((n,))) for _ in g.media[s].poles] for s in self.disp}
-        self.Pa = {s: [(eng.zeros((n,)), eng.zeros((n,))) for _ in g.media[s].poles] for s in self.disp}
+        self.Eh = {s: eng.fzeros((n,)) for s in self.disp}
+        self.Ea = eng.fzeros((n,))
+        self.Ph = {s: [(eng.fzeros((n,)), eng.fzeros((n,))) for _ in g.media[s].poles] for s in self.disp}
+        self.Pa = {s: [(eng.fzeros((n,)), eng.fzeros((n,))) for _ in g.media[s].poles] for s in self.disp}
         self.media_idx = list(range(len(g.media)))
 
     @staticmethod
