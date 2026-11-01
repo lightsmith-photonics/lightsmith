@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class NearFieldData(BaseModel):
-    """Total field on a plane. Arrays are indexed [axis1][axis2] (and [component] first for E)."""
+    """Total field on a plane. Arrays are indexed ``[axis1][axis2]`` (and ``[component]`` first for E)."""
 
     wavelength_nm: float
     plane: str

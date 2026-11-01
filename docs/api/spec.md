@@ -1,0 +1,3 @@
+# Scattering spec
+
+::: lightsmith.spec

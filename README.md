@@ -4,6 +4,8 @@
 
 Describe a photonics problem once, as typed JSON, and solve it with the method that fits: from nanoparticles and thin films to metasurfaces, waveguides, photonic crystals, devices and circuits. Every result comes back in the same units and conventions, with provenance, so methods can be cross-checked directly. Many solvers run on GPU and can be differentiated, which is what powers inverse design.
 
+Documentation: <https://docs.lightsmith.dev/>
+
 > Status: pre-alpha (v0.1). Validation numbers for every solver are in `tests/` and in the technical report (`lightsmith-paper` repository).
 
 ## Install
@@ -74,7 +76,7 @@ GPL-licensed solvers live in separate plugin packages discovered through the `li
 - `lightsmith schema` prints the JSON Schema of every problem kind.
 - Every CLI command prints JSON; failures print `{"error", "message"}` to stderr with exit code 1.
 - `lightsmith-mcp` serves `get_schema`, `list_backends`, `check_environment`, `estimate`, `solve` and `compare`.
-- See [AGENTS.md](AGENTS.md) and [llms.txt](llms.txt).
+- See [AGENTS.md](https://github.com/lightsmith-photonics/lightsmith/blob/main/AGENTS.md) and [llms.txt](https://github.com/lightsmith-photonics/lightsmith/blob/main/llms.txt).
 
 ## Licence
 
