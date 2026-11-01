@@ -1,0 +1,541 @@
+{
+ "database": "refractiveindex.info database",
+ "repository": "https://github.com/polyanskiy/refractiveindex.info-database",
+ "commit": "c5c2f188e848453def5970e347399d653df2ffc2",
+ "license": "CC0-1.0",
+ "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+ "database_citation": "M. N. Polyanskiy, Sci. Data 11, 94 (2024), doi:10.1038/s41597-023-02898-2",
+ "notes": "YAML files are verbatim copies of database/data/main/<book>/nk/<page>.yml at the commit above. Wavelengths in the YAML are in micrometres; range_nm here is in nanometres.",
+ "materials": {
+  "Au": {
+   "description": "Gold",
+   "aliases": [
+    "gold"
+   ],
+   "default": "Johnson-Christy",
+   "datasets": {
+    "Johnson-Christy": {
+     "aliases": [
+      "Johnson",
+      "JC",
+      "Johnson-Christy-1972"
+     ],
+     "file": "Au/Johnson.yml",
+     "shelf": "main",
+     "book": "Au",
+     "page": "Johnson",
+     "type": "tabulated nk",
+     "has_k": true,
+     "range_nm": [
+      187.9,
+      1937.0
+     ],
+     "reference": "P. B. Johnson and R. W. Christy. Optical constants of the noble metals. Phys. Rev. B 6, 4370-4379 (1972)",
+     "doi": "10.1103/PhysRevB.6.4370",
+     "comments": "Room temperature",
+     "url": "https://refractiveindex.info/?shelf=main&book=Au&page=Johnson",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/Au/nk/Johnson.yml"
+    },
+    "McPeak": {
+     "aliases": [
+      "McPeak-2015"
+     ],
+     "file": "Au/McPeak.yml",
+     "shelf": "main",
+     "book": "Au",
+     "page": "McPeak",
+     "type": "tabulated nk",
+     "has_k": true,
+     "range_nm": [
+      300.0,
+      1700.0
+     ],
+     "reference": "K. M. McPeak, S. V. Jayanti, S. J. P. Kress, S. Meyer, S. Iotti, A. Rossinelli, D. J. Norris. Plasmonic films can easily be better: Rules and recipes. ACS Photonics 2, 326-333 (2015)",
+     "doi": "10.1021/ph5004237",
+     "comments": "Thermally evaporated Au at 10 Å/s with base pressure of 3e-8 Torr, template stripped from Si wafer",
+     "url": "https://refractiveindex.info/?shelf=main&book=Au&page=McPeak",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/Au/nk/McPeak.yml"
+    },
+    "Rakic-LD": {
+     "aliases": [
+      "Rakic",
+      "Rakic-1998"
+     ],
+     "file": "Au/Rakic-LD.yml",
+     "shelf": "main",
+     "book": "Au",
+     "page": "Rakic-LD",
+     "type": "tabulated nk",
+     "has_k": true,
+     "range_nm": [
+      247.97,
+      6199.2
+     ],
+     "reference": "A. D. Rakić, A. B. Djurišic, J. M. Elazar, M. L. Majewski. Optical properties of metallic films for vertical-cavity optoelectronic devices. Appl. Opt. 37, 5271-5283 (1998); [Calculation script (Python)]",
+     "doi": "10.1364/AO.37.005271",
+     "comments": "Fit of experimental data from several sources to Lorentz-Drude (LD) model",
+     "url": "https://refractiveindex.info/?shelf=main&book=Au&page=Rakic-LD",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/Au/nk/Rakic-LD.yml"
+    }
+   }
+  },
+  "Ag": {
+   "description": "Silver",
+   "aliases": [
+    "silver"
+   ],
+   "default": "Johnson-Christy",
+   "datasets": {
+    "Johnson-Christy": {
+     "aliases": [
+      "Johnson",
+      "JC",
+      "Johnson-Christy-1972"
+     ],
+     "file": "Ag/Johnson.yml",
+     "shelf": "main",
+     "book": "Ag",
+     "page": "Johnson",
+     "type": "tabulated nk",
+     "has_k": true,
+     "range_nm": [
+      187.9,
+      1937.0
+     ],
+     "reference": "P. B. Johnson and R. W. Christy. Optical constants of the noble metals. Phys. Rev. B 6, 4370-4379 (1972)",
+     "doi": "10.1103/PhysRevB.6.4370",
+     "comments": "Room temperature",
+     "url": "https://refractiveindex.info/?shelf=main&book=Ag&page=Johnson",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/Ag/nk/Johnson.yml"
+    },
+    "McPeak": {
+     "aliases": [
+      "McPeak-2015"
+     ],
+     "file": "Ag/McPeak.yml",
+     "shelf": "main",
+     "book": "Ag",
+     "page": "McPeak",
+     "type": "tabulated nk",
+     "has_k": true,
+     "range_nm": [
+      300.0,
+      1700.0
+     ],
+     "reference": "K. M. McPeak, S. V. Jayanti, S. J. P. Kress, S. Meyer, S. Iotti, A. Rossinelli, D. J. Norris. Plasmonic films can easily be better: Rules and recipes. ACS Photonics 2, 326-333 (2015)",
+     "doi": "10.1021/ph5004237",
+     "comments": "Thermally evaporated Ag at 50 Å/s with base pressure of 3e-8 Torr, template stripped from Si wafer",
+     "url": "https://refractiveindex.info/?shelf=main&book=Ag&page=McPeak",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/Ag/nk/McPeak.yml"
+    },
+    "Rakic-LD": {
+     "aliases": [
+      "Rakic",
+      "Rakic-1998"
+     ],
+     "file": "Ag/Rakic-LD.yml",
+     "shelf": "main",
+     "book": "Ag",
+     "page": "Rakic-LD",
+     "type": "tabulated nk",
+     "has_k": true,
+     "range_nm": [
+      247.97,
+      12398.0
+     ],
+     "reference": "A. D. Rakić, A. B. Djurišic, J. M. Elazar, M. L. Majewski. Optical properties of metallic films for vertical-cavity optoelectronic devices. Appl. Opt. 37, 5271-5283 (1998); [Calculation script (Python)]",
+     "doi": "10.1364/AO.37.005271",
+     "comments": "Fit of experimental data from several sources to Lorentz-Drude (LD) model",
+     "url": "https://refractiveindex.info/?shelf=main&book=Ag&page=Rakic-LD",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/Ag/nk/Rakic-LD.yml"
+    }
+   }
+  },
+  "Al": {
+   "description": "Aluminium",
+   "aliases": [
+    "aluminium",
+    "aluminum"
+   ],
+   "default": "McPeak",
+   "datasets": {
+    "McPeak": {
+     "aliases": [
+      "McPeak-2015"
+     ],
+     "file": "Al/McPeak.yml",
+     "shelf": "main",
+     "book": "Al",
+     "page": "McPeak",
+     "type": "tabulated nk",
+     "has_k": true,
+     "range_nm": [
+      150.0,
+      1700.0
+     ],
+     "reference": "K. M. McPeak, S. V. Jayanti, S. J. P. Kress, S. Meyer, S. Iotti, A. Rossinelli, D. J. Norris. Plasmonic films can easily be better: Rules and recipes. ACS Photonics 2, 326-333 (2015)",
+     "doi": "10.1021/ph5004237",
+     "comments": "Thermally evaporated Al at 150 Å/s, template stripped from Si wafer",
+     "url": "https://refractiveindex.info/?shelf=main&book=Al&page=McPeak",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/Al/nk/McPeak.yml"
+    },
+    "Rakic-1995": {
+     "aliases": [
+      "Rakic"
+     ],
+     "file": "Al/Rakic.yml",
+     "shelf": "main",
+     "book": "Al",
+     "page": "Rakic",
+     "type": "tabulated nk",
+     "has_k": true,
+     "range_nm": [
+      0.124,
+      200000.0
+     ],
+     "reference": "A. D. Rakić. Algorithm for the determination of intrinsic optical constants of metal films: application to aluminum. Appl. Opt. 34, 4755-4767 (1995)",
+     "doi": "10.1364/AO.34.004755",
+     "comments": "Optical and electron-energy-loss data for evaporated-aluminum films have been critically analyzed and used in an iterative, self-consistent algorithm that represents a combination of the Kramers-Kronig analysis and the semiquantum-model application.",
+     "url": "https://refractiveindex.info/?shelf=main&book=Al&page=Rakic",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/Al/nk/Rakic.yml"
+    },
+    "Rakic-LD": {
+     "aliases": [
+      "Rakic-1998"
+     ],
+     "file": "Al/Rakic-LD.yml",
+     "shelf": "main",
+     "book": "Al",
+     "page": "Rakic-LD",
+     "type": "tabulated nk",
+     "has_k": true,
+     "range_nm": [
+      61.992,
+      247970.0
+     ],
+     "reference": "A. D. Rakić, A. B. Djurišic, J. M. Elazar, M. L. Majewski. Optical properties of metallic films for vertical-cavity optoelectronic devices. Appl. Opt. 37, 5271-5283 (1998); [Calculation script (Python)]",
+     "doi": "10.1364/AO.37.005271",
+     "comments": "Fit of experimental data from several sources to Lorentz-Drude (LD) model",
+     "url": "https://refractiveindex.info/?shelf=main&book=Al&page=Rakic-LD",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/Al/nk/Rakic-LD.yml"
+    }
+   }
+  },
+  "Cu": {
+   "description": "Copper",
+   "aliases": [
+    "copper"
+   ],
+   "default": "Johnson-Christy",
+   "datasets": {
+    "Johnson-Christy": {
+     "aliases": [
+      "Johnson",
+      "JC",
+      "Johnson-Christy-1972"
+     ],
+     "file": "Cu/Johnson.yml",
+     "shelf": "main",
+     "book": "Cu",
+     "page": "Johnson",
+     "type": "tabulated nk",
+     "has_k": true,
+     "range_nm": [
+      187.9,
+      1937.0
+     ],
+     "reference": "P. B. Johnson and R. W. Christy. Optical constants of the noble metals. Phys. Rev. B 6, 4370-4379 (1972)",
+     "doi": "10.1103/PhysRevB.6.4370",
+     "comments": "Room temperature",
+     "url": "https://refractiveindex.info/?shelf=main&book=Cu&page=Johnson",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/Cu/nk/Johnson.yml"
+    },
+    "McPeak": {
+     "aliases": [
+      "McPeak-2015"
+     ],
+     "file": "Cu/McPeak.yml",
+     "shelf": "main",
+     "book": "Cu",
+     "page": "McPeak",
+     "type": "tabulated nk",
+     "has_k": true,
+     "range_nm": [
+      300.0,
+      1700.0
+     ],
+     "reference": "K. M. McPeak, S. V. Jayanti, S. J. P. Kress, S. Meyer, S. Iotti, A. Rossinelli, D. J. Norris. Plasmonic films can easily be better: Rules and recipes. ACS Photonics 2, 326-333 (2015)",
+     "doi": "10.1021/ph5004237",
+     "comments": "Thermally evaporated Cu at 35 Å/s with base pressure of 3e-8 Torr, template stripped from Si wafer",
+     "url": "https://refractiveindex.info/?shelf=main&book=Cu&page=McPeak",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/Cu/nk/McPeak.yml"
+    },
+    "Rakic-LD": {
+     "aliases": [
+      "Rakic",
+      "Rakic-1998"
+     ],
+     "file": "Cu/Rakic-LD.yml",
+     "shelf": "main",
+     "book": "Cu",
+     "page": "Rakic-LD",
+     "type": "tabulated nk",
+     "has_k": true,
+     "range_nm": [
+      206.64,
+      12398.0
+     ],
+     "reference": "A. D. Rakić, A. B. Djurišic, J. M. Elazar, and M. L. Majewski. Optical properties of metallic films for vertical-cavity optoelectronic devices. Appl. Opt. 37, 5271-5283 (1998); [Calculation script (Python)]",
+     "doi": "10.1364/AO.37.005271",
+     "comments": "Fit of experimental data from several sources to Lorentz-Drude (LD) model",
+     "url": "https://refractiveindex.info/?shelf=main&book=Cu&page=Rakic-LD",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/Cu/nk/Rakic-LD.yml"
+    }
+   }
+  },
+  "Si": {
+   "description": "Crystalline silicon",
+   "aliases": [
+    "silicon",
+    "c-Si"
+   ],
+   "default": "Green-2008",
+   "datasets": {
+    "Green-2008": {
+     "aliases": [
+      "Green"
+     ],
+     "file": "Si/Green-2008.yml",
+     "shelf": "main",
+     "book": "Si",
+     "page": "Green-2008",
+     "type": "tabulated nk",
+     "has_k": true,
+     "range_nm": [
+      250.0,
+      1450.0
+     ],
+     "reference": "M. A. Green. Self-consistent optical parameters of intrinsic silicon at 300K including temperature coefficients. Sol. Energ. Mat. Sol. Cells 92, 1305–1310 (2008)",
+     "doi": "10.1016/j.solmat.2008.06.009",
+     "comments": "Combination of data sets enforcing KK consistency. 300 K (27 °C). k is for band-to-band absorption.",
+     "url": "https://refractiveindex.info/?shelf=main&book=Si&page=Green-2008",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/Si/nk/Green-2008.yml"
+    },
+    "Schinke": {
+     "aliases": [
+      "Schinke-2015"
+     ],
+     "file": "Si/Schinke.yml",
+     "shelf": "main",
+     "book": "Si",
+     "page": "Schinke",
+     "type": "tabulated nk",
+     "has_k": true,
+     "range_nm": [
+      250.0,
+      1450.0
+     ],
+     "reference": "1) C. Schinke, P. C. Peest, J. Schmidt, R. Brendel, K. Bothe, M. R. Vogt, I. Kröger, S. Winter, A. Schirmacher, S. Lim, H. T. Nguyen, D. MacDonald. Uncertainty analysis for the coefficient of band-to-band absorption of crystalline silicon. AIP Advances 5, 67168 (2015); 2) M. R. Vogt. Development of physical models for the simulation of optical properties of solar cell modules. PhD. Thesis (2015)",
+     "doi": "10.1063/1.4923379",
+     "comments": "Relative uncertainties of the absorption coefficient: 0.4% at 0.250 µm, 11% at 0.6 µm, 1.4% at 1 µm, 12% at 1.2 µm and 180% at 1.45 µm. Temperature: 295 K.",
+     "url": "https://refractiveindex.info/?shelf=main&book=Si&page=Schinke",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/Si/nk/Schinke.yml"
+    },
+    "Aspnes-Studna": {
+     "aliases": [
+      "Aspnes",
+      "Aspnes-1983"
+     ],
+     "file": "Si/Aspnes.yml",
+     "shelf": "main",
+     "book": "Si",
+     "page": "Aspnes",
+     "type": "tabulated nk",
+     "has_k": true,
+     "range_nm": [
+      206.6,
+      826.6
+     ],
+     "reference": "D. E. Aspnes and A. A. Studna. Dielectric functions and optical parameters of Si, Ge, GaP, GaAs, GaSb, InP, InAs, and InSb from 1.5 to 6.0 eV. Phys. Rev. B 27, 985-1009 (1983)",
+     "doi": "10.1103/PhysRevB.27.985",
+     "comments": "Crystal orientation: ; Doping: 2.3×1014 cm-3, n; Room temperature",
+     "url": "https://refractiveindex.info/?shelf=main&book=Si&page=Aspnes",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/Si/nk/Aspnes.yml"
+    }
+   }
+  },
+  "TiO2": {
+   "description": "Titanium dioxide",
+   "aliases": [
+    "titania",
+    "titanium dioxide"
+   ],
+   "default": "Siefke",
+   "datasets": {
+    "Siefke": {
+     "aliases": [
+      "Siefke-2016"
+     ],
+     "file": "TiO2/Siefke.yml",
+     "shelf": "main",
+     "book": "TiO2",
+     "page": "Siefke",
+     "type": "tabulated nk",
+     "has_k": true,
+     "range_nm": [
+      120.1811,
+      125122.7623
+     ],
+     "reference": "T. Siefke, S. Kroker, K. Pfeiffer, O. Puffky, K. Dietrich, D. Franta, I. Ohlídal, A. Szeghalmi, E.-B. Kley, A. Tünnermann. Materials pushing the application limits of wire grid polarizers further into the deep ultraviolet spectral range. Adv. Opt. Mater. 4, 1780–1786 (2016) (Numerical data kindly provided by Thomas Siefke)",
+     "doi": "10.1002/adom.201600250",
+     "comments": "Film: prepared by ALD, 350 nm TiO2. See Ratzsch et al. Nanotechnology 26, 024003 (2015).; Measurement: ellipsometer Jobin Yvon UVISEL2 VUV: 1.5–8.7 eV; ellipsometer Jobin Yvon UVISEL: 0.6–6.5 eV; ellipsometer Woollam IRVASE: 300–6500 cm-1; spectrophotometer McPhersom VUVas 2000: 5.6–10.3 eV; spectrophotometer Perkin Elmer Lambda 1050: 0.5-6.7 eV; spectrophotometer Bruker Vertex 80v: 80-7500 cm-1.; Fit model: universal dispersion model. See Franta et al. Appl. Opt. 54, 9108–9119 (2015).",
+     "url": "https://refractiveindex.info/?shelf=main&book=TiO2&page=Siefke",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/TiO2/nk/Siefke.yml"
+    },
+    "Sarkar": {
+     "aliases": [
+      "Sarkar-2019"
+     ],
+     "file": "TiO2/Sarkar.yml",
+     "shelf": "main",
+     "book": "TiO2",
+     "page": "Sarkar",
+     "type": "tabulated nk",
+     "has_k": true,
+     "range_nm": [
+      300.0,
+      1690.0
+     ],
+     "reference": "S. Sarkar, V. Gupta, M. Kumar, J. Schubert, P.T. Probst, J. Joseph, T.A.F. König. Hybridized guided-mode resonances via colloidal plasmonic self-assembled grating. ACS Appl. Mater. Interfaces, 11, 13752-13760 (2019) (Numerical data kindly provided by Dr. Tobias König)",
+     "doi": "10.1021/acsami.8b20535",
+     "comments": "Titanium(IV) oxide (Titanium dioxide, TiO2) thin film (thickness 200 nm) on glass substrate.",
+     "url": "https://refractiveindex.info/?shelf=main&book=TiO2&page=Sarkar",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/TiO2/nk/Sarkar.yml"
+    },
+    "Devore-o": {
+     "aliases": [
+      "Devore",
+      "rutile-o"
+     ],
+     "file": "TiO2/Devore-o.yml",
+     "shelf": "main",
+     "book": "TiO2",
+     "page": "Devore-o",
+     "type": "formula 4",
+     "has_k": false,
+     "range_nm": [
+      430.0,
+      1530.0
+     ],
+     "reference": "J. R. Devore. Refractive indices of rutile and sphalerite. J. Opt. Soc. Am. 41, 416-419 (1951)",
+     "doi": "10.1364/JOSA.41.000416",
+     "comments": "Ordinary ray (o); Room temperature.",
+     "url": "https://refractiveindex.info/?shelf=main&book=TiO2&page=Devore-o",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/TiO2/nk/Devore-o.yml"
+    }
+   }
+  },
+  "SiO2": {
+   "description": "Silicon dioxide (silica)",
+   "aliases": [
+    "silica",
+    "fused silica",
+    "glass"
+   ],
+   "default": "Malitson",
+   "datasets": {
+    "Malitson": {
+     "aliases": [
+      "Malitson-1965"
+     ],
+     "file": "SiO2/Malitson.yml",
+     "shelf": "main",
+     "book": "SiO2",
+     "page": "Malitson",
+     "type": "formula 1",
+     "has_k": false,
+     "range_nm": [
+      210.0,
+      6700.0
+     ],
+     "reference": "1) I. H. Malitson. Interspecimen comparison of the refractive index of fused silica. J. Opt. Soc. Am. 55, 1205-1208 (1965); 2) C. Z. Tan. Determination of refractive index of silica glass for infrared wavelengths by IR spectroscopy. J. Non-Cryst. Solids 223, 158-163 (1998); * Sellmeier formula is reported in Ref. 1 for the 0.21–3.71 μm wavelength range. Ref. 2 verifies the validity of the formula up to 6.7 μm.",
+     "doi": "10.1364/JOSA.55.001205",
+     "comments": "Fused silica, 20 °C",
+     "url": "https://refractiveindex.info/?shelf=main&book=SiO2&page=Malitson",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/SiO2/nk/Malitson.yml"
+    },
+    "Lemarchand": {
+     "aliases": [
+      "Lemarchand-2013"
+     ],
+     "file": "SiO2/Lemarchand.yml",
+     "shelf": "main",
+     "book": "SiO2",
+     "page": "Lemarchand",
+     "type": "tabulated nk",
+     "has_k": true,
+     "range_nm": [
+      250.0,
+      2500.0
+     ],
+     "reference": "F. Lemarchand. private communications (2013). Measurement method described in:; L. Gao, F. Lemarchand, M. Lequime. Exploitation of multiple incidences spectrometric measurements for thin film reverse engineering. Opt. Express 20, 15734-15751 (2012)",
+     "doi": "10.1364/OE.20.015734",
+     "comments": "580-nm monolayer deposited on BK7 substrate using the magnetron sputtering technique.",
+     "url": "https://refractiveindex.info/?shelf=main&book=SiO2&page=Lemarchand",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/SiO2/nk/Lemarchand.yml"
+    }
+   }
+  },
+  "H2O": {
+   "description": "Liquid water",
+   "aliases": [
+    "water"
+   ],
+   "default": "Hale-Querry",
+   "datasets": {
+    "Hale-Querry": {
+     "aliases": [
+      "Hale",
+      "Hale-Querry-1973"
+     ],
+     "file": "H2O/Hale.yml",
+     "shelf": "main",
+     "book": "H2O",
+     "page": "Hale",
+     "type": "tabulated nk",
+     "has_k": true,
+     "range_nm": [
+      200.0,
+      200000.0
+     ],
+     "reference": "G. M. Hale and M. R. Querry. Optical constants of water in the 200-nm to 200-µm wavelength region. Appl. Opt. 12, 555-563 (1973); See also Segelstein 1981 for more recent data from the same group.",
+     "doi": "10.1364/AO.12.000555",
+     "comments": "Liquid water (H2O) at 25 °C",
+     "url": "https://refractiveindex.info/?shelf=main&book=H2O&page=Hale",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/H2O/nk/Hale.yml"
+    },
+    "Daimon-24C": {
+     "aliases": [
+      "Daimon",
+      "Daimon-2007"
+     ],
+     "file": "H2O/Daimon-24.0C.yml",
+     "shelf": "main",
+     "book": "H2O",
+     "page": "Daimon-24.0C",
+     "type": "formula 2",
+     "has_k": false,
+     "range_nm": [
+      182.0,
+      1129.0
+     ],
+     "reference": "M. Daimon and A. Masumura. Measurement of the refractive index of distilled water from the near-infrared region to the ultraviolet region. Appl. Opt. 46, 3811-3820 (2007)",
+     "doi": "10.1364/AO.46.003811",
+     "comments": "High performance liquid chromatography (HPLC) distilled water at 24.0 °C.",
+     "url": "https://refractiveindex.info/?shelf=main&book=H2O&page=Daimon-24.0C",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/H2O/nk/Daimon-24.0C.yml"
+    }
+   }
+  }
+ }
+}

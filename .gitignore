@@ -1,0 +1,30 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Tooling caches and scratch output
+.pytest_cache/
+.ruff_cache/
+prof
+*.prof
+
+# Node / Next.js / Tauri
+node_modules/
+.next/
+out/
+src-tauri/target/
+*.tsbuildinfo
+
+# Local secrets and databases
+.env
+.env.*
+!.env.example
+*.db
+*.sqlite3

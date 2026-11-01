@@ -1,0 +1,22 @@
+# omniscatter
+
+> One problem spec, many electromagnetic scattering solvers (Mie, T-matrix, DDA, FDTD), CPU and GPU, with JSON-first Python, CLI and MCP interfaces.
+
+Units: nm, vacuum wavelengths. Time convention exp(-i omega t) (Im eps > 0 = loss). Cross sections in nm^2; efficiencies normalised by pi * r_eq^2.
+
+## Docs
+
+- [README](README.md): install, quick start, status of each method
+- [AGENTS.md](AGENTS.md): conventions and workflow for agents (estimate -> solve -> check warnings)
+- [Example spec](examples/drude_sphere.json): a complete simulation in JSON
+- [Library landscape](docs/landscape.md): survey of existing solvers and backend choices
+
+## API
+
+- `omniscatter.Simulation`: pydantic model; `omniscatter.json_schema()` for its JSON Schema
+- `omniscatter.solve(sim, method="auto", device="auto") -> Result`
+- `omniscatter.estimate(sim, method, device) -> dict` (no solve)
+- `omniscatter.compare(sim, methods=None, device="auto") -> dict`
+- `omniscatter.doctor() -> dict` (frameworks and GPUs)
+- CLI: `omniscatter {doctor,backends,schema,estimate,solve,compare}`
+- MCP server: `omniscatter-mcp`

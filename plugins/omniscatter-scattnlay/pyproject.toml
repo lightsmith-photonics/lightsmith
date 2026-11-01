@@ -1,0 +1,39 @@
+[project]
+name = "omniscatter-scattnlay"
+version = "0.1.0"
+description = "scattnlay (multilayer-sphere Mie theory) backend for omniscatter."
+readme = "README.md"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Alexander Feghali", email = "alexander.al-feghali@mail.mcgill.ca" }
+]
+requires-python = ">=3.10"
+keywords = ["mie", "multilayer sphere", "core-shell", "scattnlay", "scattering", "omniscatter"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    "omniscatter>=0.1",
+    "numpy>=2.0",
+    "scattnlay>=2.4",
+]
+
+[project.entry-points."omniscatter.backends"]
+scattnlay = "omniscatter_scattnlay:ScattnlayBackend"
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+]
+
+[tool.uv.sources]
+omniscatter = { path = "../..", editable = true }

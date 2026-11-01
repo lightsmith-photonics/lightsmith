@@ -1,0 +1,13 @@
+{
+  "particles": [
+    {
+      "shape": {"kind": "sphere", "radius_nm": 40},
+      "material": {"kind": "drude", "eps_inf": 9.5, "wp_ev": 9.0, "gamma_ev": 0.07},
+      "position_nm": [0, 0, 0]
+    }
+  ],
+  "medium_index": 1.33,
+  "illumination": {"kind": "plane_wave", "direction": [0, 0, 1], "polarization": [1, 0, 0]},
+  "wavelengths": {"start_nm": 400, "stop_nm": 800, "num": 41},
+  "options": {"dda": {"dipoles_per_diameter": 16}}
+}
