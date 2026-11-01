@@ -23,7 +23,9 @@ AUTO_ORDER: dict[str, tuple[str, ...]] = {
     "layer_stack": ("tmm", "rcwa", "fdtd"),
     "periodic": ("rcwa", "fdfd", "fdtd"),
     "mode": ("fde",),
-    "device": ("eme", "fdfd", "fdtd"),
+    # BPM after EME: same port topology, but one-way (no reflections) and approximate at abrupt junctions;
+    # before FDFD/FDTD because it is far cheaper for long, slowly varying devices.
+    "device": ("eme", "bpm", "fdfd", "fdtd"),
     "bands": ("pwe", "fdfd"),
     "circuit": ("circuit",),
     "optimization": ("inverse",),

@@ -56,7 +56,7 @@ uv run lightsmith solve examples/drude_sphere.json --method dda --device gpu
 | `layer_stack` — thin films | TMM, RCWA, FDTD | ✅ | TMM, RCWA |
 | `periodic` — gratings, metasurfaces | RCWA, FDTD (rectangular lattices) | ✅ | RCWA |
 | `mode` — waveguide cross-sections | FDE (full vector, bends) | — | — |
-| `device` — S-parameters between ports | EME, FDFD (2D) | FDFD | FDFD |
+| `device` — S-parameters between ports | EME, BPM (one-way, wide-angle; 2D and 3D semi/full-vector), FDFD (2D) | BPM, FDFD | FDFD |
 | `bands` — photonic crystals | PWE (2D TE/TM, 3D) | ✅ | dense path |
 | `circuit` — netlists of compact models | S-matrix circuit solver | ✅ | ✅ |
 | `optimization` — inverse design | topology optimisation on FDFD | ✅ | — |
