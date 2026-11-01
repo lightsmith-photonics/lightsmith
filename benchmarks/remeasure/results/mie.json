@@ -1,0 +1,192 @@
+{
+  "script": "benchmarks/remeasure/mie.py",
+  "env": {
+    "python": "3.12.2",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "processor": "AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD",
+    "numpy": "2.4.6",
+    "mpmath": "1.3.0",
+    "lightsmith_commit": "53452c49a97ea3f1bbbe360d90b9385b1f6121c2"
+  },
+  "rows": [
+    {
+      "row": "Homogeneous and coated spheres, hard cases",
+      "table": "Native Mie (tests/test_mie_native.py)",
+      "configuration": "the 3 homogeneous hard cases of test_hard_cases_against_mpmath and the 3 coated cases of test_coated_sphere_against_mpmath; medium 1.33; mie_cross_sections on NumPy (CPU, float64); reference: 40-digit mpmath Riccati-Bessel formulas copied from the test, n_max = Wiscombe + 10",
+      "device": "cpu",
+      "precision": "double",
+      "quantity": "max relative error of Q_ext and Q_sca vs the mpmath value (kept at 40 digits)",
+      "measured_max_rel_error": 6.351480118558503e-15,
+      "worst_case": {
+        "case": "coated",
+        "core_eps": "(12+0.5j)",
+        "shell_eps": "Drude",
+        "core_radius_nm": 30.0,
+        "outer_radius_nm": 42.0,
+        "wavelength_nm": 500.0,
+        "medium_index": 1.33,
+        "q_ext_mp": "1.80422158217028480800023",
+        "q_sca_mp": "1.267553356369066362107997",
+        "q_ext_native": 1.8042215821702963,
+        "q_sca_native": 1.2675533563690722,
+        "rel_err_ext": 6.351480118558503e-15,
+        "rel_err_sca": 4.591172522547425e-15
+      },
+      "measured_max_rel_error_homogeneous": 5.017170193105424e-15,
+      "measured_max_rel_error_coated": 6.351480118558503e-15,
+      "cases": [
+        {
+          "case": "homogeneous",
+          "n_particle": 4.0,
+          "eps": [
+            16.0,
+            0.0
+          ],
+          "radius_nm": 1.0,
+          "wavelength_nm": 300.0,
+          "medium_index": 1.33,
+          "x": 0.027855454861829502,
+          "q_ext_mp": "0.0000008523016529455685840164761",
+          "q_sca_mp": "0.0000008523016529455685840164761",
+          "q_ext_native": 8.523016529455682e-07,
+          "q_sca_native": 8.523016529455684e-07,
+          "rel_err_ext": 4.235407239629776e-16,
+          "rel_err_sca": 1.7508615851454147e-16
+        },
+        {
+          "case": "homogeneous",
+          "n_particle": 4.0,
+          "eps": [
+            16.0,
+            0.0
+          ],
+          "radius_nm": 1500.0,
+          "wavelength_nm": 300.0,
+          "medium_index": 1.33,
+          "x": 41.78318229274425,
+          "q_ext_mp": "2.385649759597055364797844",
+          "q_sca_mp": "2.385649759597055364797844",
+          "q_ext_native": 2.3856497595970434,
+          "q_sca_native": 2.3856497595970434,
+          "rel_err_ext": 5.017170193105424e-15,
+          "rel_err_sca": 5.017170193105424e-15
+        },
+        {
+          "case": "homogeneous",
+          "n_particle": "Drude(9.5, 9.0 eV, 0.07 eV)",
+          "eps": [
+            0.09933183935834933,
+            0.22424209249150323
+          ],
+          "radius_nm": 10.0,
+          "wavelength_nm": 422.5,
+          "medium_index": 1.33,
+          "x": 0.19779021203665917,
+          "q_ext_mp": "0.06965661705224038166713669",
+          "q_sca_mp": "0.000834395190280426580224247",
+          "q_ext_native": 0.06965661705224033,
+          "q_sca_native": 0.0008343951902804269,
+          "rel_err_ext": 7.822044237350388e-16,
+          "rel_err_sca": 3.4548687339756465e-16
+        },
+        {
+          "case": "coated",
+          "core_eps": "2.25",
+          "shell_eps": "Drude",
+          "core_radius_nm": 30.0,
+          "outer_radius_nm": 42.0,
+          "wavelength_nm": 600.0,
+          "medium_index": 1.33,
+          "q_ext_mp": "6.019280584414646171353416",
+          "q_sca_mp": "3.929711320599968108553609",
+          "q_ext_native": 6.019280584414626,
+          "q_sca_native": 3.9297113205999517,
+          "rel_err_ext": 3.315944456580082e-15,
+          "rel_err_sca": 4.18781636444389e-15
+        },
+        {
+          "case": "coated",
+          "core_eps": "Drude",
+          "shell_eps": "2.1",
+          "core_radius_nm": 30.0,
+          "outer_radius_nm": 42.0,
+          "wavelength_nm": 520.0,
+          "medium_index": 1.33,
+          "q_ext_mp": "6.396950750180492850684602",
+          "q_sca_mp": "3.685928671932162940220618",
+          "q_ext_native": 6.396950750180493,
+          "q_sca_native": 3.685928671932158,
+          "rel_err_ext": 5.379656980106632e-17,
+          "rel_err_sca": 1.3383245732297973e-15
+        },
+        {
+          "case": "coated",
+          "core_eps": "(12+0.5j)",
+          "shell_eps": "Drude",
+          "core_radius_nm": 30.0,
+          "outer_radius_nm": 42.0,
+          "wavelength_nm": 500.0,
+          "medium_index": 1.33,
+          "q_ext_mp": "1.80422158217028480800023",
+          "q_sca_mp": "1.267553356369066362107997",
+          "q_ext_native": 1.8042215821702963,
+          "q_sca_native": 1.2675533563690722,
+          "rel_err_ext": 6.351480118558503e-15,
+          "rel_err_sca": 4.591172522547425e-15
+        }
+      ],
+      "reference": "40-digit mpmath",
+      "test_bound": 1e-11,
+      "previously_reported": "~1e-15",
+      "reproduced": true
+    },
+    {
+      "row": "scattnlay plugin (GPL, separate package)",
+      "table": "Native Mie",
+      "reference": "miepython",
+      "test_bound": 1e-09,
+      "previously_reported": "1e-11",
+      "configuration": "the plugin's tests: Drude and n=1.5+0.02i spheres, r=40 nm in n=1.33, 400-800 nm (41 points); C_ext, C_sca, C_abs; plus the layered (shell = core) case vs miepython",
+      "device": "cpu",
+      "precision": "double (scattnlay default, multiprecision off)",
+      "scattnlay_version": "2.4",
+      "miepython_version": "3.3.1",
+      "plugin_source": "C:\\Users\\alexg\\Documents\\ChatGPT\\lightsmith-scattnlay\\src (imported read-only, registered by hand)",
+      "install": "uv run --no-sync --with scattnlay (ephemeral overlay env; project env untouched)",
+      "measured_max_rel_error": 3.1896750620076603e-11,
+      "measured_max_rel_error_plain_ext_sca": 2.9364444721914844e-11,
+      "note": "C_abs = C_ext - C_sca suffers cancellation for the weakly absorbing dielectric; see per-quantity values",
+      "cases": [
+        {
+          "case": "plain sphere r=40 nm, drude-gold, 400-800 nm (41)",
+          "test": "test_matches_miepython_for_plain_sphere",
+          "precision": "double",
+          "rel_err_ext_vs_miepython": 9.683608571331091e-12,
+          "rel_err_sca_vs_miepython": 3.392120530549182e-15,
+          "rel_err_abs_vs_miepython": 2.3624045419983696e-11,
+          "rel_err_ext_vs_native_mie": 1.980727019618153e-14,
+          "rel_err_sca_vs_native_mie": 4.613283921546893e-15,
+          "rel_err_abs_vs_native_mie": 4.8068476690356987e-14
+        },
+        {
+          "case": "plain sphere r=40 nm, lossy-dielectric, 400-800 nm (41)",
+          "test": "test_matches_miepython_for_plain_sphere",
+          "precision": "double",
+          "rel_err_ext_vs_miepython": 2.9364444721914844e-11,
+          "rel_err_sca_vs_miepython": 3.311865245478861e-14,
+          "rel_err_abs_vs_miepython": 3.1896750620076603e-11,
+          "rel_err_ext_vs_native_mie": 1.118921572956282e-14,
+          "rel_err_sca_vs_native_mie": 3.4662318459037176e-14,
+          "rel_err_abs_vs_native_mie": 1.4619330149527038e-14
+        },
+        {
+          "case": "layered 30+10 nm, shell = core (Drude), 400-800 nm (41)",
+          "test": "test_layered_sphere_reduces_to_homogeneous",
+          "precision": "double",
+          "rel_err_ext_vs_miepython": 9.683608571331091e-12
+        }
+      ],
+      "reproduced": true
+    }
+  ]
+}
