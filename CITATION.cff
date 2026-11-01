@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use Lightsmith in your work, please cite it as below, and also cite the solver backends you used (see `lightsmith backends` and `Result.provenance`)."
+type: software
+title: "Lightsmith: an open, GPU-native photonics suite built for AI agents"
+abstract: >-
+  Lightsmith describes a photonics problem once, as typed JSON, and solves it
+  with Mie, T-matrix, DDA, FDTD, TMM, RCWA, FDE, EME, FDFD, PWE and S-matrix
+  circuit solvers on CPU or GPU, with differentiable inverse design. Every
+  result uses the same units and conventions and carries provenance, so methods
+  can be cross-checked directly. Python, CLI and MCP interfaces are JSON in,
+  JSON out.
+authors:
+  - family-names: Feghali
+    given-names: Alexander
+version: 0.1.0
+license: MIT
+repository-code: "https://github.com/lightsmith-photonics/lightsmith"
+url: "https://lightsmith-photonics.github.io/lightsmith/"
+keywords:
+  - photonics
+  - nanophotonics
+  - electromagnetics
+  - scattering
+  - Mie theory
+  - discrete dipole approximation
+  - FDTD
+  - RCWA
+  - inverse design
+  - GPU

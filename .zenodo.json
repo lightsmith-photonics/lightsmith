@@ -1,0 +1,38 @@
+{
+  "title": "Lightsmith: an open, GPU-native photonics suite built for AI agents",
+  "upload_type": "software",
+  "description": "<p>Lightsmith describes a photonics problem once, as typed JSON, and solves it with Mie, T-matrix, DDA, FDTD, TMM, RCWA, FDE, EME, FDFD, PWE and S-matrix circuit solvers on CPU or GPU, with differentiable inverse design. Every result uses the same units and conventions and carries provenance, so methods can be cross-checked directly. Python, CLI and MCP interfaces are JSON in, JSON out.</p>",
+  "creators": [
+    {
+      "name": "Feghali, Alexander"
+    }
+  ],
+  "license": "MIT",
+  "access_right": "open",
+  "keywords": [
+    "photonics",
+    "nanophotonics",
+    "electromagnetics",
+    "scattering",
+    "Mie theory",
+    "discrete dipole approximation",
+    "FDTD",
+    "RCWA",
+    "inverse design",
+    "GPU"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/lightsmith-photonics/lightsmith",
+      "relation": "isSupplementTo",
+      "resource_type": "software",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://lightsmith-photonics.github.io/lightsmith/",
+      "relation": "isDocumentedBy",
+      "resource_type": "publication-softwaredocumentation",
+      "scheme": "url"
+    }
+  ]
+}
