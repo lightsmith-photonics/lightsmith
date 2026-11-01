@@ -15,6 +15,12 @@ One broadband Gaussian pulse covers all requested wavelengths. Running DFTs give
     C_abs = -(net flux of the total field inside the TFSF box) / I_inc
     C_ext = C_sca + C_abs
 
+Periodic structures and planar stacks (``PeriodicProblem``, ``LayerStackProblem``) are
+solved at normal incidence in one unit cell: periodic x/y boundaries (real fields), CPML
+along z, non-cubic cells so each period holds a whole number of cells, a one-sided TFSF plane
+source, and reflection/transmission planes whose DFT fields are split into diffraction
+orders by a 2D FFT (``_fdtd/periodic.py``).
+
 Written against the Python array API: the same code runs on NumPy (CPU) and
 PyTorch (CPU/CUDA); on CUDA the time loop is replayed as CUDA graphs.
 Tabulated/library materials are fitted with
@@ -24,9 +30,10 @@ Tabulated/library materials are fitted with
 from __future__ import annotations
 
 from ..device import Device
-from ..results import Result
+from ..problems import LayerStackProblem, PeriodicProblem, options_for
+from ..results import Result, SpectrumResult
 from ..spec import Simulation
-from ._fdtd import scattering
+from ._fdtd import periodic, scattering
 from ._fdtd.media import fit_module, needs_fit
 from ._fdtd.options import FDTDOptions
 from .base import Backend, register, unsupported_outputs
@@ -42,9 +49,17 @@ class NativeFDTD(Backend):
     citation = ("Taflove & Hagness, Computational Electrodynamics (2005); Roden & Gedney, MOTL 27, 334 (2000); "
                 "Oskooi et al., CPC 181, 687 (2010)")
     gpu = True
+    problem_kinds = ("scattering", "periodic", "layer_stack")
 
     @classmethod
-    def supports(cls, sim: Simulation):
+    def supports(cls, sim):
+        if isinstance(sim, (PeriodicProblem, LayerStackProblem)):
+            ok, why = periodic.supports(sim)
+            if ok and any(needs_fit(m) for m in periodic._materials(sim)) and fit_module() is None:
+                ok, why = False, "tabulated/library materials need omniscatter.materials_fit"
+            return ok, why
+        if not isinstance(sim, Simulation):
+            return False, "FDTD solves scattering, periodic and layer_stack problems"
         why = unsupported_outputs(sim, near_field=True)
         if not why and any(needs_fit(m) for p in sim.particles for m in p.region_materials()) \
                 and fit_module() is None:
@@ -53,12 +68,20 @@ class NativeFDTD(Backend):
 
     @classmethod
     def _options(cls, sim) -> FDTDOptions:
-        return FDTDOptions.model_validate(sim.options_for(cls.name, cls.method))
+        return FDTDOptions.model_validate(options_for(sim, cls.name, cls.method))
 
     @classmethod
     def estimate(cls, sim, device: Device):
         opts = cls._options(sim)
         single = opts.precision == "single" or (opts.precision == "auto" and device.is_gpu)
+        if isinstance(sim, (PeriodicProblem, LayerStackProblem)):
+            p = periodic.plan(sim, opts, single)
+            c = p["cell"]
+            runs = 1 if isinstance(sim, LayerStackProblem) else len(sim.incidence.polarizations)
+            return {"grid": list(c.shape), "real_cells": list(c.n_cells) + [c.shape[2]], "cells": c.cells,
+                    "spacing_nm": list(c.spacing), "dt_fs": p["dt"] / scattering.FS, "steps_max": p["max_steps"],
+                    "runs": runs, "dft_stride": p["stride"], "precision": "single" if single else "double",
+                    "memory_bytes": p["memory_bytes"], "fits": c.cells <= opts.max_cells}
         p = scattering.plan(sim, opts, single)
         lay = p["layout"]
         return {"grid": list(lay.shape), "cells": lay.cells, "spacing_nm": p["dx"], "dt_fs": p["dt"] / scattering.FS,
@@ -67,10 +90,12 @@ class NativeFDTD(Backend):
                 "fits": lay.cells <= opts.max_cells, "warnings": p["warnings"]}
 
     @classmethod
-    def solve(cls, sim: Simulation, device: Device) -> Result:
+    def solve(cls, sim, device: Device) -> Result | SpectrumResult:
         ok, why = cls.supports(sim)
         if not ok:
             raise ValueError(f"{cls.name} {why}")
+        if isinstance(sim, (PeriodicProblem, LayerStackProblem)):
+            return periodic.solve(sim, cls._options(sim), device)
         out = scattering.solve(sim, cls._options(sim), device)
         res = Result.from_arrays(method=cls.method, backend=cls.name, wavelengths_nm=sim.wavelength_array(),
                                  c_ext=out["c_ext"], c_sca=out["c_sca"], c_abs=out["c_abs"],

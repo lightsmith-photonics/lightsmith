@@ -32,7 +32,7 @@ def time_step(dx: float, courant: float, media: list[Medium]) -> float:
 _TEST = np.stack(np.meshgrid(*[np.array([-0.5, 0.0, 0.5])] * 3, indexing="ij"), axis=-1).reshape(-1, 3)
 
 
-def voxelise(slot_fn, media: list[Medium], shape, origin, dx: float, roi_lo, roi_hi, *, subpixel: bool,
+def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *, subpixel: bool,
              samples: int = 8, chunk: int = 2048):
     """Material on the Yee E grid.
 
@@ -41,6 +41,7 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx: float, roi_lo, roi
     Returns (inv_eps[3, *shape] with 1/eps for non-dispersive cells and 1 for D-form cells,
     list of DispersiveGroup, stats dict)."""
     shape = tuple(shape)
+    dx = np.broadcast_to(np.asarray(dx, dtype=float), (3,))  # cell size per axis
     S = len(media)
     eps0 = media[0].eps_inf
     inv_eps = np.full((3,) + shape, 1.0 / eps0)
@@ -53,8 +54,7 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx: float, roi_lo, roi
     sub = ((np.arange(samples) + 0.5) / samples - 0.5)
     sub3 = np.stack(np.meshgrid(sub, sub, sub, indexing="ij"), axis=-1).reshape(-1, 3)
     for c in range(3):
-        I, J, K = np.meshgrid(*axes_idx, indexing="ij")
-        idx3 = np.stack([I, J, K], axis=-1).reshape(-1, 3)
+        idx3 = np.stack(np.meshgrid(*axes_idx, indexing="ij"), axis=-1).reshape(-1, 3)
         pos = origin + (idx3 + e_offset(c)) * dx
         center = slot_fn(pos)
         if subpixel:
@@ -85,7 +85,7 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx: float, roi_lo, roi
             frac = np.stack([(sl == s).mean(axis=1) for s in range(S)])  # (S, n)
             dom = np.argmax(frac, axis=0)
             chi = (sl == dom[:, None]).astype(float)
-            mom = (chi - chi.mean(axis=1, keepdims=True)) @ sub3  # (n, 3) first moment ~ normal
+            mom = (chi - chi.mean(axis=1, keepdims=True)) @ sub3 / dx  # (n, 3) first moment ~ normal
             nrm = np.linalg.norm(mom, axis=1)
             w = np.where(nrm > 1e-12, (mom[:, c] / np.where(nrm > 0, nrm, 1)) ** 2, 1 / 3)
             has_disp = (frac[disp] > 0).any(axis=0) if disp.any() else np.zeros(len(sel), bool)
@@ -213,3 +213,39 @@ def particle_slot_fn(sim, slot_of: list[list[int]]):
                 out[(region == r) & (out == 0)] = s
         return out
     return fn
+
+
+# --- time loop ---------------------------------------------------------------------
+
+
+def run_until_decayed(eng, opts, *, max_steps: int, min_steps: int, window: int, warnings: list[str]):
+    """Run chunks until the monitor energy has fallen below opts.decay_by of its peak (over a sliding
+    window of `window` chunks, after `min_steps`), or until max_steps / opts.run_time_fs.
+    Returns (steps, decay_level, used_cuda_graphs)."""
+    from collections import deque
+
+    from ...device import Device
+
+    run, graphs = eng.make_runner(opts.cuda_graphs)
+    win = deque(maxlen=max(3, int(window)))
+    peak, level, steps = 0.0, float("nan"), 0
+    try:
+        while steps < max_steps:
+            run()
+            steps += eng.stride
+            e = float(Device.to_numpy(eng.energy)[0])  # one sync per chunk
+            if not np.isfinite(e):
+                raise FloatingPointError(f"FDTD diverged after {steps} steps (non-finite fields); "
+                                         "lower courant or check the material model")
+            win.append(e)
+            peak = max(peak, e)
+            level = max(win) / peak if peak > 0 else float("nan")
+            if not opts.run_time_fs and steps >= min_steps and len(win) == win.maxlen and level < opts.decay_by:
+                break
+        else:
+            if not opts.run_time_fs:
+                warnings.append(f"fields had decayed only to {level:.1e} of peak at the time cap "
+                                f"({opts.max_time_fs} fs); raise max_time_fs or decay_by")
+    finally:
+        eng.release()
+    return steps, level, graphs

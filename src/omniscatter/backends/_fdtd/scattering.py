@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import math
 import time
-from collections import deque
 
 import numpy as np
 
@@ -13,7 +12,8 @@ from ...results import NearFieldData
 from .engine import DFTMonitor, Engine, PMLSpec, flat_index
 from .media import Medium, to_medium
 from .options import FDTDOptions
-from .setup import FS, flux, flux_points, particle_slot_fn, scattering_layout, time_step, voxelise
+from .setup import (FS, flux, flux_points, particle_slot_fn, run_until_decayed, scattering_layout, time_step,
+                    voxelise)
 from .tfsf import TFSFPlaneWave
 
 
@@ -138,33 +138,10 @@ def solve(sim, opts: FDTDOptions, device: Device):
     eng = Engine(device, shape=lay.shape, dx=dx, dt=dt, single=single, inv_eps=inv_eps, groups=groups, pml=pml,
                  sources=[src], monitors=monitors, dft_stride=stride)
     del inv_eps
-    run, graphs = eng.make_runner(opts.cuda_graphs)
-
-    # time loop with decay shutoff
-    min_steps = int(src.t_passed / dt)
-    window = deque(maxlen=max(3, int(math.ceil(2 * np.pi / (2 * np.pi / lam_max) / (stride * dt)))))
-    peak, level, steps = 0.0, float("nan"), 0
     t_loop = time.perf_counter()
-    try:
-        while steps < p["max_steps"]:
-            run()
-            steps += stride
-            e = float(Device.to_numpy(eng.energy)[0])  # one sync per chunk
-            if not np.isfinite(e):
-                raise FloatingPointError(f"FDTD diverged after {steps} steps (non-finite fields); "
-                                         "lower courant or check the material model")
-            window.append(e)
-            peak = max(peak, e)
-            level = max(window) / peak if peak > 0 else float("nan")
-            if (not opts.run_time_fs and steps >= min_steps and len(window) == window.maxlen
-                    and level < opts.decay_by):
-                break
-        else:
-            if not opts.run_time_fs:
-                warnings.append(f"fields had decayed only to {level:.1e} of peak at the time cap "
-                                f"({opts.max_time_fs} fs); raise max_time_fs or decay_by")
-    finally:
-        eng.release()
+    steps, level, graphs = run_until_decayed(
+        eng, opts, max_steps=p["max_steps"], min_steps=int(src.t_passed / dt),
+        window=math.ceil(lam_max / (stride * dt)), warnings=warnings)
     t_loop = time.perf_counter() - t_loop
 
     # cross sections
@@ -209,8 +186,8 @@ def _near_monitor(sim, lay):
         if i1 <= i0:
             raise ValueError("near_field plane lies outside the FDTD grid; reduce half_width_nm or offset_nm")
         rng.append(np.arange(i0, i1 + 1))
-    I, J, K = np.meshgrid(*rng, indexing="ij")
-    idx = np.concatenate([flat_index(c, I, J, K, lay.shape).ravel() for c in range(3)])
+    gi, gj, gk = np.meshgrid(*rng, indexing="ij")
+    idx = np.concatenate([flat_index(c, gi, gj, gk, lay.shape).ravel() for c in range(3)])
     om = 2 * np.pi / np.asarray(req.wavelengths_nm, dtype=float)
     return {"mon": DFTMonitor(om, idx), "inc": None, "ranges": rng, "omega": om}
 

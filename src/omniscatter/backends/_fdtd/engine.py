@@ -35,13 +35,17 @@ def shift(R: tuple, d: int, s: int) -> tuple:
     return tuple(R)
 
 
-def e_region(c: int, shape) -> tuple:
-    """Index region of E_c that is time-stepped (tangential E on the outer planes stays 0: PEC)."""
-    return tuple(slice(0, n - 1) if a == c else slice(1, n - 1) for a, n in enumerate(shape))
+def e_region(c: int, shape, periodic=(False, False, False)) -> tuple:
+    """Index region of E_c that is time-stepped (tangential E on the outer planes stays 0: PEC).
+
+    Along a periodic axis the arrays carry one ghost plane at each end (index 0 and n-1);
+    the real cells are 1..n-2 and the ghosts are refreshed every half step."""
+    return tuple(slice(1, n - 1) if (periodic[a] or a != c) else slice(0, n - 1) for a, n in enumerate(shape))
 
 
-def h_region(c: int, shape) -> tuple:
-    return tuple(slice(0, n) if a == c else slice(0, n - 1) for a, n in enumerate(shape))
+def h_region(c: int, shape, periodic=(False, False, False)) -> tuple:
+    return tuple(slice(1, n - 1) if periodic[a] else (slice(0, n) if a == c else slice(0, n - 1))
+                 for a, n in enumerate(shape))
 
 
 def flat_index(c, i, j, k, shape) -> np.ndarray:
@@ -76,6 +80,7 @@ class PMLSpec:
     kappa_max: float = 1.0
     alpha_max: float = 0.0  # CFS alpha (normalised units)
     eps_ref: float = 1.0  # sigma_opt is scaled for this permittivity
+    eps_ref_high: float | None = None  # a different one for the high side of every axis (e.g. a substrate)
 
 
 @dataclass
@@ -101,12 +106,18 @@ class DFTMonitor:
 
 
 class Engine:
-    def __init__(self, device: Device, *, shape, dx: float, dt: float, single: bool, inv_eps: np.ndarray,
+    def __init__(self, device: Device, *, shape, dx, dt: float, single: bool, inv_eps: np.ndarray,
                  groups: list[DispersiveGroup], pml: PMLSpec, sources: list, monitors: list[DFTMonitor],
-                 dft_stride: int):
+                 dft_stride: int, periodic=(False, False, False)):
+        """dx: cell size, or (dx, dy, dz) for non-cubic cells. periodic: per axis; those axes carry ghost
+        planes (see e_region) and no PML."""
         self.device, self.xp = device, device.namespace()
         xp = self.xp
-        self.shape, self.dx, self.dt, self.single = tuple(int(n) for n in shape), float(dx), float(dt), single
+        self.shape, self.dt, self.single = tuple(int(n) for n in shape), float(dt), single
+        self.spacing = tuple(float(v) for v in np.broadcast_to(np.asarray(dx, dtype=float), (3,)))
+        self.uniform = len(set(self.spacing)) == 1
+        self.dx = self.spacing[0]
+        self.periodic = tuple(bool(p) for p in periodic)
         self.rdt = xp.float32 if single else xp.float64
         self.cdt = xp.complex64 if single else xp.complex128
         self.stride = int(dft_stride)
@@ -119,9 +130,11 @@ class Engine:
         self.n = device.asarray(np.zeros(1, dtype=np.int64))  # completed steps (device counter)
         self.n_host = 0
 
-        cdx = self.dt / self.dx
-        self.RE = [e_region(c, self.shape) for c in range(3)]
-        self.RH = [h_region(c, self.shape) for c in range(3)]
+        # uniform cells: coefficients carry dt/dx; otherwise dt, and differences are scaled by 1/d_axis
+        cdx = self.dt / self.dx if self.uniform else self.dt
+        self.inv_d = tuple(1.0 / d for d in self.spacing)
+        self.RE = [e_region(c, self.shape, self.periodic) for c in range(3)]
+        self.RH = [h_region(c, self.shape, self.periodic) for c in range(3)]
         self.cbE = [self.asarray(cdx * inv_eps[c][self.RE[c]]) for c in range(3)]
         self.cH = cdx
         self._build_pml(pml, inv_eps)
@@ -148,22 +161,23 @@ class Engine:
     def _build_pml(self, spec: PMLSpec, inv_eps):
         """Precompute CPML terms. Each term: (target, comp, src, axis, slab region, b, c', k' or None, psi)."""
         self.pml_E, self.pml_H = [], []
-        dt, dx = self.dt, self.dx
+        dt = self.dt
         for d in range(3):
             lo_n, hi_n = spec.cells[d]
             if not (lo_n or hi_n):
                 continue
+            if self.periodic[d]:
+                raise ValueError("a periodic axis cannot have a PML")
             N = self.shape[d]
-            sig_max_lo = 0.8 * (spec.m + 1) / (np.sqrt(spec.eps_ref) * dx)
+            dx = self.spacing[d]
+            sig_lo = 0.8 * (spec.m + 1) / (np.sqrt(spec.eps_ref) * dx)
+            sig_hi = 0.8 * (spec.m + 1) / (np.sqrt(spec.eps_ref_high or spec.eps_ref) * dx)
 
             def profile(u):
-                rho = np.zeros_like(u)
-                if lo_n:
-                    rho = np.maximum(rho, (lo_n - u) / lo_n)
-                if hi_n:
-                    rho = np.maximum(rho, (u - (N - 1 - hi_n)) / hi_n)
-                rho = np.clip(rho, 0, 1)
-                sig = sig_max_lo * rho**spec.m
+                r_lo = np.clip((lo_n - u) / lo_n, 0, 1) if lo_n else np.zeros_like(u)
+                r_hi = np.clip((u - (N - 1 - hi_n)) / hi_n, 0, 1) if hi_n else np.zeros_like(u)
+                rho = np.maximum(r_lo, r_hi)
+                sig = np.where(r_lo >= r_hi, sig_lo, sig_hi) * rho**spec.m
                 kap = 1 + (spec.kappa_max - 1) * rho**spec.m
                 alp = spec.alpha_max * (1 - rho) * (rho > 0)
                 b = np.exp(-(sig / kap + alp) * dt)
@@ -201,10 +215,13 @@ class Engine:
                         bb, cc, kk = profile(u)
                         bshape = [1, 1, 1]
                         bshape[d] = b_ - a
+                        cd = dt / dx if self.uniform else dt
                         if field_ == "E":
-                            scale = (dt / dx) * inv_eps[c][Rs]  # slab-shaped
+                            scale = cd * inv_eps[c][Rs]  # slab-shaped
                         else:
-                            scale = np.full([s.stop - s.start for s in Rs], dt / dx)
+                            scale = np.full([s.stop - s.start for s in Rs], cd)
+                        if not self.uniform:
+                            scale = scale / dx
                         cprime = sgn * scale * cc.reshape(bshape)
                         kprime = sgn * scale * (1 / kk - 1).reshape(bshape)
                         has_k = bool(np.any(kk > 1))
@@ -244,16 +261,40 @@ class Engine:
             self.energy[...] = energy
 
     # --- time stepping -----------------------------------------------------------
+    def _ghosts(self, F, low: bool):
+        """Refresh periodic ghost planes: E's high ghost (read by the H update), H's low ghost (E update)."""
+        for a, per in enumerate(self.periodic):
+            if not per:
+                continue
+            n = self.shape[a]
+            dst, src = (0, n - 2) if low else (n - 1, 1)
+            ix_d = [slice(None)] * 4
+            ix_s = [slice(None)] * 4
+            ix_d[a + 1], ix_s[a + 1] = slice(dst, dst + 1), slice(src, src + 1)
+            F[tuple(ix_d)] = F[tuple(ix_s)]
+
+    def _curl(self, F, c, R, sgn: int, coef):
+        """coef * curl(F)_c over region R; sgn=+1 forward differences (H update), -1 backward (E update)."""
+        d1, d2 = (c + 1) % 3, (c + 2) % 3
+        if sgn > 0:
+            a = F[d2][shift(R, d1, 1)] - F[d2][R]
+            b = F[d1][shift(R, d2, 1)] - F[d1][R]
+        else:
+            a = F[d2][R] - F[d2][shift(R, d1, -1)]
+            b = F[d1][R] - F[d1][shift(R, d2, -1)]
+        if not self.uniform:
+            a *= self.inv_d[d1]
+            b *= self.inv_d[d2]
+        a -= b
+        a *= coef
+        return a
+
     def _update_H(self):
         E, H = self.E, self.H
+        if any(self.periodic):
+            self._ghosts(E, low=False)
         for c in range(3):
-            d1, d2 = (c + 1) % 3, (c + 2) % 3
-            R = self.RH[c]
-            curl = E[d2][shift(R, d1, 1)] - E[d2][R]
-            curl -= E[d1][shift(R, d2, 1)]
-            curl += E[d1][R]
-            curl *= self.cH
-            H[c][R] -= curl
+            H[c][self.RH[c]] -= self._curl(E, c, self.RH[c], 1, self.cH)
         for c, src, d, Rs, b, cp, kp, psi in self.pml_H:
             der = E[src][shift(Rs, d, 1)] - E[src][Rs]
             psi *= b
@@ -265,14 +306,10 @@ class Engine:
 
     def _update_E(self):
         E, H = self.E, self.H
+        if any(self.periodic):
+            self._ghosts(H, low=True)
         for c in range(3):
-            d1, d2 = (c + 1) % 3, (c + 2) % 3
-            R = self.RE[c]
-            curl = H[d2][R] - H[d2][shift(R, d1, -1)]
-            curl -= H[d1][R]
-            curl += H[d1][shift(R, d2, -1)]
-            curl *= self.cbE[c]
-            E[c][R] += curl
+            E[c][self.RE[c]] += self._curl(H, c, self.RE[c], -1, self.cbE[c])
         for c, src, d, Rs, b, cp, kp, psi in self.pml_E:
             der = H[src][Rs] - H[src][shift(Rs, d, -1)]
             psi *= b
@@ -348,7 +385,7 @@ class _Group:
     fraction-weighted mixture. Both reduce to the standard update for pure cells."""
 
     def __init__(self, eng: Engine, g: DispersiveGroup):
-        xp, dt = eng.xp, eng.dt
+        dt = eng.dt
         n = len(g.idx)
         self.idx = eng.index(g.idx)
         self.D = eng.zeros((n,))

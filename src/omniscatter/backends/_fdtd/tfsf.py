@@ -49,13 +49,18 @@ def _matched_eps_1d(khat, omega, dt, dx, eps_b) -> float:
 
 class TFSFPlaneWave:
     def __init__(self, *, shape, origin, dx, dt, r0, lo, hi, khat, ehat, eps_b, omega_c, omega_half,
-                 max_steps: int):
-        self.shape, self.dx, self.dt = tuple(shape), float(dx), float(dt)
+                 max_steps: int, periodic=(False, False, False)):
+        """dx: cell size or (dx, dy, dz). lo/hi: TFSF box in node-index units; faces outside the grid
+        (e.g. +-1e9 along periodic axes) produce no corrections, giving a one-sided plane source."""
+        spacing = np.broadcast_to(np.asarray(dx, dtype=float), (3,)).copy()
+        self.shape, self.dx, self.dt = tuple(shape), float(spacing[0]), float(dt)
         self.khat, self.ehat = np.asarray(khat, float), np.asarray(ehat, float)
         self.hhat = np.cross(self.khat, self.ehat)
         self.eps_b = float(eps_b)
         self.axis_aligned = int(np.sum(np.abs(self.khat) > 1e-12)) == 1
-        self.eps_1d = self.eps_b if self.axis_aligned else _matched_eps_1d(self.khat, omega_c, dt, dx, eps_b)
+        if not self.axis_aligned and len(set(spacing)) > 1:
+            raise ValueError("oblique TFSF incidence needs cubic cells")
+        self.eps_1d = self.eps_b if self.axis_aligned else _matched_eps_1d(self.khat, omega_c, dt, spacing[0], eps_b)
         origin, r0 = np.asarray(origin, float), np.asarray(r0, float)
         lo, hi = np.asarray(lo), np.asarray(hi)
 
@@ -64,7 +69,7 @@ class TFSFPlaneWave:
         for kind in ("E", "H"):
             proj = self.hhat if kind == "E" else self.ehat  # E corrections need H_inc and vice versa
             for c in range(3):
-                R = e_region(c, shape) if kind == "E" else h_region(c, shape)
+                R = e_region(c, shape, periodic) if kind == "E" else h_region(c, shape, periodic)
                 off = _offsets(kind, c)
                 d1, d2 = (c + 1) % 3, (c + 2) % 3
                 for d, g, s in ((d1, d2, 1.0), (d2, d1, -1.0)):
@@ -100,14 +105,14 @@ class TFSFPlaneWave:
                                 else:
                                     axes.append(np.array([u[i] + du]))
                             q = np.stack(np.meshgrid(*axes, indexing="ij"), axis=-1)  # index coords of q
-                            sq = (origin + q * dx - r0) @ self.khat
-                            coef = s * sign_q * delta[i] * (dt / dx) * proj[g]
+                            sq = (origin + q * spacing - r0) @ self.khat
+                            coef = s * sign_q * delta[i] * (dt / spacing[d]) * proj[g]
                             if kind == "E":
                                 coef /= eps_b
                             raw.append((kind, c, tuple(region), coef, sq))
 
         s_all = np.concatenate([r[4].ravel() for r in raw] + [np.zeros(1)])
-        ds = dx
+        ds = float(spacing[int(np.argmax(np.abs(self.khat)))]) if self.axis_aligned else float(spacing[0])
         self.m_src = PML1D + 2
         self.m0 = int(self.m_src + 4 + np.ceil(-s_all.min() / ds))
         m_max = self.m0 + int(np.ceil(s_all.max() / ds)) + 4
