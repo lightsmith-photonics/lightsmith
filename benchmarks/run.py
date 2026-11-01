@@ -1,8 +1,8 @@
-"""Cross-method benchmark runner for omniscatter.
+"""Cross-method benchmark runner for lightsmith.
 
 For every problem x backend x device x variant x resolution it records cross
 sections, relative error against a reference, wall time, peak memory and
-provenance. Backends are discovered at runtime (`osc.all_backends()`,
+provenance. Backends are discovered at runtime (`ls.all_backends()`,
 `available()`, `supports(sim)`), so new backends join the benchmark without
 changes here, provided they expose a resolution option this file knows how to
 map (see RESOLUTION_ADAPTERS).
@@ -49,7 +49,7 @@ import numpy as np
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-import omniscatter as osc  # noqa: E402
+import lightsmith as ls  # noqa: E402
 from problems import build_suite  # noqa: E402
 
 # Method preference when no Mie reference exists (most accurate first).
@@ -145,7 +145,7 @@ def device_list(arg: str) -> list[str]:
             continue
         if d == "gpu":
             try:
-                osc.resolve_device("gpu")
+                ls.resolve_device("gpu")
             except Exception as e:  # noqa: BLE001
                 print(f"[run] gpu requested but unavailable: {e}", file=sys.stderr)
                 continue
@@ -188,8 +188,8 @@ def measure(fn, device: str):
 def warmup(devices, backends):
     """Pay one-off costs (numba JIT, CUDA context, cuFFT plans, CUDA graphs) before timing.
     Only tiny problems: anything whose estimate is not tiny is skipped."""
-    sim = osc.Simulation(particles=[osc.Particle(shape=osc.Sphere(radius_nm=10),
-                                                 material=osc.Drude(eps_inf=9.5, wp_ev=9.0, gamma_ev=0.07))],
+    sim = ls.Simulation(particles=[ls.Particle(shape=ls.Sphere(radius_nm=10),
+                                                 material=ls.Drude(eps_inf=9.5, wp_ev=9.0, gamma_ev=0.07))],
                          wavelengths=[500.0], medium_index=1.33,
                          options={"dda": {"dipoles_per_diameter": 6}, "fdtd": {"spacing_nm": 4.0}})
     tiny = {"max_dipoles": 2000, "max_cells": 2e5, "max_cell_steps": 3e8}
@@ -199,10 +199,10 @@ def warmup(devices, backends):
                 if not (b.available()[0] and b.supports(sim)[0]):
                     continue
                 lim = tiny if dev == "cpu" else {**tiny, "max_cells": 2e6, "max_cell_steps": 5e9}
-                if budget_violation(osc.estimate(sim, b.name, dev), lim):
+                if budget_violation(ls.estimate(sim, b.name, dev), lim):
                     continue
                 t0 = time.perf_counter()
-                osc.solve(sim, b.name, dev)
+                ls.solve(sim, b.name, dev)
                 print(f"[warmup] {b.name}/{dev} {time.perf_counter() - t0:.1f}s", flush=True)
             except Exception as e:  # noqa: BLE001
                 print(f"[warmup] {b.name}/{dev} failed: {type(e).__name__}: {e}", flush=True)
@@ -243,7 +243,7 @@ def budget_violation(est: dict, budget: dict) -> str | None:
 
 def plan_problem(problem, backends, devices, budgets, max_mem_gb, extra_options):
     """List of run dicts (not yet executed) and skips for one problem."""
-    sim = osc.Simulation.model_validate(problem["simulation"])
+    sim = ls.Simulation.model_validate(problem["simulation"])
     runs, skips = [], []
     for b in backends:
         ok, why = b.available()
@@ -271,7 +271,7 @@ def plan_problem(problem, backends, devices, budgets, max_mem_gb, extra_options)
                             **variant_options(b, variant, field, val)}
                     run_sim = sim.model_copy(update={"options": {**sim.options, b.name: opts}})
                     try:
-                        est = osc.estimate(run_sim, b.name, dev)
+                        est = ls.estimate(run_sim, b.name, dev)
                     except Exception as e:  # noqa: BLE001
                         skips.append({"backend": b.name, "device": dev, "variant": variant, "resolution": v,
                                       "reason": f"estimate failed: {type(e).__name__}: {e}"})
@@ -313,7 +313,7 @@ def execute(run) -> dict:
            "option_field": run["option_field"], "option_value": run["option_value"],
            "estimate": run["estimate"], "options": run["sim"].options.get(b.name, {})}
     try:
-        res, wall, peak, kind = measure(lambda: osc.solve(run["sim"], b.name, dev), dev)
+        res, wall, peak, kind = measure(lambda: ls.solve(run["sim"], b.name, dev), dev)
     except Exception as e:  # noqa: BLE001
         rec.update(status="error", message=f"{type(e).__name__}: {e}", traceback=traceback.format_exc(limit=3))
         return rec
@@ -434,7 +434,7 @@ def environment(args, backends) -> dict:
         "timestamp": _dt.datetime.now().isoformat(timespec="seconds"),
         "command": sys.argv, "args": vars(args) | {"out": str(args.out)},
         "python": sys.version, "platform": platform.platform(), "cpu": cpu,
-        "omniscatter_version": osc.__version__, "doctor": osc.doctor(),
+        "lightsmith_version": ls.__version__, "doctor": ls.doctor(),
         "backends": [b.info() for b in backends],
         "git_commit": sh(["git", "rev-parse", "HEAD"]) or "uncommitted",
         "git_dirty": bool(sh(["git", "status", "--porcelain"])),
@@ -466,7 +466,7 @@ def main(argv=None):
     for k, v in json.loads(args.extra_options).items():
         extra[k] = {**extra.get(k, {}), **v}
     wanted = {m.strip() for m in args.methods.split(",") if m.strip()}
-    backends = [b for b in osc.all_backends() if not wanted or b.method in wanted or b.name in wanted]
+    backends = [b for b in ls.all_backends() if not wanted or b.method in wanted or b.name in wanted]
     devices = device_list(args.devices)
     problems = suite["problems"]
     if args.problems:

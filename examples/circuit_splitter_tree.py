@@ -13,9 +13,9 @@ from pathlib import Path
 
 import numpy as np
 
-import omniscatter as osc
-from omniscatter.circuits import write_touchstone
-from omniscatter.problems import CircuitProblem
+import lightsmith as ls
+from lightsmith.circuits import write_touchstone
+from lightsmith.problems import CircuitProblem
 
 LEVELS = 2
 mmi = {"component": "mmi1x2", "settings": {"loss_db": 0.2, "bandwidth_1db_nm": 60.0}}
@@ -34,7 +34,7 @@ ports = {"in": "mmi_0_0,o1", **{f"out{i + 1}": ref for i, ref in enumerate(leave
 
 tree = CircuitProblem(instances=instances, connections=connections, ports=ports,
                       wavelengths={"start_nm": 1500, "stop_nm": 1600, "num": 101})
-res = osc.solve(tree, device="cpu")
+res = ls.solve(tree, device="cpu")
 wl = np.asarray(res.wavelengths_nm)
 s = res.s()
 p_out = np.abs(s[:, 1:, 0]) ** 2  # [wavelength, output]

@@ -1,4 +1,4 @@
-"""Generate the omniscatter cross-method benchmark problem suites as JSON specs.
+"""Generate the lightsmith cross-method benchmark problem suites as JSON specs.
 
 Each problem is a plain dict:
 
@@ -7,7 +7,7 @@ Each problem is a plain dict:
       "family": "metal_sphere",
       "params": {...},                     # physical parameters, for tables and regime maps
       "map_axes": ["radius_nm", "medium"],  # which params a regime map should use as x / y
-      "simulation": {...},                 # an omniscatter Simulation, schema 0.1, without solver options
+      "simulation": {...},                 # an lightsmith Simulation, schema 0.1, without solver options
       "sweeps": {                          # resolution ladders per method (semantic quantity + values)
         "dda": {"quantity": "dipoles_per_diameter", "values": [...]},
         "fdtd": {"quantity": "mesh_nm", "values": [...]},
@@ -314,11 +314,11 @@ def build_suite(name: str) -> dict:
 
 
 def validate(suite: dict) -> None:
-    """Every simulation must validate against the installed omniscatter schema."""
-    import omniscatter as osc
+    """Every simulation must validate against the installed lightsmith schema."""
+    import lightsmith as ls
 
     for p in suite["problems"]:
-        osc.Simulation.model_validate(p["simulation"])
+        ls.Simulation.model_validate(p["simulation"])
 
 
 def main(argv=None):

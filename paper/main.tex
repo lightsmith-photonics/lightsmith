@@ -1,6 +1,6 @@
 \documentclass[11pt]{article}
 % Lightsmith technical report (arXiv). Build notes: paper/README.md; arXiv metadata: paper/ARXIV.md.
-% The Python package is still imported as `omniscatter` while the rename to `lightsmith` lands.
+% The Python package is still imported as `lightsmith` while the rename to `lightsmith` lands.
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
@@ -176,7 +176,7 @@ Kind & Describes & Solvers \\
 \code{circuit} & netlists of compact models; circuit S-matrices & circuit solver \\
 \bottomrule
 \end{tabularx}
-\caption{Problem kinds (\code{src/omniscatter/problems.py}) and the backends that accept them. An
+\caption{Problem kinds (\code{src/lightsmith/problems.py}) and the backends that accept them. An
 eighth kind, \code{optimization}, wraps a \code{device} problem with design regions and objectives
 for inverse design (Section~\ref{sec:fdfd}).}
 \label{tab:kinds}
@@ -205,7 +205,7 @@ can solve a problem and if not why, and \code{solve(problem, device)}, plus opti
 \code{available()} and \code{estimate(problem, device)}. With \code{method="auto"} the most
 accurate applicable backend is chosen (for scattering: Mie, then T-matrix, then DDA, then FDTD),
 and the reasons others were skipped are returned. Third-party backends register through the
-\code{omniscatter.backends} entry-point group. The core is MIT-licensed and depends only on
+\code{lightsmith.backends} entry-point group. The core is MIT-licensed and depends only on
 permissive packages; GPL solvers (e.g.\ a scattnlay \cite{PenaPal2009} wrapper) live in separate
 plugin packages, so installing the core never changes the licence of a user's work.
 
@@ -810,7 +810,7 @@ scripts, the problem suites (JSON) and the raw results of every run reported her
 provenance) are in \code{benchmarks/}. \todo{archive the release and results with a DOI at
 submission.} Bundled optical constants come from the refractiveindex.info database (CC0)
 \cite{Polyanskiy2024}; please also cite the original dataset papers listed with each material and the
-backends used (\code{omniscatter backends}).
+backends used (\code{lightsmith backends}).
 
 \section*{Acknowledgements}
 \todo{funding and thanks.}

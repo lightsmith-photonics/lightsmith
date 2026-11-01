@@ -4,7 +4,7 @@ A 2 x 2 um design region joins a horizontal input waveguide (port o1) to a verti
 output waveguide (port o2). We maximise the worst-case |S21|^2 over 1500-1600 nm,
 with a conic filter, tanh projection with beta-continuation and a 100 nm minimum
 feature size, using globally convergent MMA. The final binary design is exported
-to omniscatter Structures (re-simulated for validation) and to GDS.
+to lightsmith Structures (re-simulated for validation) and to GDS.
 
     uv run python examples/inverse_design_bend.py [--device auto|cpu|gpu] [--iters 60]
 
@@ -21,12 +21,12 @@ import time
 
 import numpy as np
 
-import omniscatter as osc
-from omniscatter import inverse
-from omniscatter.problems import DeviceProblem, Port, Prism, Rectangle, Structure
+import lightsmith as ls
+from lightsmith import inverse
+from lightsmith.problems import DeviceProblem, Port, Prism, Rectangle, Structure
 
-SI = osc.ConstantIndex(n_real=3.48)
-SIO2 = osc.ConstantIndex(n_real=1.44)
+SI = ls.ConstantIndex(n_real=3.48)
+SIO2 = ls.ConstantIndex(n_real=1.44)
 W, HALF = 450.0, 1000.0  # waveguide width; half-size of the design region (nm)
 
 
@@ -66,7 +66,7 @@ def main() -> None:
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
     spec = build_problem(args.iters)
-    print(osc.estimate(spec.device, method="fdfd", device=args.device))
+    print(ls.estimate(spec.device, method="fdfd", device=args.device))
 
     def progress(s: inverse.IterationState) -> None:
         print(f"it {s.iteration:3d}  objective {s.objective:+.4f}  beta {s.beta:5.1f}  "

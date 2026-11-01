@@ -3,14 +3,14 @@
 import numpy as np
 import pytest
 
-import omniscatter as osc
-from omniscatter.backends._fde import port_modes
-from omniscatter.backends.eme import NativeEME
-from omniscatter.problems import Box, DeviceProblem, Polygon, Port, Prism, Structure
+import lightsmith as ls
+from lightsmith.backends._fde import port_modes
+from lightsmith.backends.eme import NativeEME
+from lightsmith.problems import Box, DeviceProblem, Polygon, Port, Prism, Structure
 
-SI, SIO2 = osc.ConstantIndex(n_real=3.476), osc.ConstantIndex(n_real=1.444)
+SI, SIO2 = ls.ConstantIndex(n_real=3.476), ls.ConstantIndex(n_real=1.444)
 # 2D devices: core = slab effective index of 220 nm SOI (TE), cladding SiO2.
-CORE, CLAD = osc.ConstantIndex(n_real=2.85), osc.ConstantIndex(n_real=1.44)
+CORE, CLAD = ls.ConstantIndex(n_real=2.85), ls.ConstantIndex(n_real=1.44)
 
 
 def port2d(name, x, y=0.0, width=2000.0, direction="+"):
@@ -28,7 +28,7 @@ def straight3d(length=2000.0, width=500.0, num_modes=2):
 
 
 def test_uniform_waveguide_3d_transmits_fully_with_the_fde_phase():
-    r = osc.solve(straight3d(), "eme")
+    r = ls.solve(straight3d(), "eme")
     s = r.s()[0]
     assert r.ports == ["o1@0", "o1@1", "o2@0", "o2@1"]
     np.testing.assert_allclose(np.abs(s[2:, :2]), np.eye(2), atol=1e-6)  # TE0 -> TE0, TM0 -> TM0
@@ -45,7 +45,7 @@ def test_uniform_waveguide_2d():
                       background=CLAD, domain_size_nm=(L, 4000, 0), wavelengths=[1500, 1550],
                       ports=[port2d("o1", -L / 2), port2d("o2", L / 2, direction="-")],
                       options={"eme": {"num_modes": 10}})
-    s = osc.solve(p, "eme").s()
+    s = ls.solve(p, "eme").s()
     np.testing.assert_allclose(np.abs(s[:, 1, 0]), 1, atol=1e-5)
     assert np.abs(s[:, 0, 0]).max() < 1e-6
 
@@ -58,7 +58,7 @@ def test_width_step_3d_is_reciprocal_and_passive():
         ports=[Port(name="o1", center_nm=(-1000, 0, 0), size_nm=(0, 2000, 1500), direction="+"),
                Port(name="o2", center_nm=(1000, 0, 0), size_nm=(0, 2000, 1500), direction="-")],
         options={"eme": {"num_modes": 8, "grid_spacing_nm": 25}})
-    r = osc.solve(p, "eme")
+    r = ls.solve(p, "eme")
     s = r.s()[0]
     assert r.provenance["cells"] == 2
     assert abs(s[1, 0] - s[0, 1]) < 1e-6  # reciprocity
@@ -82,7 +82,7 @@ def taper(length, w1=500.0, w2=3000.0):
 def test_linear_taper_approaches_adiabatic_limit():
     t = []
     for length in (1000, 3000, 10000, 30000):
-        s = osc.solve(taper(length), "eme").s()[0]
+        s = ls.solve(taper(length), "eme").s()[0]
         t.append(abs(s[1, 0]) ** 2)
         assert abs(s[1, 0] - s[0, 1]) < 1e-3
     assert np.all(np.diff(t) > 0), t
@@ -112,7 +112,7 @@ def test_mmi_1x2_self_imaging_length():
     fs = np.array([0.85, 0.9, 0.95, 1.0, 1.05, 1.1])
     out = []
     for f in fs:
-        r = osc.solve(mmi(f * l_th), "eme")
+        r = ls.solve(mmi(f * l_th), "eme")
         s = np.abs(r.s()[0]) ** 2
         assert s[1, 0] == pytest.approx(s[2, 0], rel=1e-6)  # 50/50
         out.append(s[1, 0] + s[2, 0])
@@ -139,5 +139,5 @@ def test_supports_explains_unsuitable_devices():
     ok, why = NativeEME.supports(three)
     assert not ok and "two opposite planes" in why
     assert NativeEME.supports(base) == (True, "")
-    est = osc.estimate(base, "eme")
+    est = ls.estimate(base, "eme")
     assert est["axis"] == "x" and est["fits"]

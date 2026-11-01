@@ -1,12 +1,12 @@
 import numpy as np
 import pytest
 
-import omniscatter as osc
-from omniscatter.backends.tmm import optimize_thicknesses, tmm_tensors
-from omniscatter.device import _torch_cuda
-from omniscatter.problems import Layer, LayerStackProblem
+import lightsmith as ls
+from lightsmith.backends.tmm import optimize_thicknesses, tmm_tensors
+from lightsmith.device import _torch_cuda
+from lightsmith.problems import Layer, LayerStackProblem
 
-CI = osc.ConstantIndex
+CI = ls.ConstantIndex
 
 
 def stack(layers=(), sup=1.0, sub=1.5, wl=(500.0,), angles=(0.0,), pols=("s", "p"), **kw):
@@ -36,7 +36,7 @@ def fresnel(n1, n2, theta):
 
 def test_fresnel_single_interface():
     th = np.array([0.0, 20.0, 45.0, 70.0, 89.0])
-    res = osc.solve(stack(angles=th), "tmm", "cpu")
+    res = ls.solve(stack(angles=th), "tmm", "cpu")
     rs, rp, ts, tp, ct = fresnel(1.0, 1.5, np.radians(th))
     np.testing.assert_allclose(amp(res, "r_amplitude", "s")[:, 0], rs, atol=1e-13)
     np.testing.assert_allclose(amp(res, "r_amplitude", "p")[:, 0], rp, atol=1e-13)
@@ -49,14 +49,14 @@ def test_fresnel_single_interface():
 
 def test_brewster_angle():
     th_b = np.degrees(np.arctan(1.5))
-    res = osc.solve(stack(angles=[th_b]), "tmm", "cpu")
+    res = ls.solve(stack(angles=[th_b]), "tmm", "cpu")
     assert res.r["p"][0][0] < 1e-28
     assert res.r["s"][0][0] > 0.14
 
 
 def test_total_internal_reflection():
     th = np.array([45.0, 60.0, 80.0])  # critical angle glass -> air is 41.8 deg
-    res = osc.solve(stack(sup=1.5, sub=1.0, angles=th), "tmm", "cpu")
+    res = ls.solve(stack(sup=1.5, sub=1.0, angles=th), "tmm", "cpu")
     for p in "sp":
         np.testing.assert_allclose(res.r[p], 1.0, atol=1e-14)
         np.testing.assert_allclose(res.t[p], 0.0, atol=1e-14)
@@ -68,16 +68,16 @@ def test_total_internal_reflection():
 def test_frustrated_tir_and_energy_conservation():
     # Glass / thin air gap / glass beyond the critical angle: light tunnels through the gap.
     gaps = [50.0, 200.0, 800.0]
-    t = [osc.solve(stack([(1.0, g)], sup=1.5, sub=1.5, angles=[50.0]), "tmm", "cpu").t["s"][0][0] for g in gaps]
+    t = [ls.solve(stack([(1.0, g)], sup=1.5, sub=1.5, angles=[50.0]), "tmm", "cpu").t["s"][0][0] for g in gaps]
     assert 1 > t[0] > t[1] > t[2] > 0 and t[2] < 1e-3
     rng = np.random.default_rng(1)
     lossless = stack([(n, d) for n, d in zip(rng.uniform(1.3, 2.5, 12), rng.uniform(20, 300, 12))],
                      wl=np.linspace(400, 900, 26), angles=[0, 30, 60, 85])
-    res = osc.solve(lossless, "tmm", "cpu")
+    res = ls.solve(lossless, "tmm", "cpu")
     for p in "sp":
         np.testing.assert_allclose(np.asarray(res.r[p]) + np.asarray(res.t[p]), 1.0, atol=1e-12)
         np.testing.assert_allclose(res.a[p], 0.0, atol=1e-12)
-    lossy = osc.solve(stack([(complex(2.0, 0.3), 40.0), (1.4, 90.0)], wl=[450, 600], angles=[0, 40]), "tmm", "cpu")
+    lossy = ls.solve(stack([(complex(2.0, 0.3), 40.0), (1.4, 90.0)], wl=[450, 600], angles=[0, 40]), "tmm", "cpu")
     for p in "sp":
         a = np.asarray(lossy.a[p])
         assert np.all((a > 0.01) & (a < 1))
@@ -88,7 +88,7 @@ def test_quarter_wave_ar_coating():
     n_s, lam0 = 1.52, 550.0
     n_c = np.sqrt(n_s)
     wl = np.linspace(450, 650, 41)
-    res = osc.solve(stack([(n_c, lam0 / (4 * n_c))], sub=n_s, wl=wl, pols=["s"]), "tmm", "cpu")
+    res = ls.solve(stack([(n_c, lam0 / (4 * n_c))], sub=n_s, wl=wl, pols=["s"]), "tmm", "cpu")
     r = np.asarray(res.r["s"][0])
     assert r[np.argmin(np.abs(wl - lam0))] < 1e-28
     # Single-film Airy formula as an independent closed form.
@@ -102,7 +102,7 @@ def test_bragg_mirror_stop_band():
     layers = [(n_h, lam0 / (4 * n_h)), (n_l, lam0 / (4 * n_l))] * pairs
     half = (2 / np.pi) * np.arcsin((n_h - n_l) / (n_h + n_l))  # relative half-width in frequency
     x = np.linspace(-3, 3, 241)  # frequency offset in units of the half-width
-    res = osc.solve(stack(layers, sub=n_s, wl=lam0 / (1 + x * half), pols=["s"]), "tmm", "cpu")
+    res = ls.solve(stack(layers, sub=n_s, wl=lam0 / (1 + x * half), pols=["s"]), "tmm", "cpu")
     r = np.asarray(res.r["s"][0])
     y = (n_h / n_l) ** (2 * pairs) * n_s
     assert r[120] == pytest.approx(((1 - y) / (1 + y)) ** 2, abs=1e-12)  # centre: admittance (n_h/n_l)^2N n_s
@@ -112,7 +112,7 @@ def test_bragg_mirror_stop_band():
 
 def test_incoherent_thick_slab_matches_closed_form():
     n, k, d, lam = 1.5, 2e-6, 1e6, 600.0  # 1 mm weakly absorbing slab in air
-    res = osc.solve(stack([(complex(n, k), d)], sub=1.0, wl=[lam], coherent=False), "tmm", "cpu")
+    res = ls.solve(stack([(complex(n, k), d)], sub=1.0, wl=[lam], coherent=False), "tmm", "cpu")
     eps = complex(n, k) ** 2
     r1 = abs((1 - np.sqrt(eps)) / (1 + np.sqrt(eps))) ** 2
     p = np.exp(-4 * np.pi * np.sqrt(eps).imag * d / lam)
@@ -129,7 +129,7 @@ def test_incoherent_equals_phase_averaged_coherent():
     film = (1.38, 99.6)
     p_inc = stack([film, (1.52, slab)], sub=1.33, wl=[lam], angles=[angle])
     p_inc = p_inc.model_copy(update={"layers": [p_inc.layers[0], p_inc.layers[1].model_copy(update={"coherent": False})]})
-    inc = osc.solve(p_inc, "tmm", "cpu")
+    inc = ls.solve(p_inc, "tmm", "cpu")
     # Sweep the slab thickness over one fringe period (lam / (2 n cos theta_t)) and average.
     n_s = 1.52
     cos_t = np.sqrt(1 - (np.sin(np.radians(angle)) / n_s) ** 2)
@@ -149,7 +149,7 @@ def test_incoherent_equals_phase_averaged_coherent():
 def test_tmm_matches_rcwa_for_unpatterned_stack():
     p = stack([(complex(2.0, 0.2), 80.0), (1.38, 120.0), (complex(0.2, 3.0), 15.0)], sub=1.5,
               wl=np.linspace(400, 800, 9), angles=[0, 35, 70])
-    a, b = osc.solve(p, "tmm", "cpu"), osc.solve(p, "rcwa", "cpu")
+    a, b = ls.solve(p, "tmm", "cpu"), ls.solve(p, "rcwa", "cpu")
     for pol in "sp":
         for q in ("r", "t", "a"):
             np.testing.assert_allclose(getattr(a, q)[pol], getattr(b, q)[pol], atol=1e-12)
@@ -159,7 +159,7 @@ def test_tmm_matches_rcwa_for_unpatterned_stack():
 
 def test_rcwa_refuses_incoherent_layers():
     p = stack([(1.5, 1e6)], coherent=False)
-    ok, why = osc.get_backend("rcwa", kind="layer_stack").supports(p)
+    ok, why = ls.get_backend("rcwa", kind="layer_stack").supports(p)
     assert not ok and "incoherent" in why
 
 
@@ -201,7 +201,7 @@ def test_tmm_gpu_matches_cpu():
     rng = np.random.default_rng(0)
     p = stack([(n, d) for n, d in zip(rng.uniform(1.3, 2.5, 20), rng.uniform(20, 200, 20))],
               wl=np.linspace(400, 900, 101), angles=np.linspace(0, 80, 9))
-    cpu, gpu = osc.solve(p, "tmm", "cpu"), osc.solve(p, "tmm", "gpu")
+    cpu, gpu = ls.solve(p, "tmm", "cpu"), ls.solve(p, "tmm", "gpu")
     assert gpu.provenance["framework"] == "torch"
     for pol in "sp":
         np.testing.assert_allclose(gpu.r[pol], cpu.r[pol], atol=1e-12)

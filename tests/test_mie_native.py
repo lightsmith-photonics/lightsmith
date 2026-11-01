@@ -1,19 +1,19 @@
 import numpy as np
 import pytest
 
-import omniscatter as osc
-from omniscatter.backends.mie_native import mie_cross_sections
-from omniscatter.device import _torch_cuda
-from omniscatter.spec import FarFieldRequest, LayeredSphere, NearFieldRequest, Outputs, Shell
+import lightsmith as ls
+from lightsmith.backends.mie_native import mie_cross_sections
+from lightsmith.device import _torch_cuda
+from lightsmith.spec import FarFieldRequest, LayeredSphere, NearFieldRequest, Outputs, Shell
 
-DIELECTRIC = osc.ConstantIndex(n_real=1.5, n_imag=0.02)
-DRUDE = osc.Drude(eps_inf=9.5, wp_ev=9.0, gamma_ev=0.07)
-SILICA = osc.ConstantIndex(n_real=1.45)
-NATIVE = "omniscatter-mie"
+DIELECTRIC = ls.ConstantIndex(n_real=1.5, n_imag=0.02)
+DRUDE = ls.Drude(eps_inf=9.5, wp_ev=9.0, gamma_ev=0.07)
+SILICA = ls.ConstantIndex(n_real=1.45)
+NATIVE = "lightsmith-mie"
 
 
 def sim_of(shape, material=DRUDE, wavelengths=(520.0,), medium=1.33, **kw):
-    return osc.Simulation(particles=[osc.Particle(shape=shape, material=material)], medium_index=medium,
+    return ls.Simulation(particles=[ls.Particle(shape=shape, material=material)], medium_index=medium,
                           wavelengths=list(wavelengths), **kw)
 
 
@@ -34,9 +34,9 @@ def rel(a, b):
 def test_matches_miepython(material, radius):
     # 450-900 nm avoids the Drude epsilon ~ 0 point (~425 nm), where miepython's
     # small-particle branch itself is only good to ~1e-5 (see test_hard_cases_against_mpmath).
-    sim = sim_of(osc.Sphere(radius_nm=radius), material, np.linspace(450, 900, 19))
-    ref = osc.solve(sim, "miepython")
-    res = osc.solve(sim, NATIVE, "cpu")
+    sim = sim_of(ls.Sphere(radius_nm=radius), material, np.linspace(450, 900, 19))
+    ref = ls.solve(sim, "miepython")
+    res = ls.solve(sim, NATIVE, "cpu")
     assert rel(res.c_ext_nm2, ref.c_ext_nm2) < 1e-6
     assert rel(res.c_sca_nm2, ref.c_sca_nm2) < 1e-6
     assert np.max(np.abs(np.subtract(res.c_abs_nm2, ref.c_abs_nm2)) / np.asarray(ref.c_ext_nm2)) < 1e-6
@@ -79,7 +79,7 @@ def test_hard_cases_against_mpmath(n_part, radius, lam):
         b = (dpsi(n, x) - m * d * psi(n, x)) / (dxi - m * d * xi)
         return a, b
 
-    qe, qs = _mp_efficiencies(ab, x, osc.backends.mie_native.n_max_wiscombe(float(x)) + 10)
+    qe, qs = _mp_efficiencies(ab, x, ls.backends.mie_native.n_max_wiscombe(float(x)) + 10)
     ce, cs, _ = mie_cross_sections(radius, eps, np.array([lam]), med)
     g = np.pi * radius**2
     assert ce[0] / g == pytest.approx(qe, rel=1e-11)
@@ -109,7 +109,7 @@ def test_coated_sphere_against_mpmath(core_eps, shell_eps, lam):
         b = (m2 * psi(n, y) * fb - dpsi(n, y) * gb) / (m2 * xi * fb - dxi * gb)
         return a, b
 
-    qe, qs = _mp_efficiencies(ab, y, osc.backends.mie_native.n_max_wiscombe(float(y)) + 10)
+    qe, qs = _mp_efficiencies(ab, y, ls.backends.mie_native.n_max_wiscombe(float(y)) + 10)
     ce, cs, _ = mie_cross_sections([rc, rs], [ec, es], np.array([lam]), med)
     g = np.pi * rs**2
     assert ce[0] / g == pytest.approx(qe, rel=1e-11)
@@ -122,8 +122,8 @@ def test_shell_of_core_material_reproduces_sphere():
     nf = NearFieldRequest(plane="xz", half_width_nm=80, points=15, wavelengths_nm=[520.0])
     out = Outputs(far_field=ff, near_field=nf)
     shells = [Shell(thickness_nm=10, material=DRUDE), Shell(thickness_nm=15, material=DRUDE)]
-    layered = osc.solve(sim_of(LayeredSphere(core_radius_nm=30, shells=shells), wavelengths=wl, outputs=out), NATIVE, "cpu")
-    plain = osc.solve(sim_of(osc.Sphere(radius_nm=55), wavelengths=wl, outputs=out), NATIVE, "cpu")
+    layered = ls.solve(sim_of(LayeredSphere(core_radius_nm=30, shells=shells), wavelengths=wl, outputs=out), NATIVE, "cpu")
+    plain = ls.solve(sim_of(ls.Sphere(radius_nm=55), wavelengths=wl, outputs=out), NATIVE, "cpu")
     for q in ("c_ext_nm2", "c_sca_nm2"):
         assert rel(getattr(layered, q), getattr(plain, q)) < 1e-10
     assert rel(layered.far_field[0].dcsca_domega_nm2, plain.far_field[0].dcsca_domega_nm2) < 1e-10
@@ -133,16 +133,16 @@ def test_shell_of_core_material_reproduces_sphere():
 # --- far field ----------------------------------------------------------------
 
 
-@pytest.mark.parametrize("shape", [osc.Sphere(radius_nm=80), core_shell()], ids=["sphere", "core_shell"])
+@pytest.mark.parametrize("shape", [ls.Sphere(radius_nm=80), core_shell()], ids=["sphere", "core_shell"])
 def test_far_field_integrates_to_csca(shape):
     mu, w = np.polynomial.legendre.leggauss(64)
     theta = np.degrees(np.arccos(mu))
     phi = np.arange(0, 360, 10.0)
     sim = sim_of(shape, wavelengths=[500.0, 650.0],
-                 illumination=osc.PlaneWave(direction=(1, 2, 2), polarization=(2, 1, -2)),
+                 illumination=ls.PlaneWave(direction=(1, 2, 2), polarization=(2, 1, -2)),
                  outputs=Outputs(far_field=FarFieldRequest(theta_deg=theta.tolist(), phi_deg=phi.tolist(),
                                                            wavelengths_nm=[500.0, 650.0])))
-    res = osc.solve(sim, NATIVE, "cpu")
+    res = ls.solve(sim, NATIVE, "cpu")
     for ff, c_sca in zip(res.far_field, res.c_sca_nm2):
         d = np.asarray(ff.dcsca_domega_nm2)
         assert np.sum(w * d.mean(axis=1)) * 2 * np.pi == pytest.approx(c_sca, rel=1e-10)
@@ -150,9 +150,9 @@ def test_far_field_integrates_to_csca(shape):
 
 def test_far_field_angle_convention():
     """phi = 0 is the E-plane: a small sphere (electric dipole) does not radiate along E."""
-    sim = sim_of(osc.Sphere(radius_nm=3), DIELECTRIC, wavelengths=[600.0],
+    sim = sim_of(ls.Sphere(radius_nm=3), DIELECTRIC, wavelengths=[600.0],
                  outputs=Outputs(far_field=FarFieldRequest(theta_deg=[0, 90], phi_deg=[0, 90], wavelengths_nm=[600.0])))
-    d = np.asarray(osc.solve(sim, NATIVE, "cpu").far_field[0].dcsca_domega_nm2)
+    d = np.asarray(ls.solve(sim, NATIVE, "cpu").far_field[0].dcsca_domega_nm2)
     assert d[1, 0] < 1e-4 * d[1, 1]  # theta=90 in the E-plane vs the H-plane
     assert d[0, 0] == pytest.approx(d[0, 1], rel=1e-12)  # forward direction is phi-independent
 
@@ -163,7 +163,7 @@ def test_far_field_angle_convention():
 def test_near_field_tends_to_one_far_away():
     def max_dev(offset):
         nf = NearFieldRequest(plane="xy", offset_nm=offset, half_width_nm=300, points=5, wavelengths_nm=[530.0])
-        res = osc.solve(sim_of(osc.Sphere(radius_nm=50), outputs=Outputs(near_field=nf)), NATIVE, "cpu")
+        res = ls.solve(sim_of(ls.Sphere(radius_nm=50), outputs=Outputs(near_field=nf)), NATIVE, "cpu")
         return np.max(np.abs(np.asarray(res.near_field[0].enhancement) - 1))
 
     far, very_far = max_dev(5_000.0), max_dev(100_000.0)
@@ -173,14 +173,14 @@ def test_near_field_tends_to_one_far_away():
 def _field_at(sim, half_width):
     """Total E at the four corners (+-h, 0, +-h) of an xz near-field plane: radius sqrt(2) h, theta = 45/135 deg."""
     nf = NearFieldRequest(plane="xz", half_width_nm=half_width, points=2, wavelengths_nm=[sim.wavelength_array()[0]])
-    res = osc.solve(sim.model_copy(update={"outputs": Outputs(near_field=nf)}), NATIVE, "cpu").near_field[0]
+    res = ls.solve(sim.model_copy(update={"outputs": Outputs(near_field=nf)}), NATIVE, "cpu").near_field[0]
     e = np.asarray(res.e_real) + 1j * np.asarray(res.e_imag)  # (3, 2, 2)
     pts = np.array([[[x, 0.0, z] for z in (-half_width, half_width)] for x in (-half_width, half_width)])
     return e, pts / np.linalg.norm(pts, axis=-1, keepdims=True)
 
 
 @pytest.mark.parametrize("shape, interface, eps_in, eps_out", [
-    (osc.Sphere(radius_nm=50), 50.0, "core", "medium"),
+    (ls.Sphere(radius_nm=50), 50.0, "core", "medium"),
     (core_shell(), 40.0, "core", "shell"),
     (core_shell(), 50.0, "shell", "medium"),
 ])
@@ -206,30 +206,30 @@ def test_near_field_boundary_conditions(shape, interface, eps_in, eps_out):
 
 def test_any_incidence_and_orientation_average():
     wl = [450.0, 550.0, 700.0]
-    base = osc.solve(sim_of(core_shell(), wavelengths=wl), NATIVE, "cpu")
-    tilted = osc.solve(sim_of(core_shell(), wavelengths=wl, illumination=osc.PlaneWave(direction=(0, 1, 1), polarization=(1, 0, 0))),
+    base = ls.solve(sim_of(core_shell(), wavelengths=wl), NATIVE, "cpu")
+    tilted = ls.solve(sim_of(core_shell(), wavelengths=wl, illumination=ls.PlaneWave(direction=(0, 1, 1), polarization=(1, 0, 0))),
                        NATIVE, "cpu")
-    avg = osc.solve(sim_of(core_shell(), wavelengths=wl, orientation_average=True), NATIVE, "cpu")
+    avg = ls.solve(sim_of(core_shell(), wavelengths=wl, orientation_average=True), NATIVE, "cpu")
     for r in (tilted, avg):
         assert rel(r.c_ext_nm2, base.c_ext_nm2) < 1e-12
 
 
 def test_auto_selection_and_estimate():
-    assert osc.choose_method(sim_of(core_shell()))[0].name == NATIVE
-    with_field = sim_of(osc.Sphere(radius_nm=40), outputs=Outputs(
+    assert ls.choose_method(sim_of(core_shell()))[0].name == NATIVE
+    with_field = sim_of(ls.Sphere(radius_nm=40), outputs=Outputs(
         far_field=FarFieldRequest(theta_deg=[0.0], wavelengths_nm=[520.0])))
-    assert osc.choose_method(with_field)[0].name == NATIVE
-    est = osc.estimate(sim_of(core_shell(), wavelengths=np.linspace(400, 800, 50)), NATIVE, "cpu")
+    assert ls.choose_method(with_field)[0].name == NATIVE
+    est = ls.estimate(sim_of(core_shell(), wavelengths=np.linspace(400, 800, 50)), NATIVE, "cpu")
     assert est["n_max"] > 0 and est["layers"] == 2 and est["memory_bytes"] > 0
-    sim = sim_of(osc.Spheroid(semi_axis_xy_nm=10, semi_axis_z_nm=20))
-    ok, why = osc.get_backend(NATIVE).supports(sim)
+    sim = sim_of(ls.Spheroid(semi_axis_xy_nm=10, semi_axis_z_nm=20))
+    ok, why = ls.get_backend(NATIVE).supports(sim)
     assert not ok and "spheres only" in why
 
 
 def test_wavelength_chunks_agree():
     sim = sim_of(core_shell(), wavelengths=np.linspace(400, 900, 37))
-    one = osc.solve(sim, NATIVE, "cpu")
-    chunked = osc.solve(sim.model_copy(update={"options": {"mie": {"wavelength_chunk": 5}}}), NATIVE, "cpu")
+    one = ls.solve(sim, NATIVE, "cpu")
+    chunked = ls.solve(sim.model_copy(update={"options": {"mie": {"wavelength_chunk": 5}}}), NATIVE, "cpu")
     assert chunked.provenance["wavelength_chunks"] == 8
     assert rel(chunked.c_ext_nm2, one.c_ext_nm2) < 1e-12
 
@@ -268,13 +268,13 @@ def test_gpu_matches_cpu():
     out = Outputs(far_field=FarFieldRequest(theta_deg=[0, 60, 120, 180], phi_deg=[0, 90], wavelengths_nm=[520.0]),
                   near_field=NearFieldRequest(plane="xz", half_width_nm=80, points=11, wavelengths_nm=[520.0]))
     sim = sim_of(core_shell(), wavelengths=np.linspace(400, 900, 101), outputs=out)
-    cpu = osc.solve(sim, NATIVE, "cpu")
-    gpu = osc.solve(sim, NATIVE, "gpu")
+    cpu = ls.solve(sim, NATIVE, "cpu")
+    gpu = ls.solve(sim, NATIVE, "gpu")
     assert gpu.provenance["framework"] == "torch" and gpu.provenance["precision"] == "double"
     assert rel(gpu.c_ext_nm2, cpu.c_ext_nm2) < 1e-12
     assert rel(gpu.far_field[0].dcsca_domega_nm2, cpu.far_field[0].dcsca_domega_nm2) < 1e-12
     np.testing.assert_allclose(gpu.near_field[0].enhancement, cpu.near_field[0].enhancement, rtol=1e-10)
-    single = osc.solve(sim.model_copy(update={"options": {"mie": {"precision": "single"}}}), NATIVE, "gpu")
+    single = ls.solve(sim.model_copy(update={"options": {"mie": {"precision": "single"}}}), NATIVE, "gpu")
     assert single.provenance["precision"] == "single"
     assert rel(single.c_ext_nm2, cpu.c_ext_nm2) < 1e-3
 

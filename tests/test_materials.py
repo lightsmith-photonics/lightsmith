@@ -5,13 +5,13 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
-import omniscatter as osc
-from omniscatter import materials as M
-from omniscatter.materials import LibraryMaterial, MaterialRangeError, list_materials, load_material
-from omniscatter.materials_fit import DrudeLorentzFit, fit_drude_lorentz, fit_quality
+import lightsmith as ls
+from lightsmith import materials as M
+from lightsmith.materials import LibraryMaterial, MaterialRangeError, list_materials, load_material
+from lightsmith.materials_fit import DrudeLorentzFit, fit_drude_lorentz, fit_quality
 
 BAND = np.linspace(450.0, 900.0, 91)
-NETWORK = os.environ.get("OMNISCATTER_NETWORK_TESTS") == "1"
+NETWORK = os.environ.get("LIGHTSMITH_NETWORK_TESTS") == "1"
 
 
 # --- bundled library ----------------------------------------------------------
@@ -60,7 +60,7 @@ def test_aliases_resolve_to_canonical_names():
 
 
 def test_library_json_roundtrip_in_simulation():
-    sim = osc.Simulation.model_validate({
+    sim = ls.Simulation.model_validate({
         "particles": [{"shape": {"kind": "sphere", "radius_nm": 10},
                        "material": {"kind": "library", "name": "gold", "dataset": "JC"}}],
         "medium_index": 1.33, "wavelengths": [500.0, 600.0],
@@ -69,7 +69,7 @@ def test_library_json_roundtrip_in_simulation():
     assert isinstance(mat, LibraryMaterial)
     dumped = sim.model_dump(mode="json")["particles"][0]["material"]
     assert dumped == {"kind": "library", "name": "Au", "dataset": "Johnson-Christy"}
-    again = osc.Simulation.from_json(sim.to_json())
+    again = ls.Simulation.from_json(sim.to_json())
     assert again == sim
     assert np.allclose(again.particles[0].material.eps([550.0]), mat.eps([550.0]))
 
@@ -115,10 +115,10 @@ def test_yaml_parser_formats():
 
 def test_mie_gold_sphere_plasmon_peak():
     # 20 nm diameter Au sphere in water: dipolar plasmon at ~520-525 nm (JC data)
-    sim = osc.Simulation(
-        particles=[osc.Particle(shape=osc.Sphere(radius_nm=10.0), material={"kind": "library", "name": "Au"})],
-        medium_index=1.333, wavelengths=osc.WavelengthRange(start_nm=450, stop_nm=650, num=201))
-    res = osc.solve(sim, method="mie")
+    sim = ls.Simulation(
+        particles=[ls.Particle(shape=ls.Sphere(radius_nm=10.0), material={"kind": "library", "name": "Au"})],
+        medium_index=1.333, wavelengths=ls.WavelengthRange(start_nm=450, stop_nm=650, num=201))
+    res = ls.solve(sim, method="mie")
     peak = sim.wavelength_array()[np.argmax(res.c_ext_nm2)]
     assert 515.0 <= peak <= 530.0
 
@@ -132,7 +132,7 @@ def test_fit_reproduces_johnson_christy(name):
     |d eps|/|eps| RMS < 2 %, worst < 5 %; Im(eps) error (rms_imag_error) RMS < 3 %, worst < 8 %."""
     mat = {"kind": "library", "name": name, "dataset": "Johnson-Christy"}
     model, info = fit_drude_lorentz(mat, BAND, return_info=True)
-    assert isinstance(model, osc.DrudeLorentz) and isinstance(info, DrudeLorentzFit)
+    assert isinstance(model, ls.DrudeLorentz) and isinstance(info, DrudeLorentzFit)
     assert info.model == model and info.n_poles == len(model.poles) <= 5 and info.drude
     q = fit_quality(model, mat, np.linspace(450, 900, 451))  # also between the fitted samples
     assert q["rms_rel_error"] < 0.02 and q["max_rel_error"] < 0.05
@@ -142,15 +142,15 @@ def test_fit_reproduces_johnson_christy(name):
     assert model.eps_inf >= 1 and model.wp_ev > 0 and model.gamma_ev > 0
     assert all(p.delta_eps > 0 and p.omega0_ev > 0 and p.gamma_ev > 0 for p in model.poles)
     assert np.all(model.eps(np.geomspace(100, 1e5, 400)).imag > 0)
-    assert osc.Simulation.model_validate({  # usable in a spec as-is
+    assert ls.Simulation.model_validate({  # usable in a spec as-is
         "particles": [{"shape": {"kind": "sphere", "radius_nm": 10}, "material": model.model_dump()}],
         "wavelengths": [500.0]}).particles[0].material == model
 
 
 def test_fit_recovers_known_model_and_fixed_pole_count():
-    true = osc.DrudeLorentz(eps_inf=1.5, wp_ev=9.0, gamma_ev=0.07, poles=[
-        osc.LorentzPole(delta_eps=1.2, omega0_ev=2.9, gamma_ev=0.6),
-        osc.LorentzPole(delta_eps=2.0, omega0_ev=4.0, gamma_ev=1.0)])
+    true = ls.DrudeLorentz(eps_inf=1.5, wp_ev=9.0, gamma_ev=0.07, poles=[
+        ls.LorentzPole(delta_eps=1.2, omega0_ev=2.9, gamma_ev=0.6),
+        ls.LorentzPole(delta_eps=2.0, omega0_ev=4.0, gamma_ev=1.0)])
     wl = np.linspace(400, 1000, 61)
     fit = fit_drude_lorentz(true, wl, n_poles=2)
     assert fit_quality(fit, true, wl)["rms_rel_error"] < 1e-6
@@ -167,9 +167,9 @@ def test_fit_with_library_model_matches_mie():
     model = fit_drude_lorentz("Au", np.linspace(450, 900, 91))
     res = {}
     for key, mat in (("data", {"kind": "library", "name": "Au"}), ("fit", model)):
-        sim = osc.Simulation(particles=[osc.Particle(shape=osc.Sphere(radius_nm=10.0), material=mat)],
+        sim = ls.Simulation(particles=[ls.Particle(shape=ls.Sphere(radius_nm=10.0), material=mat)],
                              medium_index=1.333, wavelengths=wl.tolist())
-        res[key] = np.asarray(osc.solve(sim, method="mie").c_ext_nm2)
+        res[key] = np.asarray(ls.solve(sim, method="mie").c_ext_nm2)
     assert np.max(np.abs(res["fit"] / res["data"] - 1)) < 0.06
     assert abs(wl[res["fit"].argmax()] - wl[res["data"].argmax()]) <= 3.0
 
@@ -187,7 +187,7 @@ def test_fit_rejects_bad_input():
 
 
 @pytest.mark.network
-@pytest.mark.skipif(not NETWORK, reason="set OMNISCATTER_NETWORK_TESTS=1 to run network tests")
+@pytest.mark.skipif(not NETWORK, reason="set LIGHTSMITH_NETWORK_TESTS=1 to run network tests")
 def test_fetch_refractiveindex_network(tmp_path):
     commit = M._manifest()["commit"]
     jc = M.fetch_refractiveindex("main", "Au", "Johnson", cache_dir=tmp_path, ref=commit)

@@ -4,16 +4,16 @@ import math
 import numpy as np
 import pytest
 
-import omniscatter as osc
-from omniscatter.circuits import (
+import lightsmith as ls
+from lightsmith.circuits import (
     NetlistError,
     circuit_sparameters,
     list_models,
     waveguide_from_modes,
 )
-from omniscatter.circuits.touchstone import read_touchstone, write_touchstone
-from omniscatter.problems import CircuitProblem
-from omniscatter.results import ModeData, ModeResult
+from lightsmith.circuits.touchstone import read_touchstone, write_touchstone
+from lightsmith.problems import CircuitProblem
+from lightsmith.results import ModeData, ModeResult
 
 NEFF, NG, WL0 = 2.4, 4.2, 1550.0
 
@@ -62,7 +62,7 @@ def allpass(wl, L, coupling, loss_db_per_cm):
 
 def test_mzi_matches_analytic():
     p = mzi()
-    res = osc.solve(p, method="circuit", device="cpu")
+    res = ls.solve(p, method="circuit", device="cpu")
     wl = np.asarray(res.wavelengths_nm)
     s = res.s()
     phi_t = 2 * np.pi * neff_of(wl) * 70_000.0 / wl
@@ -88,13 +88,13 @@ def test_ring_netlist_and_model_match_allpass_formula():
     wl = np.linspace(1540, 1560, 2001)
     loss = 3.0  # dB/cm
     p = ring_netlist(L, 0.1, loss, wl)
-    s = osc.solve(p, device="cpu").s()[:, 1, 0]
+    s = ls.solve(p, device="cpu").s()[:, 1, 0]
     ref = allpass(wl, L, 0.1, loss)
     assert np.max(np.abs(s - ref)) < 1e-10
     model = CircuitProblem(instances={"r": {"component": "ring_single", "settings": {
         "radius_nm": R, "coupling": 0.1, "loss_db_per_cm": loss, "neff": NEFF, "ng": NG, "wl0_nm": WL0}}},
         ports={"in": "r,o1", "out": "r,o2"}, wavelengths=list(wl))
-    sm = osc.solve(model, device="cpu").s()[:, 1, 0]
+    sm = ls.solve(model, device="cpu").s()[:, 1, 0]
     assert np.max(np.abs(sm - ref)) < 1e-12
     # FSR = lambda^2 / (ng L) from adjacent resonances.
     T = np.abs(s) ** 2
@@ -114,15 +114,15 @@ def test_ring_critical_coupling_extinction():
     p = CircuitProblem(instances={"r": {"component": "ring_single", "settings": {
         "radius_nm": L / (2 * np.pi), "coupling": coupling, "loss_db_per_cm": loss, "neff": NEFF, "ng": NG}}},
         ports={"in": "r,o1", "out": "r,o2"}, wavelengths=[WL0, WL0 + 1.0])
-    s = osc.solve(p, device="cpu").s()
+    s = ls.solve(p, device="cpu").s()
     assert abs(s[0, 1, 0]) ** 2 < 1e-20  # critical coupling: zero transmission on resonance
     # Same with the netlist built from a coupler and a waveguide.
-    s2 = osc.solve(ring_netlist(L, coupling, loss, [WL0]), device="cpu").s()
+    s2 = ls.solve(ring_netlist(L, coupling, loss, [WL0]), device="cpu").s()
     assert abs(s2[0, 1, 0]) ** 2 < 1e-20
     # Under/over-coupled: finite extinction.
     p2 = upd(p, instances={"r": {"component": "ring_single", "settings": {
         "radius_nm": L / (2 * np.pi), "coupling": coupling / 4, "loss_db_per_cm": loss, "neff": NEFF, "ng": NG}}})
-    assert abs(osc.solve(p2, device="cpu").s()[0, 1, 0]) ** 2 > 1e-3
+    assert abs(ls.solve(p2, device="cpu").s()[0, 1, 0]) ** 2 > 1e-3
 
 
 def _lossless_network(wl):
@@ -146,7 +146,7 @@ def test_unitarity_and_reciprocity():
     wl = np.linspace(1530, 1570, 201)
     for algorithm in ("dense", "reduce"):
         p = upd(_lossless_network(wl), options={"circuit": {"algorithm": algorithm}})
-        res = osc.solve(p, device="cpu")
+        res = ls.solve(p, device="cpu")
         s = res.s()
         eye = np.eye(s.shape[1])
         err = np.max(np.abs(np.conj(np.swapaxes(s, 1, 2)) @ s - eye))
@@ -154,7 +154,7 @@ def test_unitarity_and_reciprocity():
         assert np.max(np.abs(s - np.swapaxes(s, 1, 2))) < 1e-12, algorithm
         assert res.provenance["algorithm"] == algorithm
     # MZI with both inputs exposed is a lossless 4-port.
-    s = osc.solve(mzi(both_inputs=True, wl=np.linspace(1500, 1600, 51)), device="cpu").s()
+    s = ls.solve(mzi(both_inputs=True, wl=np.linspace(1500, 1600, 51)), device="cpu").s()
     assert np.max(np.abs(np.conj(np.swapaxes(s, 1, 2)) @ s - np.eye(4))) < 1e-12
 
 
@@ -164,8 +164,8 @@ def test_dense_and_reduce_agree_on_lossy_circuit():
     inst = dict(p.instances)
     inst["a"] = wg(30_000.0, loss_db_per_cm=300.0)
     p = upd(p, instances=inst)
-    sd = osc.solve(upd(p, options={"circuit": {"algorithm": "dense"}}), device="cpu").s()
-    sr = osc.solve(upd(p, options={"circuit": {"algorithm": "reduce"}}), device="cpu").s()
+    sd = ls.solve(upd(p, options={"circuit": {"algorithm": "dense"}}), device="cpu").s()
+    sr = ls.solve(upd(p, options={"circuit": {"algorithm": "reduce"}}), device="cpu").s()
     assert np.max(np.abs(sd - sr)) < 1e-12
     sv = np.linalg.svd(sd, compute_uv=False)
     assert sv.max() <= 1 + 1e-12 and sv.min() < 0.95  # passive and lossy
@@ -178,7 +178,7 @@ def test_splitter_tree_power():
         connections=[("y0,o2", "w1,o1"), ("w1,o2", "y1,o1"), ("y0,o3", "w2,o1"), ("w2,o2", "y2,o1")],
         ports={"in": "y0,o1", "out1": "y1,o2", "out2": "y1,o3", "out3": "y2,o2", "out4": "y2,o3"},
         wavelengths=[1550.0])
-    s = osc.solve(p, device="cpu").s()[0]
+    s = ls.solve(p, device="cpu").s()[0]
     assert np.allclose(np.abs(s[1:, 0]) ** 2, 0.25, atol=1e-14)
     assert np.isclose(np.sum(np.abs(s[:, 0]) ** 2), 1.0, atol=1e-14)
 
@@ -189,14 +189,14 @@ def test_ring_double_drop_and_grating_passband():
     p = CircuitProblem(instances={"r": {"component": "ring_double", "settings": {
         "radius_nm": L / (2 * np.pi), "coupling": 0.05}}},
         ports={"in": "r,o1", "thru": "r,o2", "add": "r,o3", "drop": "r,o4"}, wavelengths=[WL0, 1551.3])
-    s = osc.solve(p, device="cpu").s()
+    s = ls.solve(p, device="cpu").s()
     assert abs(s[0, 3, 0]) ** 2 > 1 - 1e-12  # symmetric lossless add-drop: full drop on resonance
     assert abs(s[0, 1, 0]) ** 2 < 1e-12
     assert np.allclose(np.conj(np.swapaxes(s, 1, 2)) @ s, np.eye(4), atol=1e-12)
     g = CircuitProblem(instances={"gc": {"component": "grating_coupler", "settings": {
         "peak_loss_db": 2.5, "wl0_nm": 1550, "bandwidth_1db_nm": 30}}},
         ports={"wg": "gc,o1", "fiber": "gc,o2"}, wavelengths=[1550.0, 1565.0, 1535.0])
-    t = osc.solve(g, device="cpu").s()[:, 1, 0]
+    t = ls.solve(g, device="cpu").s()[:, 1, 0]
     loss_db = -20 * np.log10(np.abs(t))
     assert np.allclose(loss_db, [2.5, 3.5, 3.5], atol=1e-12)
 
@@ -253,14 +253,14 @@ def test_touchstone_round_trip(tmp_path, n_ports):
 
 def test_sparams_component_round_trip(tmp_path):
     wl = np.linspace(1500, 1600, 41)
-    ref = osc.solve(mzi(wl=wl, both_inputs=True), device="cpu")
+    ref = ls.solve(mzi(wl=wl, both_inputs=True), device="cpu")
     write_touchstone(tmp_path / "mzi.s4p", ref.wavelengths_nm, ref.s(), ref.ports)
     (tmp_path / "mzi.json").write_text(ref.model_dump_json())
     for fname in ("mzi.s4p", "mzi.json"):
         p = CircuitProblem(instances={"dev": {"component": f"sparams:{fname}"}},
                            ports={n: f"dev,{n}" for n in ref.ports}, wavelengths=list(wl),
                            options={"circuit": {"base_dir": str(tmp_path)}})
-        got = osc.solve(p, device="cpu")
+        got = ls.solve(p, device="cpu")
         assert got.ports == ref.ports
         # JSON is exact; Touchstone goes through frequency (12 significant digits) and back.
         assert np.max(np.abs(got.s() - ref.s())) < (1e-14 if fname.endswith(".json") else 1e-8), fname
@@ -269,7 +269,7 @@ def test_sparams_component_round_trip(tmp_path):
                                           "settings": {"interpolation": "linear"}}},
                        ports={"a": "dev,in", "b": "dev,out_bar"}, wavelengths=[1700.0])
     with pytest.raises(ValueError, match="1500-1600 nm"):
-        osc.solve(p, device="cpu")
+        ls.solve(p, device="cpu")
 
 
 def test_netlist_errors_name_ports():
@@ -277,22 +277,22 @@ def test_netlist_errors_name_ports():
     cut = [c for c in base.connections if tuple(c) != ("bot,o2", "cp2,o1")]
     p = upd(base, connections=cut)
     with pytest.raises(NetlistError, match=r"unconnected port\(s\): 'cp2,o1', 'bot,o2'\. Connect them"):
-        osc.solve(p, device="cpu")
+        ls.solve(p, device="cpu")
     p = upd(base, ports={**base.ports, "again": "top,o2"})
     with pytest.raises(NetlistError, match=r"duplicate port use.*'top,o2' in connection #1 .* and external port 'again'"):
-        osc.solve(p, device="cpu")
+        ls.solve(p, device="cpu")
     p = upd(base, connections=[*cut, ("bot,o9", "cp2,o1")])
     with pytest.raises(NetlistError, match=r"instance 'bot' \(waveguide\) has no port 'o9' \(ports: o1, o2\)"):
-        osc.solve(p, device="cpu")
+        ls.solve(p, device="cpu")
     p = upd(base, instances={**base.model_dump()["instances"], "x": {"component": "flux_capacitor"}})
     with pytest.raises(ValueError, match="unknown component model.*flux_capacitor"):
-        osc.solve(p, device="cpu")
+        ls.solve(p, device="cpu")
     p = upd(base, instances={**base.model_dump()["instances"], "top": wg(-5.0)})
     with pytest.raises(NetlistError, match="instance 'top' .*length_nm"):
-        osc.solve(p, device="cpu")
+        ls.solve(p, device="cpu")
     # 'ignore' treats loose ports as matched ends and warns.
     p = upd(base, connections=cut, options={"circuit": {"unconnected": "ignore"}})
-    res = osc.solve(p, device="cpu")
+    res = ls.solve(p, device="cpu")
     assert any("bot,o2" in w for w in res.warnings)
     assert abs(res.s()[0, 2, 0]) ** 2 == pytest.approx(0.25)
 
@@ -308,7 +308,7 @@ def test_waveguide_from_mode_result():
     loss = inst.settings["loss_table_db_per_cm"][1]
     assert loss == pytest.approx(10 / math.log(10) * 4 * math.pi * 1e-6 / 1550e-7)
     p = CircuitProblem(instances={"w": inst.model_dump()}, ports={"a": "w,o1", "b": "w,o2"}, wavelengths=[1550.0])
-    t = osc.solve(p, device="cpu").s()[0, 1, 0]
+    t = ls.solve(p, device="cpu").s()[0, 1, 0]
     assert np.angle(t) == pytest.approx(np.angle(np.exp(2j * np.pi * 2.44 * 1e5 / 1550)), abs=1e-9)
     assert -20 * np.log10(abs(t)) == pytest.approx(loss * 1e5 * 1e-7)
     single = ModeResult(method="fde", backend="test", wavelengths_nm=[1550.0],
@@ -324,10 +324,10 @@ def test_models_are_documented_and_json_round_trips():
                  "sparams:<path>"):
         assert models[name]["doc"] and "properties" in models[name]["settings_schema"], name
     p = mzi(wl=[1550.0])
-    r1 = osc.solve(json.loads(p.model_dump_json()), device="cpu")
-    r2 = osc.solve(p.model_dump_json(), device="cpu")
+    r1 = ls.solve(json.loads(p.model_dump_json()), device="cpu")
+    r2 = ls.solve(p.model_dump_json(), device="cpu")
     assert r1.s_real == r2.s_real
-    assert osc.estimate(p, device="cpu")["internal_ports"] == 10  # 4 arms + terminator
+    assert ls.estimate(p, device="cpu")["internal_ports"] == 10  # 4 arms + terminator
 
 
 def test_phase_shifter_switches_mzi():
@@ -351,6 +351,6 @@ def test_gpu_matches_cpu():
     if not torch.cuda.is_available():
         pytest.skip("no CUDA GPU")
     p = _lossless_network(np.linspace(1530, 1570, 101))
-    cpu = osc.solve(p, device="cpu").s()
-    gpu = osc.solve(p, device="cuda").s()
+    cpu = ls.solve(p, device="cpu").s()
+    gpu = ls.solve(p, device="cuda").s()
     assert np.max(np.abs(cpu - gpu)) < 1e-10

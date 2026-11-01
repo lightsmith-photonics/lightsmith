@@ -11,15 +11,15 @@ Measured (RTX 5070, float32; CPU float64), max absolute differences in R/T:
 import numpy as np
 import pytest
 
-import omniscatter as osc
-from omniscatter.device import _torch_cuda
-from omniscatter.materials import LibraryMaterial
-from omniscatter.problems import (Circle, Incidence, Layer, LayerStackProblem, PatternedLayer, PeriodicProblem,
+import lightsmith as ls
+from lightsmith.device import _torch_cuda
+from lightsmith.materials import LibraryMaterial
+from lightsmith.problems import (Circle, Incidence, Layer, LayerStackProblem, PatternedLayer, PeriodicProblem,
                                   Rectangle, Structure2D)
 
-CI, CP = osc.ConstantIndex, osc.ConstantPermittivity
+CI, CP = ls.ConstantIndex, ls.ConstantPermittivity
 needs_cuda = pytest.mark.skipif(not _torch_cuda(), reason="no CUDA GPU with PyTorch")
-WL = osc.WavelengthRange(start_nm=400, stop_nm=800, num=9)
+WL = ls.WavelengthRange(start_nm=400, stop_nm=800, num=9)
 
 
 def stack(layer_material, thickness, pols=("s",), **fdtd):
@@ -43,9 +43,9 @@ def max_abs_diff(a, b):
 
 def test_fdtd_layer_stack_matches_tmm_cpu():
     for prob, tol in ((stack(CI(n_real=2.0), 300), 0.01),
-                      (stack(osc.Drude(eps_inf=5, wp_ev=9.0, gamma_ev=0.05), 30, pols=("s", "p")), 0.005)):
-        res = osc.solve(prob, "fdtd", "cpu")
-        ref = osc.solve(prob, "tmm", "cpu")
+                      (stack(ls.Drude(eps_inf=5, wp_ev=9.0, gamma_ev=0.05), 30, pols=("s", "p")), 0.005)):
+        res = ls.solve(prob, "fdtd", "cpu")
+        ref = ls.solve(prob, "tmm", "cpu")
         assert res.kind == "spectrum" and res.provenance["precision"] == "double"
         assert max_abs_diff(res, ref) < tol
         assert res.provenance["real_cells"][:2] == [1, 1]
@@ -53,7 +53,7 @@ def test_fdtd_layer_stack_matches_tmm_cpu():
 
 
 def test_fdtd_periodic_supports_estimate_and_kinds():
-    b = osc.get_backend("omniscatter-fdtd")
+    b = ls.get_backend("lightsmith-fdtd")
     assert {"scattering", "periodic", "layer_stack"} <= set(b.problem_kinds)
     p = lamellar([600.0])
     assert b.supports(p)[0]
@@ -62,7 +62,7 @@ def test_fdtd_periodic_supports_estimate_and_kinds():
     assert not ok and "normal incidence" in why
     skew = p.model_copy(update={"lattice_a1_nm": (600, 100)})
     assert not b.supports(skew)[0]
-    est = osc.estimate(p, method="fdtd", device="cpu")
+    est = ls.estimate(p, method="fdtd", device="cpu")
     nx = est["real_cells"][0]
     assert est["spacing_nm"][0] * nx == pytest.approx(700.0)  # whole cells per period (non-cubic)
     assert est["runs"] == 2 and est["memory_bytes"] > 0
@@ -71,13 +71,13 @@ def test_fdtd_periodic_supports_estimate_and_kinds():
 @pytest.mark.gpu
 @needs_cuda
 def test_fdtd_layer_stack_gpu_matches_cpu_and_metal_film():
-    prob = stack(osc.Drude(eps_inf=5, wp_ev=9.0, gamma_ev=0.05), 30, run_time_fs=20)
-    cpu, gpu = osc.solve(prob, "fdtd", "cpu"), osc.solve(prob, "fdtd", "gpu")
+    prob = stack(ls.Drude(eps_inf=5, wp_ev=9.0, gamma_ev=0.05), 30, run_time_fs=20)
+    cpu, gpu = ls.solve(prob, "fdtd", "cpu"), ls.solve(prob, "fdtd", "gpu")
     assert gpu.provenance["framework"] == "torch"
     np.testing.assert_allclose(gpu.r["s"], cpu.r["s"], atol=2e-5)
     np.testing.assert_allclose(gpu.t["s"], cpu.t["s"], atol=2e-5)
     ag = stack(LibraryMaterial(name="Ag", dataset="Johnson-Christy"), 40)
-    assert max_abs_diff(osc.solve(ag, "fdtd", "gpu"), osc.solve(ag, "tmm", "cpu")) < 0.01
+    assert max_abs_diff(ls.solve(ag, "fdtd", "gpu"), ls.solve(ag, "tmm", "cpu")) < 0.01
 
 
 @pytest.mark.gpu
@@ -85,7 +85,7 @@ def test_fdtd_layer_stack_gpu_matches_cpu_and_metal_film():
 def test_fdtd_1d_grating_matches_rcwa():
     wl = [500.0, 600.0, 800.0, 900.0, 1000.0, 1200.0]  # avoids the Rayleigh anomaly at 700 nm
     prob = lamellar(wl)
-    cmp = osc.compare(prob, ["fdtd", "rcwa"], device="gpu", reference="rcwa")
+    cmp = ls.compare(prob, ["fdtd", "rcwa"], device="gpu", reference="rcwa")
     diff = cmp["relative_difference"]["fdtd"]
     assert max(v["max"] for v in diff.values()) < 0.015
     res, ref = cmp["results"]["fdtd"], cmp["results"]["rcwa"]
@@ -108,7 +108,7 @@ def test_fdtd_hole_array_guided_mode_resonance_matches_rcwa():
                                shapes=[Structure2D(profile=Circle(radius_nm=100), material=CI(n_real=1.0))])],
         wavelengths=list(wl), incidence=Incidence(polarizations=["s"]),
         options={"fdtd": {"cells_per_wavelength": 30}, "rcwa": {"harmonics": 7}})
-    res, ref = osc.solve(prob, "fdtd", "gpu"), osc.solve(prob, "rcwa", "cpu")
+    res, ref = ls.solve(prob, "fdtd", "gpu"), ls.solve(prob, "rcwa", "cpu")
 
     def peak(r):
         i = int(np.argmax(r))

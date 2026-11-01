@@ -121,7 +121,7 @@ URLS = [
      "https://github.com/polyanskiy/refractiveindex.info-database"),
 ]
 
-UA = {"User-Agent": "omniscatter-paper-bib/0.1 (mailto:noreply@example.org)"}
+UA = {"User-Agent": "lightsmith-paper-bib/0.1 (mailto:noreply@example.org)"}
 
 
 def _get(url, accept=None, timeout=30):

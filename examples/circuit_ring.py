@@ -18,9 +18,9 @@ import sys
 
 import numpy as np
 
-import omniscatter as osc
-from omniscatter.circuits import circuit_sparameters
-from omniscatter.problems import CircuitProblem
+import lightsmith as ls
+from lightsmith.circuits import circuit_sparameters
+from lightsmith.problems import CircuitProblem
 
 NEFF, NG, WL0 = 2.4, 4.2, 1550.0
 RADIUS = 10_000.0
@@ -40,7 +40,7 @@ netlist = CircuitProblem(
     connections=[("dc,o3", "loop,o1"), ("loop,o2", "dc,o2")],
     ports={"in": "dc,o1", "out": "dc,o4"}, wavelengths=wavelengths)
 
-r1, r2 = osc.solve(model, device="cpu"), osc.solve(netlist, device="cpu")
+r1, r2 = ls.solve(model, device="cpu"), ls.solve(netlist, device="cpu")
 wl = np.asarray(r1.wavelengths_nm)
 T1, T2 = np.abs(r1.s()[:, 1, 0]) ** 2, np.abs(r2.s()[:, 1, 0]) ** 2
 phi = 2 * np.pi * (NEFF + (NEFF - NG) * (wl - WL0) / WL0) * L / wl

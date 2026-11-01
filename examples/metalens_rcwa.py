@@ -17,13 +17,13 @@ import time
 
 import numpy as np
 
-import omniscatter as osc
-from omniscatter.optics import angular_spectrum, focal_spot
-from omniscatter.problems import Circle, Incidence, PatternedLayer, PeriodicProblem, Structure2D
+import lightsmith as ls
+from lightsmith.optics import angular_spectrum, focal_spot
+from lightsmith.problems import Circle, Incidence, PatternedLayer, PeriodicProblem, Structure2D
 
 LAMBDA, PERIOD, HEIGHT = 633.0, 350.0, 600.0
 N_CELLS, FOCAL = 72, 20_000.0
-GLASS, PILLAR, AIR = osc.ConstantIndex(n_real=1.46), osc.ConstantIndex(n_real=2.4), osc.ConstantIndex(n_real=1.0)
+GLASS, PILLAR, AIR = ls.ConstantIndex(n_real=1.46), ls.ConstantIndex(n_real=2.4), ls.ConstantIndex(n_real=1.0)
 
 
 def pillar_array(radius_nm: float) -> PeriodicProblem:
@@ -37,7 +37,7 @@ def pillar_array(radius_nm: float) -> PeriodicProblem:
 def phase_library(radii: np.ndarray, device: str = "auto") -> np.ndarray:
     t = []
     for r in radii:
-        res = osc.solve(pillar_array(float(r)), "rcwa", device)
+        res = ls.solve(pillar_array(float(r)), "rcwa", device)
         re, im = res.t_amplitude["s"][0][0]
         t.append(complex(re, im))
     return np.asarray(t)

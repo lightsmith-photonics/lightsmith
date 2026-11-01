@@ -63,7 +63,7 @@ def marker(device):
 
 def label(r):
     v = "" if r["variant"] in ("default", "") else f"/{r['variant']}"
-    return f"{r['backend'].replace('omniscatter-', '')}{v}/{r['device']}"
+    return f"{r['backend'].replace('lightsmith-', '')}{v}/{r['device']}"
 
 
 def load_csv(path):
@@ -276,7 +276,7 @@ def regime_map(cheap_all, out, metric="err_headline", name="regime_map"):
             else:
                 res = c.get("resolution", "")
                 res = f"@{float(res):g}" if res not in ("", None) else ""
-                txt = f"{c['backend'].replace('omniscatter-', '')}{res}\n{c['device']} {float(c['wall_s']):.2g}s"
+                txt = f"{c['backend'].replace('lightsmith-', '')}{res}\n{c['device']} {float(c['wall_s']):.2g}s"
             ax.text(j + 0.5, i + 0.5, txt, ha="center", va="center", fontsize=5.5)
     ax.set_xlim(0, len(targets))
     ax.set_ylim(len(pids), 0)
@@ -287,7 +287,7 @@ def regime_map(cheap_all, out, metric="err_headline", name="regime_map"):
             return pid
         res = c.get("reference_resolution", "")
         res = f"@{float(res):g}" if res not in ("", None, "nan") else ""
-        backend = c.get("reference_backend", "").replace("omniscatter-", "")
+        backend = c.get("reference_backend", "").replace("lightsmith-", "")
         return pid + "\n" + f"(ref: {backend}{res})"
 
     ax.set_yticks(np.arange(len(pids)) + 0.5, [ylab(p) for p in pids], fontsize=6)

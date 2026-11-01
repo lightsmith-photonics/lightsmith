@@ -6,8 +6,8 @@ import warnings
 import numpy as np
 import pytest
 
-import omniscatter as osc
-from omniscatter.layout import (
+import lightsmith as ls
+from lightsmith.layout import (
     from_gdsfactory_component,
     from_gdsfactory_netlist,
     read_gds,
@@ -15,7 +15,7 @@ from omniscatter.layout import (
     resolved_device,
     write_gds,
 )
-from omniscatter.problems import DeviceProblem, GdsLayout
+from lightsmith.problems import DeviceProblem, GdsLayout
 
 SI = {"kind": "constant_index", "n_real": 3.48}
 SIO2 = {"kind": "constant_index", "n_real": 1.44}
@@ -150,7 +150,7 @@ def test_netlist_to_circuit_mzi(gf):
     p = from_gdsfactory_netlist(c, list(wl), defaults={"waveguide": guide, "bend": guide,
                                                      "mmi1x2": {"loss_db": 0.0}})
     assert {i.component for i in p.instances.values()} == {"waveguide", "bend", "mmi1x2"}
-    res = osc.solve(p, device="cpu")
+    res = ls.solve(p, device="cpu")
     assert res.warnings == []
     t = np.abs(res.s()[:, 1, 0]) ** 2
     dl = abs(_arm_length(p, "cp1,o2") - _arm_length(p, "cp1,o3"))
@@ -164,7 +164,7 @@ def test_netlist_to_circuit_mzi(gf):
 def test_netlist_unmapped_cells_are_named(gf):
     p = from_gdsfactory_netlist(gf.components.mzi2x2_2x2(), [1550.0], defaults={"mmi2x2": {"loss_db": 0.0}})
     assert sorted(p.ports) == ["o1", "o2", "o3", "o4"]
-    s = osc.solve(p, device="cpu").s()[0]
+    s = ls.solve(p, device="cpu").s()[0]
     assert np.allclose(s.conj().T @ s, np.eye(4), atol=1e-12)  # lossless 2x2 MZI is unitary
     netlist = {"instances": {"s1": {"component": "spiral_thing"}, "w": {"component": "straight"}},
                "nets": [], "ports": {}}

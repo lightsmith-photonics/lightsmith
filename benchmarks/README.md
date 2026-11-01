@@ -1,4 +1,4 @@
-# omniscatter cross-method benchmark
+# lightsmith cross-method benchmark
 
 Scripts that regenerate every benchmark number and figure in the paper (`paper/`).
 They measure accuracy against a reference and cost (wall time, peak memory) for every
@@ -6,7 +6,7 @@ installed backend, on CPU and GPU, across a ladder of resolutions.
 
 | File | Purpose |
 |---|---|
-| `problems.py` | Generates the problem suites (`smoke`, `full`) as omniscatter specs → `suites/<suite>.json` (`--split` also writes one Simulation JSON per problem). |
+| `problems.py` | Generates the problem suites (`smoke`, `full`) as lightsmith specs → `suites/<suite>.json` (`--split` also writes one Simulation JSON per problem). |
 | `run.py` | Runs a suite: problem × backend × device × variant × resolution. Discovers backends at run time. |
 | `analyze.py` | Convergence fits, staircase noise, cheapest run per target accuracy (run automatically by `run.py`). |
 | `plots.py` | Figures (matplotlib, not a project dependency). |
@@ -45,7 +45,7 @@ Useful options of `run.py`:
 
 | File | Content |
 |---|---|
-| `environment.json` | Command line, Python, OS, CPU, `omniscatter.doctor()` (torch/CUDA/GPU), backend list with versions and licences, git commit. |
+| `environment.json` | Command line, Python, OS, CPU, `lightsmith.doctor()` (torch/CUDA/GPU), backend list with versions and licences, git commit. |
 | `suite.json` | The exact problems that were run. |
 | `runs.csv` | One row per run: problem, backend, method, variant, device, framework, precision, resolution (semantic and as the backend option), status, wall time, solver runtime, peak memory and how it was measured, `estimate()` memory, dipoles, iterations, whether the run is the reference, relative errors (max and RMS over wavelengths) for C_ext, C_sca, C_abs, the headline error, warnings. |
 | `runs.jsonl` | The same plus full spectra, the options passed, the `estimate()` output and full provenance. |
@@ -74,7 +74,7 @@ Useful options of `run.py`:
   matching option runs once with its defaults (logged in `skips.csv`).
 * **DDA variants**: `center` (default), `weighted` (experimental), `extrapolate` (experimental;
   the resolution is the finest lattice of the ladder `[res/2, 3res/4, res]`).
-* **Wall time** is measured around `omniscatter.solve` after a warm-up of each backend/device
+* **Wall time** is measured around `lightsmith.solve` after a warm-up of each backend/device
   (JIT, CUDA context, cuFFT plans). GPU timings synchronise the device.
 * **Peak memory**: `torch.cuda.max_memory_allocated` minus the allocation before the run on GPU;
   `tracemalloc` peak on CPU (NumPy buffers are traced). `tracemalloc` slows Python-level loops,
@@ -121,7 +121,7 @@ runs of several minutes each. Recommended:
 ## Adding a backend
 
 Nothing here needs to change: a backend registered with `@register` (or via the
-`omniscatter.backends` entry point) is discovered, filtered by `available()` and `supports()`,
+`lightsmith.backends` entry point) is discovered, filtered by `available()` and `supports()`,
 sized with `estimate()` and solved. To take part in resolution sweeps its options model (a
 pydantic class named `*Options` in the backend's module, or `Backend.options_model`) needs a field
 listed in `RESOLUTION_ADAPTERS` in `run.py`; add a mapping there if it uses a new name.

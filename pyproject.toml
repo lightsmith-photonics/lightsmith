@@ -1,5 +1,5 @@
 [project]
-name = "omniscatter"
+name = "lightsmith"
 version = "0.1.0"
 description = "One problem spec, many electromagnetic scattering solvers (Mie, T-matrix, DDA, FDTD) on CPU and GPU, built for humans and AI agents."
 readme = "README.md"
@@ -38,11 +38,11 @@ layout = ["gdsfactory>=9; python_version >= '3.11'"]
 xarray = ["xarray>=2024.1"]
 
 [project.scripts]
-omniscatter = "omniscatter.cli:main"
-omniscatter-mcp = "omniscatter.mcp_server:main"
+lightsmith = "lightsmith.cli:main"
+lightsmith-mcp = "lightsmith.mcp_server:main"
 
 [project.urls]
-Repository = "https://github.com/omniscatter/omniscatter"
+Repository = "https://github.com/lightsmith-photonics/lightsmith"
 
 [build-system]
 requires = ["hatchling"]
@@ -66,5 +66,5 @@ testpaths = ["tests"]  # plugins/ have their own environments and test suites
 markers = [
     "gpu: needs a CUDA GPU",
     "slow: long-running convergence checks",
-    "network: needs internet; set OMNISCATTER_NETWORK_TESTS=1",
+    "network: needs internet; set LIGHTSMITH_NETWORK_TESTS=1",
 ]

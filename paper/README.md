@@ -1,7 +1,7 @@
 # Paper: build notes
 
 Technical report "Lightsmith: an open, GPU-native, differentiable photonics suite for humans and
-AI agents" (the package is still imported as `omniscatter` until the rename lands). arXiv metadata
+AI agents" (the package is still imported as `lightsmith` until the rename lands). arXiv metadata
 and the upload checklist are in `ARXIV.md`.
 
 `main.tex` is an arXiv-ready skeleton (plain `article`, natbib + `unsrtnat`, pdfLaTeX, no

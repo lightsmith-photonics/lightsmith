@@ -1,4 +1,4 @@
-"""Plane-wave-expansion band solver (omniscatter-pwe).
+"""Plane-wave-expansion band solver (lightsmith-pwe).
 
 References used below:
 - Joannopoulos, Johnson, Winn & Meade, *Photonic Crystals: Molding the Flow of
@@ -16,14 +16,14 @@ import math
 import numpy as np
 import pytest
 
-import omniscatter as osc
-from omniscatter.backends.pwe import band_gaps, bands_from_permittivity, density_of_states, k_path, supercell
-from omniscatter.device import _torch_cuda
-from omniscatter.problems import Ball, BandProblem, Circle, KPoint, Structure, Structure2D
-from omniscatter.results import BandResult
+import lightsmith as ls
+from lightsmith.backends.pwe import band_gaps, bands_from_permittivity, density_of_states, k_path, supercell
+from lightsmith.device import _torch_cuda
+from lightsmith.problems import Ball, BandProblem, Circle, KPoint, Structure, Structure2D
+from lightsmith.results import BandResult
 
 A = 400.0
-AIR = osc.ConstantIndex(n_real=1.0)
+AIR = ls.ConstantIndex(n_real=1.0)
 SQ = [(A, 0, 0), (0, A, 0)]
 TRI = [(A, 0, 0), (A / 2, A * math.sqrt(3) / 2, 0)]
 SQ_PATH = [KPoint(label="Γ", reduced=(0, 0, 0)), KPoint(label="X", reduced=(0.5, 0, 0)),
@@ -35,7 +35,7 @@ TRI_PATH = [KPoint(label="Γ", reduced=(0, 0, 0)), KPoint(label="M", reduced=(0.
 def rods(eps=8.9, r=0.2, pol="tm", pps=6, nb=4, **opts):
     return BandProblem(lattice_vectors_nm=SQ, background=AIR, k_path=SQ_PATH, points_per_segment=pps,
                        structures_2d=[Structure2D(profile=Circle(radius_nm=r * A),
-                                                  material=osc.ConstantPermittivity(eps_real=eps))],
+                                                  material=ls.ConstantPermittivity(eps_real=eps))],
                        num_bands=nb, polarization=pol, options={"pwe": opts})
 
 
@@ -62,10 +62,10 @@ def free_photon(lattice_vectors, k_cart, n, nb, nmax=6):
 @pytest.mark.parametrize("solver", ["dense", "lobpcg"])
 def test_empty_lattice_2d_free_photon_bands(solver):
     n = 1.5
-    p = BandProblem(lattice_vectors_nm=TRI, background=osc.ConstantIndex(n_real=n), k_path=TRI_PATH,
+    p = BandProblem(lattice_vectors_nm=TRI, background=ls.ConstantIndex(n_real=n), k_path=TRI_PATH,
                     points_per_segment=5, num_bands=6,
                     options={"pwe": {"solver": solver, "resolution": 16, "num_plane_waves": 100}})
-    r = osc.solve(p, "pwe", "cpu")
+    r = ls.solve(p, "pwe", "cpu")
     _, cart, _, _ = k_path(p)
     ref = free_photon(TRI, cart, n, 6)
     for pol in ("te", "tm"):  # identical in a uniform medium
@@ -78,10 +78,10 @@ def test_empty_lattice_3d_fcc_free_photon_bands(solver):
     fcc = [(0, A / 2, A / 2), (A / 2, 0, A / 2), (A / 2, A / 2, 0)]
     path = [KPoint(label="Γ", reduced=(0, 0, 0)), KPoint(label="X", reduced=(0.5, 0, 0.5)),
             KPoint(label="L", reduced=(0.5, 0.5, 0.5))]
-    p = BandProblem(dimension=3, lattice_vectors_nm=fcc, background=osc.ConstantIndex(n_real=n), k_path=path,
+    p = BandProblem(dimension=3, lattice_vectors_nm=fcc, background=ls.ConstantIndex(n_real=n), k_path=path,
                     points_per_segment=3, num_bands=6,
                     options={"pwe": {"solver": solver, "resolution": 8, "num_plane_waves": 120}})
-    r = osc.solve(p, "pwe", "cpu")
+    r = ls.solve(p, "pwe", "cpu")
     _, cart, _, _ = k_path(p)
     ref = np.repeat(free_photon(fcc, cart, n, 3), 2, axis=1)  # two transverse polarizations per plane wave
     np.testing.assert_allclose(r.frequencies["all"], ref, atol=1e-6)
@@ -97,7 +97,7 @@ def test_square_rods_tm_gap_joannopoulos_and_convergence():
     # The path keeps the corners X and M, where the gap edges sit (band 1 max at M, band 2 min at X).
     edges = {}
     for npw in (40, 100, 200, 600):
-        g = tm_gap(osc.solve(rods(pps=2, num_plane_waves=npw), "pwe", "cpu"))
+        g = tm_gap(ls.solve(rods(pps=2, num_plane_waves=npw), "pwe", "cpu"))
         edges[npw] = np.array([g["bottom"], g["top"]])
     err = {n: np.abs(e - edges[600]).max() for n, e in edges.items() if n != 600}
     assert err[200] < err[40] and err[200] < 2e-4
@@ -109,7 +109,7 @@ def test_square_rods_tm_gap_joannopoulos_and_convergence():
 def test_square_rods_eps12_matches_mpb_tutorial():
     # MPB (resolution 32) reports 0.282623 - 0.419335. We get 0.28066 - 0.41717 (dense HCS, converged to
     # 1e-5; our LOBPCG/subpixel path converges to the same values to 2e-4 at 128/a). Tolerance: 1 %.
-    g = tm_gap(osc.solve(rods(eps=12, pps=2), "pwe", "cpu"))
+    g = tm_gap(ls.solve(rods(eps=12, pps=2), "pwe", "cpu"))
     assert g["bottom"] == pytest.approx(0.282623, rel=1e-2)
     assert g["top"] == pytest.approx(0.419335, rel=1e-2)
 
@@ -117,10 +117,10 @@ def test_square_rods_eps12_matches_mpb_tutorial():
 def test_triangular_air_holes_complete_gap():
     # eps = 13, r = 0.48a. Converged complete gap 0.4297 - 0.5199 (18.98 %; set by the TM gap, which sits
     # inside the TE gap 0.36 - 0.53). Book: 18.6 %. Tolerance: 1 % on edges, 0.01 on the ratio.
-    p = BandProblem(lattice_vectors_nm=TRI, background=osc.ConstantPermittivity(eps_real=13), k_path=TRI_PATH,
+    p = BandProblem(lattice_vectors_nm=TRI, background=ls.ConstantPermittivity(eps_real=13), k_path=TRI_PATH,
                     structures_2d=[Structure2D(profile=Circle(radius_nm=0.48 * A), material=AIR)],
                     points_per_segment=4, num_bands=3, polarization="both")
-    r = osc.solve(p, "pwe", "cpu")
+    r = ls.solve(p, "pwe", "cpu")
     assert r.provenance["solver"] == {"te": "lobpcg", "tm": "dense"}
     gaps = band_gaps(r)
     assert gaps["te"][0]["between_bands"] == (1, 2)
@@ -135,8 +135,8 @@ def test_triangular_air_holes_complete_gap():
 
 def test_lobpcg_matches_dense_for_tm():
     path = [KPoint(label="X", reduced=(0.5, 0, 0)), KPoint(label="M", reduced=(0.5, 0.5, 0))]
-    dense = osc.solve(rods(pps=1, num_plane_waves=300).model_copy(update={"k_path": path}), "pwe", "cpu")
-    it = osc.solve(rods(pps=1, resolution=32).model_copy(update={"k_path": path}), "pwe", "cpu")
+    dense = ls.solve(rods(pps=1, num_plane_waves=300).model_copy(update={"k_path": path}), "pwe", "cpu")
+    it = ls.solve(rods(pps=1, resolution=32).model_copy(update={"k_path": path}), "pwe", "cpu")
     np.testing.assert_allclose(it.frequencies["tm"], dense.frequencies["tm"], rtol=3e-3)
     assert it.provenance["eps_treatment"]["tm"] == "subpixel_smoothed_tensor"
 
@@ -144,7 +144,7 @@ def test_lobpcg_matches_dense_for_tm():
 def test_te_subpixel_smoothing_converges():
     # TE at X/M for eps = 12 rods; reference from resolution 64 (converged to ~1e-4 against 128).
     path = [KPoint(label="X", reduced=(0.5, 0, 0)), KPoint(label="M", reduced=(0.5, 0.5, 0))]
-    f = {res: np.asarray(osc.solve(rods(eps=12, pol="te", pps=1, resolution=res).model_copy(update={"k_path": path}),
+    f = {res: np.asarray(ls.solve(rods(eps=12, pol="te", pps=1, resolution=res).model_copy(update={"k_path": path}),
                                    "pwe", "cpu").frequencies["te"]) for res in (16, 32, 64)}
     e16, e32 = (np.abs(f[r] - f[64]).max() for r in (16, 32))
     assert e32 < e16 and e32 < 3e-3
@@ -154,7 +154,7 @@ def test_te_subpixel_smoothing_converges():
 
 
 def test_k_path_and_result_fields():
-    r = osc.solve(rods(pps=4, num_plane_waves=60), "pwe", "cpu")
+    r = ls.solve(rods(pps=4, num_plane_waves=60), "pwe", "cpu")
     assert len(r.k_reduced) == 13 and r.k_labels == {0: "Γ", 4: "X", 8: "M", 12: "Γ"}
     assert r.k_reduced[4] == (0.5, 0.0, 0.0)
     assert r.k_distance[4] == pytest.approx(0.5) and r.k_distance[-1] == pytest.approx(1 + math.sqrt(0.5))
@@ -176,47 +176,47 @@ def test_band_gaps_helper_complete_gap():
 
 
 def test_estimate_reports_matrix_size_without_solving():
-    est = osc.estimate(rods(pol="both"), method="pwe", device="cpu")
-    assert est["backend"] == "omniscatter-pwe"
+    est = ls.estimate(rods(pol="both"), method="pwe", device="cpu")
+    assert est["backend"] == "lightsmith-pwe"
     assert est["solver"] == {"te": "lobpcg", "tm": "dense"}
     assert est["matrix_size"]["tm"] >= 400 and est["matrix_size"]["te"] == 32 * 32
     assert est["memory_bytes"] > 0 and est["k_points"] == 19
 
 
 def test_choose_method_picks_pwe_for_bands():
-    b, _ = osc.choose_method(rods())
-    assert b.name == "omniscatter-pwe"
+    b, _ = ls.choose_method(rods())
+    assert b.name == "lightsmith-pwe"
 
 
 def test_material_warnings_and_errors():
-    lossy = osc.ConstantIndex(n_real=3.0, n_imag=0.01)
+    lossy = ls.ConstantIndex(n_real=3.0, n_imag=0.01)
     p = rods(num_plane_waves=60).model_copy(update={"structures_2d": [
         Structure2D(name="rod", profile=Circle(radius_nm=80), material=lossy)]})
-    assert any("lossy" in w for w in osc.solve(p, "pwe", "cpu").warnings)
-    drude = osc.Drude(eps_inf=12.0, wp_ev=1.0, gamma_ev=0.0)  # eps > 0 at 800 nm, but dispersive
+    assert any("lossy" in w for w in ls.solve(p, "pwe", "cpu").warnings)
+    drude = ls.Drude(eps_inf=12.0, wp_ev=1.0, gamma_ev=0.0)  # eps > 0 at 800 nm, but dispersive
     p = p.model_copy(update={"structures_2d": [Structure2D(name="rod", profile=Circle(radius_nm=80), material=drude)]})
-    w = osc.solve(p, "pwe", "cpu").warnings
+    w = ls.solve(p, "pwe", "cpu").warnings
     assert any("dispersive" in m for m in w) and any("reference_wavelength_nm not set" in m for m in w)
-    metal = osc.Drude(eps_inf=1.0, wp_ev=9.0, gamma_ev=0.1)
+    metal = ls.Drude(eps_inf=1.0, wp_ev=9.0, gamma_ev=0.1)
     p = p.model_copy(update={"structures_2d": [Structure2D(profile=Circle(radius_nm=80), material=metal)]})
     with pytest.raises(ValueError, match="positive permittivity"):
-        osc.solve(p, "pwe", "cpu")
+        ls.solve(p, "pwe", "cpu")
 
 
 def test_supports_rejects_inconsistent_problems():
     bad = rods().model_copy(update={"k_path": [KPoint(label="A", reduced=(0, 0, 0)),
                                                KPoint(label="B", reduced=(0, 0, 0.5))]})
-    ok, why = osc.get_backend("pwe").supports(bad)
+    ok, why = ls.get_backend("pwe").supports(bad)
     assert not ok and "out-of-plane" in why
 
 
 def test_overlapping_inclusions_use_raster():
     # Two overlapping circles: analytic sum would double count, so eps_hat comes from the raster.
-    mat = osc.ConstantPermittivity(eps_real=8.9)
+    mat = ls.ConstantPermittivity(eps_real=8.9)
     p = rods(num_plane_waves=100).model_copy(update={"structures_2d": [
         Structure2D(profile=Circle(radius_nm=80, center_nm=(-30, 0)), material=mat),
         Structure2D(profile=Circle(radius_nm=80, center_nm=(30, 0)), material=mat)]})
-    r = osc.solve(p, "pwe", "cpu")
+    r = ls.solve(p, "pwe", "cpu")
     assert "raster" in r.provenance["eps_treatment"]["tm"]
 
 
@@ -228,8 +228,8 @@ def test_supercell_line_defect_mode_in_gap():
     perfect = supercell(bulk, (1, 5), k_path=path).model_copy(update={"num_bands": 7})
     wg = supercell(bulk, (1, 5), remove=[(0, 0)], k_path=path).model_copy(update={"num_bands": 7})
     assert len(perfect.structures_2d) == 5 and len(wg.structures_2d) == 4
-    fp = np.asarray(osc.solve(perfect, "pwe", "cpu").frequencies["tm"])
-    fw = np.asarray(osc.solve(wg, "pwe", "cpu").frequencies["tm"])
+    fp = np.asarray(ls.solve(perfect, "pwe", "cpu").frequencies["tm"])
+    fw = np.asarray(ls.solve(wg, "pwe", "cpu").frequencies["tm"])
     # Perfect supercell: 5 folded first bands, then nothing until the upper gap edge.
     assert fp[:, 4].max() < 0.3225 + 1e-3 and fp[:, 5].min() > 0.4425 - 1e-3
     # Guided band (5th): 0.315, 0.332, 0.379, 0.446, 0.447 at k_x = 0 ... 0.5 (2 pi / a).
@@ -271,8 +271,8 @@ def test_bands_from_permittivity_is_differentiable():
 @pytest.mark.skipif(not _torch_cuda(), reason="no CUDA GPU with PyTorch")
 def test_gpu_matches_cpu():
     p = rods(pol="both", pps=4)
-    cpu = osc.solve(p, "pwe", "cpu")
-    gpu = osc.solve(p, "pwe", "gpu")
+    cpu = ls.solve(p, "pwe", "cpu")
+    gpu = ls.solve(p, "pwe", "gpu")
     assert gpu.provenance["framework"] == "torch"
     assert gpu.provenance["solver"] == {"te": "lobpcg", "tm": "dense"}
     # TM dense runs in single precision on the GPU; TE LOBPCG in double.
@@ -289,12 +289,12 @@ def test_diamond_lattice_complete_gap_3d():
     fcc = [(0, ac / 2, ac / 2), (ac / 2, 0, ac / 2), (ac / 2, ac / 2, 0)]
     pts = {"X": (0.5, 0, 0.5), "U": (0.625, 0.25, 0.625), "L": (0.5, 0.5, 0.5), "Γ": (0, 0, 0),
            "W": (0.5, 0.25, 0.75), "K": (0.375, 0.375, 0.75)}
-    si = osc.ConstantPermittivity(eps_real=11.56)
+    si = ls.ConstantPermittivity(eps_real=11.56)
     p = BandProblem(dimension=3, lattice_vectors_nm=fcc, background=AIR, num_bands=5, points_per_segment=3,
                     k_path=[KPoint(label=lab, reduced=pts[lab]) for lab in ["X", "U", "L", "Γ", "X", "W", "K"]],
                     structures=[Structure(geometry=Ball(center_nm=(s * ac / 8,) * 3, radius_nm=0.25 * ac),
                                           material=si) for s in (1, -1)],
                     options={"pwe": {"resolution": 16}})
-    (g,) = band_gaps(osc.solve(p, "pwe", "auto"))["all"]
+    (g,) = band_gaps(ls.solve(p, "pwe", "auto"))["all"]
     assert g["between_bands"] == (2, 3)
     assert g["bottom"] == pytest.approx(0.2815, rel=5e-3) and g["top"] == pytest.approx(0.3144, rel=5e-3)

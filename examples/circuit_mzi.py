@@ -11,8 +11,8 @@ import sys
 
 import numpy as np
 
-import omniscatter as osc
-from omniscatter.problems import CircuitProblem
+import lightsmith as ls
+from lightsmith.problems import CircuitProblem
 
 NEFF, NG, DL = 2.4, 4.2, 20_000.0  # nm
 guide = {"neff": NEFF, "ng": NG, "wl0_nm": 1550.0, "loss_db_per_cm": 2.0}
@@ -32,7 +32,7 @@ mzi = CircuitProblem(
     wavelengths={"start_nm": 1500, "stop_nm": 1600, "num": 2001},
 )
 
-res = osc.solve(mzi, device="cpu")
+res = ls.solve(mzi, device="cpu")
 wl = np.asarray(res.wavelengths_nm)
 s = res.s()
 bar = np.abs(s[:, res.ports.index("bar"), res.ports.index("in")]) ** 2

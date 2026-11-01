@@ -1,83 +1,81 @@
-# omniscatter
+# Lightsmith
 
-**One problem spec, many electromagnetic scattering solvers — on CPU or GPU, for humans and AI agents.**
+**The open photonics suite — GPU-native, differentiable, and built for AI agents.**
 
-Describe a nanoparticle scattering problem once (shapes, materials, host medium, illumination, wavelengths) and solve it with Mie theory, the T-matrix method, the discrete dipole approximation (DDA) or FDTD. Results come back in the same units and conventions, with provenance, so methods can be compared directly.
+Describe a photonics problem once, as typed JSON, and solve it with the method that fits: from nanoparticles and thin films to metasurfaces, waveguides, photonic crystals, devices and circuits. Every result comes back in the same units and conventions, with provenance, so methods can be cross-checked directly. Many solvers run on GPU and can be differentiated, which is what powers inverse design.
 
-> Status: pre-alpha (v0.1). Mie and DDA work; T-matrix and FDTD backends are next (see the roadmap).
+> Status: pre-alpha (v0.1). Validation numbers for every solver are in `tests/` and the technical report draft in `paper/`.
 
 ## Install
 
 ```bash
-uv add omniscatter                 # CPU
-uv add "omniscatter[gpu]"          # + PyTorch for GPU solvers
-uv add "omniscatter[mcp]"          # + MCP server for AI agents
+uv add lightsmith                    # CPU
+uv add "lightsmith[gpu]"             # + PyTorch for GPU solvers
+uv add "lightsmith[mcp]"             # + MCP server for AI agents
+uv add "lightsmith[tmatrix]"         # + treams T-matrix backend
+uv add "lightsmith[layout]"          # + gdsfactory import (Python >= 3.11)
 ```
 
 From a clone (pulls CUDA 12.8 PyTorch wheels on Windows/Linux):
 
 ```bash
 uv sync --extra gpu --extra mcp
-uv run omniscatter doctor
+uv run lightsmith doctor
 ```
 
 ## Quick start
 
 ```python
-import omniscatter as osc
+import lightsmith as ls
 
-sim = osc.Simulation(
-    particles=[osc.Particle(shape=osc.Sphere(radius_nm=40),
-                            material=osc.Drude(eps_inf=9.5, wp_ev=9.0, gamma_ev=0.07))],
+sim = ls.Simulation(
+    particles=[ls.Particle(shape=ls.Sphere(radius_nm=40),
+                           material=ls.LibraryMaterial(name="Au"))],   # Johnson & Christy
     medium_index=1.33,
-    wavelengths=osc.WavelengthRange(start_nm=400, stop_nm=800, num=81),
+    wavelengths=ls.WavelengthRange(start_nm=400, stop_nm=800, num=81),
 )
 
-res = osc.solve(sim)                         # auto -> Mie for a single sphere
-print(res.summary())
-
-osc.estimate(sim, method="dda", device="gpu")  # size and memory, no solve
-cmp = osc.compare(sim, ["mie", "dda"])        # cross-check against Mie
-print(cmp["relative_difference"])
+ls.estimate(sim, method="fdtd", device="gpu")   # grid, steps, memory; never solves
+res = ls.solve(sim)                             # auto -> exact Mie for a sphere
+cmp = ls.compare(sim, ["mie", "dda", "fdtd"])   # cross-check methods
 ```
 
-The same from the shell, with JSON in and out:
+The same from the shell, JSON in and out:
 
 ```bash
-uv run omniscatter solve examples/drude_sphere.json --method dda --device gpu
+uv run lightsmith solve examples/drude_sphere.json --method dda --device gpu
 ```
 
-## Methods
+## Problems and solvers
 
-| Method | Backend | Licence | Device | Geometry | Status |
-|---|---|---|---|---|---|
-| Mie | [miepython](https://github.com/scottprahl/miepython) | MIT | CPU | single sphere | ✅ |
-| DDA | native (FFT + BiCGStab, array API) | MIT | CPU, CUDA GPU | any voxelised shapes, multiple particles | ✅ |
-| T-matrix | planned | — | — | — | 🚧 |
-| FDTD | planned | — | — | — | 🚧 |
+| Problem kind | Solvers (auto order first) | GPU | Gradients |
+|---|---|---|---|
+| `scattering` — particles, clusters | Mie (native, miepython), T-matrix (treams), DDA, FDTD, quasistatic | ✅ | Mie |
+| `layer_stack` — thin films | TMM, RCWA, FDTD | ✅ | TMM, RCWA |
+| `periodic` — gratings, metasurfaces | RCWA, FDTD (normal incidence) | ✅ | RCWA |
+| `mode` — waveguide cross-sections | FDE (full vector, bends) | — | — |
+| `device` — S-parameters between ports | EME, FDFD (2D) | FDFD | FDFD |
+| `bands` — photonic crystals | PWE (2D TE/TM, 3D) | ✅ | dense path |
+| `circuit` — netlists of compact models | S-matrix circuit solver | ✅ | ✅ |
+| `optimization` — inverse design | topology optimisation on FDFD | ✅ | — |
 
-`omniscatter backends` lists what is installed. GPL-licensed solvers can be added as separate plugin packages through the `omniscatter.backends` entry point, keeping this core MIT.
+`lightsmith backends` lists what is installed. Materials: bundled CC0 datasets (Au, Ag, Al, Cu, Si, SiO2, TiO2, water) from the refractiveindex.info database, online fetch of any entry, and passive Drude–Lorentz fitting for time-domain solvers.
+
+GPL-licensed solvers live in separate plugin packages discovered through the `lightsmith.backends` entry point (`lightsmith-adda`, `lightsmith-scattnlay`), keeping this core MIT.
 
 ## Conventions
 
-- Lengths in nm; wavelengths are vacuum wavelengths; host medium has a real index.
+- Lengths in nm; wavelengths are vacuum wavelengths.
 - Time dependence `exp(-iωt)`: absorbing materials have `Im(ε) > 0`.
-- Cross sections in nm². Efficiencies use the volume-equivalent radius: `Q = C / (π r_eq²)`.
+- Scattering cross sections in nm²; efficiencies use the volume-equivalent radius, `Q = C / (π r_eq²)`.
 
 ## For AI agents
 
-- `omniscatter schema` prints the JSON Schema of a simulation.
+- `lightsmith schema` prints the JSON Schema of every problem kind.
 - Every CLI command prints JSON; failures print `{"error", "message"}` to stderr with exit code 1.
-- `omniscatter-mcp` runs an MCP server with `get_schema`, `list_backends`, `check_environment`, `estimate`, `solve` and `compare` tools.
+- `lightsmith-mcp` serves `get_schema`, `list_backends`, `check_environment`, `estimate`, `solve` and `compare`.
 - See [AGENTS.md](AGENTS.md) and [llms.txt](llms.txt).
-
-## Roadmap
-
-- T-matrix and FDTD backends (chosen from the survey in [docs/landscape.md](docs/landscape.md))
-- Material database loader (refractiveindex.info)
-- Near fields, orientation averaging, substrates
-- Cross-method benchmark suite (the basis of the accompanying preprint)
 
 ## Licence
 
-MIT. Each backend keeps its own licence; please cite the backends you use (`Result.provenance`, `omniscatter backends`).
+MIT. Backends keep their own licences; cite the ones you use (`Result.provenance`, `lightsmith backends`).

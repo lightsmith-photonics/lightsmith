@@ -5,17 +5,17 @@ import math
 import numpy as np
 import pytest
 
-import omniscatter as osc
-from omniscatter.problems import DeviceProblem, Port, Prism, Rectangle, Structure
+import lightsmith as ls
+from lightsmith.problems import DeviceProblem, Port, Prism, Rectangle, Structure
 
 torch = pytest.importorskip("torch")
 pytest.importorskip("scipy")
 
-from omniscatter import inverse  # noqa: E402
-from omniscatter.inverse import parametrization as par  # noqa: E402,I001
+from lightsmith import inverse  # noqa: E402
+from lightsmith.inverse import parametrization as par  # noqa: E402,I001
 
-SI = osc.ConstantIndex(n_real=3.48)
-SIO2 = osc.ConstantIndex(n_real=1.44)
+SI = ls.ConstantIndex(n_real=3.48)
+SIO2 = ls.ConstantIndex(n_real=1.44)
 
 
 def wg(cx, cy, sx, sy):
@@ -103,7 +103,7 @@ def test_marching_squares_disc_and_ring():
     structs = inverse.to_structures(ring, SI, SIO2, -110, 110, (0, 0), (1010, 1010))
     assert [s.material for s in structs] == [SIO2, SI, SIO2]
     # Rasterising the structures reproduces the ring.
-    from omniscatter.raster import inside_geometry
+    from lightsmith.raster import inside_geometry
 
     owner = np.full(X.shape, -1)
     for i, s in enumerate(structs):
@@ -118,7 +118,7 @@ def test_gds_roundtrip(tmp_path):
     rho = ((np.abs(X - 200) < 120) & (np.abs(Y - 200) < 120) & ~((np.abs(X - 200) < 40) & (np.abs(Y - 200) < 40)))
     cs = inverse.marching_squares(rho.astype(float), x, x)
     info = inverse.write_gds(str(tmp_path / "d.gds"), cs, layer=(3, 0))
-    from omniscatter.layout import read_gds
+    from lightsmith.layout import read_gds
 
     polys = read_gds(info["path"])
     assert info["holes"] == 1 and sorted(polys) == [(3, 0), (3, 1)]
@@ -141,11 +141,11 @@ def test_spec_json_roundtrip():
 
 
 def test_backend_protocol():
-    b = osc.get_backend("omniscatter-fdfd")
+    b = ls.get_backend("lightsmith-fdfd")
     assert isinstance(b, inverse.DifferentiableBackend)
     inverse.check_backend(b)
     with pytest.raises(ValueError):
-        inverse.check_backend(osc.get_backend("dda"))
+        inverse.check_backend(ls.get_backend("dda"))
 
 
 def test_design_region_must_not_touch_ports():
@@ -199,7 +199,7 @@ def test_field_objective_and_lbfgsb():
 
 
 def test_solve_dispatches_optimization_problems():
-    res = osc.solve(bend_spec(max_iter=2, dl=50.0), method="inverse", device="cpu")
+    res = ls.solve(bend_spec(max_iter=2, dl=50.0), method="inverse", device="cpu")
     assert isinstance(res, inverse.OptimizationResult) and len(res.history) == 2
-    est = osc.estimate(bend_spec(), method="inverse", device="cpu")
-    assert est["differentiable_backend"] == "omniscatter-fdfd" and est["sources_per_iteration"] == 1
+    est = ls.estimate(bend_spec(), method="inverse", device="cpu")
+    assert est["differentiable_backend"] == "lightsmith-fdfd" and est["sources_per_iteration"] == 1
