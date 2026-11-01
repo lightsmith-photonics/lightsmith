@@ -50,7 +50,7 @@ def main(argv: list[str] | None = None) -> int:
         if name == "compare":
             s.add_argument("--methods", help="comma-separated methods/backends (default: all applicable)")
         else:
-            s.add_argument("--method", default="auto", help="auto | mie | tmatrix | dda | fdtd | <backend>")
+            s.add_argument("--method", default="auto", help="auto | <method> (see `backends`) | <backend name>")
         if name != "estimate":
             s.add_argument("-o", "--output", help="write JSON here instead of stdout")
     a = p.parse_args(argv)

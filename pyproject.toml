@@ -30,6 +30,9 @@ dependencies = [
 # below pulls CUDA 12.8 wheels (needed for RTX 50xx / Blackwell).
 gpu = ["torch>=2.7"]
 mcp = ["mcp>=1.2"]
+# gdsfactory is MIT, but pulls in klayout (GPL-3.0-or-later) via kfactory; kept optional
+# and imported lazily. Our own GDS reader in layout.py needs no extra.
+layout = ["gdsfactory>=9; python_version >= '3.11'"]
 xarray = ["xarray>=2024.1"]
 
 [project.scripts]
