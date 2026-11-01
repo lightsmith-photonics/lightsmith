@@ -28,3 +28,7 @@ src-tauri/target/
 !.env.example
 *.db
 *.sqlite3
+
+# layout files written by ad-hoc runs at the repo root
+/*.gds
+/*.oas
