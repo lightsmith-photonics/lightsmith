@@ -1,0 +1,141 @@
+site_name: Lightsmith
+site_description: The open photonics suite — GPU-native, differentiable, and built for AI agents.
+site_author: Alexander Feghali
+site_url: https://lightsmith-photonics.github.io/lightsmith/
+repo_url: https://github.com/lightsmith-photonics/lightsmith
+repo_name: lightsmith-photonics/lightsmith
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; 2026 Alexander Feghali and the Lightsmith contributors — MIT licence
+
+# `uv run --group docs mkdocs build --strict` must pass (see RELEASING.md).
+strict: true
+validation:
+  omitted_files: warn
+  absolute_links: info
+  unrecognized_links: warn
+  anchors: warn
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - content.action.edit
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - navigation.indexes
+    - search.highlight
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            show_source: false
+            show_root_heading: true
+            show_root_full_path: false
+            show_symbol_type_heading: true
+            members_order: source
+            separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+            merge_init_into_class: true
+            filters: ["!^_"]
+            show_if_no_docstring: true
+            heading_level: 2
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Installation: install.md
+      - Quick start: quickstart.md
+      - Conventions: conventions.md
+  - Problem kinds:
+      - problems/index.md
+      - Scattering: problems/scattering.md
+      - Layer stacks: problems/layer-stack.md
+      - Periodic structures: problems/periodic.md
+      - Waveguide modes: problems/mode.md
+      - Devices: problems/device.md
+      - Photonic bands: problems/bands.md
+      - Circuits: problems/circuit.md
+      - Inverse design: problems/optimization.md
+  - Solvers:
+      - solvers/index.md
+      - Mie: solvers/mie.md
+      - T-matrix: solvers/tmatrix.md
+      - DDA: solvers/dda.md
+      - FDTD: solvers/fdtd.md
+      - Quasistatic: solvers/quasistatic.md
+      - TMM: solvers/tmm.md
+      - RCWA: solvers/rcwa.md
+      - FDE: solvers/fde.md
+      - EME: solvers/eme.md
+      - FDFD: solvers/fdfd.md
+      - PWE: solvers/pwe.md
+      - Circuit: solvers/circuit.md
+      - Inverse design: solvers/inverse.md
+  # Placeholders for backends being added on other branches; fill them in when those branches merge.
+  - In development:
+      - solvers/in-development/index.md
+      - BEM: solvers/in-development/bem.md
+      - BPM: solvers/in-development/bpm.md
+      - FDTD oblique incidence: solvers/in-development/fdtd-oblique.md
+      - 3D inverse design: solvers/in-development/inverse-3d.md
+      - PDK flow: solvers/in-development/pdk-flow.md
+  - Materials: materials.md
+  - Interfaces:
+      - Command line: cli.md
+      - MCP server: mcp-overview.md
+  - API reference:
+      - api/index.md
+      - Top level: api/core.md
+      - Problems: api/problems.md
+      - Scattering spec: api/spec.md
+      - Materials: api/materials.md
+      - Results: api/results.md
+      - Backends: api/backends.md
+      - Circuits: api/circuits.md
+      - Inverse design: api/inverse.md
+      - Layout: api/layout.md
+  - Contributing: contributing.md
+  - Related software: landscape.md
+  - Changelog: changelog.md

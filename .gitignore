@@ -32,3 +32,6 @@ src-tauri/target/
 # layout files written by ad-hoc runs at the repo root
 /*.gds
 /*.oas
+
+# MkDocs build output
+/site/
