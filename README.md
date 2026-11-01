@@ -75,8 +75,27 @@ GPL-licensed solvers live in separate plugin packages discovered through the `li
 
 - `lightsmith schema` prints the JSON Schema of every problem kind.
 - Every CLI command prints JSON; failures print `{"error", "message"}` to stderr with exit code 1.
-- `lightsmith-mcp` serves `get_schema`, `list_backends`, `check_environment`, `estimate`, `solve` and `compare`.
 - See [AGENTS.md](https://github.com/lightsmith-photonics/lightsmith/blob/main/AGENTS.md) and [llms.txt](https://github.com/lightsmith-photonics/lightsmith/blob/main/llms.txt).
+
+### MCP server
+
+`lightsmith-mcp` is a Model Context Protocol server (stdio, or streamable HTTP with `--http`) for Claude and other
+MCP clients:
+
+```bash
+claude mcp add lightsmith -- uv run --directory /path/to/lightsmith lightsmith-mcp
+```
+
+- **Tools:** schemas and examples for every problem kind, validation, budget-checked `estimate`/`solve`/`compare`,
+  background jobs with progress and cancellation, and materials search, sampling and Drude–Lorentz fits.
+- **Resources:** schemas, examples, conventions, the backend matrix, and full results as JSON, CSV and PNG.
+- **Prompts:** guided workflows.
+- **Remote mode:** set `LIGHTSMITH_CLOUD_URL` and `LIGHTSMITH_API_KEY` to run solves on Lightsmith Cloud.
+
+See [docs/mcp.md](https://github.com/lightsmith-photonics/lightsmith/blob/main/docs/mcp.md) for configuration snippets and the full tool list.
+
+<!-- mcp-name: io.github.lightsmith-photonics/lightsmith -->
+
 
 ## Licence
 

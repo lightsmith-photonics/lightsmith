@@ -40,8 +40,8 @@ dependencies = [
 # GPU array framework for the native solvers. On Windows/Linux the dev setup
 # below pulls CUDA 12.8 wheels (needed for RTX 50xx / Blackwell).
 gpu = ["torch>=2.7"]
-# mcp 2.x renamed FastMCP to MCPServer; mcp_server.py still uses the 1.x API
-mcp = ["mcp>=1.2,<2"]
+# MCP server (lightsmith-mcp). mcp 2.x: MCPServer API, protocol 2026-07-28 with fallback to older clients.
+mcp = ["mcp>=2.3,<3"]
 # treams pins scipy<1.17 and Python<3.14 (upstream: scipy.special.sph_harm removal)
 tmatrix = ["treams>=0.4.7,<0.5; python_version < '3.14'"]
 # gdsfactory is MIT, but pulls in klayout (GPL-3.0-or-later) via kfactory; kept optional
