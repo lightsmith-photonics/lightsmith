@@ -1,6 +1,6 @@
 # lightsmith cross-method benchmark
 
-Scripts that regenerate every benchmark number and figure in the paper (`paper/`).
+Scripts that regenerate every benchmark number and figure in the technical report (the sibling `lightsmith-paper` repository).
 They measure accuracy against a reference and cost (wall time, peak memory) for every
 installed backend, on CPU and GPU, across a ladder of resolutions.
 
@@ -24,7 +24,7 @@ uv run --no-sync --with matplotlib python benchmarks/plots.py benchmarks/results
 ```
 
 `--no-sync` keeps `uv` from touching the environment; drop it on a fresh clone.
-`--paper` copies the PDFs into `paper/figures/`.
+`--paper` copies the PDFs into `../lightsmith-paper/figures/` (override with `LIGHTSMITH_PAPER_DIR`).
 
 Useful options of `run.py`:
 

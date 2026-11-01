@@ -4,7 +4,7 @@
 
 Describe a photonics problem once, as typed JSON, and solve it with the method that fits: from nanoparticles and thin films to metasurfaces, waveguides, photonic crystals, devices and circuits. Every result comes back in the same units and conventions, with provenance, so methods can be cross-checked directly. Many solvers run on GPU and can be differentiated, which is what powers inverse design.
 
-> Status: pre-alpha (v0.1). Validation numbers for every solver are in `tests/` and the technical report draft in `paper/`.
+> Status: pre-alpha (v0.1). Validation numbers for every solver are in `tests/` and in the technical report (`lightsmith-paper` repository).
 
 ## Install
 
@@ -79,3 +79,14 @@ GPL-licensed solvers live in separate plugin packages discovered through the `li
 ## Licence
 
 MIT. Backends keep their own licences; cite the ones you use (`Result.provenance`, `lightsmith backends`).
+
+## Related repositories
+
+Lightsmith is split across sibling repositories:
+
+| Repository | Contents |
+|---|---|
+| `lightsmith` (this one) | Core library, solvers, benchmarks |
+| `lightsmith-adda`, `lightsmith-scattnlay` | GPL solver plugins (separate licence) |
+| `lightsmith-paper` | arXiv technical report |
+| `lightsmith-studio`, `lightsmith-community`, `lightsmith-cloud`, `lightsmith-materials`, `lightsmith-deploy` | GUI, web platform, compute service, materials database, full-stack deployment |

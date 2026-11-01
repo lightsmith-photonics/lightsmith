@@ -2,7 +2,8 @@
 
     uv run --no-sync --with matplotlib python benchmarks/plots.py benchmarks/results/<dir> [--paper]
 
-Writes <dir>/figures/*.pdf and *.png; --paper also copies the PDFs to paper/figures/.
+Writes <dir>/figures/*.pdf and *.png; --paper also copies the PDFs to the lightsmith-paper
+repository (sibling folder by default, or $LIGHTSMITH_PAPER_DIR).
 Figures:
     spectra.pdf         Q_ext and Q_abs spectra: reference vs each backend at its finest resolution
     error_vs_cost.pdf   headline error vs wall time, one panel per problem, lines join resolution ladders
@@ -19,6 +20,7 @@ import argparse
 import csv
 import json
 import math
+import os
 import shutil
 import sys
 from collections import defaultdict
@@ -364,7 +366,7 @@ def gpu_speedup(rows, out):
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("results", type=Path)
-    ap.add_argument("--paper", action="store_true", help="copy PDFs to paper/figures/")
+    ap.add_argument("--paper", action="store_true", help="copy PDFs to <lightsmith-paper>/figures/")
     args = ap.parse_args(argv)
     d = args.results
     rows = load_runs(d)
@@ -391,7 +393,7 @@ def main(argv=None):
             traceback.print_exc()
             print(f"[plots] figure failed: {e}", file=sys.stderr)
     if args.paper:
-        dest = HERE.parent / "paper" / "figures"
+        dest = Path(os.environ.get("LIGHTSMITH_PAPER_DIR", HERE.parent.parent / "lightsmith-paper")) / "figures"
         dest.mkdir(parents=True, exist_ok=True)
         for f in out.glob("*.pdf"):
             shutil.copy2(f, dest / f.name)

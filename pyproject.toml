@@ -62,7 +62,7 @@ url = "https://download.pytorch.org/whl/cu128"
 explicit = true
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]  # plugins/ have their own environments and test suites
+testpaths = ["tests"]  # benchmarks are run separately (benchmarks/run.py)
 markers = [
     "gpu: needs a CUDA GPU",
     "slow: long-running convergence checks",
