@@ -184,8 +184,8 @@ After the first release, add the concept DOI to the citation files and the READM
 
 ## 5. Documentation site
 
-The site is MkDocs Material, built from `docs/` and `mkdocs.yml` and served by GitHub Pages from the
-`gh-pages` branch at <https://docs.lightsmith.dev/>.
+The site is MkDocs Material, built from `docs/` and `mkdocs.yml`. It is served at
+<https://docs.lightsmith.dev/> by nginx on the Lightsmith server (`root@95.217.87.43`), behind Cloudflare.
 
 Preview locally:
 
@@ -193,26 +193,32 @@ Preview locally:
 uv run --group docs mkdocs serve
 ```
 
-Publish:
+Publish (needs SSH access to the server):
 
 ```bash
-uv run --group docs mkdocs gh-deploy --strict --force -m "Deploy docs for {sha}"
+scripts/deploy_docs.sh
 ```
 
-`gh-deploy` builds the site, commits it to the `gh-pages` branch and pushes that branch to `origin`.
-`docs/CNAME` puts the custom domain into every build, so a deploy never resets it.
+The script:
 
-How the site is wired (one-time setup, already done on 2026-11-01):
+1. builds the site with `--strict`;
+2. unpacks it into `/var/www/lightsmith-docs/releases/<time>-<commit>`;
+3. switches the `current` symlink that nginx serves, in a single atomic step;
+4. keeps the last five releases.
 
-- **GitHub:** under **Settings → Pages** for `lightsmith-photonics/lightsmith`, the source is the `gh-pages`
-  branch, folder `/ (root)`. The custom domain is `docs.lightsmith.dev`, with *Enforce HTTPS* on.
-- **Cloudflare DNS** (`lightsmith.dev` zone): `CNAME docs → lightsmith-photonics.github.io`, **DNS only**
-  (grey cloud). GitHub issues the TLS certificate itself, and the Cloudflare proxy would get in the way of
-  that.
-- **Old links:** the PyPI page for 0.1.0 links to `lightsmith-photonics.github.io/lightsmith/`. GitHub
-  redirects that address to the custom domain.
+To roll back, point `current` at an older release directory.
 
-Re-run `gh-deploy` after each release, or whenever the docs on `main` change.
+Re-run it after each release, or whenever the docs on `main` change.
+
+How the site is wired (one-time setup, done on 2026-11-01):
+
+- **Cloudflare DNS** (`lightsmith.dev` zone): `A docs → 95.217.87.43`, proxied. The zone's SSL mode is
+  *Full (strict)*.
+- **Server:** the nginx site is `/etc/nginx/sites-available/lightsmith-docs`, and the Let's Encrypt
+  certificate is `lightsmith-docs`. The certificate renews automatically with the server's certbot timer.
+- **Old links:** the 0.1.0 PyPI page links to `lightsmith-photonics.github.io/lightsmith/`. The
+  `gh-pages` branch holds only a redirect page. It sends every path there to the same path on
+  docs.lightsmith.dev, so keep GitHub Pages enabled on that branch, and do not run `mkdocs gh-deploy`.
 
 ## 6. After the release
 
