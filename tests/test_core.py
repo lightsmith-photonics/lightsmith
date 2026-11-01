@@ -53,7 +53,7 @@ def test_auto_method_selection():
         wavelengths=[500.0],
     )
     backend, skipped = ls.choose_method(sim)
-    assert backend.method == "dda"
+    assert backend.method == "bem"  # BEM precedes DDA for homogeneous non-spherical particles
     assert any("spheres only" in s for s in skipped)
 
 

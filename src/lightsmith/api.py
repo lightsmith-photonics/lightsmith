@@ -17,7 +17,9 @@ from .results import Result, relative_difference
 
 # Preference order per problem kind when method="auto": exact/cheap first, then more general.
 AUTO_ORDER: dict[str, tuple[str, ...]] = {
-    "scattering": ("mie", "tmatrix", "dda", "fdtd"),
+    # BEM after T-matrix: it takes the non-spherical and mixed clusters neither Mie nor treams handles,
+    # converging smoothly for metals where DDA/FDTD staircase; it cannot do substrates (DDA/FDTD then).
+    "scattering": ("mie", "tmatrix", "bem", "dda", "fdtd"),
     "layer_stack": ("tmm", "rcwa", "fdtd"),
     "periodic": ("rcwa", "fdfd", "fdtd"),
     "mode": ("fde",),
