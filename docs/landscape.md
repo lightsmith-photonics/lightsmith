@@ -1,6 +1,6 @@
 # Landscape survey: open-source EM scattering solvers (Mie, T-matrix, DDA/GDM, FDTD)
 
-*Compiled 2026-11-01 for PlasmonHub, an MIT-core, uv/pip-installable Python library with CPU and GPU support.*
+*Compiled 2026-11-01 for Lightsmith, an MIT-core, uv/pip-installable Python library with CPU and GPU support.*
 
 ## How the facts were gathered
 
@@ -132,7 +132,7 @@ We should read and write the HDF5 format natively. It is the obvious interchange
 
 ## 5. Multi-method / unified toolkits (potential competitors)
 
-| Project | What it unifies | How it differs from PlasmonHub |
+| Project | What it unifies | How it differs from Lightsmith |
 |---|---|---|
 | **HoloPy** ([GH](https://github.com/manoharan-lab/holopy)), GPL-3 | Mie (layered), multisphere T-matrix (SCSMFO) and ADDA behind one scatterer/theory API | Holography and inference focus; no FDTD; no GPU or autodiff; last release 2021; conda-only; GPL. |
 | **TorchGDM** ([paper](https://scipost.org/SciPostPhysCodeb.60)), GPL-3 | GDM plus effective-dipole models from Mie and T-matrix (via treams) | One method family; dense and limited N; homogeneous environment; GPL. The closest "multi-scale" competitor. |
@@ -143,7 +143,7 @@ We should read and write the HDF5 format natively. It is the obvious interchange
 | **FermiLink** ([arXiv:2604.03460](https://arxiv.org/abs/2604.03460)) | LLM agent spanning about 50 simulation packages | An agent layer over existing codes, not a unified physics spec. |
 | **ScattPort** ([scattport.org](https://scattport.org)), **Wikipedia list** ([DDA codes](https://en.wikipedia.org/wiki/Discrete_dipole_approximation_codes)) | Catalogues of scattering codes | Directories only. |
 
-**Conclusion.** No project offers one declarative problem spec (particle + materials + environment + illumination + observables) dispatched to Mie, T-matrix, DDA and FDTD with consistent units, conventions and outputs, a validation harness, and agent-friendly schemas. That is the PlasmonHub niche.
+**Conclusion.** No project offers one declarative problem spec (particle + materials + environment + illumination + observables) dispatched to Mie, T-matrix, DDA and FDTD with consistent units, conventions and outputs, a validation harness, and agent-friendly schemas. That is the Lightsmith niche.
 
 ---
 
@@ -260,7 +260,7 @@ Status key:
 | **FEABench**, [arXiv:2504.06260](https://arxiv.org/abs/2504.06260) | COMSOL API | LLMs generate FEA models | Executable 88% of the time, but **no model fully solved any problem**: "runs" is not "correct". | P |
 | **FermiLink**, [arXiv:2604.03460](https://arxiv.org/abs/2604.03460) | About 50 packages (a Meep variant, U) | Reproduces published figures | 74/132 figures reproduced (56%). | V |
 
-**Design implications for PlasmonHub:**
+**Design implications for Lightsmith:**
 - a Pydantic/JSON-Schema problem spec with a small typed API surface;
 - an MCP server exposing schema, validate, run and compare;
 - machine-readable errors with fix hints;
