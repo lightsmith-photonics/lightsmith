@@ -10,6 +10,8 @@ Guidance for AI agents (and humans) using or developing lightsmith.
 4. `compare(problem, methods=[...])` cross-checks methods; Mie is the reference for single spheres, otherwise the first method listed.
 5. Results carry `provenance` (backend versions, device, precision, iterations, residuals) and `warnings`. Check `warnings` before trusting numbers.
 
+Component-to-circuit flow (`lightsmith.pdk`): `get_component(cell, **params)` builds layout + ports (port centres are the S-parameter reference planes; names o1, o2, ... as gdsfactory); `flow.simulate` solves its `DeviceProblem` via `solve` (2D effective-index plan view by default); `flow.component_model` fits and caches the S-parameters (key = cell, params, technology, band, solver, options); circuit netlists use `{"component": "pdk:<cell>", "settings": {<params>, <FlowSettings>}}`. Technologies are `Technology` JSON (`generic_soi()` uses only open data). Compare circuits with direct simulations only when both use the same solver and grid (`FlowSettings(method=..., waveguide_model="device")`): FDFD's numerical dispersion at the default grid is ~1e-2 in neff, and with the default 4x subpixel sampling the grid alignment of waveguide edges shifts neff by ~7e-3 between instances (use `subsamples: 16`).
+
 Interfaces, all JSON in / JSON out:
 
 - Python: `import lightsmith as ls`

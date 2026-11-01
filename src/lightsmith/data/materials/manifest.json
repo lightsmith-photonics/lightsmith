@@ -361,6 +361,27 @@
      "comments": "Crystal orientation: ; Doping: 2.3×1014 cm-3, n; Room temperature",
      "url": "https://refractiveindex.info/?shelf=main&book=Si&page=Aspnes",
      "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/Si/nk/Aspnes.yml"
+    },
+    "Li-293K": {
+     "aliases": [
+      "Li",
+      "Li-1980"
+     ],
+     "file": "Si/Li-293K.yml",
+     "shelf": "main",
+     "book": "Si",
+     "page": "Li-293K",
+     "type": "tabulated n",
+     "has_k": false,
+     "range_nm": [
+      1200.0,
+      14000.0
+     ],
+     "reference": "H. H. Li. Refractive index of silicon and germanium and its wavelength and temperature derivatives. J. Phys. Chem. Ref. Data 9, 561-658 (1980)",
+     "doi": "10.1063/1.555624",
+     "comments": "293 K (20 °C)",
+     "url": "https://refractiveindex.info/?shelf=main&book=Si&page=Li-293K",
+     "source_url": "https://raw.githubusercontent.com/polyanskiy/refractiveindex.info-database/c5c2f188e848453def5970e347399d653df2ffc2/database/data/main/Si/nk/Li-293K.yml"
     }
    }
   },

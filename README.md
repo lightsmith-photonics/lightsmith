@@ -61,6 +61,21 @@ uv run lightsmith solve examples/drude_sphere.json --method dda --device gpu
 
 `lightsmith backends` lists what is installed. Materials: bundled CC0 datasets (Au, Ag, Al, Cu, Si, SiO2, TiO2, water) from the refractiveindex.info database, online fetch of any entry, and passive Drude–Lorentz fitting for time-domain solvers.
 
+## From components to circuits (`lightsmith.pdk`)
+
+An open design kit: a technology as data (`generic_soi()`: 220 nm Si on 2 µm oxide, open material data only; define others as JSON), parametric cells (straight, circular/Euler bends, taper, MMI 1×2/2×2, directional coupler, ring/racetrack, Y-branch, crossing, grating coupler, MZI) with gdsfactory-style ports and GDS output, and a flow that simulates each component through `solve` (EME, FDFD or whatever `AUTO_ORDER` picks), fits a compact model, caches it by parameter hash and uses it in netlists as `pdk:<cell>`:
+
+```python
+from lightsmith.pdk import get_component
+from lightsmith.pdk.flow import component_model, netlist_problem
+mzi = get_component("mzi", delta_length_nm=4000)
+mzi.write_gds("mzi.gds")
+model = component_model("mmi1x2")                  # simulate -> fit -> cache
+circuit = netlist_problem(mzi, wavelengths)        # {"component": "pdk:mmi1x2", "settings": {...}}
+```
+
+See [examples/pdk_mzi.py](examples/pdk_mzi.py) (layout, per-component simulation, circuit vs direct simulation).
+
 GPL-licensed solvers live in separate plugin packages discovered through the `lightsmith.backends` entry point (`lightsmith-adda`, `lightsmith-scattnlay`), keeping this core MIT.
 
 ## Conventions

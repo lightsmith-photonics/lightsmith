@@ -20,3 +20,4 @@ Units: nm, vacuum wavelengths. Time convention exp(-i omega t) (Im eps > 0 = los
 - `lightsmith.doctor() -> dict` (frameworks and GPUs)
 - CLI: `lightsmith {doctor,backends,schema,estimate,solve,compare}`
 - MCP server: `lightsmith-mcp`
+- PDK flow: `lightsmith.pdk.get_component(cell, **params)` -> layout/GDS/DeviceProblem; `lightsmith.pdk.flow.component_model(cell, flow, **params)` -> fitted, cached S-parameter model; netlists use `"pdk:<cell>"` instances
