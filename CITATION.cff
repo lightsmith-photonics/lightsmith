@@ -13,6 +13,7 @@ authors:
   - family-names: Feghali
     given-names: Alexander
 version: 0.1.0
+date-released: "2026-11-01"
 license: MIT
 repository-code: "https://github.com/lightsmith-photonics/lightsmith"
 url: "https://lightsmith-photonics.github.io/lightsmith/"
