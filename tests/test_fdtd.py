@@ -9,6 +9,9 @@ Measured accuracy (RTX 5070, float32; CPU float64 agrees to ~1e-7):
 - Au (Johnson-Christy, Drude-Lorentz fit, 1.6% RMS), r=40 nm in water, dx=2 nm: peak 550 nm as Mie,
   height -3.9%.
 - layered sphere: 0.6%; near-field |E|^2 vs native Mie: 2.9% RMS; oblique incidence: ~1%.
+- off-axis incidence (n=1.5, dx=6 nm): sphere r=60 nm within 1.0-1.2% of Mie for (0,0,1), (1,0,1),
+  (1,1,1), (1,2,3), spread between directions 0.35%; spheroid 40x80 nm within 0.5-1.1% of DDA
+  (80 dipoles per diameter) for axial and off-axis directions, 0.3-0.5% at dx=4 nm.
 """
 
 import numpy as np
@@ -125,6 +128,46 @@ def test_fdtd_layered_sphere_near_field_and_oblique_incidence():
     a, b = np.asarray(res.near_field[0].enhancement), np.asarray(mie.near_field[0].enhancement)
     ok = np.isfinite(b)
     assert np.sqrt(np.mean((a[ok] / b[ok] - 1) ** 2)) < 0.06
+
+
+def plane_wave(direction, polarization):
+    k, e = np.asarray(direction, float), np.asarray(polarization, float)
+    return ls.PlaneWave(direction=tuple(k), polarization=tuple(e - (e @ k) / (k @ k) * k))
+
+
+@pytest.mark.gpu
+@needs_cuda
+def test_fdtd_oblique_tfsf_sphere_is_direction_independent():
+    """Off-axis incidence (interpolated TFSF feed) on a sphere: each direction vs Mie, and the spread
+    between directions, which isolates the oblique source from the common grid error."""
+    wl = [400.0, 500.0, 650.0, 800.0]
+    ref = ls.solve(sphere_sim(ls.ConstantIndex(n_real=1.5), 60, wl), "mie")
+    ext = []
+    for k, e in (((0, 0, 1), (1, 0, 0)), ((1, 1, 1), (1, -1, 0)), ((1, 2, 3), (3, 0, -1))):
+        sim = sphere_sim(ls.ConstantIndex(n_real=1.5), 60, wl, spacing_nm=6.0).model_copy(
+            update={"illumination": plane_wave(k, e)})
+        res = ls.solve(sim, "fdtd", "gpu")
+        assert rel(res.c_ext_nm2, ref.c_ext_nm2).max() < 0.02  # measured 1.0-1.2% (subpixel error at dx=6)
+        assert rel(res.c_sca_nm2, ref.c_sca_nm2).max() < 0.02
+        assert np.abs(res.c_abs_nm2).max() < 1e-3 * max(res.c_ext_nm2)
+        ext.append(res.c_ext_nm2)
+    ext = np.asarray(ext)
+    assert (ext.max(axis=0) / ext.min(axis=0) - 1).max() < 0.006  # measured 0.35%
+
+
+@pytest.mark.gpu
+@needs_cuda
+def test_fdtd_oblique_tfsf_spheroid_matches_dda():
+    """A prolate spheroid, whose C_ext changes 2x with direction, at axial and off-axis incidence vs DDA."""
+    wl = [400.0, 500.0, 650.0, 800.0]
+    for k, e in (((1, 0, 0), (0, 0, 1)), ((1, 0, 1), (1, 0, -1)), ((1, 2, 3), (3, 0, -1))):
+        sim = ls.Simulation(
+            particles=[ls.Particle(shape=ls.Spheroid(semi_axis_xy_nm=40, semi_axis_z_nm=80),
+                                   material=ls.ConstantIndex(n_real=1.5))],
+            wavelengths=wl, illumination=plane_wave(k, e),
+            options={"fdtd": {"spacing_nm": 6.0}, "dda": {"dipoles_per_diameter": 80}})
+        res, ref = ls.solve(sim, "fdtd", "gpu"), ls.solve(sim, "dda", "gpu")
+        assert rel(res.c_ext_nm2, ref.c_ext_nm2).max() < 0.02  # measured 0.5-1.1% (0.5% at dx=4 nm)
 
 
 # --- slow, tighter checks -----------------------------------------------------

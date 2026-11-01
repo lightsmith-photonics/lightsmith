@@ -16,10 +16,13 @@ One broadband Gaussian pulse covers all requested wavelengths. Running DFTs give
     C_ext = C_sca + C_abs
 
 Periodic structures and planar stacks (``PeriodicProblem``, ``LayerStackProblem``) are
-solved at normal incidence in one unit cell: periodic x/y boundaries (real fields), CPML
-along z, non-cubic cells so each period holds a whole number of cells, a one-sided TFSF plane
-source, and reflection/transmission planes whose DFT fields are split into diffraction
-orders by a 2D FFT (``_fdtd/periodic.py``).
+solved in one unit cell: periodic x/y boundaries, CPML along z, non-cubic cells so each period
+holds a whole number of cells, a one-sided TFSF plane source, and reflection/transmission planes
+whose DFT fields are split into diffraction orders by a 2D FFT (``_fdtd/periodic.py``). Normal
+incidence is one broadband real run; oblique and conical incidence use Bloch-periodic boundaries
+at fixed in-plane wavevector (complex fields), one run per (angle, wavelength, polarisation) so
+that every result is at the requested angle. Scattering problems accept any incidence direction
+(the TFSF box interpolates its 1D feed off-axis).
 
 Written against the Python array API: the same code runs on NumPy (CPU) and
 PyTorch (CPU/CUDA); on CUDA the time loop is replayed as CUDA graphs.
@@ -77,11 +80,16 @@ class NativeFDTD(Backend):
         if isinstance(sim, (PeriodicProblem, LayerStackProblem)):
             p = periodic.plan(sim, opts, single)
             c = p["cell"]
-            runs = 1 if isinstance(sim, LayerStackProblem) else len(sim.incidence.polarizations)
-            return {"grid": list(c.shape), "real_cells": list(c.n_cells) + [c.shape[2]], "cells": c.cells,
-                    "spacing_nm": list(c.spacing), "dt_fs": p["dt"] / scattering.FS, "steps_max": p["max_steps"],
-                    "runs": runs, "dft_stride": p["stride"], "precision": "single" if single else "double",
-                    "memory_bytes": p["memory_bytes"], "fits": c.cells <= opts.max_cells}
+            out = {"grid": list(c.shape), "real_cells": list(c.n_cells) + [c.shape[2]], "cells": c.cells,
+                   "spacing_nm": list(c.spacing), "dt_fs": p["dt"] / scattering.FS, "steps_max": p["max_steps"],
+                   "runs": p["runs"], "dft_stride": p["stride"], "precision": "single" if single else "double",
+                   "memory_bytes": p["memory_bytes"], "fits": c.cells <= opts.max_cells}
+            if p["oblique_runs"]:
+                out["oblique_runs"] = p["oblique_runs"]
+                out["oblique_run_min_steps"] = p["oblique_run_min_steps"]
+                out["notes"] = ("oblique incidence: one fixed-k_par complex-field run per (angle, wavelength, "
+                                "polarisation); runs at large angles use narrow-band, longer pulses")
+            return out
         p = scattering.plan(sim, opts, single)
         lay = p["layout"]
         return {"grid": list(lay.shape), "cells": lay.cells, "spacing_nm": p["dx"], "dt_fs": p["dt"] / scattering.FS,

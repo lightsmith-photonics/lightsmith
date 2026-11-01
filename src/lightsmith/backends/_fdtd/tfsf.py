@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from .engine import e_region, h_region
+from .engine import Engine, e_region, flat_index, h_region
 
 PML1D = 48
 
@@ -189,3 +189,88 @@ class TFSFPlaneWave:
         E[1:-1] -= self._cb * (H[1:-1] - H[:-2])
         m = self.m_src
         E[m:m + 1] += self._wave[eng.n]
+
+
+class BlochPlaneSource:
+    """One-sided TFSF plane (normal +z) for a Bloch-periodic cell at fixed in-plane wavevector (kx, ky).
+
+    The incident field is computed by an auxiliary column: a 3D engine one cell wide in x and y with the
+    same Bloch phases, z spacing, CPML and time step, filled with the background medium and driven by a
+    current sheet at node ``k_launch`` above the plane. Its fields times exp(i (kx x + ky y)) satisfy the
+    discrete 3D equations of the main grid exactly, so the TFSF plane does not leak, whatever the angle
+    and polarisation (which, at fixed (kx, ky), vary with frequency).
+
+    The sheet is along s = (-Ky, Kx) or p = (Kx, Ky), with K = 2 sin(k d / 2) / d the grid wavenumbers,
+    so it launches a pure s (TE) or p (TM) wave on the grid. Total field for z-nodes >= k_src.
+    """
+
+    def __init__(self, *, shape, spacing, dt, k_src, k_launch, kpar, pol: str, eps_b, pml, omega_c,
+                 omega_half, max_steps: int):
+        self.shape, self.spacing, self.dt = tuple(shape), tuple(float(d) for d in spacing), float(dt)
+        self.k_src, self.k_launch = int(k_src), int(k_launch)
+        self.kpar = (float(kpar[0]), float(kpar[1]))
+        self.eps_b, self.pml = float(eps_b), pml
+        dx, dy = self.spacing[0], self.spacing[1]
+        K = np.array([2 * np.sin(self.kpar[a] * self.spacing[a] / 2) / self.spacing[a] for a in (0, 1)])
+        u = K / np.linalg.norm(K)
+        a = np.array([-u[1], u[0]]) if pol == "s" else u
+        # sheet samples at the Ex (x + dx/2) and Ey (y + dy/2) positions of the column cell
+        self.amp = (a[0] * np.exp(0.5j * self.kpar[0] * dx), a[1] * np.exp(0.5j * self.kpar[1] * dy))
+        nx, ny = shape[0] - 2, shape[1] - 2
+        i, j = np.meshgrid(np.arange(nx), np.arange(ny), indexing="ij")
+        self.phase = np.exp(1j * (self.kpar[0] * i * dx + self.kpar[1] * j * dy))[:, :, None]
+        self.tau = 2.0 / omega_half
+        self.t0 = 3.5 * self.tau
+        t = (np.arange(max_steps + 2) + 1) * dt
+        self.wave = np.exp(-(((t - self.t0) / self.tau) ** 2)) * np.sin(omega_c * (t - self.t0))
+        self.t_passed = 2 * self.t0
+
+    def probe(self, k: int):
+        """Flat indices (e, h1, h2) into the column's E/H for S_z = Ex Hy - Ey Hx on node plane k."""
+        n = (3, 3, self.shape[2])
+        e = np.array([flat_index(0, 1, 1, k, n), flat_index(1, 1, 1, k, n)])
+        h1 = np.array([flat_index(1, 1, 1, k - 1, n), flat_index(0, 1, 1, k - 1, n)])
+        h2 = np.array([flat_index(1, 1, 1, k, n), flat_index(0, 1, 1, k, n)])
+        return e, h1, h2
+
+    def bind(self, eng):
+        nz = self.shape[2]
+        col = Engine(eng.device, shape=(3, 3, nz), dx=self.spacing, dt=self.dt, single=eng.single,
+                     inv_eps=np.full((3, 3, 3, nz), 1 / self.eps_b), groups=[], pml=self.pml, sources=[],
+                     monitors=[], dft_stride=1, periodic=(True, True, False), bloch=(*self.kpar, 0.0))
+        self.col = col
+        self.E_flat, self.H_flat = col.E_flat, col.H_flat
+        self._phase = eng.asarray(self.phase, dtype=eng.cdt)
+        self._amp = [eng.asarray(np.array([v]), dtype=eng.cdt) for v in self.amp]
+        self._wave = eng.asarray(self.wave)
+        nx, ny = self.shape[0] - 2, self.shape[1] - 2
+        self._xy = (slice(1, nx + 1), slice(1, ny + 1))
+        self._cE = self.dt / (self.eps_b * self.spacing[2])
+        self._cH = self.dt / self.spacing[2]
+
+    def _inc(self, F, c, k):
+        return self._phase * F[c][1:2, 1:2, k:k + 1]
+
+    def correct_H(self, eng):
+        # H just above the plane (scattered) was updated from total E on the plane: remove E_inc
+        k, (X, Y) = self.k_src, self._xy
+        E = self.col.E
+        eng.H[0][X, Y, k - 1:k] -= self._cH * self._inc(E, 1, k)
+        eng.H[1][X, Y, k - 1:k] += self._cH * self._inc(E, 0, k)
+
+    def correct_E(self, eng):
+        # E on the plane (total) was updated from scattered H above it: add H_inc
+        k, (X, Y) = self.k_src, self._xy
+        H = self.col.H
+        eng.E[0][X, Y, k:k + 1] += self._cE * self._inc(H, 1, k - 1)
+        eng.E[1][X, Y, k:k + 1] -= self._cE * self._inc(H, 0, k - 1)
+
+    def advance_H(self, eng):
+        self.col._update_H()
+
+    def advance_E(self, eng):
+        self.col._update_E()
+        w = self._wave[eng.n]
+        k = self.k_launch
+        self.col.E[0][1:2, 1:2, k:k + 1] += self._amp[0] * w
+        self.col.E[1][1:2, 1:2, k:k + 1] += self._amp[1] * w

@@ -52,12 +52,14 @@ uv run lightsmith solve examples/drude_sphere.json --method dda --device gpu
 |---|---|---|---|
 | `scattering` — particles, clusters | Mie (native, miepython), T-matrix (treams), DDA, FDTD, quasistatic | ✅ | Mie |
 | `layer_stack` — thin films | TMM, RCWA, FDTD | ✅ | TMM, RCWA |
-| `periodic` — gratings, metasurfaces | RCWA, FDTD (normal incidence) | ✅ | RCWA |
+| `periodic` — gratings, metasurfaces | RCWA, FDTD (rectangular lattices) | ✅ | RCWA |
 | `mode` — waveguide cross-sections | FDE (full vector, bends) | — | — |
 | `device` — S-parameters between ports | EME, FDFD (2D) | FDFD | FDFD |
 | `bands` — photonic crystals | PWE (2D TE/TM, 3D) | ✅ | dense path |
 | `circuit` — netlists of compact models | S-matrix circuit solver | ✅ | ✅ |
 | `optimization` — inverse design | topology optimisation on FDFD | ✅ | — |
+
+FDTD handles oblique and conical incidence on layer stacks and periodic structures (up to 85° from the normal) with Bloch-periodic boundaries at fixed in-plane wavevector: one run per angle, wavelength and polarisation, so results are at the stated angle, but an oblique spectrum costs one run per wavelength (`estimate` reports the count). Normal incidence is one broadband run.
 
 `lightsmith backends` lists what is installed. Materials: bundled CC0 datasets (Au, Ag, Al, Cu, Si, SiO2, TiO2, water) from the refractiveindex.info database, online fetch of any entry, and passive Drude–Lorentz fitting for time-domain solvers.
 
