@@ -28,3 +28,4 @@ Units: nm, vacuum wavelengths. Time convention exp(-i omega t) (Im eps > 0 = los
     (also `.csv` and `/plot.png`).
 - Scattering methods (auto order): mie (spheres) > tmatrix (sphere clusters) > bem (surface integral equation: spheroids, cylinders, layered spheres, clusters; accurate for metals; no substrate) > dda > fdtd. BEM options: `{"bem": {"mesh_size_nm": ...}}`; `estimate` reports unknowns and memory (dense, grows as unknowns^2).
 - Device solvers: `eme` (bidirectional, exact for piecewise-uniform sections), `bpm` (one-way beam propagation: no reflections, S between ports on the same plane = 0; best for long, slowly varying devices; options under `options["bpm"]`), `fdfd` (2D full-wave)
+- PDK flow: `lightsmith.pdk.get_component(cell, **params)` -> layout/GDS/DeviceProblem; `lightsmith.pdk.flow.component_model(cell, flow, **params)` -> fitted, cached S-parameter model; netlists use `"pdk:<cell>"` instances

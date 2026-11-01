@@ -35,3 +35,6 @@ src-tauri/target/
 
 # MkDocs build output
 /site/
+
+# outputs of examples
+examples/output/

@@ -171,13 +171,18 @@ def compact_model(name: str, settings: type[ModelSettings], ports: tuple[str, ..
 
 
 def model_names() -> list[str]:
-    return sorted(MODELS) + sorted(_ALIASES) + ["sparams:<path>"]
+    return sorted(MODELS) + sorted(_ALIASES) + ["sparams:<path>", "pdk:<cell>"]
 
 
 def get_model(component: str) -> CompactModel:
-    """Look up a model by name or alias; ``sparams:<path>`` loads S-parameters from a file."""
+    """Look up a model by name or alias; ``sparams:<path>`` loads S-parameters from a file and ``pdk:<cell>``
+    is a simulated, fitted component of :mod:`lightsmith.pdk`."""
     if component.startswith("sparams:"):
         return _sparams_model(component[len("sparams:"):].strip())
+    if component.startswith("pdk:"):  # simulated + fitted components of lightsmith.pdk
+        from ..pdk.flow import pdk_model
+
+        return pdk_model(component[len("pdk:"):].strip())
     name = _ALIASES.get(component, component)
     if name not in MODELS:
         raise KeyError(f"unknown component model {component!r}; available: {', '.join(model_names())}")
@@ -190,6 +195,12 @@ def list_models() -> list[dict[str, Any]]:
     out.append({"name": "sparams:<path>", "aliases": [], "ports": None,
                 "doc": " ".join((_sparams_fn.__doc__ or "").split()),
                 "settings_schema": SParamsSettings.model_json_schema()})
+    from ..pdk.cells import CELLS
+
+    out.append({"name": "pdk:<cell>", "aliases": [], "ports": None,
+                "doc": "Simulated, fitted and cached component of lightsmith.pdk; settings are the cell parameters "
+                       "plus FlowSettings (technology, band, solver, fit). Cells: " + ", ".join(sorted(CELLS)),
+                "settings_schema": {}})
     return out
 
 
