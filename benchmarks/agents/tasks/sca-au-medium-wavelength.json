@@ -1,0 +1,138 @@
+{
+ "id": "sca-au-medium-wavelength",
+ "kind": "scattering",
+ "category": "trap",
+ "traps": [
+  "medium_vs_vacuum_wavelength"
+ ],
+ "prompt": "A 25 nm radius gold sphere sits in water. Our source is specified by its wavelength inside the water, which is 450 nm. What's the extinction cross-section at that source? Use J&C gold.",
+ "answer_fields": [
+  {
+   "key": "c_ext_nm2",
+   "unit": "nm^2",
+   "description": "extinction cross-section at the source wavelength"
+  }
+ ],
+ "targets": {
+  "c_ext_nm2": {
+   "extract": {
+    "kind": "cross_section",
+    "quantity": "c_ext_nm2",
+    "wavelength_nm": 598.5
+   },
+   "tol": {
+    "rel": 0.03
+   }
+  }
+ },
+ "checks": [
+  {
+   "type": "spec_wavelength",
+   "wavelength_nm": 598.5,
+   "abs": 1.0
+  },
+  {
+   "type": "spec",
+   "path": "medium_index",
+   "approx": 1.33,
+   "abs": 0.01
+  }
+ ],
+ "naive_spec": {
+  "kind": "scattering",
+  "particles": [
+   {
+    "shape": {
+     "kind": "sphere",
+     "radius_nm": 25.0
+    },
+    "material": {
+     "kind": "library",
+     "name": "Au",
+     "dataset": "Johnson-Christy"
+    },
+    "position_nm": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "medium_index": 1.33,
+  "illumination": {
+   "kind": "plane_wave",
+   "direction": [
+    0,
+    0,
+    1
+   ],
+   "polarization": [
+    1,
+    0,
+    0
+   ]
+  },
+  "wavelengths": [
+   450.0
+  ]
+ },
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "oracle": {},
+ "reference_spec": {
+  "kind": "scattering",
+  "particles": [
+   {
+    "shape": {
+     "kind": "sphere",
+     "radius_nm": 25.0
+    },
+    "material": {
+     "kind": "library",
+     "name": "Au",
+     "dataset": "Johnson-Christy"
+    },
+    "position_nm": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "medium_index": 1.33,
+  "illumination": {
+   "kind": "plane_wave",
+   "direction": [
+    0,
+    0,
+    1
+   ],
+   "polarization": [
+    1,
+    0,
+    0
+   ]
+  },
+  "wavelengths": [
+   598.5
+  ]
+ },
+ "reference": {
+  "values": {
+   "c_ext_nm2": 1266.4558694030409
+  },
+  "method": "mie",
+  "backend": "miepython",
+  "device": "cpu",
+  "runtime_s": 0.001,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "oracle_extract": {
+  "c_ext_nm2": {
+   "kind": "cross_section",
+   "quantity": "c_ext_nm2",
+   "wavelength_nm": 598.5
+  }
+ }
+}

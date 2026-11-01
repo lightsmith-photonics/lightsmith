@@ -1,0 +1,92 @@
+{
+ "id": "sca-quasistatic-too-big",
+ "kind": "scattering",
+ "category": "warning",
+ "traps": [
+  "check_warnings"
+ ],
+ "reference_method": "quasistatic",
+ "prompt": "Quick one: use the quasistatic (dipole) approximation, since it's the fastest, to get Q_ext for a gold sphere of 150 nm radius in air at 600 nm.",
+ "answer_fields": [
+  {
+   "key": "q_ext",
+   "unit": "dimensionless",
+   "description": "extinction efficiency at 600 nm"
+  }
+ ],
+ "checks": [
+  {
+   "type": "mentions",
+   "any": [
+    "unreliable",
+    "not valid",
+    "invalid",
+    "too large",
+    "size parameter",
+    "inaccurate",
+    "breaks down",
+    "mie",
+    "not appropriate",
+    "not accurate"
+   ],
+   "required": true
+  }
+ ],
+ "oracle": {
+  "concerns": [
+   "The quasistatic approximation is unreliable here: the size parameter is far above 1. Use Mie theory instead."
+  ]
+ },
+ "reference_device": "auto",
+ "targets": {},
+ "reference_spec": {
+  "kind": "scattering",
+  "particles": [
+   {
+    "shape": {
+     "kind": "sphere",
+     "radius_nm": 150.0
+    },
+    "material": {
+     "kind": "library",
+     "name": "Au",
+     "dataset": "Johnson-Christy"
+    },
+    "position_nm": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "medium_index": 1.0,
+  "illumination": {
+   "kind": "plane_wave",
+   "direction": [
+    0,
+    0,
+    1
+   ],
+   "polarization": [
+    1,
+    0,
+    0
+   ]
+  },
+  "wavelengths": [
+   600.0
+  ]
+ },
+ "reference": {
+  "values": {},
+  "method": "quasistatic",
+  "backend": "lightsmith-quasistatic",
+  "device": "cpu",
+  "runtime_s": 0.001,
+  "warnings": [
+   "size parameter x = 1.57 > 0.3: the quasistatic approximation is unreliable; use method 'mie' (spheres) or 'dda'/'tmatrix' (spheroids)"
+  ],
+  "lightsmith_version": "0.1.0"
+ },
+ "oracle_extract": {}
+}

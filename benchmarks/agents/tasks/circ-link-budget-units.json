@@ -1,0 +1,146 @@
+{
+ "id": "circ-link-budget-units",
+ "kind": "circuit",
+ "category": "trap",
+ "traps": [
+  "length_units"
+ ],
+ "prompt": "Fibre-to-fibre test structure: grating coupler in (4.5 dB loss at its 1550 nm peak), a 2 cm long waveguide with 3 dB/cm propagation loss, grating coupler out (same). Simulate the fibre-to-fibre transmission at 1550 nm in dB.",
+ "answer_fields": [
+  {
+   "key": "transmission_db",
+   "unit": "dB",
+   "description": "fibre-to-fibre transmission (negative)"
+  }
+ ],
+ "targets": {
+  "transmission_db": {
+   "extract": {
+    "kind": "sparam",
+    "out": "fiber_out",
+    "in": "fiber_in",
+    "wavelength_nm": 1550.0,
+    "as": "db"
+   },
+   "tol": {
+    "abs": 0.05
+   }
+  }
+ },
+ "checks": [
+  {
+   "type": "solved_kind"
+  }
+ ],
+ "naive_spec": {
+  "kind": "circuit",
+  "wavelengths": [
+   1550.0
+  ],
+  "instances": {
+   "gc_in": {
+    "component": "grating_coupler",
+    "settings": {
+     "peak_loss_db": 4.5
+    }
+   },
+   "wg": {
+    "component": "waveguide",
+    "settings": {
+     "length_nm": 20000.0,
+     "loss_db_per_cm": 3.0,
+     "neff": 2.4,
+     "ng": 4.2,
+     "wl0_nm": 1550.0
+    }
+   },
+   "gc_out": {
+    "component": "grating_coupler",
+    "settings": {
+     "peak_loss_db": 4.5
+    }
+   }
+  },
+  "connections": [
+   [
+    "gc_in,o1",
+    "wg,o1"
+   ],
+   [
+    "wg,o2",
+    "gc_out,o1"
+   ]
+  ],
+  "ports": {
+   "fiber_in": "gc_in,o2",
+   "fiber_out": "gc_out,o2"
+  }
+ },
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "oracle": {},
+ "reference_spec": {
+  "kind": "circuit",
+  "wavelengths": [
+   1550.0
+  ],
+  "instances": {
+   "gc_in": {
+    "component": "grating_coupler",
+    "settings": {
+     "peak_loss_db": 4.5
+    }
+   },
+   "wg": {
+    "component": "waveguide",
+    "settings": {
+     "length_nm": 20000000.0,
+     "loss_db_per_cm": 3.0,
+     "neff": 2.4,
+     "ng": 4.2,
+     "wl0_nm": 1550.0
+    }
+   },
+   "gc_out": {
+    "component": "grating_coupler",
+    "settings": {
+     "peak_loss_db": 4.5
+    }
+   }
+  },
+  "connections": [
+   [
+    "gc_in,o1",
+    "wg,o1"
+   ],
+   [
+    "wg,o2",
+    "gc_out,o1"
+   ]
+  ],
+  "ports": {
+   "fiber_in": "gc_in,o2",
+   "fiber_out": "gc_out,o2"
+  }
+ },
+ "reference": {
+  "values": {
+   "transmission_db": -15.000000000000002
+  },
+  "method": "circuit",
+  "backend": "lightsmith-circuit",
+  "device": "cuda:0",
+  "runtime_s": 0.006,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "oracle_extract": {
+  "transmission_db": {
+   "kind": "sparam",
+   "out": "fiber_out",
+   "in": "fiber_in",
+   "wavelength_nm": 1550.0,
+   "as": "db"
+  }
+ }
+}

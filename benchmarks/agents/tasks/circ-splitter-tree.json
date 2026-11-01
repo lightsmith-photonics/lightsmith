@@ -1,0 +1,138 @@
+{
+ "id": "circ-splitter-tree",
+ "kind": "circuit",
+ "prompt": "1x4 splitter tree built from three Y-branches, each with 0.2 dB excess loss and a perfect 50:50 split. What's the power at one output relative to the input, in dB, at 1550 nm?",
+ "answer_fields": [
+  {
+   "key": "output_db",
+   "unit": "dB",
+   "description": "output power / input power in dB (negative)"
+  }
+ ],
+ "targets": {
+  "output_db": {
+   "extract": {
+    "kind": "sparam",
+    "out": "o1",
+    "in": "in",
+    "wavelength_nm": 1550.0,
+    "as": "db"
+   },
+   "tol": {
+    "abs": 0.05
+   }
+  }
+ },
+ "naive_spec": {
+  "kind": "circuit",
+  "wavelengths": [
+   1550.0
+  ],
+  "instances": {
+   "y0": {
+    "component": "y_branch",
+    "settings": {
+     "loss_db": 0.0
+    }
+   },
+   "y1": {
+    "component": "y_branch",
+    "settings": {
+     "loss_db": 0.0
+    }
+   },
+   "y2": {
+    "component": "y_branch",
+    "settings": {
+     "loss_db": 0.0
+    }
+   }
+  },
+  "connections": [
+   [
+    "y0,o2",
+    "y1,o1"
+   ],
+   [
+    "y0,o3",
+    "y2,o1"
+   ]
+  ],
+  "ports": {
+   "in": "y0,o1",
+   "o1": "y1,o2",
+   "o2": "y1,o3",
+   "o3": "y2,o2",
+   "o4": "y2,o3"
+  }
+ },
+ "category": "standard",
+ "traps": [],
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "checks": [],
+ "oracle": {},
+ "reference_spec": {
+  "kind": "circuit",
+  "wavelengths": [
+   1550.0
+  ],
+  "instances": {
+   "y0": {
+    "component": "y_branch",
+    "settings": {
+     "loss_db": 0.2
+    }
+   },
+   "y1": {
+    "component": "y_branch",
+    "settings": {
+     "loss_db": 0.2
+    }
+   },
+   "y2": {
+    "component": "y_branch",
+    "settings": {
+     "loss_db": 0.2
+    }
+   }
+  },
+  "connections": [
+   [
+    "y0,o2",
+    "y1,o1"
+   ],
+   [
+    "y0,o3",
+    "y2,o1"
+   ]
+  ],
+  "ports": {
+   "in": "y0,o1",
+   "o1": "y1,o2",
+   "o2": "y1,o3",
+   "o3": "y2,o2",
+   "o4": "y2,o3"
+  }
+ },
+ "reference": {
+  "values": {
+   "output_db": -6.420599913279624
+  },
+  "method": "circuit",
+  "backend": "lightsmith-circuit",
+  "device": "cuda:0",
+  "runtime_s": 0.059,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "oracle_extract": {
+  "output_db": {
+   "kind": "sparam",
+   "out": "o1",
+   "in": "in",
+   "wavelength_nm": 1550.0,
+   "as": "db"
+  }
+ }
+}

@@ -1,0 +1,139 @@
+{
+ "id": "sca-ps-bead-wavenumber",
+ "kind": "scattering",
+ "category": "trap",
+ "traps": [
+  "wavenumber_units",
+  "diameter_vs_radius"
+ ],
+ "prompt": "Polystyrene bead, 1 µm diameter, n = 1.59 (assume non-absorbing), in water. What is its scattering efficiency at 15,800 cm^-1?",
+ "answer_fields": [
+  {
+   "key": "q_sca",
+   "unit": "dimensionless",
+   "description": "scattering efficiency"
+  }
+ ],
+ "targets": {
+  "q_sca": {
+   "extract": {
+    "kind": "cross_section",
+    "quantity": "q_sca",
+    "wavelength_nm": 632.9113924050633
+   },
+   "tol": {
+    "rel": 0.03
+   }
+  }
+ },
+ "checks": [
+  {
+   "type": "spec_wavelength",
+   "wavelength_nm": 632.9113924050633,
+   "abs": 0.5
+  },
+  {
+   "type": "spec",
+   "path": "particles[0].shape.radius_nm",
+   "approx": 500.0,
+   "abs": 2
+  }
+ ],
+ "naive_spec": {
+  "kind": "scattering",
+  "particles": [
+   {
+    "shape": {
+     "kind": "sphere",
+     "radius_nm": 1000.0
+    },
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.59,
+     "n_imag": 0.0
+    },
+    "position_nm": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "medium_index": 1.33,
+  "illumination": {
+   "kind": "plane_wave",
+   "direction": [
+    0,
+    0,
+    1
+   ],
+   "polarization": [
+    1,
+    0,
+    0
+   ]
+  },
+  "wavelengths": [
+   633.0
+  ]
+ },
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "oracle": {},
+ "reference_spec": {
+  "kind": "scattering",
+  "particles": [
+   {
+    "shape": {
+     "kind": "sphere",
+     "radius_nm": 500.0
+    },
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.59,
+     "n_imag": 0.0
+    },
+    "position_nm": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "medium_index": 1.33,
+  "illumination": {
+   "kind": "plane_wave",
+   "direction": [
+    0,
+    0,
+    1
+   ],
+   "polarization": [
+    1,
+    0,
+    0
+   ]
+  },
+  "wavelengths": [
+   632.9113924050633
+  ]
+ },
+ "reference": {
+  "values": {
+   "q_sca": 2.595900142940527
+  },
+  "method": "mie",
+  "backend": "miepython",
+  "device": "cpu",
+  "runtime_s": 0.001,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "oracle_extract": {
+  "q_sca": {
+   "kind": "cross_section",
+   "quantity": "q_sca",
+   "wavelength_nm": 632.9113924050633
+  }
+ }
+}

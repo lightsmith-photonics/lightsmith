@@ -1,0 +1,139 @@
+{
+ "id": "sca-si-sphere-ev",
+ "kind": "scattering",
+ "category": "trap",
+ "traps": [
+  "photon_energy_units",
+  "diameter_vs_radius"
+ ],
+ "prompt": "Silicon nanosphere, 150 nm in diameter, in air, illuminated with 2.0 eV photons. What's its scattering efficiency Q_sca? Please use the bundled crystalline silicon data.",
+ "answer_fields": [
+  {
+   "key": "q_sca",
+   "unit": "dimensionless",
+   "description": "scattering efficiency C_sca / (pi r^2)"
+  }
+ ],
+ "targets": {
+  "q_sca": {
+   "extract": {
+    "kind": "cross_section",
+    "quantity": "q_sca",
+    "wavelength_nm": 619.920992
+   },
+   "tol": {
+    "rel": 0.03
+   }
+  }
+ },
+ "checks": [
+  {
+   "type": "spec",
+   "path": "particles[0].shape.radius_nm",
+   "approx": 75.0,
+   "abs": 0.5
+  },
+  {
+   "type": "spec_wavelength",
+   "wavelength_nm": 619.92,
+   "abs": 0.5
+  }
+ ],
+ "naive_spec": {
+  "kind": "scattering",
+  "particles": [
+   {
+    "shape": {
+     "kind": "sphere",
+     "radius_nm": 150.0
+    },
+    "material": {
+     "kind": "library",
+     "name": "Si",
+     "dataset": "Green-2008"
+    },
+    "position_nm": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "medium_index": 1.0,
+  "illumination": {
+   "kind": "plane_wave",
+   "direction": [
+    0,
+    0,
+    1
+   ],
+   "polarization": [
+    1,
+    0,
+    0
+   ]
+  },
+  "wavelengths": [
+   620.0
+  ]
+ },
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "oracle": {},
+ "reference_spec": {
+  "kind": "scattering",
+  "particles": [
+   {
+    "shape": {
+     "kind": "sphere",
+     "radius_nm": 75.0
+    },
+    "material": {
+     "kind": "library",
+     "name": "Si",
+     "dataset": "Green-2008"
+    },
+    "position_nm": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "medium_index": 1.0,
+  "illumination": {
+   "kind": "plane_wave",
+   "direction": [
+    0,
+    0,
+    1
+   ],
+   "polarization": [
+    1,
+    0,
+    0
+   ]
+  },
+  "wavelengths": [
+   619.920992
+  ]
+ },
+ "reference": {
+  "values": {
+   "q_sca": 7.1610324293665535
+  },
+  "method": "mie",
+  "backend": "miepython",
+  "device": "cpu",
+  "runtime_s": 0.002,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "oracle_extract": {
+  "q_sca": {
+   "kind": "cross_section",
+   "quantity": "q_sca",
+   "wavelength_nm": 619.920992
+  }
+ }
+}

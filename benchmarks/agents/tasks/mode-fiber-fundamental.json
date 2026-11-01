@@ -1,0 +1,124 @@
+{
+ "id": "mode-fiber-fundamental",
+ "kind": "mode",
+ "traps": [
+  "um_units"
+ ],
+ "prompt": "Weakly guiding step-index fibre: core n = 1.46, cladding n = 1.45, core radius 2.5 µm. Effective index of the fundamental (HE11) mode at λ = 1.55 µm?",
+ "answer_fields": [
+  {
+   "key": "neff",
+   "unit": "dimensionless",
+   "description": "HE11 effective index"
+  }
+ ],
+ "targets": {
+  "neff": {
+   "extract": {
+    "kind": "mode",
+    "field": "neff_real",
+    "wavelength_nm": 1550.0
+   },
+   "tol": {
+    "abs": 0.0006
+   }
+  }
+ },
+ "checks": [
+  {
+   "type": "spec",
+   "path": "structures[0].profile.radius_nm",
+   "approx": 2500.0,
+   "abs": 5.0
+  }
+ ],
+ "naive_spec": {
+  "kind": "mode",
+  "structures": [
+   {
+    "profile": {
+     "kind": "circle",
+     "radius_nm": 1250.0
+    },
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.46,
+     "n_imag": 0.0
+    }
+   }
+  ],
+  "background": {
+   "kind": "constant_index",
+   "n_real": 1.45,
+   "n_imag": 0.0
+  },
+  "window_size_nm": [
+   16000.0,
+   16000.0
+  ],
+  "wavelengths": [
+   1550.0
+  ],
+  "num_modes": 1
+ },
+ "category": "standard",
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "oracle": {},
+ "reference_spec": {
+  "kind": "mode",
+  "structures": [
+   {
+    "profile": {
+     "kind": "circle",
+     "radius_nm": 2500.0
+    },
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.46,
+     "n_imag": 0.0
+    }
+   }
+  ],
+  "background": {
+   "kind": "constant_index",
+   "n_real": 1.45,
+   "n_imag": 0.0
+  },
+  "window_size_nm": [
+   16000.0,
+   16000.0
+  ],
+  "wavelengths": [
+   1550.0
+  ],
+  "num_modes": 1,
+  "options": {
+   "fde": {
+    "grid_spacing_nm": 80.0,
+    "symmetry": [
+     "pec",
+     "pmc"
+    ]
+   }
+  }
+ },
+ "reference": {
+  "values": {
+   "neff": 1.4531882203166877
+  },
+  "method": "fde",
+  "backend": "lightsmith-fde",
+  "device": "cpu",
+  "runtime_s": 2.016,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "oracle_extract": {
+  "neff": {
+   "kind": "mode",
+   "field": "neff_real",
+   "wavelength_nm": 1550.0
+  }
+ }
+}

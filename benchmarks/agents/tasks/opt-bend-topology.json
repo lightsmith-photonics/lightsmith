@@ -1,0 +1,202 @@
+{
+ "id": "opt-bend-topology",
+ "kind": "optimization",
+ "category": "standard",
+ "traps": [
+  "estimate_first",
+  "self_consistency"
+ ],
+ "prompt": "Inverse-design a compact 90° waveguide bend in 2D: 400 nm wide silicon (n = 3.476) guides in SiO2 (n = 1.444), the input coming from -x and leaving towards +y, joined by a 1.2 µm x 1.2 µm design region centred at the origin. Optimise for TE transmission at 1550 nm with a short run (about 10 iterations is fine; keep the grid coarse, ~50 nm) and tell me the transmission of the final design.",
+ "answer_fields": [
+  {
+   "key": "transmission",
+   "unit": "fraction (0-1)",
+   "description": "|S21|^2 of the final (binarized) design"
+  }
+ ],
+ "reference_method": "inverse",
+ "targets": {},
+ "checks": [
+  {
+   "type": "estimate_before_solve"
+  },
+  {
+   "type": "self_consistent",
+   "key": "transmission",
+   "abs": 0.03,
+   "extract": {
+    "kind": "sparam",
+    "out": "o2",
+    "in": "o1",
+    "wavelength_nm": 1550.0
+   }
+  },
+  {
+   "type": "threshold",
+   "key": "transmission",
+   "min": 0.5
+  }
+ ],
+ "reference_device": "auto",
+ "oracle": {},
+ "reference_spec": {
+  "kind": "optimization",
+  "device": {
+   "kind": "device",
+   "dimension": 2,
+   "background": {
+    "kind": "constant_index",
+    "n_real": 1.444,
+    "n_imag": 0.0
+   },
+   "structures": [
+    {
+     "geometry": {
+      "kind": "prism",
+      "profile": {
+       "kind": "rectangle",
+       "center_nm": [
+        -5600.0,
+        0
+       ],
+       "size_nm": [
+        10000,
+        400
+       ]
+      },
+      "z_min_nm": -110,
+      "z_max_nm": 110
+     },
+     "material": {
+      "kind": "constant_index",
+      "n_real": 3.476,
+      "n_imag": 0.0
+     }
+    },
+    {
+     "geometry": {
+      "kind": "prism",
+      "profile": {
+       "kind": "rectangle",
+       "center_nm": [
+        0,
+        5600.0
+       ],
+       "size_nm": [
+        400,
+        10000
+       ]
+      },
+      "z_min_nm": -110,
+      "z_max_nm": 110
+     },
+     "material": {
+      "kind": "constant_index",
+      "n_real": 3.476,
+      "n_imag": 0.0
+     }
+    }
+   ],
+   "domain_size_nm": [
+    2600.0,
+    2600.0,
+    0
+   ],
+   "wavelengths": [
+    1550.0
+   ],
+   "ports": [
+    {
+     "name": "o1",
+     "center_nm": [
+      -1050.0,
+      0,
+      0
+     ],
+     "size_nm": [
+      0,
+      1500,
+      1
+     ],
+     "direction": "+",
+     "num_modes": 1
+    },
+    {
+     "name": "o2",
+     "center_nm": [
+      0,
+      1050.0,
+      0
+     ],
+     "size_nm": [
+      1500,
+      0,
+      1
+     ],
+     "direction": "-",
+     "num_modes": 1
+    }
+   ],
+   "options": {
+    "fdfd": {
+     "dl_nm": 50.0,
+     "pml_cells": 10
+    }
+   }
+  },
+  "design_regions": [
+   {
+    "size_nm": [
+     1200.0,
+     1200.0,
+     220
+    ],
+    "material_low": {
+     "kind": "constant_index",
+     "n_real": 1.444,
+     "n_imag": 0.0
+    },
+    "material_high": {
+     "kind": "constant_index",
+     "n_real": 3.476,
+     "n_imag": 0.0
+    },
+    "filter_radius_nm": 80
+   }
+  ],
+  "objective": [
+   {
+    "kind": "sparameter",
+    "out_port": "o2",
+    "in_port": "o1"
+   }
+  ],
+  "optimizer": {
+   "method": "mma",
+   "max_iter": 10,
+   "beta_every": 1000
+  }
+ },
+ "reference": {
+  "values": {},
+  "method": "mma",
+  "backend": "lightsmith-fdfd",
+  "oracle_values": {
+   "transmission": 0.7660833834170607
+  },
+  "device": "cuda:0",
+  "runtime_s": 11.543,
+  "warnings": [
+   "final design is only 63% binary; raise beta_max or max_iter (objective_binary is the thresholded performance)"
+  ],
+  "lightsmith_version": "0.1.0"
+ },
+ "oracle_extract": {
+  "transmission": {
+   "kind": "sparam",
+   "out": "o2",
+   "in": "o1",
+   "wavelength_nm": 1550.0
+  }
+ }
+}

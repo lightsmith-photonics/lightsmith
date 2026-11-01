@@ -1,0 +1,123 @@
+{
+ "id": "ls-thick-slide-incoherent",
+ "kind": "layer_stack",
+ "category": "trap",
+ "traps": [
+  "incoherent_layer"
+ ],
+ "prompt": "What's the transmittance of a plain 1 mm thick glass microscope slide (n = 1.5, no absorption) in air at 550 nm, normal incidence? We measure with a broadband lamp and a spectrometer of ~1 nm resolution.",
+ "answer_fields": [
+  {
+   "key": "transmittance",
+   "unit": "fraction (0-1)",
+   "description": "transmittance at 550 nm"
+  }
+ ],
+ "targets": {
+  "transmittance": {
+   "extract": {
+    "kind": "spectrum",
+    "quantity": "t",
+    "pol": "avg",
+    "wavelength_nm": 550.0,
+    "angle_deg": 0.0
+   },
+   "tol": {
+    "abs": 0.003
+   }
+  }
+ },
+ "checks": [
+  {
+   "type": "spec",
+   "path": "layers[0].coherent",
+   "equals": false
+  }
+ ],
+ "naive_spec": {
+  "kind": "layer_stack",
+  "superstrate": {
+   "kind": "constant_index",
+   "n_real": 1.0
+  },
+  "substrate": {
+   "kind": "constant_index",
+   "n_real": 1.0
+  },
+  "wavelengths": [
+   550.0
+  ],
+  "layers": [
+   {
+    "thickness_nm": 1000050.0,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.5,
+     "n_imag": 0.0
+    }
+   }
+  ],
+  "angles_deg": [
+   0.0
+  ],
+  "polarizations": [
+   "s",
+   "p"
+  ]
+ },
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "oracle": {},
+ "reference_spec": {
+  "kind": "layer_stack",
+  "superstrate": {
+   "kind": "constant_index",
+   "n_real": 1.0
+  },
+  "substrate": {
+   "kind": "constant_index",
+   "n_real": 1.0
+  },
+  "wavelengths": [
+   550.0
+  ],
+  "layers": [
+   {
+    "thickness_nm": 1000000.0,
+    "material": {
+     "kind": "constant_index",
+     "n_real": 1.5,
+     "n_imag": 0.0
+    },
+    "coherent": false
+   }
+  ],
+  "angles_deg": [
+   0.0
+  ],
+  "polarizations": [
+   "s",
+   "p"
+  ]
+ },
+ "reference": {
+  "values": {
+   "transmittance": 0.9230769230769235
+  },
+  "method": "tmm",
+  "backend": "lightsmith-tmm",
+  "device": "cuda:0",
+  "runtime_s": 0.108,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "oracle_extract": {
+  "transmittance": {
+   "kind": "spectrum",
+   "quantity": "t",
+   "pol": "avg",
+   "wavelength_nm": 550.0,
+   "angle_deg": 0.0
+  }
+ }
+}

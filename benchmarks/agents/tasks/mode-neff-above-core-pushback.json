@@ -1,0 +1,49 @@
+{
+ "id": "mode-neff-above-core-pushback",
+ "kind": "mode",
+ "category": "pushback",
+ "traps": [
+  "unphysical_request"
+ ],
+ "prompt": "Find the width of a 220 nm thick silicon strip (n = 3.476) in SiO2 for which the fundamental TE mode has an effective index of 3.8 at 1550 nm.",
+ "answer_fields": [
+  {
+   "key": "width_nm",
+   "unit": "nm",
+   "description": "strip width giving neff = 3.8"
+  }
+ ],
+ "checks": [
+  {
+   "type": "pushback"
+  },
+  {
+   "type": "mentions",
+   "any": [
+    "core index",
+    "exceed",
+    "larger than",
+    "greater than",
+    "cannot",
+    "impossible",
+    "above the",
+    "bounded",
+    "not possible",
+    "3.476"
+   ],
+   "required": true
+  }
+ ],
+ "oracle": {
+  "decline": true,
+  "concerns": [
+   "A guided mode's effective index cannot exceed the core index (3.476); neff = 3.8 is impossible for any width."
+  ]
+ },
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "targets": {},
+ "reference_spec": null,
+ "reference": null,
+ "oracle_extract": {}
+}

@@ -1,0 +1,138 @@
+{
+ "id": "sca-au80-vendor-size-abs",
+ "kind": "scattering",
+ "category": "trap",
+ "traps": [
+  "diameter_vs_radius"
+ ],
+ "prompt": "We bought 80 nm gold nanoparticles (vendor size) suspended in water and will heat them with a 532 nm laser. What is the absorption cross-section of one particle at 532 nm, in nm^2?",
+ "answer_fields": [
+  {
+   "key": "c_abs_nm2",
+   "unit": "nm^2",
+   "description": "absorption cross-section at 532 nm"
+  }
+ ],
+ "targets": {
+  "c_abs_nm2": {
+   "extract": {
+    "kind": "cross_section",
+    "quantity": "c_abs_nm2",
+    "wavelength_nm": 532.0
+   },
+   "tol": {
+    "rel": 0.03
+   }
+  }
+ },
+ "checks": [
+  {
+   "type": "spec",
+   "path": "particles[0].shape.radius_nm",
+   "approx": 40.0,
+   "abs": 0.5
+  },
+  {
+   "type": "spec_wavelength",
+   "wavelength_nm": 532.0,
+   "abs": 0.5
+  }
+ ],
+ "naive_spec": {
+  "kind": "scattering",
+  "particles": [
+   {
+    "shape": {
+     "kind": "sphere",
+     "radius_nm": 80.0
+    },
+    "material": {
+     "kind": "library",
+     "name": "Au",
+     "dataset": "Johnson-Christy"
+    },
+    "position_nm": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "medium_index": 1.33,
+  "illumination": {
+   "kind": "plane_wave",
+   "direction": [
+    0,
+    0,
+    1
+   ],
+   "polarization": [
+    1,
+    0,
+    0
+   ]
+  },
+  "wavelengths": [
+   532.0
+  ]
+ },
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "oracle": {},
+ "reference_spec": {
+  "kind": "scattering",
+  "particles": [
+   {
+    "shape": {
+     "kind": "sphere",
+     "radius_nm": 40.0
+    },
+    "material": {
+     "kind": "library",
+     "name": "Au",
+     "dataset": "Johnson-Christy"
+    },
+    "position_nm": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "medium_index": 1.33,
+  "illumination": {
+   "kind": "plane_wave",
+   "direction": [
+    0,
+    0,
+    1
+   ],
+   "polarization": [
+    1,
+    0,
+    0
+   ]
+  },
+  "wavelengths": [
+   532.0
+  ]
+ },
+ "reference": {
+  "values": {
+   "c_abs_nm2": 18256.874652185463
+  },
+  "method": "mie",
+  "backend": "miepython",
+  "device": "cpu",
+  "runtime_s": 0.001,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "oracle_extract": {
+  "c_abs_nm2": {
+   "kind": "cross_section",
+   "quantity": "c_abs_nm2",
+   "wavelength_nm": 532.0
+  }
+ }
+}
