@@ -180,15 +180,21 @@ class ModeProblem(_Model):
 class Port(_Model):
     name: str
     center_nm: tuple[float, float, float]
-    size_nm: tuple[float, float, float] = Field(description="Exactly one zero entry: the port normal axis.")
+    size_nm: tuple[float, float, float] = Field(
+        description="Zero along the port normal. In 2D devices z may also be zero, e.g. (0, w, 0) for an x-normal port.")
     direction: Literal["+", "-"] = Field(description="Direction of propagation *into* the device along the normal.")
     num_modes: int = Field(1, ge=1)
 
     @model_validator(mode="after")
     def _one_normal(self):
-        if sum(s == 0 for s in self.size_nm) != 1:
-            raise ValueError("port size_nm must have exactly one zero entry (the normal axis)")
+        zeros = [i for i, s in enumerate(self.size_nm) if s == 0]
+        if not (len(zeros) == 1 or (len(zeros) == 2 and 2 in zeros)):
+            raise ValueError("port size_nm must be zero along exactly one in-plane axis (the normal)")
         return self
+
+    @property
+    def normal_axis(self) -> int:
+        return next(i for i, s in enumerate(self.size_nm) if s == 0)
 
 
 class GdsLayout(_Model):
@@ -260,12 +266,15 @@ class CircuitProblem(_Model):
 
 # --- the union ------------------------------------------------------------------
 
+from .inverse.spec import OptimizationProblem  # noqa: E402  (it wraps DeviceProblem, defined above)
+
 Problem = Annotated[
-    Union[Simulation, LayerStackProblem, PeriodicProblem, ModeProblem, DeviceProblem, BandProblem, CircuitProblem],
+    Union[Simulation, LayerStackProblem, PeriodicProblem, ModeProblem, DeviceProblem, BandProblem, CircuitProblem,
+          OptimizationProblem],
     Field(discriminator="kind"),
 ]
 
-PROBLEM_KINDS = ("scattering", "layer_stack", "periodic", "mode", "device", "bands", "circuit")
+PROBLEM_KINDS = ("scattering", "layer_stack", "periodic", "mode", "device", "bands", "circuit", "optimization")
 
 
 class _Envelope(BaseModel):
