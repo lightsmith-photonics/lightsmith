@@ -1,27 +1,32 @@
 """Native finite-difference beam propagation method (BPM) for long, slowly varying devices.
 
-The field is marched along the axis normal to the ports, from one port plane
-to the other, with the one-way equation dE_t/dw = i k0 sqrt(M) E_t, where M is
-the FDE engine's Yee-grid transverse operator (so FDE/EME port modes are exact
-eigenvectors of the propagator in uniform sections and mode conventions match
-EME). sqrt is replaced by a Padé (m, m) approximant (wide angle; m = 0 is the
-paraxial Fresnel equation), steps are Crank-Nicolson, transverse walls are
+The transverse magnetic field is marched along the axis normal to the ports,
+from one port plane to the other, with the one-way equation
+dH_t/dw = i k0 sqrt(N) H_t, where N = P Q is built from the FDE engine's
+Yee-grid operators (so FDE/EME port modes are exact eigenvectors of the
+propagator in uniform sections and mode conventions match EME). sqrt is
+replaced by a Padé (m, m) approximant (wide angle; m = 0 is the paraxial
+Fresnel equation), steps are Crank-Nicolson, transverse walls are
 stretched-coordinate PMLs, and the reference index adapts to the field in
-every slice.
+every slice. H (continuous across every interface) is carried across slice
+boundaries, and each input's power is kept continuous there (energy-conserving
+BPM), which makes tapers reciprocal and adiabatic to ~1%.
 
 - ``dimension=2``: slab BPM in the xy plane, 'te' (in-plane E, default, as EME)
   or 'tm' (E along z); exact scalar operators.
-- ``dimension=3``: semi-vectorial (quasi-TE Ex or quasi-TM Ey) or
-  full-vectorial (Ex, Ey coupled) on the 2D cross-section.
+- ``dimension=3``: semi-vectorial (quasi-TE: Hy, quasi-TM: Hx) or
+  full-vectorial (Hx, Hy coupled; default) on the 2D cross-section.
 
 BPM is unidirectional: reflections and back-scattering are neglected. One run
 from the min port plane fills S(max <- min); a second run from the max plane
 fills S(min <- max); S entries between ports on the same plane are set to 0.
-Use EME (bidirectional) or FDFD/FDTD when reflections matter. The
-``bend_radius_nm`` option propagates along a circular arc (conformal
-transformation, as FDE bend modes). Solves are block-tridiagonal parallel
-cyclic reduction in the array API, so the same code runs on NumPy (CPU) and
-torch (CUDA).
+Use EME (bidirectional, exact for piecewise-uniform devices) or FDFD/FDTD when
+reflections or abrupt high-contrast junctions matter: at an abrupt junction BPM
+transmits by overlap, an error of order the mismatch, and short converging
+(wide -> narrow) high-contrast tapers come out low. The ``bend_radius_nm``
+option propagates along a circular arc (conformal transformation, as FDE bend
+modes). Solves are block-tridiagonal parallel cyclic reduction in the array
+API, so the same code runs on NumPy (CPU) and torch (CUDA).
 """
 
 from __future__ import annotations
@@ -47,7 +52,7 @@ class BPMOptions(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     vector: Literal["auto", "semi", "full"] = Field(
-        "auto", description="3D only: semi-vectorial (one E component) or full-vectorial (Ex, Ey). auto = full.")
+        "auto", description="3D only: semi-vectorial (one H component) or full-vectorial (Hx, Hy). auto = full.")
     polarization: Literal["auto", "te", "tm", "any"] = Field(
         "auto", description="2D: 'te' (in-plane E, default) or 'tm'. 3D semi: dominant Ex ('te', default) or Ey "
         "('tm'). 3D full: filters port modes by te_fraction ('any' by default).")
@@ -60,9 +65,9 @@ class BPMOptions(BaseModel):
     pml_cells: int = Field(15, ge=1)
     pml_reflection: float = Field(1e-8, gt=0, lt=1)
     step_nm: float | None = Field(None, gt=0, description="Max propagation step. Default wavelength / 10.")
-    pade_order: int = Field(1, ge=0, le=6, description="0 = paraxial, m = Padé (m, m) wide-angle.")
-    pade_rotation_deg: float = Field(
-        0.0, ge=0, lt=90, description="Rotated branch cut (e.g. 45) to damp evanescent waves; 0 = standard Padé.")
+    pade_order: int = Field(
+        2, ge=0, le=6, description="0 = paraxial, m = Padé (m, m) wide-angle; cost is m solves per step. (1, 1) "
+        "suffices for straight guides and gentle tapers; tilted guides, branches and bends need (2, 2).")
     reference_index: Literal["adaptive"] | float = Field(
         "adaptive", description="'adaptive' (Rayleigh quotient of the field, per slice) or a fixed value.")
     taper_grid_cells_per_slice: float = Field(
@@ -71,7 +76,8 @@ class BPMOptions(BaseModel):
     max_taper_slices: int = Field(400, ge=1, description="Upper bound of slices per varying segment.")
     power_continuity: bool = Field(
         True, description="Rescale the field at slice boundaries so each input's power is continuous (energy-"
-        "conserving BPM); False keeps plain E continuity.")
+        "conserving BPM); False keeps plain H continuity, which conserves an n-weighted norm instead (a taper's "
+        "transmission is then off by ~sqrt(n_out / n_in)).")
     directions: Literal["both", "forward"] = Field(
         "both", description="'forward' only propagates from the min plane and fills S(min <- max) by reciprocity.")
     bend_radius_nm: float | None = Field(
@@ -79,6 +85,9 @@ class BPMOptions(BaseModel):
         "positive = centre of curvature towards -u). The device is given unrolled.")
     precision: Literal["auto", "single", "double"] = Field("auto", description="auto: single on GPU, double on CPU.")
     max_grid_cells: int = Field(400_000, ge=1)
+    gpu_min_unknowns: int = Field(
+        2000, ge=0, description="Cross-sections with fewer unknowns run on the CPU even when a GPU is selected "
+        "(2D slabs: per-step kernel launches cost more than the arithmetic). 0 = always use the given device.")
 
 
 @register
@@ -207,6 +216,11 @@ class NativeBPM(Backend):
                              problem.domain_center_nm[2], None, None, opts.subsamples, opts.subpixel,
                              cells_per_step=opts.taper_grid_cells_per_slice,
                              taper_cells_range=(1, opts.max_taper_slices))
+        device_note = None
+        if device.is_gpu and len(comps) * grid.size < opts.gpu_min_unknowns:
+            device_note = (f"ran on the CPU: {len(comps) * grid.size} unknowns per cross-section is below "
+                           f"gpu_min_unknowns={opts.gpu_min_unknowns}")
+            device = Device("numpy", "cpu")
         xp = device.namespace()
         cdt = "complex64" if cls._bytes_per_value(opts, device) == 8 else "complex128"
 
@@ -214,7 +228,6 @@ class NativeBPM(Backend):
             return device.asarray(np.asarray(a, dtype=complex), dtype=cdt)
 
         settings = Settings(comps=comps, step_nm=st["step"], pade_order=opts.pade_order,
-                            pade_rotation_deg=opts.pade_rotation_deg,
                             reference_index=None if opts.reference_index == "adaptive" else float(opts.reference_index),
                             power_continuity=opts.power_continuity,
                             bend_radius_nm=opts.bend_radius_nm, bend_center_nm=grid.x0 + grid.nx * grid.dx / 2,
@@ -283,12 +296,12 @@ class NativeBPM(Backend):
             s_all.append(s)
         s_all = np.asarray(s_all)
         provenance = {
-            **device.describe(), "axis": "xyz"[axis], "port_planes_nm": [lo, hi], "slices": len(cells),
+            **device.describe(), "device_note": device_note, "axis": "xyz"[axis], "port_planes_nm": [lo, hi], "slices": len(cells),
             "slice_bounds_nm": [[c.start, c.stop] for c in cells] if len(cells) <= 200 else None,
             "cross_section_grid": grid.describe(), "vector": st["vector"],
             "components": ["Hx", "Hy"] if len(comps) == 2 else ["Hy" if comps == (1,) else "Hx"],
             "polarization": st["pol"] or "any", "pade_order": opts.pade_order,
-            "pade_rotation_deg": opts.pade_rotation_deg, "max_step_nm": st["step"], "steps": stats.steps,
+"max_step_nm": st["step"], "steps": stats.steps,
             "factorizations": stats.factorizations, "peak_factor_bytes": stats.peak_factor_bytes,
             "precision": "single" if cdt == "complex64" else "double", "unidirectional": True,
             "directions": opts.directions, "reference_index_range": [min(stats.n_ref), max(stats.n_ref)],

@@ -14,6 +14,11 @@ GPUs (no sequential sweep over n as in the Thomas algorithm). The multipliers
 of every level are kept, so later right-hand sides with the same matrix (all
 steps through a uniform section) cost ~2 log2(n) batched products.
 
+Performance note: NumPy inverts a stack of small blocks one LAPACK call at a time,
+each multi-threaded by OpenBLAS; on a busy machine that thread contention can
+make 3D factorisations ~100x slower. Set OPENBLAS_NUM_THREADS=1, or use
+``device="torch-cpu"`` (torch batches the inverses), for 3D on the CPU.
+
 No pivoting across lines: fine for the Crank-Nicolson BPM matrices (diagonally
 dominant for paraxial steps, mildly indefinite but strongly damped for Padé
 steps); the diagonal blocks themselves are inverted with pivoting.

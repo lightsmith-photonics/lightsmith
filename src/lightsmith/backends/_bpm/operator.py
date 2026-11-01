@@ -115,6 +115,11 @@ class Operator:
         wy = [grid.weights(1, d) for d in (False, True)]
         self.wa = asarray(wx[1][:, None] * wy[0][None, :])  # at Ex / Hy
         self.wb = asarray(wx[0][:, None] * wy[1][None, :])  # at Ey / Hx
+        # Power is integrated over the physical cross-section only: in the PML the stretched operators make
+        # <E, H*> meaningless (radiation entering it can count as negative power).
+        inside = [~grid.pml_mask(a, d) for a, d in ((0, True), (1, False), (0, False), (1, True))]
+        self.wa_in = asarray(wx[1][:, None] * wy[0][None, :] * inside[0][:, None] * inside[1][None, :])
+        self.wb_in = asarray(wx[0][:, None] * wy[1][None, :] * inside[2][:, None] * inside[3][None, :])
         self.asarray = asarray
 
     # --- differences (k0-normalised, stretched), matching _fde.modes._diff_1d -----------------
@@ -182,6 +187,14 @@ class Operator:
         den = xp.sum(sx * cx * hx + sy * cy * hy, axis=(-2, -1))
         flux = xp.sum(self.wa * cy * ex - self.wb * cx * ey, axis=(-2, -1))
         return xp.real(num), xp.real(den), xp.real(flux)
+
+    def power(self, f, y):
+        """Re sum(wa conj(hy) (Q y)_x - wb conj(hx) (Q y)_y) outside the PML, per right-hand side: the power
+        <E, H*> of the field H = f when y = N^-1/2 f (then E = Q y)."""
+        xp = self.xp
+        hx, hy = self._split(f * self.keep)
+        ex, ey = self.q(*self._split(y * self.keep))
+        return xp.real(xp.sum(self.wa_in * xp.conj(hy) * ex - self.wb_in * xp.conj(hx) * ey, axis=(-2, -1)))
 
     def blocks(self, chunk: int = 96):
         """Block-tridiagonal (A, B, C) of M in the line layout, each (n, nb, nb), by probing."""

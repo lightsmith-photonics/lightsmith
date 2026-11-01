@@ -35,8 +35,12 @@ import numpy as np
 from .._fde import Grid
 from .._fde.modes import bend_transform
 from .operator import Operator
-from .pade import cn_factors
+from .pade import cn_factors, inv_sqrt_factors
 from .tridiag import BlockTridiag, block_matvec
+
+
+POWER_PADE_STEPS = 5  # (2, 3) rotated approximant of N^-1/2 for the power at slice boundaries
+POWER_PADE_ROTATION_DEG = 60.0
 
 
 @dataclass
@@ -44,7 +48,6 @@ class Settings:
     comps: tuple[int, ...]
     step_nm: float
     pade_order: int
-    pade_rotation_deg: float
     reference_index: float | None  # None = adaptive
     power_continuity: bool
     bend_radius_nm: float | None
@@ -71,55 +74,78 @@ def cell_eps(cell, grid: Grid, wavelength_nm: float, s: Settings):
     return eps, mu, n_pml
 
 
+class Rational:
+    """gain * prod_j (1 - X/b_j)^-1 (1 - X/a_j) with X = (N - n^2) / n^2, N given by its line blocks."""
+
+    def __init__(self, xp, blocks, n_ref: float, gain: complex, pairs, eye, stats: RunStats):
+        self.xp, self.blocks, self.n2, self.gain = xp, blocks, n_ref**2, gain
+        A, B, C = blocks
+        n2 = self.n2
+        self.facs = []
+        for a, b in pairs:
+            fb = None
+            if b is not None:
+                fb = BlockTridiag(xp, A * (-1 / (b * n2)), eye * (1 + 1 / b) - B * (1 / (b * n2)), C * (-1 / (b * n2)))
+                stats.factorizations += 1
+            self.facs.append((a, fb))
+
+    def __call__(self, phi):
+        xp, n2 = self.xp, self.n2
+        phi = phi * self.gain
+        for a, fb in self.facs:
+            if a is not None:
+                phi = phi * (1 + 1 / a) - block_matvec(xp, *self.blocks, phi) * (1 / (a * n2))
+            if fb is not None:
+                phi = fb.solve(phi)
+        return phi
+
+    def nbytes(self) -> int:
+        return sum(f.nbytes() for _, f in self.facs if f is not None)
+
+
 def propagate(cells, grid: Grid, wavelength_nm: float, phi, s: Settings, xp, asarray, stats: RunStats,
               n_bounds: tuple[float, float]):
     """Propagate line-layout fields `phi` (n, nb, k) through `cells` in order. Returns (phi, theta)."""
     k0 = 2 * math.pi / wavelength_nm
     theta = 0.0
     n_ref = s.reference_index
-    prev = None  # operator of the previous slice
+    prev = None  # (operator, N^-1/2) of the previous slice
+    isq_gain, isq_pairs = inv_sqrt_factors(POWER_PADE_STEPS, POWER_PADE_ROTATION_DEG)
     for cell in cells:
         eps, mu, n_pml = cell_eps(cell, grid, wavelength_nm, s)
         op = Operator(grid, eps, mu, wavelength_nm, s.comps, xp, asarray, n_pml, s.pml_reflection)
-        A, B, C = op.blocks()
-        f = op.layout.from_lines(xp, phi)
-        num, den, flux = op.rayleigh(f)
-        n_col = _index(xp, num, den, n_bounds)
-        if prev is not None and s.power_continuity:
-            # Keep each column's power <E, H> = flux / n continuous across the slice boundary.
-            pnum, pden, pflux = prev.rayleigh(f)
-            ratio = (pflux / _index(xp, pnum, pden, n_bounds)) / (flux / n_col)
-            ratio = xp.where(ratio > 0, ratio, xp.ones_like(ratio))
-            phi = phi * xp.astype(xp.sqrt(ratio), phi.dtype)
-            stats.power_rescale.append(float(xp.max(xp.abs(ratio - 1))))
-        prev = op
+        blocks = op.blocks()
+        lay = op.layout
+        eye = asarray(np.eye(lay.nb))
+        f = lay.from_lines(xp, phi)
         if s.reference_index is None:
+            num, den, flux = op.rayleigh(f)
+            n_col = _index(xp, num, den, n_bounds)
             w = xp.abs(flux)
             n_ref = float(xp.sqrt(xp.sum(w * n_col**2) / xp.sum(w))) if float(xp.sum(w)) > 0 else n_bounds[1]
         stats.n_ref.append(n_ref)
+        isq = None
+        if s.power_continuity:
+            isq = Rational(xp, blocks, n_ref, isq_gain / n_ref, isq_pairs, eye, stats)
+            if prev is not None:
+                # Keep each column's power continuous across the slice boundary, with E = Q N^-1/2 H on
+                # either side (H continuity alone conserves an n-weighted norm instead).
+                p_old = prev[0].power(f, lay.from_lines(xp, prev[1](phi)))
+                p_new = op.power(f, lay.from_lines(xp, isq(phi)))
+                ratio = p_old / xp.where(p_new != 0, p_new, xp.ones_like(p_new))
+                ratio = xp.where(ratio > 0, ratio, xp.ones_like(ratio))
+                phi = phi * xp.astype(xp.sqrt(ratio), phi.dtype)
+                stats.power_rescale.append(float(xp.max(xp.abs(ratio - 1))))
+        prev = (op, isq)
         nsteps = max(1, math.ceil(cell.length / s.step_nm - 1e-9))
         dw = cell.length / nsteps
-        gain, pairs = cn_factors(s.pade_order, k0 * n_ref * dw, s.pade_rotation_deg)
-        n2 = n_ref**2
-        eye = asarray(np.eye(op.layout.nb))
-        facs = []
-        for a, b in pairs:
-            fb = None
-            if b is not None:
-                fb = BlockTridiag(xp, A * (-1 / (b * n2)), eye * (1 + 1 / b) - B * (1 / (b * n2)), C * (-1 / (b * n2)))
-                stats.factorizations += 1
-            facs.append((a, fb))
-        stats.peak_factor_bytes = max(stats.peak_factor_bytes, sum(f.nbytes() for _, f in facs if f is not None))
+        gain, pairs = cn_factors(s.pade_order, k0 * n_ref * dw)
+        step = Rational(xp, blocks, n_ref, gain, pairs, eye, stats)
+        stats.peak_factor_bytes = max(stats.peak_factor_bytes, step.nbytes() + (isq.nbytes() if isq else 0))
         for _ in range(nsteps):
-            phi = phi * gain
-            for a, fb in facs:
-                if a is not None:
-                    phi = phi * (1 + 1 / a) - block_matvec(xp, A, B, C, phi) * (1 / (a * n2))
-                if fb is not None:
-                    phi = fb.solve(phi)
+            phi = step(phi)
             theta += k0 * n_ref * dw
         stats.steps += nsteps
-        del facs
     return phi, theta
 
 

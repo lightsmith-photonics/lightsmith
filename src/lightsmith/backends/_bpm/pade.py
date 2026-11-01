@@ -9,9 +9,10 @@ R is replaced by the Padé recursion R_{k+1} = (X/2) / (1 + R_k/2), R_0 = 0
 (Hadley, Opt. Lett. 17, 1426 (1992)): R_1 = X/2 is the paraxial (Fresnel)
 equation and R_{2m} the (m, m) Padé approximant. Every R_{2m} is a sum of
 terms a X / (1 + b X) with a, b > 0, so Im R >= 0 whenever Im X >= 0 and the
-scheme stays dissipative in PMLs and lossy media. Optionally the branch cut is
-rotated by alpha (Milinazzo, Zala & Brooke, J. Acoust. Soc. Am. 101, 760
-(1997)), which damps evanescent components instead of propagating them.
+scheme stays dissipative in PMLs and lossy media. A rotated branch cut
+(Milinazzo, Zala & Brooke, J. Acoust. Soc. Am. 101, 760 (1997)) is used only
+for the N^-1/2 of the power estimate (:func:`inv_sqrt_factors`): as a
+propagator its Im R changes sign on the propagating range, so steps could grow.
 
 Crank-Nicolson, D (phi+ - phi) = i beta_ref dw N (phi+ + phi) / 2 with R = N / D, gives
 
@@ -19,7 +20,7 @@ Crank-Nicolson, D (phi+ - phi) = i beta_ref dw N (phi+ + phi) / 2 with R = N / D
 
 and both sides factor into first-order polynomials in X (Hadley's multistep
 method), so one step is a product of `order` shifted solves
-(1 - X / b_j)^-1 (1 - X / a_j), each with the sparsity of M.
+(1 - X / b_j)^-1 (1 - X / a_j), each with the sparsity of M (here N, the H-field operator).
 """
 
 from __future__ import annotations
@@ -31,9 +32,13 @@ import numpy as np
 from numpy.polynomial import polynomial as P
 
 
-def pade_rational(order: int, rotation_deg: float = 0.0) -> tuple[np.ndarray, np.ndarray]:
-    """Ascending coefficients (N, D) of R(X) ~ sqrt(1 + X) - 1; order 0 = paraxial, m = Padé (m, m)."""
-    steps = 1 if order == 0 else 2 * order
+def pade_rational(order: int, rotation_deg: float = 0.0, steps: int | None = None) -> tuple[np.ndarray, np.ndarray]:
+    """Ascending coefficients (N, D) of R(X) ~ sqrt(1 + X) - 1; order 0 = paraxial, m = Padé (m, m).
+
+    `steps` overrides the number of recursion steps (odd steps give (k+1, k) approximants).
+    """
+    if steps is None:
+        steps = 1 if order == 0 else 2 * order
     n, d = np.zeros(1, complex), np.ones(1, complex)
     for _ in range(steps):
         n, d = P.polymul([0, 0.5], d), P.polyadd(d, 0.5 * n)
@@ -73,6 +78,27 @@ def cn_factors(order: int, beta_ref_dw: float, rotation_deg: float = 0.0
     n, d = np.pad(n, (0, m - len(n))), np.pad(d, (0, m - len(d)))
     a0, ra = _roots(d + tau * n)
     b0, rb = _roots(d - tau * n)
+    ra, rb = list(ra), list(rb)
+    k = max(len(ra), len(rb))
+    ra += [None] * (k - len(ra))
+    rb += [None] * (k - len(rb))
+    return a0 / b0, list(zip(ra, rb))
+
+
+def inv_sqrt_factors(steps: int = 5, rotation_deg: float = 60.0
+                     ) -> tuple[complex, list[tuple[complex | None, complex | None]]]:
+    """(1 + X)^-1/2 ~ 1 / (1 + R) = D / (D + N) = gain * prod_j (1 - X/b_j)^-1 (1 - X/a_j) (as :func:`cn_factors`).
+
+    An odd number of recursion steps makes this a (k, k+1) approximant, which decays like 1/X for
+    strongly evanescent X << -1 (as the exact value does, up to its phase), and the rotated branch cut
+    keeps it nearly imaginary there: so the kink-induced high-k content met at slice boundaries,
+    whose quadratic forms grow like |X|, adds no spurious power. Default: 1e-3 accurate for |X| < 0.3.
+    """
+    n, d = pade_rational(0, rotation_deg, steps)
+    m = max(len(n), len(d))
+    n, d = np.pad(n, (0, m - len(n))), np.pad(d, (0, m - len(d)))
+    a0, ra = _roots(d)
+    b0, rb = _roots(d + n)
     ra, rb = list(ra), list(rb)
     k = max(len(ra), len(rb))
     ra += [None] * (k - len(ra))
