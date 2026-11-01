@@ -1,0 +1,39 @@
+{
+ "schema_version": "0.1",
+ "particles": [
+  {
+   "shape": {
+    "kind": "sphere",
+    "radius_nm": 40.0
+   },
+   "material": {
+    "kind": "drude",
+    "eps_inf": 9.5,
+    "wp_ev": 9.0,
+    "gamma_ev": 0.07
+   },
+   "position_nm": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  }
+ ],
+ "medium_index": 1.33,
+ "illumination": {
+  "kind": "plane_wave",
+  "direction": [
+   0.0,
+   0.0,
+   1.0
+  ],
+  "polarization": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "wavelengths": [
+  700.0
+ ]
+}

@@ -1,0 +1,40 @@
+{
+ "schema_version": "0.1",
+ "particles": [
+  {
+   "shape": {
+    "kind": "sphere",
+    "radius_nm": 30.0
+   },
+   "material": {
+    "kind": "library",
+    "name": "Ag",
+    "dataset": "Johnson-Christy"
+   },
+   "position_nm": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  }
+ ],
+ "medium_index": 1.0,
+ "illumination": {
+  "kind": "plane_wave",
+  "direction": [
+   0.0,
+   0.0,
+   1.0
+  ],
+  "polarization": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "wavelengths": [
+  360.0,
+  400.0,
+  500.0
+ ]
+}

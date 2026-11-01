@@ -1,0 +1,36 @@
+{
+ "schema_version": "0.1",
+ "particles": [
+  {
+   "shape": {
+    "kind": "spheroid",
+    "semi_axis_xy_nm": 15.874010519681994,
+    "semi_axis_z_nm": 31.748021039363987
+   },
+   "material": {
+    "kind": "library",
+    "name": "Au",
+    "dataset": "Johnson-Christy"
+   }
+  }
+ ],
+ "medium_index": 1.33,
+ "illumination": {
+  "kind": "plane_wave",
+  "direction": [
+   1.0,
+   0.0,
+   0.0
+  ],
+  "polarization": [
+   0.0,
+   0.0,
+   1.0
+  ]
+ },
+ "wavelengths": [
+  520.0,
+  600.0,
+  700.0
+ ]
+}

@@ -1,0 +1,9 @@
+problem_id,family,reference_kind,reference_label,reference_self_change
+sphere-diel-x1.5-m1.5-k0.01-water,dielectric_sphere,mie,Mie (miepython),
+sphere-drude-r40-water,metal_sphere,mie,Mie (miepython),
+sphere-au-jc-r20-water,metal_sphere,mie,Mie (miepython),
+sphere-ag-jc-r30-vacuum,metal_sphere,mie,Mie (miepython),
+coreshell-sio2-au-c30-s8-water,core_shell,mie,Mie (omniscatter-mie),
+spheroid-au-ar2-req20-water,spheroid,highest_resolution,"highest-resolution omniscatter-dda (center) @ dipoles_per_diameter=24, gpu",0.4664574692
+rod-au-ar3-r8-water,rod,highest_resolution,"highest-resolution omniscatter-dda (center) @ dipoles_per_diameter=20, gpu",2.531690464
+dimer-au-r15-gap4-water,dimer,highest_resolution,"highest-resolution omniscatter-dda (center) @ dipoles_per_diameter=24, gpu",0.3028234117

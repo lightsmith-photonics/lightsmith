@@ -1,0 +1,128 @@
+problem_id,backend,device,variant,resolution,reason
+sphere-diel-x1.5-m1.5-k0.01-water,omniscatter-circuit,*,,,solves circuit problems only
+sphere-diel-x1.5-m1.5-k0.01-water,omniscatter-dda,cpu,center,12,budget: dipoles 912 > max_dipoles 600
+sphere-diel-x1.5-m1.5-k0.01-water,omniscatter-dda,cpu,center,16,budget: dipoles 2.18e+03 > max_dipoles 600
+sphere-diel-x1.5-m1.5-k0.01-water,omniscatter-dda,cpu,center,20,budget: dipoles 4.22e+03 > max_dipoles 600
+sphere-diel-x1.5-m1.5-k0.01-water,omniscatter-dda,cpu,weighted,12,budget: dipoles 1.21e+03 > max_dipoles 600
+sphere-diel-x1.5-m1.5-k0.01-water,omniscatter-dda,cpu,weighted,16,budget: dipoles 2.62e+03 > max_dipoles 600
+sphere-diel-x1.5-m1.5-k0.01-water,omniscatter-dda,cpu,weighted,20,budget: dipoles 4.94e+03 > max_dipoles 600
+sphere-diel-x1.5-m1.5-k0.01-water,omniscatter-eme,*,,,solves device problems only
+sphere-diel-x1.5-m1.5-k0.01-water,omniscatter-fde,*,,,solves mode problems only
+sphere-diel-x1.5-m1.5-k0.01-water,omniscatter-fdfd,*,,,FDFD solves device problems
+sphere-diel-x1.5-m1.5-k0.01-water,omniscatter-inverse,*,,,expects an optimization problem
+sphere-diel-x1.5-m1.5-k0.01-water,omniscatter-pwe,*,,,PWE solves 'bands' problems only
+sphere-diel-x1.5-m1.5-k0.01-water,omniscatter-rcwa,*,,,RCWA solves periodic and layer_stack problems
+sphere-diel-x1.5-m1.5-k0.01-water,treams,*,,,treams is not installed (pip install treams)
+sphere-diel-x1.5-m1.5-k0.01-water,omniscatter-tmm,*,,,TMM solves planar layer stacks only
+sphere-drude-r40-water,omniscatter-circuit,*,,,solves circuit problems only
+sphere-drude-r40-water,omniscatter-dda,cpu,center,12,budget: dipoles 912 > max_dipoles 600
+sphere-drude-r40-water,omniscatter-dda,cpu,center,14,budget: dipoles 1.47e+03 > max_dipoles 600
+sphere-drude-r40-water,omniscatter-dda,cpu,center,16,budget: dipoles 2.18e+03 > max_dipoles 600
+sphere-drude-r40-water,omniscatter-dda,cpu,center,18,budget: dipoles 3.11e+03 > max_dipoles 600
+sphere-drude-r40-water,omniscatter-dda,cpu,center,20,budget: dipoles 4.22e+03 > max_dipoles 600
+sphere-drude-r40-water,omniscatter-dda,cpu,center,22,budget: dipoles 5.62e+03 > max_dipoles 600
+sphere-drude-r40-water,omniscatter-dda,cpu,center,24,budget: dipoles 7.21e+03 > max_dipoles 600
+sphere-drude-r40-water,omniscatter-dda,cpu,center,28,budget: dipoles 1.15e+04 > max_dipoles 600
+sphere-drude-r40-water,omniscatter-dda,cpu,center,32,budget: dipoles 1.73e+04 > max_dipoles 600
+sphere-drude-r40-water,omniscatter-dda,cpu,weighted,12,budget: dipoles 1.21e+03 > max_dipoles 600
+sphere-drude-r40-water,omniscatter-dda,cpu,weighted,16,budget: dipoles 2.62e+03 > max_dipoles 600
+sphere-drude-r40-water,omniscatter-dda,cpu,weighted,24,budget: dipoles 8.26e+03 > max_dipoles 600
+sphere-drude-r40-water,omniscatter-dda,cpu,weighted,32,budget: dipoles 1.9e+04 > max_dipoles 600
+sphere-drude-r40-water,omniscatter-dda,cpu,extrapolate,16,budget: dipoles 2.18e+03 > max_dipoles 600
+sphere-drude-r40-water,omniscatter-dda,cpu,extrapolate,24,budget: dipoles 7.21e+03 > max_dipoles 600
+sphere-drude-r40-water,omniscatter-dda,cpu,extrapolate,32,budget: dipoles 1.73e+04 > max_dipoles 600
+sphere-drude-r40-water,omniscatter-eme,*,,,solves device problems only
+sphere-drude-r40-water,omniscatter-fde,*,,,solves mode problems only
+sphere-drude-r40-water,omniscatter-fdfd,*,,,FDFD solves device problems
+sphere-drude-r40-water,omniscatter-inverse,*,,,expects an optimization problem
+sphere-drude-r40-water,omniscatter-fdtd,cpu,default,8,budget: cell_steps 1.65e+09 > max_cell_steps 1e+09
+sphere-drude-r40-water,omniscatter-fdtd,cpu,default,4,budget: cell_steps 5.41e+09 > max_cell_steps 1e+09
+sphere-drude-r40-water,omniscatter-fdtd,cpu,default,2,budget: cell_steps 2.41e+10 > max_cell_steps 1e+09
+sphere-drude-r40-water,omniscatter-pwe,*,,,PWE solves 'bands' problems only
+sphere-drude-r40-water,omniscatter-rcwa,*,,,RCWA solves periodic and layer_stack problems
+sphere-drude-r40-water,treams,*,,,treams is not installed (pip install treams)
+sphere-drude-r40-water,omniscatter-tmm,*,,,TMM solves planar layer stacks only
+sphere-au-jc-r20-water,omniscatter-circuit,*,,,solves circuit problems only
+sphere-au-jc-r20-water,omniscatter-dda,cpu,center,12,budget: dipoles 912 > max_dipoles 600
+sphere-au-jc-r20-water,omniscatter-dda,cpu,center,16,budget: dipoles 2.18e+03 > max_dipoles 600
+sphere-au-jc-r20-water,omniscatter-dda,cpu,center,24,budget: dipoles 7.21e+03 > max_dipoles 600
+sphere-au-jc-r20-water,omniscatter-eme,*,,,solves device problems only
+sphere-au-jc-r20-water,omniscatter-fde,*,,,solves mode problems only
+sphere-au-jc-r20-water,omniscatter-fdfd,*,,,FDFD solves device problems
+sphere-au-jc-r20-water,omniscatter-inverse,*,,,expects an optimization problem
+sphere-au-jc-r20-water,omniscatter-fdtd,cpu,default,8,budget: cell_steps 4.53e+09 > max_cell_steps 1e+09
+sphere-au-jc-r20-water,omniscatter-pwe,*,,,PWE solves 'bands' problems only
+sphere-au-jc-r20-water,omniscatter-rcwa,*,,,RCWA solves periodic and layer_stack problems
+sphere-au-jc-r20-water,treams,*,,,treams is not installed (pip install treams)
+sphere-au-jc-r20-water,omniscatter-tmm,*,,,TMM solves planar layer stacks only
+sphere-ag-jc-r30-vacuum,omniscatter-circuit,*,,,solves circuit problems only
+sphere-ag-jc-r30-vacuum,omniscatter-dda,cpu,center,12,budget: dipoles 912 > max_dipoles 600
+sphere-ag-jc-r30-vacuum,omniscatter-dda,cpu,center,16,budget: dipoles 2.18e+03 > max_dipoles 600
+sphere-ag-jc-r30-vacuum,omniscatter-dda,cpu,center,24,budget: dipoles 7.21e+03 > max_dipoles 600
+sphere-ag-jc-r30-vacuum,omniscatter-eme,*,,,solves device problems only
+sphere-ag-jc-r30-vacuum,omniscatter-fde,*,,,solves mode problems only
+sphere-ag-jc-r30-vacuum,omniscatter-fdfd,*,,,FDFD solves device problems
+sphere-ag-jc-r30-vacuum,omniscatter-inverse,*,,,expects an optimization problem
+sphere-ag-jc-r30-vacuum,omniscatter-fdtd,cpu,default,12,budget: cell_steps 3.02e+09 > max_cell_steps 1e+09
+sphere-ag-jc-r30-vacuum,omniscatter-pwe,*,,,PWE solves 'bands' problems only
+sphere-ag-jc-r30-vacuum,omniscatter-rcwa,*,,,RCWA solves periodic and layer_stack problems
+sphere-ag-jc-r30-vacuum,treams,*,,,treams is not installed (pip install treams)
+sphere-ag-jc-r30-vacuum,omniscatter-tmm,*,,,TMM solves planar layer stacks only
+coreshell-sio2-au-c30-s8-water,omniscatter-circuit,*,,,solves circuit problems only
+coreshell-sio2-au-c30-s8-water,omniscatter-dda,cpu,center,12,budget: dipoles 912 > max_dipoles 600
+coreshell-sio2-au-c30-s8-water,omniscatter-dda,cpu,center,16,budget: dipoles 2.18e+03 > max_dipoles 600
+coreshell-sio2-au-c30-s8-water,omniscatter-dda,cpu,center,24,budget: dipoles 7.21e+03 > max_dipoles 600
+coreshell-sio2-au-c30-s8-water,omniscatter-eme,*,,,solves device problems only
+coreshell-sio2-au-c30-s8-water,omniscatter-fde,*,,,solves mode problems only
+coreshell-sio2-au-c30-s8-water,omniscatter-fdfd,*,,,FDFD solves device problems
+coreshell-sio2-au-c30-s8-water,omniscatter-inverse,*,,,expects an optimization problem
+coreshell-sio2-au-c30-s8-water,omniscatter-fdtd,cpu,default,4,budget: cell_steps 5.71e+09 > max_cell_steps 1e+09
+coreshell-sio2-au-c30-s8-water,miepython,*,,,"Mie handles spheres only, got 'layered_sphere'; use 'dda' or 'tmatrix'"
+coreshell-sio2-au-c30-s8-water,omniscatter-pwe,*,,,PWE solves 'bands' problems only
+coreshell-sio2-au-c30-s8-water,omniscatter-rcwa,*,,,RCWA solves periodic and layer_stack problems
+coreshell-sio2-au-c30-s8-water,treams,*,,,treams is not installed (pip install treams)
+coreshell-sio2-au-c30-s8-water,omniscatter-tmm,*,,,TMM solves planar layer stacks only
+spheroid-au-ar2-req20-water,omniscatter-circuit,*,,,solves circuit problems only
+spheroid-au-ar2-req20-water,omniscatter-dda,cpu,center,24,budget: dipoles 1.82e+03 > max_dipoles 600
+spheroid-au-ar2-req20-water,omniscatter-eme,*,,,solves device problems only
+spheroid-au-ar2-req20-water,omniscatter-fde,*,,,solves mode problems only
+spheroid-au-ar2-req20-water,omniscatter-fdfd,*,,,FDFD solves device problems
+spheroid-au-ar2-req20-water,omniscatter-inverse,*,,,expects an optimization problem
+spheroid-au-ar2-req20-water,omniscatter-fdtd,cpu,default,6.35,budget: cell_steps 3.73e+09 > max_cell_steps 1e+09
+spheroid-au-ar2-req20-water,miepython,*,,,"Mie handles spheres only, got 'spheroid'; use 'dda' or 'tmatrix'"
+spheroid-au-ar2-req20-water,omniscatter-mie,*,,,"Mie handles spheres only (plain or layered), got 'spheroid'; use 'dda' or 'tmatrix'"
+spheroid-au-ar2-req20-water,omniscatter-pwe,*,,,PWE solves 'bands' problems only
+spheroid-au-ar2-req20-water,omniscatter-rcwa,*,,,RCWA solves periodic and layer_stack problems
+spheroid-au-ar2-req20-water,treams,*,,,treams is not installed (pip install treams)
+spheroid-au-ar2-req20-water,omniscatter-tmm,*,,,TMM solves planar layer stacks only
+rod-au-ar3-r8-water,omniscatter-circuit,*,,,solves circuit problems only
+rod-au-ar3-r8-water,omniscatter-dda,cpu,center,20,budget: dipoles 740 > max_dipoles 600
+rod-au-ar3-r8-water,omniscatter-eme,*,,,solves device problems only
+rod-au-ar3-r8-water,omniscatter-fde,*,,,solves mode problems only
+rod-au-ar3-r8-water,omniscatter-fdfd,*,,,FDFD solves device problems
+rod-au-ar3-r8-water,omniscatter-inverse,*,,,expects an optimization problem
+rod-au-ar3-r8-water,omniscatter-fdtd,cpu,default,4,budget: cell_steps 9.35e+09 > max_cell_steps 1e+09
+rod-au-ar3-r8-water,omniscatter-fdtd,cpu,default,3.2,budget: cell_steps 1.36e+10 > max_cell_steps 1e+09
+rod-au-ar3-r8-water,miepython,*,,,"Mie handles spheres only, got 'cylinder'; use 'dda' or 'tmatrix'"
+rod-au-ar3-r8-water,omniscatter-mie,*,,,"Mie handles spheres only (plain or layered), got 'cylinder'; use 'dda' or 'tmatrix'"
+rod-au-ar3-r8-water,omniscatter-pwe,*,,,PWE solves 'bands' problems only
+rod-au-ar3-r8-water,omniscatter-quasistatic,*,,,"quasistatic handles spheres, layered spheres and spheroids, got 'cylinder'"
+rod-au-ar3-r8-water,omniscatter-rcwa,*,,,RCWA solves periodic and layer_stack problems
+rod-au-ar3-r8-water,treams,*,,,treams is not installed (pip install treams)
+rod-au-ar3-r8-water,omniscatter-tmm,*,,,TMM solves planar layer stacks only
+dimer-au-r15-gap4-water,omniscatter-circuit,*,,,solves circuit problems only
+dimer-au-r15-gap4-water,omniscatter-dda,cpu,center,12,budget: dipoles 1.82e+03 > max_dipoles 600
+dimer-au-r15-gap4-water,omniscatter-dda,cpu,center,16,budget: dipoles 4.38e+03 > max_dipoles 600
+dimer-au-r15-gap4-water,omniscatter-dda,cpu,center,24,budget: dipoles 1.45e+04 > max_dipoles 600
+dimer-au-r15-gap4-water,omniscatter-eme,*,,,solves device problems only
+dimer-au-r15-gap4-water,omniscatter-fde,*,,,solves mode problems only
+dimer-au-r15-gap4-water,omniscatter-fdfd,*,,,FDFD solves device problems
+dimer-au-r15-gap4-water,omniscatter-inverse,*,,,expects an optimization problem
+dimer-au-r15-gap4-water,omniscatter-fdtd,cpu,default,4,budget: cell_steps 1.17e+10 > max_cell_steps 1e+09
+dimer-au-r15-gap4-water,miepython,*,,,Mie handles exactly one particle; use 'tmatrix' or 'dda' for clusters
+dimer-au-r15-gap4-water,omniscatter-mie,*,,,Mie handles exactly one particle; use 'tmatrix' or 'dda' for clusters
+dimer-au-r15-gap4-water,omniscatter-pwe,*,,,PWE solves 'bands' problems only
+dimer-au-r15-gap4-water,omniscatter-quasistatic,*,,,the quasistatic approximation handles exactly one particle
+dimer-au-r15-gap4-water,omniscatter-rcwa,*,,,RCWA solves periodic and layer_stack problems
+dimer-au-r15-gap4-water,treams,*,,,treams is not installed (pip install treams)
+dimer-au-r15-gap4-water,omniscatter-tmm,*,,,TMM solves planar layer stacks only

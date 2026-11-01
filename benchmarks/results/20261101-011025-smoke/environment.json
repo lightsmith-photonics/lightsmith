@@ -1,0 +1,228 @@
+{
+ "timestamp": "2026-11-01T01:10:29",
+ "command": [
+  "benchmarks/run.py",
+  "--suite",
+  "smoke",
+  "--devices",
+  "cpu,gpu"
+ ],
+ "args": {
+  "suite": "smoke",
+  "devices": "cpu,gpu",
+  "methods": "",
+  "problems": "",
+  "max_mem_gb": 6.0,
+  "budget": "",
+  "extra_options": "{}",
+  "out": "C:\\Users\\alexg\\Documents\\ChatGPT\\PlasmonHub\\benchmarks\\results\\20261101-011025-smoke",
+  "dry_run": false,
+  "no_analyze": false
+ },
+ "python": "3.12.2 (tags/v3.12.2:6abddd9, Feb  6 2024, 21:26:36) [MSC v.1937 64 bit (AMD64)]",
+ "platform": "Windows-11-10.0.26300-SP0",
+ "cpu": "AMD Ryzen 5 5600X 6-Core Processor",
+ "omniscatter_version": "0.1.0",
+ "doctor": {
+  "numpy": "2.5.4",
+  "torch": "2.11.0+cu128",
+  "cupy": null,
+  "cuda_gpus": [
+   "NVIDIA GeForce RTX 5070"
+  ],
+  "torch_cuda_build": "12.8",
+  "auto_device": {
+   "framework": "torch",
+   "device": "cuda:0",
+   "gpu_name": "NVIDIA GeForce RTX 5070"
+  }
+ },
+ "backends": [
+  {
+   "name": "omniscatter-circuit",
+   "method": "circuit",
+   "problem_kinds": [
+    "circuit"
+   ],
+   "license": "MIT",
+   "gpu": true,
+   "differentiable": true,
+   "available": true,
+   "unavailable_reason": null,
+   "citation": "S-matrix interconnection S_ee + S_ei C (I - S_ii C)^-1 S_ie; pairwise reduction as scikit-rf's innerconnect (Arsenovic et al., IEEE Microwave Magazine 23, 98 (2022))"
+  },
+  {
+   "name": "omniscatter-dda",
+   "method": "dda",
+   "problem_kinds": [
+    "scattering"
+   ],
+   "license": "MIT",
+   "gpu": true,
+   "differentiable": false,
+   "available": true,
+   "unavailable_reason": null,
+   "citation": "Draine & Flatau, JOSA A 11, 1491 (1994); Goodman, Draine & Flatau, Opt. Lett. 16, 1198 (1991)"
+  },
+  {
+   "name": "omniscatter-eme",
+   "method": "eme",
+   "problem_kinds": [
+    "device"
+   ],
+   "license": "MIT",
+   "gpu": false,
+   "differentiable": false,
+   "available": true,
+   "unavailable_reason": null,
+   "citation": "Bienstman & Baets, Opt. Quantum Electron. 33, 327 (2001); Gallagher & Felici, Proc. SPIE 4987 (2003)"
+  },
+  {
+   "name": "omniscatter-fde",
+   "method": "fde",
+   "problem_kinds": [
+    "mode"
+   ],
+   "license": "MIT",
+   "gpu": false,
+   "differentiable": false,
+   "available": true,
+   "unavailable_reason": null,
+   "citation": "Zhu & Brown, Opt. Express 10, 853 (2002); Fallahkhair, Li & Murphy, J. Lightwave Technol. 26, 1423 (2008)"
+  },
+  {
+   "name": "omniscatter-fdfd",
+   "method": "fdfd",
+   "problem_kinds": [
+    "device"
+   ],
+   "license": "MIT",
+   "gpu": true,
+   "differentiable": true,
+   "available": true,
+   "unavailable_reason": null,
+   "citation": "Shin & Fan, J. Comput. Phys. 231, 3406 (2012); Hughes et al., ACS Photonics 6, 3010 (2019)"
+  },
+  {
+   "name": "omniscatter-inverse",
+   "method": "inverse",
+   "problem_kinds": [
+    "optimization"
+   ],
+   "license": "MIT",
+   "gpu": true,
+   "differentiable": false,
+   "available": true,
+   "unavailable_reason": null,
+   "citation": "Hammond et al., Opt. Express 29, 23916 (2021); Svanberg, SIAM J. Optim. 12, 555 (2002); Molesky et al., Nat. Photonics 12, 659 (2018)"
+  },
+  {
+   "name": "omniscatter-fdtd",
+   "method": "fdtd",
+   "problem_kinds": [
+    "scattering"
+   ],
+   "license": "MIT",
+   "gpu": true,
+   "differentiable": false,
+   "available": true,
+   "unavailable_reason": null,
+   "citation": "Taflove & Hagness, Computational Electrodynamics (2005); Roden & Gedney, MOTL 27, 334 (2000); Oskooi et al., CPC 181, 687 (2010)"
+  },
+  {
+   "name": "miepython",
+   "method": "mie",
+   "problem_kinds": [
+    "scattering"
+   ],
+   "license": "MIT",
+   "gpu": false,
+   "differentiable": false,
+   "available": true,
+   "unavailable_reason": null,
+   "citation": "S. Prahl, miepython, https://github.com/scottprahl/miepython"
+  },
+  {
+   "name": "omniscatter-mie",
+   "method": "mie",
+   "problem_kinds": [
+    "scattering"
+   ],
+   "license": "MIT",
+   "gpu": true,
+   "differentiable": false,
+   "available": true,
+   "unavailable_reason": null,
+   "citation": "Bohren & Huffman (1983); Yang, Appl. Opt. 42, 1710 (2003); Pena & Pal, Comput. Phys. Commun. 180, 2348 (2009)"
+  },
+  {
+   "name": "omniscatter-pwe",
+   "method": "pwe",
+   "problem_kinds": [
+    "bands"
+   ],
+   "license": "MIT",
+   "gpu": true,
+   "differentiable": false,
+   "available": true,
+   "unavailable_reason": null,
+   "citation": "Ho, Chan & Soukoulis, PRL 65, 3152 (1990); Johnson & Joannopoulos, Opt. Express 8, 173 (2001); Farjadpour et al., Opt. Lett. 31, 2972 (2006)"
+  },
+  {
+   "name": "omniscatter-quasistatic",
+   "method": "quasistatic",
+   "problem_kinds": [
+    "scattering"
+   ],
+   "license": "MIT",
+   "gpu": false,
+   "differentiable": false,
+   "available": true,
+   "unavailable_reason": null,
+   "citation": "Bohren & Huffman, Absorption and Scattering of Light by Small Particles (1983), ch. 5; Meier & Wokaun, Opt. Lett. 8, 581 (1983)"
+  },
+  {
+   "name": "omniscatter-rcwa",
+   "method": "rcwa",
+   "problem_kinds": [
+    "periodic",
+    "layer_stack"
+   ],
+   "license": "MIT",
+   "gpu": true,
+   "differentiable": true,
+   "available": true,
+   "unavailable_reason": null,
+   "citation": "Moharam et al., JOSA A 12, 1068 (1995); Li, JOSA A 13, 1870 (1996) and JOSA A 14, 2758 (1997); Schuster et al., JOSA A 24, 2880 (2007); Rumpf, PIER B 35, 241 (2011)"
+  },
+  {
+   "name": "treams",
+   "method": "tmatrix",
+   "problem_kinds": [
+    "scattering"
+   ],
+   "license": "MIT",
+   "gpu": false,
+   "differentiable": false,
+   "available": false,
+   "unavailable_reason": "treams is not installed (pip install treams)",
+   "citation": "Beutel, Fernandez-Corbaton & Rockstuhl, Comput. Phys. Commun. 297, 109076 (2024); treams, https://github.com/tfp-photonics/treams"
+  },
+  {
+   "name": "omniscatter-tmm",
+   "method": "tmm",
+   "problem_kinds": [
+    "layer_stack"
+   ],
+   "license": "MIT",
+   "gpu": true,
+   "differentiable": true,
+   "available": true,
+   "unavailable_reason": null,
+   "citation": "Born & Wolf, Principles of Optics, Sec. 1.6; Katsidis & Siapkas, Appl. Opt. 41, 3978 (2002); Byrnes, arXiv:1603.02720"
+  }
+ ],
+ "git_commit": "90649542f1d0574fb35fa18d5db16afe8e1611fb",
+ "git_dirty": true,
+ "numpy": "2.5.4"
+}

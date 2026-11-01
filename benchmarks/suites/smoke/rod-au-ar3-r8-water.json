@@ -1,0 +1,36 @@
+{
+ "schema_version": "0.1",
+ "particles": [
+  {
+   "shape": {
+    "kind": "cylinder",
+    "radius_nm": 8.0,
+    "length_nm": 48.0
+   },
+   "material": {
+    "kind": "library",
+    "name": "Au",
+    "dataset": "Johnson-Christy"
+   }
+  }
+ ],
+ "medium_index": 1.33,
+ "illumination": {
+  "kind": "plane_wave",
+  "direction": [
+   1.0,
+   0.0,
+   0.0
+  ],
+  "polarization": [
+   0.0,
+   0.0,
+   1.0
+  ]
+ },
+ "wavelengths": [
+  520.0,
+  650.0,
+  800.0
+ ]
+}

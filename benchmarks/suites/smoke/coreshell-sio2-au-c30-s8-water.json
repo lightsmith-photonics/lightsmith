@@ -1,0 +1,45 @@
+{
+ "schema_version": "0.1",
+ "particles": [
+  {
+   "shape": {
+    "kind": "layered_sphere",
+    "core_radius_nm": 30.0,
+    "shells": [
+     {
+      "thickness_nm": 8.0,
+      "material": {
+       "kind": "library",
+       "name": "Au",
+       "dataset": "Johnson-Christy"
+      }
+     }
+    ]
+   },
+   "material": {
+    "kind": "library",
+    "name": "SiO2",
+    "dataset": "Malitson"
+   }
+  }
+ ],
+ "medium_index": 1.33,
+ "illumination": {
+  "kind": "plane_wave",
+  "direction": [
+   0.0,
+   0.0,
+   1.0
+  ],
+  "polarization": [
+   1.0,
+   0.0,
+   0.0
+  ]
+ },
+ "wavelengths": [
+  600.0,
+  700.0,
+  800.0
+ ]
+}
