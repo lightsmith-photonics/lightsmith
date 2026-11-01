@@ -1,0 +1,448 @@
+{
+  "script": "benchmarks/remeasure/fdtd.py",
+  "environment": {
+    "timestamp_utc": "2026-11-01T17:20:10+00:00",
+    "host": "LunasTower",
+    "python": "3.12.2",
+    "lightsmith_version": "0.1.0",
+    "git_commit": "53452c49a97ea3f1bbbe360d90b9385b1f6121c2",
+    "git_branch": "paper-bench",
+    "torch": "2.11.0+cu128",
+    "cuda_available": true,
+    "gpu_name": "NVIDIA GeForce RTX 5070",
+    "cuda_runtime": "12.8",
+    "precision": "GPU runs: single (float32, FDTD precision='auto' on GPU); CPU runs: double (float64)",
+    "wall_time_note": "PROVISIONAL: a long benchmark was running on the same GPU in the background during these measurements, so all wall/runtime values are upper bounds and not suitable for the paper without a re-run on an idle GPU.",
+    "finished_utc": "2026-11-01T17:22:58+00:00"
+  },
+  "rows": [
+    {
+      "row": "GPU (single) vs. CPU (double) | CPU | 1e-4 bound; ~1e-7 reported",
+      "test": "tests/test_fdtd.py::test_fdtd_gpu_matches_cpu",
+      "configuration": {
+        "material": "Drude(eps_inf=9.5, wp=9.0 eV, gamma=0.07 eV)",
+        "radius_nm": 20,
+        "medium_index": 1.33,
+        "wavelengths_nm": [
+          450,
+          520,
+          600
+        ],
+        "spacing_nm": 4.0,
+        "run_time_fs": 5.0,
+        "gpu": "torch CUDA, single",
+        "cpu": "numpy, double"
+      },
+      "quantity": "max relative difference |GPU/CPU - 1| over wavelengths of C_ext and C_abs (the asserted quantities); C_sca reported for information",
+      "reference": "CPU double-precision FDTD",
+      "measured": {
+        "max_rel_diff_c_ext_and_c_abs": 9.286952473708254e-08,
+        "max_rel_diff": {
+          "c_ext_nm2": 7.580340399826468e-08,
+          "c_abs_nm2": 9.286952473708254e-08,
+          "c_sca_nm2": 1.1249219336040284e-06
+        },
+        "per_wavelength": {
+          "c_ext_nm2": [
+            7.580340399826468e-08,
+            5.475393449749788e-08,
+            2.0888809126873298e-08
+          ],
+          "c_abs_nm2": [
+            9.286952473708254e-08,
+            4.4531798248925725e-08,
+            2.8301053056623005e-08
+          ],
+          "c_sca_nm2": [
+            1.1249219336040284e-06,
+            1.0924108094778617e-06,
+            9.679182553234966e-07
+          ]
+        },
+        "gpu_provenance": {
+          "framework": "torch",
+          "device": "cuda:0",
+          "precision": "single",
+          "spacing_nm": 4.0,
+          "grid": [
+            55,
+            55,
+            55
+          ],
+          "steps": 765,
+          "dt_fs": 0.007318166165876588,
+          "runtime_s": 5.5728750999842305,
+          "decay_level": 1.0,
+          "cuda_graphs": true
+        },
+        "cpu_provenance": {
+          "framework": "numpy",
+          "device": "cpu",
+          "precision": "double",
+          "spacing_nm": 4.0,
+          "grid": [
+            55,
+            55,
+            55
+          ],
+          "steps": 765,
+          "dt_fs": 0.007318166165876588,
+          "runtime_s": 37.88809410002432,
+          "decay_level": 1.0,
+          "cuda_graphs": false
+        },
+        "wall_s": {
+          "cpu": 37.94,
+          "gpu": 5.57
+        }
+      },
+      "measured_summary": "9.3e-08",
+      "previously_reported": "~1e-7",
+      "reproduced": true,
+      "reproduced_criterion": "same order of magnitude as ~1e-7 (i.e. < 1e-6)"
+    },
+    {
+      "row": "Dielectric sphere, 6/4/3/2 nm mesh | Mie | 1.1/0.8/0.6/0.4% reported",
+      "test": "tests/test_fdtd.py::test_fdtd_dielectric_sphere_fine_grid (spacing swept)",
+      "configuration": {
+        "material": "ConstantIndex n=1.5",
+        "radius_nm": 60,
+        "medium_index": 1.0,
+        "wavelengths_nm": "400-800, 9 points",
+        "spacing_nm": [
+          6,
+          4,
+          3,
+          2
+        ],
+        "device": "gpu",
+        "other_fdtd_options": "defaults"
+      },
+      "quantity": "max over wavelengths of |C_ext,FDTD / C_ext,Mie - 1|",
+      "reference": "Mie (ls.solve(sim, 'mie'))",
+      "measured": [
+        {
+          "spacing_nm": 6.0,
+          "max_rel_err_c_ext_pct": 1.126,
+          "rel_err_c_ext_pct_per_wavelength": [
+            1.126,
+            1.085,
+            1.044,
+            1.006,
+            0.983,
+            0.967,
+            0.942,
+            0.906,
+            0.88
+          ],
+          "wall_s": 6.65,
+          "provenance": {
+            "framework": "torch",
+            "device": "cuda:0",
+            "precision": "single",
+            "spacing_nm": 6.0,
+            "grid": [
+              65,
+              65,
+              65
+            ],
+            "steps": 1232,
+            "dt_fs": 0.01097724924881488,
+            "runtime_s": 6.645723100024043,
+            "decay_level": 2.501329435762211e-07,
+            "cuda_graphs": true
+          }
+        },
+        {
+          "spacing_nm": 4.0,
+          "max_rel_err_c_ext_pct": 0.793,
+          "rel_err_c_ext_pct_per_wavelength": [
+            0.793,
+            0.766,
+            0.736,
+            0.713,
+            0.703,
+            0.698,
+            0.684,
+            0.662,
+            0.645
+          ],
+          "wall_s": 9.54,
+          "provenance": {
+            "framework": "torch",
+            "device": "cuda:0",
+            "precision": "single",
+            "spacing_nm": 4.0,
+            "grid": [
+              75,
+              75,
+              75
+            ],
+            "steps": 1782,
+            "dt_fs": 0.007318166165876588,
+            "runtime_s": 9.538669000001391,
+            "decay_level": 6.0851770397447664e-06,
+            "cuda_graphs": true
+          }
+        },
+        {
+          "spacing_nm": 3.0,
+          "max_rel_err_c_ext_pct": 0.616,
+          "rel_err_c_ext_pct_per_wavelength": [
+            0.616,
+            0.595,
+            0.576,
+            0.57,
+            0.572,
+            0.567,
+            0.542,
+            0.496,
+            0.44
+          ],
+          "wall_s": 13.41,
+          "provenance": {
+            "framework": "torch",
+            "device": "cuda:0",
+            "precision": "single",
+            "spacing_nm": 3.0,
+            "grid": [
+              85,
+              85,
+              85
+            ],
+            "steps": 2376,
+            "dt_fs": 0.00548862462440744,
+            "runtime_s": 13.407751299993834,
+            "decay_level": 3.789405884213833e-06,
+            "cuda_graphs": true
+          }
+        },
+        {
+          "spacing_nm": 2.0,
+          "max_rel_err_c_ext_pct": 0.401,
+          "rel_err_c_ext_pct_per_wavelength": [
+            0.401,
+            0.398,
+            0.398,
+            0.397,
+            0.373,
+            0.315,
+            0.239,
+            0.173,
+            0.146
+          ],
+          "wall_s": 20.59,
+          "provenance": {
+            "framework": "torch",
+            "device": "cuda:0",
+            "precision": "single",
+            "spacing_nm": 2.0,
+            "grid": [
+              105,
+              105,
+              105
+            ],
+            "steps": 3564,
+            "dt_fs": 0.003659083082938294,
+            "runtime_s": 20.57591390001471,
+            "decay_level": 2.323961336790395e-06,
+            "cuda_graphs": true
+          }
+        }
+      ],
+      "measured_summary": "1.13/0.79/0.62/0.40%",
+      "previously_reported": "1.1/0.8/0.6/0.4% (and 0.40% measured, 0.6% bound at 2 nm)",
+      "reproduced": true,
+      "reproduced_criterion": "each value equal to the reported one after rounding to 0.1 percentage points"
+    },
+    {
+      "row": "Layered sphere, oblique incidence, 5 nm mesh, C_ext | native Mie | <3% bound; 0.6% (layered), ~1% (oblique) reported",
+      "test": "tests/test_fdtd.py::test_fdtd_layered_sphere_near_field_and_oblique_incidence",
+      "configuration": {
+        "core": "n=2.0, r=35 nm",
+        "shell": "n=1.4, 20 nm (outer r=55 nm)",
+        "medium_index": 1.33,
+        "wavelengths_nm": [
+          450,
+          550,
+          700
+        ],
+        "spacing_nm": 5.0,
+        "device": "gpu",
+        "illumination": "PlaneWave direction (1,0,1), polarization (1,0,-1)  [test config]",
+        "supplementary": "same sphere at normal incidence, direction (0,0,1), polarization (1,0,0)"
+      },
+      "quantity": "max over wavelengths of |C_ext,FDTD / C_ext,Mie - 1|",
+      "reference": "native Mie (ls.solve(sim, 'lightsmith-mie', 'cpu'))",
+      "measured": {
+        "oblique_test_config": {
+          "max_rel_err_c_ext_pct": 1.24,
+          "rel_err_c_ext_pct_per_wavelength": [
+            0.81,
+            1.023,
+            1.24
+          ],
+          "abs_over_max_ext": 9.408953576968044e-05,
+          "near_field_rms_rel_err_pct": 4.005,
+          "wall_s": 20.77,
+          "provenance": {
+            "framework": "torch",
+            "device": "cuda:0",
+            "precision": "single",
+            "spacing_nm": 5.0,
+            "grid": [
+              67,
+              67,
+              67
+            ],
+            "steps": 2176,
+            "dt_fs": 0.009147707707345736,
+            "runtime_s": 20.771021399996243,
+            "decay_level": 1.812154317989509e-08,
+            "cuda_graphs": true
+          }
+        },
+        "normal_incidence_supplementary": {
+          "max_rel_err_c_ext_pct": 0.891,
+          "rel_err_c_ext_pct_per_wavelength": [
+            0.891,
+            0.832,
+            0.797
+          ],
+          "abs_over_max_ext": 4.989790478009336e-05,
+          "near_field_rms_rel_err_pct": 4.603,
+          "wall_s": 8.37,
+          "provenance": {
+            "framework": "torch",
+            "device": "cuda:0",
+            "precision": "single",
+            "spacing_nm": 5.0,
+            "grid": [
+              67,
+              67,
+              67
+            ],
+            "steps": 2176,
+            "dt_fs": 0.009147707707345736,
+            "runtime_s": 8.366936499980511,
+            "decay_level": 5.558883308871426e-09,
+            "cuda_graphs": true
+          }
+        }
+      },
+      "measured_summary": "1.24% (test config: layered + oblique); 0.89% (same sphere, normal incidence)",
+      "previously_reported": "0.6% (layered), ~1% (oblique); near field 2.9% RMS",
+      "reproduced": false,
+      "reproduced_criterion": "oblique rounds to ~1% and normal-incidence value equals 0.6% at 0.1 pp"
+    },
+    {
+      "row": "Au (Johnson-Christy fit), r=40 nm, 2 nm mesh | Mie | position <=10 nm, height <20% bound; peak at the Mie position, -3.9%, 16 s on an RTX 5070 reported",
+      "test": "tests/test_fdtd.py::test_fdtd_gold_library_material_via_drude_lorentz_fit",
+      "configuration": {
+        "material": "LibraryMaterial Au, Johnson-Christy (Drude-Lorentz fit by the backend)",
+        "radius_nm": 40,
+        "medium_index": 1.33,
+        "wavelengths_nm": "480-620, 29 points (5 nm step)",
+        "spacing": "default (20 cells per radius for plasmonic -> 2 nm)",
+        "device": "gpu"
+      },
+      "quantity": "peak wavelength offset (FDTD - Mie, on the 5 nm grid), signed peak height error, wall time",
+      "reference": "Mie (ls.solve(sim, 'mie')) with the tabulated Johnson-Christy data",
+      "measured": {
+        "peak_fdtd_nm": 550.0,
+        "peak_mie_nm": 550.0,
+        "peak_offset_nm": 0.0,
+        "peak_height_err_pct": -3.88,
+        "wall_s_including_fit": 24.17,
+        "fdtd_runtime_s_provenance": 24.134629599982873,
+        "spacing_nm": 2.0,
+        "fit_warnings": [
+          "Au: fitted with 1 Lorentz pole(s) + Drude, RMS relative error 1.64% over 480-620 nm"
+        ],
+        "c_ext_fdtd_nm2": [
+          14249.049182712337,
+          14587.668739481289,
+          15076.526732765724,
+          15748.172083266682,
+          16624.44755272796,
+          17709.38872874885,
+          18996.984807665183,
+          20480.809996091433,
+          22151.422734884465,
+          23978.739280971735,
+          25889.110054501434,
+          27752.410767280835,
+          29390.248864598496,
+          30606.347979928803,
+          31229.576981980717,
+          31154.984643727155,
+          30368.93692290502,
+          28951.077602502377,
+          27054.146272047314,
+          24868.917074573408,
+          22585.69533977752,
+          20362.404082161,
+          18305.830726740096,
+          16468.118549691433,
+          14855.70065084609,
+          13445.40193328233,
+          12202.027479640972,
+          11092.413722498797,
+          10093.48639924775
+        ],
+        "c_ext_mie_nm2": [
+          14722.384838201646,
+          14980.934948734226,
+          15262.429511592103,
+          15567.427602944052,
+          16569.07033679615,
+          17888.67810095491,
+          19436.5879291583,
+          21274.691498750057,
+          23488.688892100556,
+          25458.432839574543,
+          27348.938710117236,
+          29181.909189276583,
+          30806.74451414413,
+          32024.42856874117,
+          32490.0803009523,
+          31954.09111090705,
+          30788.27238571361,
+          29073.09208937281,
+          26947.234894996625,
+          24575.54241831183,
+          22116.3686391288,
+          19744.017220643775,
+          17575.43341051535,
+          15615.991074792828,
+          13868.502717328427,
+          12323.592448129433,
+          10965.27015291471,
+          9774.705519908022,
+          8811.22956410801
+        ],
+        "provenance": {
+          "framework": "torch",
+          "device": "cuda:0",
+          "precision": "single",
+          "spacing_nm": 2.0,
+          "grid": [
+            85,
+            85,
+            85
+          ],
+          "steps": 11160,
+          "dt_fs": 0.003659083082938294,
+          "runtime_s": 24.134629599982873,
+          "decay_level": 4.256074692815255e-06,
+          "cuda_graphs": true
+        },
+        "wall_time_status": "provisional (GPU shared with a background benchmark)"
+      },
+      "measured_summary": "peak offset +0 nm (FDTD 550 vs Mie 550 nm), height -3.9%, 24 s (provisional)",
+      "previously_reported": "peak at the Mie position (550 nm), height -3.9%, 16 s on an RTX 5070",
+      "reproduced": true,
+      "reproduced_criterion": "peak offset 0 nm and height error -3.9% at 0.1 pp; wall time not judged (provisional)"
+    }
+  ]
+}

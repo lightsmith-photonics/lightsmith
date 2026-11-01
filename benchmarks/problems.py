@@ -298,7 +298,33 @@ def full() -> dict:
     }
 
 
-SUITES = {"smoke": smoke, "smoke-extended": smoke_extended, "full": full}
+def full_paper() -> dict:
+    """The full suite's 145 problems at a cost one shared consumer GPU finishes in about a day:
+    wavelength grids thinned to 9 points, experimental DDA variants only on the dielectric spheres,
+    the Drude staircase study and four representative metal problems, DDA max_iter 3000, CPU runs
+    only on small lattices and coarse meshes (for matched CPU/GPU comparisons). Run with --max-run-s
+    (see benchmarks/README.md)."""
+    suite = full()
+    keep_variants = {"sphere-au-jc-r40-water", "sphere-ag-jc-r40-water", "coreshell-sio2-au-c30-s8-water",
+                     "dimer-au-r20-gap5-water"}
+    for p in suite["problems"]:
+        wl = p["simulation"]["wavelengths"]
+        if isinstance(wl, dict) and wl["num"] > 9:
+            wl["num"] = 9
+        if p["family"] in ("dielectric_sphere",) or p["id"] == "sphere-drude-r40-water" or p["id"] in keep_variants:
+            continue
+        p["variants"]["dda"] = {"center": None}
+    suite.update(
+        suite="full-paper",
+        description="Full suite, 9 wavelengths per problem, experimental DDA variants on a subset, DDA max_iter 3000.",
+        budgets={"cpu": {"max_dipoles": 1000, "max_cell_steps": 3e8},
+                 "gpu": {"max_dipoles": 2_000_000, "max_cell_steps": 5e11}},
+        options={"dda": {"max_iter": 3000}},
+    )
+    return suite
+
+
+SUITES = {"smoke": smoke, "smoke-extended": smoke_extended, "full": full, "full-paper": full_paper}
 
 
 def build_suite(name: str) -> dict:

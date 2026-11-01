@@ -1,0 +1,399 @@
+{
+ "problem": {
+  "radius_nm": 40.0,
+  "wavelength_nm": 700.0,
+  "medium_index": 1.33,
+  "material": {
+   "kind": "drude",
+   "eps_inf": 9.5,
+   "wp_ev": 9.0,
+   "gamma_ev": 0.07
+  }
+ },
+ "mie": {
+  "q_ext": 0.5225384263874395,
+  "q_abs": 0.10670690874263727,
+  "q_sca": 0.4158315176448023
+ },
+ "runs": [
+  {
+   "label": "npd24 single tol1e-5",
+   "device": "gpu",
+   "options": {
+    "dipoles_per_diameter": 24,
+    "precision": "single"
+   },
+   "wall_s": 99.56,
+   "dipoles": [
+    7208
+   ],
+   "iterations": [
+    [
+     753
+    ]
+   ],
+   "precision": "single",
+   "q_ext": 0.7441165069194186,
+   "q_abs": 0.27597809391738565
+  },
+  {
+   "label": "npd24 double tol1e-10",
+   "device": "gpu",
+   "options": {
+    "dipoles_per_diameter": 24,
+    "precision": "double",
+    "tol": 1e-10
+   },
+   "wall_s": 30.83,
+   "dipoles": [
+    7208
+   ],
+   "iterations": [
+    [
+     1631
+    ]
+   ],
+   "precision": "double",
+   "q_ext": 0.7441169343706386,
+   "q_abs": 0.27597762894081856
+  },
+  {
+   "label": "npd32 single tol1e-5",
+   "device": "gpu",
+   "options": {
+    "dipoles_per_diameter": 32,
+    "precision": "single"
+   },
+   "wall_s": 7.1,
+   "dipoles": [
+    17256
+   ],
+   "iterations": [
+    [
+     736
+    ]
+   ],
+   "precision": "single",
+   "q_ext": 0.7262307051074848,
+   "q_abs": 0.27439773015241664
+  },
+  {
+   "label": "npd32 double tol1e-10",
+   "device": "gpu",
+   "options": {
+    "dipoles_per_diameter": 32,
+    "precision": "double",
+    "tol": 1e-10
+   },
+   "wall_s": 40.7,
+   "dipoles": [
+    17256
+   ],
+   "iterations": [
+    [
+     1628
+    ]
+   ],
+   "precision": "double",
+   "q_ext": 0.7262296434118284,
+   "q_abs": 0.27439759119046375
+  },
+  {
+   "label": "npd16 cm_rr",
+   "device": "gpu",
+   "options": {
+    "dipoles_per_diameter": 16,
+    "polarizability": "cm_rr",
+    "max_iter": 20000
+   },
+   "wall_s": 14.85,
+   "dipoles": [
+    2176
+   ],
+   "iterations": [
+    [
+     756
+    ]
+   ],
+   "precision": "single",
+   "q_ext": 1.2290690950268148,
+   "q_abs": 0.6619585177069421
+  },
+  {
+   "label": "npd24 cm_rr",
+   "device": "gpu",
+   "options": {
+    "dipoles_per_diameter": 24,
+    "polarizability": "cm_rr",
+    "max_iter": 20000
+   },
+   "wall_s": 10.0,
+   "dipoles": [
+    7208
+   ],
+   "iterations": [
+    [
+     767
+    ]
+   ],
+   "precision": "single",
+   "q_ext": 0.7395362703839102,
+   "q_abs": 0.27421064432154535
+  },
+  {
+   "label": "npd32 cm_rr",
+   "device": "gpu",
+   "options": {
+    "dipoles_per_diameter": 32,
+    "polarizability": "cm_rr",
+    "max_iter": 20000
+   },
+   "wall_s": 15.24,
+   "dipoles": [
+    17256
+   ],
+   "iterations": [
+    [
+     769
+    ]
+   ],
+   "precision": "single",
+   "q_ext": 0.7242612179700337,
+   "q_abs": 0.27368130129922336
+  },
+  {
+   "label": "npd48 cm_rr",
+   "device": "gpu",
+   "options": {
+    "dipoles_per_diameter": 48,
+    "polarizability": "cm_rr",
+    "max_iter": 20000
+   },
+   "wall_s": 14.72,
+   "dipoles": [
+    57856
+   ],
+   "iterations": [
+    [
+     762
+    ]
+   ],
+   "precision": "single",
+   "q_ext": 0.6539007405893738,
+   "q_abs": 0.21702580097661558
+  },
+  {
+   "label": "npd16 double far-field",
+   "device": "gpu",
+   "options": {
+    "dipoles_per_diameter": 16,
+    "precision": "double",
+    "tol": 1e-10
+   },
+   "wall_s": 36.65,
+   "dipoles": [
+    2176
+   ],
+   "iterations": [
+    [
+     1602,
+     1602
+    ]
+   ],
+   "precision": "double",
+   "q_ext": 1.2937723090950333,
+   "q_abs": 0.7178517948022037,
+   "q_sca_far": 0.575920514297615,
+   "q_abs_ext_minus_far": 0.7178517947974183
+  },
+  {
+   "label": "npd24 double far-field",
+   "device": "gpu",
+   "options": {
+    "dipoles_per_diameter": 24,
+    "precision": "double",
+    "tol": 1e-10
+   },
+   "wall_s": 57.67,
+   "dipoles": [
+    7208
+   ],
+   "iterations": [
+    [
+     1631,
+     1631
+    ]
+   ],
+   "precision": "double",
+   "q_ext": 0.7441169343706386,
+   "q_abs": 0.27597762894081856,
+   "q_sca_far": 0.4681393054304117,
+   "q_abs_ext_minus_far": 0.27597762894022687
+  },
+  {
+   "label": "npd32 double far-field",
+   "device": "gpu",
+   "options": {
+    "dipoles_per_diameter": 32,
+    "precision": "double",
+    "tol": 1e-10
+   },
+   "wall_s": 44.17,
+   "dipoles": [
+    17256
+   ],
+   "iterations": [
+    [
+     1628,
+     1628
+    ]
+   ],
+   "precision": "double",
+   "q_ext": 0.7262296434118284,
+   "q_abs": 0.27439759119046375,
+   "q_sca_far": 0.4518320522213918,
+   "q_abs_ext_minus_far": 0.27439759119043666
+  },
+  {
+   "label": "npd36 single",
+   "device": "gpu",
+   "options": {
+    "dipoles_per_diameter": 36,
+    "precision": "single",
+    "max_iter": 20000
+   },
+   "wall_s": 5.9,
+   "dipoles": [
+    24464
+   ],
+   "iterations": [
+    [
+     717
+    ]
+   ],
+   "precision": "single",
+   "q_ext": 0.7090178177157342,
+   "q_abs": 0.261990695656476
+  },
+  {
+   "label": "npd40 single",
+   "device": "gpu",
+   "options": {
+    "dipoles_per_diameter": 40,
+    "precision": "single",
+    "max_iter": 20000
+   },
+   "wall_s": 7.16,
+   "dipoles": [
+    33552
+   ],
+   "iterations": [
+    [
+     776
+    ]
+   ],
+   "precision": "single",
+   "q_ext": 0.6861175676985116,
+   "q_abs": 0.2388381318773195
+  },
+  {
+   "label": "npd44 single",
+   "device": "gpu",
+   "options": {
+    "dipoles_per_diameter": 44,
+    "precision": "single",
+    "max_iter": 20000
+   },
+   "wall_s": 8.81,
+   "dipoles": [
+    44720
+   ],
+   "iterations": [
+    [
+     762
+    ]
+   ],
+   "precision": "single",
+   "q_ext": 0.6779716541807945,
+   "q_abs": 0.23540981827272361
+  },
+  {
+   "label": "npd48 single",
+   "device": "gpu",
+   "options": {
+    "dipoles_per_diameter": 48,
+    "precision": "single",
+    "max_iter": 20000
+   },
+   "wall_s": 8.95,
+   "dipoles": [
+    57856
+   ],
+   "iterations": [
+    [
+     770
+    ]
+   ],
+   "precision": "single",
+   "q_ext": 0.6546253010747237,
+   "q_abs": 0.21723390081030014
+  },
+  {
+   "label": "npd56 single",
+   "device": "gpu",
+   "options": {
+    "dipoles_per_diameter": 56,
+    "precision": "single",
+    "max_iter": 20000
+   },
+   "wall_s": 10.52,
+   "dipoles": [
+    92096
+   ],
+   "iterations": [
+    [
+     759
+    ]
+   ],
+   "precision": "single",
+   "q_ext": 0.6431221018648324,
+   "q_abs": 0.20894167620503457
+  },
+  {
+   "label": "npd64 single",
+   "device": "gpu",
+   "options": {
+    "dipoles_per_diameter": 64,
+    "precision": "single",
+    "max_iter": 20000
+   },
+   "wall_s": 14.94,
+   "dipoles": [
+    137376
+   ],
+   "iterations": [
+    [
+     717
+    ]
+   ],
+   "precision": "single",
+   "q_ext": 0.6286976939531851,
+   "q_abs": 0.19499277932792008
+  }
+ ],
+ "timestamp": "2026-11-01T13:07:32",
+ "doctor": {
+  "numpy": "2.4.6",
+  "torch": "2.11.0+cu128",
+  "cupy": null,
+  "cuda_gpus": [
+   "NVIDIA GeForce RTX 5070"
+  ],
+  "torch_cuda_build": "12.8",
+  "auto_device": {
+   "framework": "torch",
+   "device": "cuda:0",
+   "gpu_name": "NVIDIA GeForce RTX 5070"
+  }
+ }
+}
