@@ -14,7 +14,10 @@ The solver uses the array API, so it runs on NumPy, PyTorch (CPU or CUDA) or CuP
 setting passed as a tensor gets gradients:
 
 ```python
-lightsmith.circuits.circuit_sparameters(problem, params={"ring": {"coupling": tensor}}, device="torch-cpu")
+from lightsmith.circuits import circuit_sparameters
+
+# problem: a CircuitProblem with an instance named "ring"; coupling: a torch tensor with requires_grad=True
+solution = circuit_sparameters(problem, params={"ring": {"coupling": coupling}}, device="torch-cpu")
 ```
 
 ## Options

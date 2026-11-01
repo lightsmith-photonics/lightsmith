@@ -46,6 +46,7 @@ strip = ModeProblem(
     window_size_nm=(3000, 2000),
     wavelengths=[1500, 1550, 1600],
     num_modes=2,
+    options={"fde": {"grid_spacing_nm": 20}},   # coarse grid for a quick look; refine to converge
 )
 res = ls.solve(strip)
 print(res.modes[1][0].neff_real, res.modes[1][0].ng)

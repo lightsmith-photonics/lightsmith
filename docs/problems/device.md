@@ -52,8 +52,8 @@ guide = DeviceProblem(
     structures=[Structure(geometry=Prism(profile=Rectangle(size_nm=(6000, 500)), z_min_nm=-110, z_max_nm=110),
                           material=si)],
     domain_size_nm=(4000, 3000, 0),
-    ports=[Port(name="o1", center_nm=(-1500, 0, 0), size_nm=(0, 2000, 0), direction="+"),
-           Port(name="o2", center_nm=(1500, 0, 0), size_nm=(0, 2000, 0), direction="-")],
+    ports=[Port(name="o1", center_nm=(-1500, 0, 0), size_nm=(0, 2000, 1), direction="+"),
+           Port(name="o2", center_nm=(1500, 0, 0), size_nm=(0, 2000, 1), direction="-")],
     wavelengths=[1550],
 )
 res = ls.solve(guide, method="fdfd")

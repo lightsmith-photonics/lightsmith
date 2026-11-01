@@ -43,7 +43,7 @@ holes = PeriodicProblem(
                            shapes=[Structure2D(profile=Circle(radius_nm=100),
                                                material=ls.ConstantIndex(n_real=1.0))])],
     substrate=ls.ConstantIndex(n_real=1.45),
-    wavelengths=ls.WavelengthRange(start_nm=580, stop_nm=610, num=61),
+    wavelengths=ls.WavelengthRange(start_nm=588, stop_nm=604, num=9),
     options={"rcwa": {"harmonics": 5}},
 )
 res = ls.solve(holes)

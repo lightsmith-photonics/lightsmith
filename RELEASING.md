@@ -123,8 +123,13 @@ repository" button shows. Keep the title, authors and licence the same in both f
 ```bash
 git tag -a v0.1.0 -m "lightsmith 0.1.0"
 git push origin main v0.1.0
-gh release create v0.1.0 dist/* --title "lightsmith 0.1.0" --notes-file <(sed -n '/^## \[0.1.0\]/,/^## \[/p' CHANGELOG.md | sed '$d')
+awk '/^## \[0\.1\.0\]/{f=1;next} /^## \[|^\[[^]]+\]: /{f=0} f' CHANGELOG.md > release-notes.md   # this version's section
+gh release create v0.1.0 dist/* --title "lightsmith 0.1.0" --notes-file release-notes.md
+rm release-notes.md
 ```
+
+`gh` is the GitHub CLI. You can also create the release in the web interface: **Releases → Draft a new
+release**, choose tag `v0.1.0`, paste the changelog section, attach `dist/*` and publish.
 
 After a few minutes the release appears on Zenodo with two DOIs:
 
