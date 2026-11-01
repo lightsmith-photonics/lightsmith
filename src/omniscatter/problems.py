@@ -146,7 +146,9 @@ class PeriodicProblem(_Model):
 
     kind: Literal["periodic"] = "periodic"
     lattice_a1_nm: tuple[float, float]
-    lattice_a2_nm: tuple[float, float] | None = Field(None, description="None for 1D gratings (periodic along a1).")
+    lattice_a2_nm: tuple[float, float] | None = Field(
+        None, description="None for 1D gratings: periodic along a1, invariant perpendicular to it; shapes are "
+        "sampled along the line through the origin in the a1 direction.")
     superstrate: Material
     layers: list[PatternedLayer] = Field(min_length=1, description="From the superstrate side to the substrate side.")
     substrate: Material

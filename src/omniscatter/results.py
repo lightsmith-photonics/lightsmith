@@ -132,6 +132,17 @@ class SpectrumResult(_ResultBase):
         None, description="Complex zeroth-order reflection amplitude (re, im), when available.")
     t_amplitude: dict[str, list[list[tuple[float, float]]]] | None = None
 
+    def difference(self, other: "SpectrumResult") -> dict[str, dict[str, float]]:
+        """Max and RMS absolute difference of r, t, a per polarization (same grids required)."""
+        if not (np.allclose(self.wavelengths_nm, other.wavelengths_nm) and np.allclose(self.angles_deg, other.angles_deg)):
+            raise ValueError("spectra are on different wavelength/angle grids")
+        out: dict[str, dict[str, float]] = {}
+        for q in ("r", "t", "a"):
+            for pol in set(getattr(self, q)) & set(getattr(other, q)):
+                d = np.abs(np.asarray(getattr(self, q)[pol]) - np.asarray(getattr(other, q)[pol]))
+                out[f"{q}_{pol}"] = {"max": float(d.max()), "rms": float(np.sqrt(np.mean(d**2)))}
+        return out
+
 
 class ModeField(BaseModel):
     x_nm: list[float]
