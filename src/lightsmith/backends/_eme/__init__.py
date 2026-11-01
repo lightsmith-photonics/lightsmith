@@ -185,8 +185,12 @@ class Cell:
 
 def slice_device(structures, background, axis: int, lo: float, hi: float, grid: Grid, dimension: int,
                  plane_z_nm: float, taper_cells: int, max_cell_length_nm: float | None, subsamples: int,
-                 subpixel: str) -> list[Cell]:
-    """Piecewise-uniform cells covering [lo, hi]; continuously varying segments are staircased."""
+                 subpixel: str, cells_per_step: float = 3.0, taper_cells_range: tuple[int, int] = (10, 60)) -> list[Cell]:
+    """Piecewise-uniform cells covering [lo, hi]; continuously varying segments are staircased.
+
+    Without `taper_cells`, a varying segment gets enough cells for its outline to move about
+    `cells_per_step` grid cells per cell, clipped to `taper_cells_range`.
+    """
     fine = 1 if subpixel == "none" else subsamples
 
     def at(pos):
@@ -211,7 +215,7 @@ def slice_device(structures, background, axis: int, lo: float, hi: float, grid: 
         uniform = probes[0][1].same_as(probes[1][1]) and probes[1][1].same_as(probes[2][1])
         n = 1
         if not uniform:
-            n = taper_cells or _auto_cells(probes[0][1], probes[2][1], grid)
+            n = taper_cells or _auto_cells(probes[0][1], probes[2][1], grid, cells_per_step, *taper_cells_range)
         if max_cell_length_nm:
             n = max(n, math.ceil((b - a) / max_cell_length_nm))
         edges = np.linspace(a, b, n + 1)
