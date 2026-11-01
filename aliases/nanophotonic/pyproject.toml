@@ -1,0 +1,37 @@
+[project]
+name = "nanophotonic"
+version = "0.1.0"
+description = "Alias for Lightsmith, the open photonics suite: installing nanophotonic installs lightsmith."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Alexander Feghali", email = "alexander.al-feghali@mail.mcgill.ca" }
+]
+requires-python = ">=3.10"
+keywords = ["lightsmith", "photonics", "nanophotonics", "plasmonics"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = ["lightsmith>=0.1"]
+
+[project.optional-dependencies]
+# Same extras as lightsmith, so `pip install "nanophotonic[gpu]"` works too.
+gpu = ["lightsmith[gpu]"]
+mcp = ["lightsmith[mcp]"]
+tmatrix = ["lightsmith[tmatrix]"]
+layout = ["lightsmith[layout]"]
+xarray = ["lightsmith[xarray]"]
+
+[project.urls]
+Homepage = "https://lightsmith-photonics.github.io/lightsmith/"
+Documentation = "https://lightsmith-photonics.github.io/lightsmith/"
+Repository = "https://github.com/lightsmith-photonics/lightsmith"
+"PyPI (lightsmith)" = "https://pypi.org/project/lightsmith/"
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"

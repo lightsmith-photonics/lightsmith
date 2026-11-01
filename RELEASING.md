@@ -94,6 +94,34 @@ uv pip install --index-url https://test.pypi.org/simple/ --extra-index-url https
 3. Check <https://pypi.org/project/lightsmith/>, then install from PyPI in a clean environment:
    `uv pip install lightsmith && lightsmith doctor`.
 
+### Alias names: `nanophotonic`, `nanophotonics`, `plasmonic`, `plasmonics`
+
+The owner's PyPI account also holds these four names. Each has only a 2 KB placeholder release (0.0.1,
+from July 2024, built from the `pypa/sampleproject` template). PyPI has no redirects or renames.
+Instead, `aliases/` contains one tiny package per name, at version 0.1.0. Each one:
+
+- depends on `lightsmith>=0.1`, so `pip install plasmonics` installs Lightsmith;
+- passes extras through (`plasmonics[gpu]` → `lightsmith[gpu]`, and the same for the other extras);
+- has a PyPI page that sends readers to Lightsmith;
+- makes `import plasmonics` expose the `lightsmith` API.
+
+Upload them **after** `lightsmith` itself is on PyPI, because their dependency must resolve. Use the same
+`UV_PUBLISH_TOKEN`; the account-wide token covers names the account already owns.
+
+```bash
+rm -rf aliases/dist
+for n in nanophotonic nanophotonics plasmonic plasmonics; do uv build aliases/$n --out-dir aliases/dist; done
+uvx twine check --strict aliases/dist/*
+uv publish aliases/dist/*
+```
+
+Then check one of them: `uv pip install plasmonics` should pull in `lightsmith`.
+
+- The old 0.0.1 releases can stay: installers pick 0.1.0. To hide them as well, yank them in each project's
+  **Manage → Releases** page.
+- The aliases set no upper bound on `lightsmith`, so they keep installing the latest Lightsmith. They need
+  no new release for later Lightsmith versions.
+
 ### Trusted publishing (later)
 
 PyPI's [trusted publishing](https://docs.pypi.org/trusted-publishers/) replaces API tokens with an
