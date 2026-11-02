@@ -25,7 +25,8 @@ class DesignRegion(_Model):
 
     name: str = "design"
     center_nm: tuple[float, float, float] = (0.0, 0.0, 0.0)
-    size_nm: tuple[float, float, float] = Field(description="Box size; z is ignored in 2D.")
+    size_nm: tuple[float, float, float] = Field(description="Box size; z is ignored in 2D. In 3D, z is the "
+                                                "thickness of an extruded region (e.g. the 220 nm device layer).")
     material_low: Material = Field(description="Material at density 0 (usually the cladding).")
     material_high: Material = Field(description="Material at density 1 (usually the core).")
     init: float | Literal["random"] = Field(0.5, description="Initial density, or 'random' (seeded).")
@@ -35,14 +36,21 @@ class DesignRegion(_Model):
     min_feature_nm: float | None = Field(
         None, gt=0, description="Minimum solid and void feature size, imposed with lengthscale penalties "
         "(needs filter_radius_nm >= min_feature_nm / 2).")
-    symmetry: list[Literal["x", "y"]] = Field(
+    symmetry: list[Literal["x", "y", "z"]] = Field(
         default_factory=list, description="Mirror symmetry: 'x' = symmetric under x -> -x about the region "
-        "centre, 'y' likewise.")
+        "centre, 'y' likewise; 'z' only for volumetric 3D regions.")
+    parametrization: Literal["extruded", "volumetric"] = Field(
+        "extruded", description="3D devices only (ignored in 2D). 'extruded': one 2D density in x-y, constant "
+        "through the region's thickness size_nm[2], i.e. a single vertical etch (planar fabrication; exports to "
+        "GDS). 'volumetric': a free 3D density on the grid nodes (filter and min-feature constraints act in 3D; "
+        "exported layer by layer).")
 
     @model_validator(mode="after")
     def _check(self):
         if self.min_feature_nm is not None and self.filter_radius_nm < self.min_feature_nm / 2:
             raise ValueError("min_feature_nm needs filter_radius_nm >= min_feature_nm / 2")
+        if "z" in self.symmetry and self.parametrization != "volumetric":
+            raise ValueError("symmetry 'z' needs parametrization='volumetric' (an extruded density is uniform in z)")
         return self
 
 
@@ -76,7 +84,7 @@ class SParameterTerm(_Term):
 
 
 class FieldIntensityTerm(_Term):
-    """Mean |field|^2 (Hz for TE, Ez for TM) in a box, with one port mode as the source."""
+    """Mean |field|^2 (Hz for TE, Ez for TM; |E|^2 in 3D) in a box, with one port mode as the source."""
 
     kind: Literal["field_intensity"] = "field_intensity"
     source_port: str
@@ -104,7 +112,11 @@ class OptimizerSettings(_Model):
 
 
 class OptimizationProblem(_Model):
-    """Topology optimisation of a device: maximise sum(weight * term) (minimise terms with goal='minimize')."""
+    """Topology optimisation of a device: maximise sum(weight * term) (minimise terms with goal='minimize').
+
+    ``device.dimension`` selects 2D or 3D; in 3D the FDFD backend solves full-vector
+    Maxwell with an iterative solver (see ``lightsmith.backends._fdfd3d``).
+    """
 
     kind: Literal["optimization"] = "optimization"
     device: DeviceProblem

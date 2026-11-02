@@ -33,8 +33,12 @@ class DesignOutput(BaseModel):
     name: str
     x_nm: list[float]
     y_nm: list[float]
-    density: list[list[float]] = Field(description="Projected density at the final beta, [x][y].")
-    raw: list[list[float]] = Field(description="Optimisation variables, [x][y].")
+    z_nm: list[float] | None = Field(None, description="3D volumetric regions: node z coordinates.")
+    parametrization: str = Field("2d", description="'2d', 'extruded' (3D, density [x][y] through the region "
+                                 "thickness) or 'volumetric' (3D, density [x][y][z]).")
+    density: list[list[float]] | list[list[list[float]]] = Field(
+        description="Projected density at the final beta, [x][y] ([x][y][z] if volumetric).")
+    raw: list[list[float]] | list[list[list[float]]] = Field(description="Optimisation variables, same layout.")
 
 
 class OptimizationResult(BaseModel):
@@ -111,7 +115,8 @@ class TopologyOptimizer:
         self.regions: list[RegionMap] = [
             region_map(r.name, r.center_nm, r.size_nm, self.grid, r.material_low.eps(self.wavelengths),
                        r.material_high.eps(self.wavelengths), filter_radius_nm=r.filter_radius_nm, eta=r.eta,
-                       min_feature_nm=r.min_feature_nm, symmetry=tuple(r.symmetry))
+                       min_feature_nm=r.min_feature_nm, symmetry=tuple(r.symmetry),
+                       parametrization=r.parametrization)
             for r in problem.design_regions]
         self._check_ports()
         labels = self._labels()
@@ -131,6 +136,22 @@ class TopologyOptimizer:
     def _check_ports(self) -> None:
         eng = self.ctx.get("engine")
         if eng is None:
+            return
+        if any(hasattr(pg, "window") for pg in eng.ports):  # 3D ports (rectangular windows)
+            from ..backends._fdfd3d.modes import plane_axes
+
+            for reg in self.regions:
+                ranges = (reg.ix, reg.iy, reg.iz if reg.iz is not None else slice(0, self.grid.shape[2]))
+                for pg in eng.ports:
+                    rng = ranges[pg.axis]
+                    lines = {pg.i0 + k for k in range(-3, 4)}
+                    t1, t2 = plane_axes(pg.axis)
+                    lo1, hi1, lo2, hi2 = pg.window
+                    across = (ranges[t1].start < hi1 and lo1 < ranges[t1].stop
+                              and ranges[t2].start < hi2 and lo2 < ranges[t2].stop)
+                    if any(rng.start <= i < rng.stop for i in lines) and across:
+                        raise ValueError(f"design region {reg.name!r} overlaps port {pg.name!r} (keep >= 4 cells "
+                                         "between a port plane and the design region)")
             return
         for reg in self.regions:
             for pg in eng.ports:
@@ -297,6 +318,18 @@ class TopologyOptimizer:
             _, _, filt = self.permittivity(torch.as_tensor(x, device=self.tdev), beta)
         structs, designs = [], []
         for r, reg, rf in zip(self.problem.design_regions, self.regions, filt):
+            if reg.mode == "volumetric":  # one slab per z node (its cell), contoured separately
+                layers = []
+                cx, cy = (reg.x_nm[0] + reg.x_nm[-1]) / 2, (reg.y_nm[0] + reg.y_nm[-1]) / 2
+                size = (len(reg.x_nm) * reg.dl_nm, len(reg.y_nm) * reg.dl_nm)
+                rfn = rf.cpu().numpy()
+                for k, zc in enumerate(reg.z_nm):
+                    contours = marching_squares(rfn[:, :, k], reg.x_nm, reg.y_nm, level=reg.eta)
+                    structs += to_structures(contours, r.material_high, r.material_low, zc - reg.dl_nm / 2,
+                                             zc + reg.dl_nm / 2, (cx, cy), size, f"{r.name}:z{k}")
+                    layers.append(contours)
+                designs.append(layers)
+                continue
             contours = marching_squares(rf.cpu().numpy(), reg.x_nm, reg.y_nm, level=reg.eta)
             zc, zs = r.center_nm[2], r.size_nm[2]
             zmin, zmax = (zc - zs / 2, zc + zs / 2) if zs > 0 else (zc - 110.0, zc + 110.0)
@@ -346,6 +379,7 @@ def optimize(problem: OptimizationProblem | dict | str, device: str = "cpu", cal
     with torch.no_grad():
         _, proj, _ = topt.permittivity(torch.as_tensor(x, device=topt.tdev), beta)
     designs = [DesignOutput(name=reg.name, x_nm=reg.x_nm.tolist(), y_nm=reg.y_nm.tolist(),
+                            z_nm=reg.z_nm.tolist() if reg.mode == "volumetric" else None, parametrization=reg.mode,
                             density=rp.cpu().numpy().tolist(), raw=xr.tolist())
                for reg, rp, xr in zip(topt.regions, proj, topt.split(x))]
     warnings = list(topt.warnings)
