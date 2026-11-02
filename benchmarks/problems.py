@@ -50,6 +50,10 @@ def _wl(start, stop, num):
     return {"start_nm": float(start), "stop_nm": float(stop), "num": int(num)}
 
 
+def _lambda_min(wavelengths) -> float:
+    return wavelengths["start_nm"] if isinstance(wavelengths, dict) else min(wavelengths)
+
+
 def _sim(particles, wavelengths, medium=1.0, direction=(0.0, 0.0, 1.0), polarization=(1.0, 0.0, 0.0)):
     return {
         "schema_version": "0.1",
@@ -68,9 +72,14 @@ def _medium_name(n):
     return {1.0: "vacuum", WATER: "water"}.get(n, f"n{n:g}")
 
 
-def _fdtd_sweep(feature_nm, cells=(5, 10, 20, 40)):
-    """Mesh ladder: `cells` Yee cells across the smallest geometric feature."""
-    return {"quantity": "mesh_nm", "values": [round(feature_nm / k, 3) for k in cells]}
+def _fdtd_sweep(feature_nm, cells=(5, 10, 20, 40), wavelength_nm=None, per_wavelength=(6, 10, 15, 20)):
+    """Mesh ladder: `cells` Yee cells across the smallest geometric feature and, when `wavelength_nm`
+    (the shortest wavelength inside the densest medium) is given, at least `per_wavelength` cells per
+    wavelength. Below about 6 cells per wavelength no FDTD code resolves the field."""
+    mesh = [feature_nm / k for k in cells]
+    if wavelength_nm is not None:
+        mesh = [min(h, wavelength_nm / m) for h, m in zip(mesh, per_wavelength)]
+    return {"quantity": "mesh_nm", "values": [round(h, 3) for h in mesh]}
 
 
 def _coarsen_fdtd(problem, cells=(5, 10)):
@@ -101,7 +110,8 @@ def dielectric_sphere(x, m, k=0.0, medium=1.0, wavelengths=None, npd=None):
         "simulation": _sim([_sphere(r, {"kind": "constant_index", "n_real": m * medium, "n_imag": k})],
                            wavelengths, medium),
         "sweeps": {"dda": {"quantity": "dipoles_per_diameter", "values": npd},
-                   "fdtd": _fdtd_sweep(2 * r), "tmatrix": DEFAULT_TMATRIX},
+                   "fdtd": _fdtd_sweep(2 * r, wavelength_nm=_lambda_min(wavelengths) / (m * medium)),
+                   "tmatrix": DEFAULT_TMATRIX},
         "variants": {"dda": {"center": None, "weighted": None}},
     }
 
