@@ -125,7 +125,10 @@ class OptimizationProblem(_Model):
     optimizer: OptimizerSettings = OptimizerSettings()
     backend: str = Field("lightsmith-fdfd", description="Any backend with differentiable=True and "
                          "differentiable_solve (see lightsmith.inverse).")
-    options: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    options: dict[str, dict[str, Any]] = Field(default_factory=dict, description="Solver options per method, "
+                                               "merged key by key over device.options[method]: set only what "
+                                               "differs (e.g. {'fdfd': {'solver': 'block'}} keeps the device's "
+                                               "dl_nm and pml_cells).")
 
     def to_json(self, **kw) -> str:
         return self.model_dump_json(**kw)
