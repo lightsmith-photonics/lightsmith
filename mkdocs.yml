@@ -118,6 +118,7 @@ nav:
       - solvers/in-development/index.md
       - BEM: solvers/in-development/bem.md
       - BPM: solvers/in-development/bpm.md
+      - FDTD roadmap: solvers/in-development/fdtd-roadmap.md
       - FDTD oblique incidence: solvers/in-development/fdtd-oblique.md
       - 3D inverse design: solvers/in-development/inverse-3d.md
       - PDK flow: solvers/in-development/pdk-flow.md
