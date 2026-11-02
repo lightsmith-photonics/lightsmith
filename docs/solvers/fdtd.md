@@ -21,11 +21,19 @@ It runs on the CPU or a CUDA GPU.
 - **Source.** A total-field/scattered-field plane-wave source fed by a 1D auxiliary grid. It has no
   leakage for axis-aligned incidence and about 1e-3 for oblique incidence.
 - **Dispersion.** Drude and Lorentz auxiliary differential equations.
-- **Interfaces.** Anisotropic subpixel smoothing (Farjadpour et al. 2006), extended to dispersive media.
+- **Interfaces.** Conformal meshing by tensor subpixel smoothing (Kottke, Farjadpour & Johnson 2008): each interface
+  cell gets 1/ε = P⟨1/ε⟩ + (1 − P)/⟨ε⟩, P = n nᵀ, off-diagonal terms included. The off-diagonal coupling
+  between neighbouring cells is symmetrised, which keeps long runs stable. Dispersive cells use the
+  diagonal of the tensor, integrated as two parallel ADE paths. See `mesh_refinement` below.
 - **Spectra.** One broadband pulse covers every wavelength, and running DFTs give the spectra:
   - C_sca is the scattered flux leaving the TFSF box;
   - C_abs is the net total-field flux into the box;
   - C_ext = C_sca + C_abs.
+- **Far field.** The scattered E and H on the outer flux box become equivalent surface currents, which are
+  projected to the requested directions (near-to-far-field transformation) to give dC_sca/dΩ.
+- **Resonances.** E at probes around each particle is recorded after the pulse has passed, and a
+  multi-channel matrix pencil (`lightsmith.resonance.harmonic_inversion`) gives each mode's wavelength,
+  Q and amplitude, as Harminv does in Meep.
 - **Stopping.** The run stops when the monitor energy has decayed by `decay_by`, or at the time cap.
 - **Materials.** A constant lossy permittivity becomes a Drude term matched exactly at the band centre,
   with a warning that it is not causal over a band. Tabulated and library materials are fitted with
@@ -52,14 +60,15 @@ It runs on the CPU or a CUDA GPU.
 | `cells_per_radius` | `None` | Minimum cells across the smallest particle. Default 10, or 20 if a material is plasmonic (Re ε < 0) in the band. |
 | `pml_cells` | `10` | CPML thickness |
 | `pml_kappa` | `1.0` | CPML κ_max; values above 1 damp evanescent fields faster |
-| `padding_nm` | `None` | Gap between the particles (or the stack) and the TFSF box. Default 4 cells. |
-| `pml_gap_nm` | `None` | Gap between the flux monitors and the CPML. Default 4 cells for scattering. For periodic structures, 3 decay lengths of the slowest evanescent order (0.25–1.5 λ). |
+| `padding_nm` | `None` | Gap between the particles (or the stack) and the TFSF box. Default 4 cells, and for scattering at least 3 % of the longest wavelength in the medium. |
+| `pml_gap_nm` | `None` | Gap between the flux monitors and the CPML. Default for scattering: 4 cells, at least 3 % of the longest wavelength in the medium. For periodic structures, 3 decay lengths of the slowest evanescent order (0.25–1.5 λ). |
 | `courant` | `0.95` | Time step as a fraction of the 3D Courant limit |
 | `run_time_fs` | `None` | Fixed simulated time; disables the decay shut-off |
 | `decay_by` | `1e-5` | Stop when the monitor energy falls below this fraction of its peak |
 | `max_time_fs` | `2000` | Hard cap on simulated time; high-Q resonances need picoseconds |
 | `precision` | `"auto"` | `"auto"` means single on the GPU and double on the CPU |
-| `subpixel` | `True` | Anisotropic subpixel smoothing |
+| `subpixel` | `True` | Smooth interfaces; `False` means staircase. Superseded by `mesh_refinement`. |
+| `mesh_refinement` | `None` | `staircase`, `volume_average` (⟨ε⟩), `subpixel` (diagonal tensor, the 0.1 behaviour) or `conformal` (full tensor). Default: `conformal`, or `staircase` when `subpixel` is false. |
 | `subpixel_samples` | `8` | Supersamples per axis for interface cells (2–24) |
 | `dft_stride` | `None` | Time steps between DFT samples. Default: aliasing-safe, from the source bandwidth. |
 | `cuda_graphs` | `True` | Replay time steps as CUDA graphs |
@@ -77,13 +86,23 @@ There are no gradients.
 | `test_fdtd_gpu_matches_cpu` (gpu): GPU float32 with CUDA graphs | CPU float64 | 1e-4 |
 | `test_fdtd_drude_sphere_matches_mie` (gpu): Drude r = 40 nm in water, dx = 2 nm | Mie | peak within 4 nm; peak height < 15 %; C_sca < 30 % everywhere |
 | `test_fdtd_layered_sphere_near_field_and_oblique_incidence` (gpu) | `lightsmith-mie` | C_ext < 3 %; near-field \|E\|² RMS < 6 % |
-| `test_fdtd_dielectric_sphere_fine_grid` (slow, gpu): r = 60 nm, dx = 2 nm | Mie | C_ext < 0.6 % (measured 0.40 %) |
+| `test_fdtd_conformal_tensor_smoothing_beats_diagonal` (gpu): r = 60 nm, dx = 6 nm | Mie | conformal < 0.2 %, subpixel > 0.8 % |
+| `test_fdtd_far_field_matches_mie` (gpu): r = 60 nm, dx = 4 nm | `lightsmith-mie` | dC_sca/dΩ median < 0.2 %, max < 1 %; integral = C_sca within 0.5 % |
+| `test_fdtd_drude_sphere_resonance` (gpu): Drude r = 40 nm in water | Mie extinction peak | dipole within 3 nm; Q between 6 and 10 |
+| `test_fdtd_conformal_is_stable_at_late_times` (slow, gpu): n = 3.5 sphere, 3 ps | — | field decays below 1e-12 |
+| `test_fdtd_dielectric_sphere_fine_grid` (slow, gpu): r = 60 nm, dx = 2 nm | Mie | C_ext < 0.2 % |
 | `test_fdtd_drude_sphere_fine_grid` (slow, gpu): dx = 1.33 nm | Mie | peak within one 10 nm sample; height < 7 % |
 | `test_fdtd_gold_library_material_via_drude_lorentz_fit` (slow, gpu): Johnson–Christy gold | Mie | peak within 10 nm; height < 20 % |
 
 Measured in the test module docstring (RTX 5070, float32; CPU float64 agrees to about 1e-7):
 
-- Dielectric r = 60 nm sphere: C_ext error 1.1 %, 0.8 %, 0.6 % and 0.4 % at dx = 6, 4, 3 and 2 nm.
+- Dielectric r = 60 nm sphere, maximum C_ext error over 400–800 nm at dx = 6, 4, 3 and 2 nm:
+  - `conformal`: 0.04 %, 0.05 %, 0.07 % and 0.05 %;
+  - `subpixel` (diagonal only): 1.1 %, 0.8 %, 0.6 % and 0.4 % (first order).
+
+  With the conformal default the remaining error is the source, monitor and PML floor, not the interfaces.
+- Far field of the same sphere at dx = 4 nm: median 0.01–0.03 % from Mie, worst 0.4 % (at 90° in the
+  E-plane, where dC_sca/dΩ is near zero).
 - Drude r = 40 nm sphere: peak at 532–536 nm (Mie: 534 nm), with height errors of 5–13 %. The error does
   not fall steadily as the grid is refined: it comes from excess absorption in interface cells.
 
@@ -101,7 +120,13 @@ Differences are maximum absolute differences in R, T and A.
 ## Limits
 
 **Scattering**
-- No far-field output, substrate or orientation averaging; near fields are supported.
+- No substrate or orientation averaging. Near fields, far fields and resonances are supported.
+- Resonances of metal particles include weak extra modes (amplitude ≤ 0.15 of the plasmon for a 10 nm
+  Drude sphere) from the interface cells, and the plasmon Q comes out about 10 % low (30.6 against 34.2
+  from Mie's line width, at 0.5 nm cells).
+- Metal interfaces: tensor smoothing is applied to non-dispersive cells only. Off-diagonal terms in Drude
+  cells diverged (the averaged ε crosses zero inside the band). Of staircase, volume average, harmonic and
+  diagonal averaging, the diagonal (default) gives the best plasmon peak, still about 10 % low.
 - Warns about:
   - oblique incidence (about 0.1 % incident-field leakage);
   - fields that have not decayed by the time cap;

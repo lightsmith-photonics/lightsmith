@@ -6,6 +6,21 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
 
 ## [Unreleased]
 
+### Added
+
+- **FDTD conformal meshing.** `mesh_refinement` (`staircase`, `volume_average`, `subpixel`, `conformal`). The
+  new default, `conformal`, adds the off-diagonal terms of tensor subpixel smoothing, symmetrised for
+  stability. Dielectric sphere C_ext error at dx = 6 nm falls from 1.1 % to 0.04 %.
+- **FDTD far field** (`outputs.far_field`): near-to-far-field projection of the scattered fields, within
+  0.4 % of Mie.
+- **Resonances** (`outputs.resonances`): wavelengths, Q factors and amplitudes from the FDTD ring-down,
+  through the new `lightsmith.resonance.harmonic_inversion` (multi-channel matrix pencil).
+
+### Changed
+
+- FDTD scattering: the default TFSF padding and PML gap are now at least 3 % of the longest wavelength
+  in the medium, so refining the grid no longer moves the monitors closer to the particle.
+
 ## [0.1.0] - 2026-11-01
 
 First public release.

@@ -202,10 +202,19 @@ class FarFieldRequest(_Model):
     wavelengths_nm: list[float] = Field(min_length=1)
 
 
+class ResonanceRequest(_Model):
+    """Resonances of the ringing field after the incident pulse has passed: wavelength, Q, relative amplitude.
+
+    Time-domain solvers only. Only modes inside the requested wavelength band are reported."""
+
+    max_modes: int = Field(10, ge=1, le=100)
+
+
 class Outputs(_Model):
     cross_sections: bool = True
     near_field: NearFieldRequest | None = None
     far_field: FarFieldRequest | None = None
+    resonances: ResonanceRequest | None = None
 
 
 # --- the simulation ---------------------------------------------------------

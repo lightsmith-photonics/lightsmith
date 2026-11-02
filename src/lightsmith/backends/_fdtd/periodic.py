@@ -50,7 +50,7 @@ from ...results import DiffractionOrder, SpectrumResult
 from .engine import DFTMonitor, Engine, PMLSpec, flat_index
 from .media import Medium, to_medium
 from .options import FDTDOptions
-from .setup import FS, run_until_decayed, voxelise
+from .setup import FS, mesh_mode, run_until_decayed, voxelise
 from .tfsf import BlochPlaneSource, TFSFPlaneWave
 
 BIG = 10**9
@@ -375,6 +375,7 @@ class _Ctx:
     dt_scale: float  # sqrt(min eps_inf) Courant factor
     area: float
     warnings: list
+    offdiag: object = None  # engine.OffDiagonal
 
     def transit(self) -> float:
         return self.cell.shape[2] * self.cell.spacing[2] * max(math.sqrt(abs(m.eps_inf)) for m in self.media)
@@ -399,7 +400,7 @@ def _run_normal(c: _Ctx, pol: str, p: dict, omega: np.ndarray):
     mon_i = DFTMonitor(omega, *src.probe(), source=src)
     eng = Engine(c.device, shape=cell.shape, dx=cell.spacing, dt=dt, single=c.single, inv_eps=c.inv_eps,
                  groups=c.groups, pml=c.pml, sources=[src], monitors=[mon_r, mon_t, mon_i], dft_stride=stride,
-                 periodic=(True, True, False))
+                 periodic=(True, True, False), offdiag=c.offdiag)
     t_loop = time.perf_counter()
     steps, level, graphs = run_until_decayed(
         eng, opts, max_steps=max_steps, min_steps=int((src.t_passed + c.transit()) / dt),
@@ -434,7 +435,7 @@ def _run_oblique(c: _Ctx, pol: str, kpar: tuple[float, float], wavelength: float
     mon_i = DFTMonitor(om, *src.probe(cell.k_top), source=src)
     eng = Engine(c.device, shape=cell.shape, dx=cell.spacing, dt=dt, single=c.single, inv_eps=c.inv_eps,
                  groups=c.groups, pml=c.pml, sources=[src], monitors=[mon_r, mon_t, mon_i], dft_stride=stride,
-                 periodic=(True, True, False), bloch=(kpar[0], kpar[1], 0.0))
+                 periodic=(True, True, False), bloch=(kpar[0], kpar[1], 0.0), offdiag=c.offdiag)
     cos_t = math.sqrt(max(1 - k**2 / (c.eps_sup * omega**2), 0.01))  # slower transit along z
     t_loop = time.perf_counter()
     steps, level, graphs = run_until_decayed(
@@ -468,9 +469,9 @@ def solve(problem, opts: FDTDOptions, device: Device) -> SpectrumResult:
     t0 = time.perf_counter()
     roi_lo = np.array([1, 1, max(1, cell.k_top - 3)])
     roi_hi = np.array([cell.shape[0] - 1, cell.shape[1] - 1, cell.shape[2] - 1])
-    inv_eps, groups, vstats = voxelise(_slot_fn(problem, layer_slots, s_sup, s_sub, cell), media, cell.shape,
-                                       cell.origin, cell.spacing, roi_lo, roi_hi, subpixel=opts.subpixel,
-                                       samples=opts.subpixel_samples)
+    inv_eps, groups, vstats, offdiag = voxelise(
+        _slot_fn(problem, layer_slots, s_sup, s_sub, cell), media, cell.shape, cell.origin, cell.spacing, roi_lo,
+        roi_hi, mode=mesh_mode(opts), samples=opts.subpixel_samples)
     t_vox = time.perf_counter() - t0
 
     eps_sup = media[0].eps_inf
@@ -480,7 +481,7 @@ def solve(problem, opts: FDTDOptions, device: Device) -> SpectrumResult:
                   eps_ref_high=max(1.0, eps_sub_ref))
     area = cell.n_cells[0] * cell.spacing[0] * cell.n_cells[1] * cell.spacing[1]
     ctx = _Ctx(problem, opts, device, single, cell, inv_eps, groups, media, pml, eps_sup,
-               math.sqrt(min([1.0] + [m.eps_inf for m in media])), area, warnings)
+               math.sqrt(min([1.0] + [m.eps_inf for m in media])), area, warnings, offdiag)
     pols, angles = _polarizations(problem), _angles(problem)
     omega = 2 * np.pi / wl
     nx, ny = cell.n_cells
@@ -565,7 +566,8 @@ def solve(problem, opts: FDTDOptions, device: Device) -> SpectrumResult:
                   "the stated angle and vacuum wavelength")
     prov = {**device.describe(), "grid": list(cell.shape), "real_cells": list(cell.n_cells) + [cell.shape[2]],
             "cells": cell.cells, "spacing_nm": list(cell.spacing), "dt_fs": _time_step(cell, opts) * ctx.dt_scale / FS,
-            "dft_stride": p["stride"], "precision": "single" if single else "double", "subpixel": opts.subpixel,
+            "dft_stride": p["stride"], "precision": "single" if single else "double",
+            "subpixel": mesh_mode(opts) != "staircase", "mesh_refinement": mesh_mode(opts),
             "pml_cells": cell.pml, "runs": prov_runs, "steps": sum(r["steps"] for r in prov_runs),
             "decay_level": max(r["decay_level"] for r in prov_runs) if prov_runs else None,
             "materials": [m.describe() for m in media], **vstats, "voxelise_s": t_vox,

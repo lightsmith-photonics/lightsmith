@@ -63,7 +63,7 @@ class NativeFDTD(Backend):
             return ok, why
         if not isinstance(sim, Simulation):
             return False, "FDTD solves scattering, periodic and layer_stack problems"
-        why = unsupported_outputs(sim, near_field=True)
+        why = unsupported_outputs(sim, near_field=True, far_field=True, resonances=True)
         if not why and any(needs_fit(m) for p in sim.particles for m in p.region_materials()) \
                 and fit_module() is None:
             why = "tabulated/library materials need lightsmith.materials_fit (Drude-Lorentz fitting)"
@@ -109,5 +109,6 @@ class NativeFDTD(Backend):
                                  c_ext=out["c_ext"], c_sca=out["c_sca"], c_abs=out["c_abs"],
                                  r_eq=sim.equivalent_radius_nm(), provenance=out["provenance"],
                                  warnings=out["warnings"])
-        res.near_field = out["near_field"]
+        res.near_field, res.far_field = out["near_field"], out["far_field"]
+        res.resonances = out["resonances"]
         return res

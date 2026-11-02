@@ -20,7 +20,7 @@ import pytest
 import lightsmith as ls
 from lightsmith.device import _torch_cuda
 from lightsmith.materials import LibraryMaterial
-from lightsmith.spec import LayeredSphere, NearFieldRequest, Outputs, Shell
+from lightsmith.spec import FarFieldRequest, LayeredSphere, NearFieldRequest, Outputs, ResonanceRequest, Shell
 
 needs_cuda = pytest.mark.skipif(not _torch_cuda(), reason="no CUDA GPU with PyTorch")
 DRUDE = ls.Drude(eps_inf=9.5, wp_ev=9.0, gamma_ev=0.07)
@@ -62,8 +62,9 @@ def test_fdtd_supports_and_options():
     sim = sphere_sim(DRUDE, 40, [500.0])
     assert ls.get_backend("fdtd").supports(sim)[0]
     far = sim.model_copy(update={"outputs": Outputs(far_field={"theta_deg": [0.0], "wavelengths_nm": [500.0]})})
-    ok, why = ls.get_backend("fdtd").supports(far)
-    assert not ok and "far_field" in why
+    assert ls.get_backend("fdtd").supports(far)[0]
+    ok, why = ls.get_backend("fdtd").supports(sim.model_copy(update={"orientation_average": True}))
+    assert not ok and "orientation_average" in why
     bad = sphere_sim(DRUDE, 40, [500.0], bogus=1)
     with pytest.raises(Exception):
         ls.estimate(bad, method="fdtd", device="cpu")
@@ -170,7 +171,73 @@ def test_fdtd_oblique_tfsf_spheroid_matches_dda():
         assert rel(res.c_ext_nm2, ref.c_ext_nm2).max() < 0.02  # measured 0.5-1.1% (0.5% at dx=4 nm)
 
 
+@pytest.mark.gpu
+@needs_cuda
+def test_fdtd_conformal_tensor_smoothing_beats_diagonal():
+    """Off-diagonal tensor terms remove the first-order interface error (1.1% -> 0.04% at dx = 6 nm)."""
+    wl = ls.WavelengthRange(start_nm=400, stop_nm=800, num=5)
+    mie = ls.solve(sphere_sim(ls.ConstantIndex(n_real=1.5), 60, wl), "mie").c_ext_nm2
+    err = {}
+    for mode in ("staircase", "subpixel", "conformal"):
+        res = ls.solve(sphere_sim(ls.ConstantIndex(n_real=1.5), 60, wl, spacing_nm=6.0, mesh_refinement=mode),
+                       "fdtd", "gpu")
+        assert res.provenance["mesh_refinement"] == mode
+        err[mode] = rel(res.c_ext_nm2, mie).max()
+    assert res.provenance["offdiagonal_cells"] > 0
+    # measured: conformal 0.04%, subpixel 1.1%, staircase 1.0% (staircase errors swing with grid alignment)
+    assert err["conformal"] < 0.002 and err["subpixel"] > 0.008 and err["staircase"] > 0.005
+
+
+@pytest.mark.gpu
+@needs_cuda
+def test_fdtd_far_field_matches_mie():
+    wl = [500.0, 700.0]
+    theta = list(np.linspace(0, 180, 37))
+    sim = ls.Simulation(
+        particles=[ls.Particle(shape=ls.Sphere(radius_nm=60), material=ls.ConstantIndex(n_real=1.5))],
+        wavelengths=wl, options={"fdtd": {"spacing_nm": 4.0}},
+        outputs=Outputs(far_field=FarFieldRequest(theta_deg=theta, phi_deg=[0.0, 90.0], wavelengths_nm=wl)))
+    res = ls.solve(sim, "fdtd", "gpu")
+    mie = ls.solve(sim, "lightsmith-mie")
+    t = np.radians(theta)
+    for i in range(len(wl)):
+        a = np.asarray(res.far_field[i].dcsca_domega_nm2)
+        b = np.asarray(mie.far_field[i].dcsca_domega_nm2)
+        assert np.median(rel(a, b)) < 2e-3 and rel(a, b).max() < 1e-2  # measured 0.03% and 0.4%
+        # the phi-averaged pattern integrates to C_sca (exact for the cos^2 phi dependence of a sphere)
+        c = 2 * np.pi * np.trapezoid(0.5 * (a[:, 0] + a[:, 1]) * np.sin(t), t)
+        assert c == pytest.approx(res.c_sca_nm2[i], rel=5e-3)
+
+
+@pytest.mark.gpu
+@needs_cuda
+def test_fdtd_drude_sphere_resonance():
+    """The dipole plasmon from the ring-down matches Mie's extinction peak (Q = peak / FWHM = 8.8)."""
+    sim = sphere_sim(DRUDE, 40, ls.WavelengthRange(start_nm=440, stop_nm=600, num=9), medium=1.33)
+    sim = sim.model_copy(update={"outputs": Outputs(resonances=ResonanceRequest(max_modes=5))})
+    res = ls.solve(sim, "fdtd", "gpu")
+    dipole = min(res.resonances, key=lambda m: abs(m.wavelength_nm - 534.0))
+    assert abs(dipole.wavelength_nm - 534.0) < 3  # measured 534.7 nm
+    assert 6 < dipole.q < 10 and dipole.amplitude > 0.5  # measured Q 7.8
+    assert res.resonances[0].amplitude == 1.0
+    assert all(440 <= m.wavelength_nm <= 600 for m in res.resonances)
+
+
 # --- slow, tighter checks -----------------------------------------------------
+
+
+@pytest.mark.slow
+@pytest.mark.gpu
+@needs_cuda
+def test_fdtd_conformal_is_stable_at_late_times():
+    """The symmetrised off-diagonal coupling keeps the update stable; the one-sided average grew without bound."""
+    sim = ls.Simulation(
+        particles=[ls.Particle(shape=ls.Sphere(radius_nm=80), material=ls.ConstantIndex(n_real=3.5))],
+        wavelengths=[500.0, 700.0, 900.0],
+        options={"fdtd": {"spacing_nm": 6.0, "run_time_fs": 3000, "max_time_fs": 3000, "precision": "double"}})
+    res = ls.solve(sim, "fdtd", "gpu")
+    assert res.provenance["mesh_refinement"] == "conformal" and res.provenance["steps"] > 250_000
+    assert res.provenance["decay_level"] < 1e-12  # measured 2e-19
 
 
 @pytest.mark.slow
@@ -180,7 +247,7 @@ def test_fdtd_dielectric_sphere_fine_grid():
     sim = sphere_sim(ls.ConstantIndex(n_real=1.5), 60, ls.WavelengthRange(start_nm=400, stop_nm=800, num=9),
                      spacing_nm=2.0)
     res = ls.solve(sim, "fdtd", "gpu")
-    assert rel(res.c_ext_nm2, ls.solve(sim, "mie").c_ext_nm2).max() < 0.006  # measured 0.40%
+    assert rel(res.c_ext_nm2, ls.solve(sim, "mie").c_ext_nm2).max() < 0.002  # conformal; diagonal subpixel: 0.40%
 
 
 @pytest.mark.slow

@@ -8,12 +8,13 @@ import time
 import numpy as np
 
 from ...device import Device
-from ...results import NearFieldData
-from .engine import DFTMonitor, Engine, PMLSpec, flat_index
-from .media import Medium, to_medium
+from ...resonance import harmonic_inversion
+from ...results import FarFieldData, NearFieldData, ResonanceData
+from .engine import DFTMonitor, Engine, PMLSpec, TimeMonitor, flat_index
+from .media import HBARC_EV_NM, Medium, to_medium
 from .options import FDTDOptions
-from .setup import (FS, flux, flux_points, particle_slot_fn, run_until_decayed, scattering_layout, time_step,
-                    voxelise)
+from .setup import (FS, far_field, flux, flux_points, mesh_mode, particle_slot_fn, run_until_decayed,
+                    scattering_layout, surface_samples, time_step, voxelise)
 from .tfsf import TFSFPlaneWave
 
 
@@ -21,6 +22,8 @@ def _media(sim, warnings) -> tuple[list[Medium], list[list[int]]]:
     wl = sim.wavelength_array()
     if sim.outputs.near_field is not None:
         wl = np.concatenate([wl, sim.outputs.near_field.wavelengths_nm])
+    if sim.outputs.far_field is not None:
+        wl = np.concatenate([wl, sim.outputs.far_field.wavelengths_nm])
     media = [Medium(sim.medium_index**2, (), "medium")]
     keys: dict[str, int] = {}
     slot_of = []
@@ -58,6 +61,8 @@ def _band(sim):
     wl = sim.wavelength_array()
     if sim.outputs.near_field is not None:
         wl = np.concatenate([wl, sim.outputs.near_field.wavelengths_nm])
+    if sim.outputs.far_field is not None:
+        wl = np.concatenate([wl, sim.outputs.far_field.wavelengths_nm])
     om = 2 * np.pi / wl
     omega_c = 0.5 * (om.min() + om.max())
     omega_half = max(0.5 * (om.max() - om.min()), 0.15 * omega_c)
@@ -110,9 +115,9 @@ def solve(sim, opts: FDTDOptions, device: Device):
     eps_b = sim.medium_index**2
 
     t0 = time.perf_counter()
-    inv_eps, groups, vstats = voxelise(particle_slot_fn(sim, slot_of), media, lay.shape, lay.origin, dx,
-                                       lay.roi[0], lay.roi[1], subpixel=opts.subpixel,
-                                       samples=opts.subpixel_samples)
+    inv_eps, groups, vstats, offdiag = voxelise(particle_slot_fn(sim, slot_of), media, lay.shape, lay.origin, dx,
+                                                lay.roi[0], lay.roi[1], mode=mesh_mode(opts),
+                                                samples=opts.subpixel_samples)
     t_vox = time.perf_counter() - t0
 
     src = TFSFPlaneWave(shape=lay.shape, origin=lay.origin, dx=dx, dt=dt, r0=lay.r0, lo=lay.tfsf[0],
@@ -131,12 +136,22 @@ def solve(sim, opts: FDTDOptions, device: Device):
     if near is not None:
         near["inc"] = DFTMonitor(near["omega"], pe, ph1, ph2, source=src)
         monitors += [near["mon"], near["inc"]]
+    far = None
+    if sim.outputs.far_field is not None:
+        surf = surface_samples(*lay.sca, lay.shape, dx)
+        om_ff = 2 * np.pi / np.asarray(sim.outputs.far_field.wavelengths_nm, dtype=float)
+        far = {"surf": surf, "omega": om_ff, "mon": DFTMonitor(om_ff, surf.e_idx, surf.h1, surf.h2),
+               "inc": DFTMonitor(om_ff, pe, ph1, ph2, source=src)}
+        monitors += [far["mon"], far["inc"]]
+    probes = ()
+    if sim.outputs.resonances is not None:
+        probes = (TimeMonitor(_resonance_probes(sim, lay), p["max_steps"] // stride + 4),)
 
     lam_max = wl.max()
     pml = PMLSpec(cells=((lay.pml, lay.pml),) * 3, kappa_max=opts.pml_kappa,
                   alpha_max=0.05 * 2 * np.pi * sim.medium_index / lam_max, eps_ref=eps_b)
     eng = Engine(device, shape=lay.shape, dx=dx, dt=dt, single=single, inv_eps=inv_eps, groups=groups, pml=pml,
-                 sources=[src], monitors=monitors, dft_stride=stride)
+                 sources=[src], monitors=monitors, dft_stride=stride, offdiag=offdiag, time_monitors=probes)
     del inv_eps
     t_loop = time.perf_counter()
     steps, level, graphs = run_until_decayed(
@@ -152,17 +167,90 @@ def solve(sim, opts: FDTDOptions, device: Device):
     c_sca = flux(es, hs, sca[3]) / intensity
     c_abs = -flux(et, ht, tot[3]) / intensity
     near_data = _near_results(sim, lay, near) if near is not None else None
+    far_data = _far_results(sim, lay, far) if far is not None else None
+    res_data = None
+    if probes:
+        n_skip = int(math.ceil(src.t_passed / (stride * dt)))
+        res_data = _resonances(sim, probes[0].results(steps // stride)[:, n_skip:], stride * dt, warnings)
 
     prov = {**device.describe(), "grid": list(lay.shape), "cells": lay.cells, "spacing_nm": dx, "dt_fs": dt / FS,
             "steps": steps, "simulated_time_fs": steps * dt / FS, "dft_stride": stride,
-            "precision": "single" if single else "double", "cuda_graphs": graphs, "subpixel": opts.subpixel,
+            "precision": "single" if single else "double", "cuda_graphs": graphs,
+            "subpixel": mesh_mode(opts) != "staircase",
             "pml_cells": lay.pml, "tfsf_box_nm": float((lay.tfsf[1] - lay.tfsf[0])[0] * dx),
             "decay_level": level, "materials": [m.describe() for m in media], **vstats,
             "runtime_s": time.perf_counter() - t_start, "time_loop_s": t_loop, "voxelise_s": t_vox}
     if np.any(c_abs < -1e-3 * np.max(np.abs(c_sca + c_abs))):
         warnings.append("negative absorption beyond 0.1% of extinction: increase resolution or decay time")
     return {"c_sca": c_sca, "c_abs": c_abs, "c_ext": c_sca + c_abs, "near_field": near_data,
-            "provenance": prov, "warnings": warnings}
+            "far_field": far_data, "resonances": res_data, "provenance": prov, "warnings": warnings}
+
+
+# --- resonances ----------------------------------------------------------------------
+
+# probe directions: the 6 axes and the 8 cube diagonals, so that a probe sits off the nodes of any low-order mode
+_DIRS = np.concatenate([np.eye(3), -np.eye(3),
+                        np.array([[a, b, c] for a in (1, -1) for b in (1, -1) for c in (1, -1)]) / np.sqrt(3)])
+
+
+def _resonance_probes(sim, lay, max_particles: int = 4) -> np.ndarray:
+    """Flat E indices: all three components at each particle's centre and at 14 points two cells outside it."""
+    pts = []
+    for p in sim.particles[:max_particles]:
+        c = np.asarray(p.position_nm, dtype=float)
+        h = p.shape.bounding_half_extent()
+        pts += [c] + [c + d * (h + 2 * lay.dx) for d in _DIRS]
+    idx = []
+    for pt in pts:
+        for comp in range(3):
+            off = np.zeros(3)
+            off[comp] = 0.5
+            i = np.clip(np.rint((pt - lay.origin) / lay.dx - off).astype(int), 1, np.asarray(lay.shape) - 2)
+            idx.append(flat_index(comp, *i, lay.shape))
+    return np.unique(np.asarray(idx))
+
+
+def _resonances(sim, x: np.ndarray, dt: float, warnings: list[str]) -> list[ResonanceData]:
+    wl = sim.wavelength_array()
+    if x.shape[1] < 64:
+        warnings.append("resonances: the field decayed too fast after the pulse for harmonic inversion; "
+                        "no resonance found (lower decay_by or set run_time_fs)")
+        return []
+    modes = harmonic_inversion(x, dt, 2 * np.pi / wl.max(), 2 * np.pi / wl.min(),
+                               max_modes=sim.outputs.resonances.max_modes)
+    if not modes:
+        return []
+    a0 = modes[0].amplitude
+    return [ResonanceData(wavelength_nm=2 * np.pi / m.omega.real, energy_ev=HBARC_EV_NM * m.omega.real, q=m.q,
+                          amplitude=m.amplitude / a0) for m in modes]
+
+
+# --- far field ---------------------------------------------------------------------
+
+
+def _far_results(sim, lay, far) -> list[FarFieldData]:
+    """dC_sca/dOmega from the scattered fields on the flux box (near-to-far-field transformation).
+
+    theta is measured from the incident direction and phi from the polarization, as in the other backends."""
+    req = sim.outputs.far_field
+    khat, ehat = sim.illumination.unit_vectors()
+    hhat = np.cross(khat, ehat)
+    th = np.radians(np.asarray(req.theta_deg, dtype=float))[:, None]
+    ph = np.radians(np.asarray(req.phi_deg, dtype=float))[None, :]
+    nhat = (np.cos(th)[..., None] * khat + np.sin(th)[..., None]
+            * (np.cos(ph)[..., None] * ehat + np.sin(ph)[..., None] * hhat))
+    surf = far["surf"]
+    r = lay.origin + surf.pos * lay.dx - lay.r0
+    e_all, h_all = far["mon"].results()
+    inc = far["inc"].results()[0][:, 0]
+    nb = sim.medium_index
+    out = []
+    for f, lam in enumerate(req.wavelengths_nm):
+        ef = far_field(surf, e_all[f], h_all[f], r, nhat.reshape(-1, 3), nb * far["omega"][f], 1 / nb)
+        dcs = np.sum(np.abs(ef) ** 2, axis=-1).reshape(nhat.shape[:2]) / abs(inc[f]) ** 2
+        out.append(FarFieldData(wavelength_nm=float(lam), theta_deg=list(req.theta_deg), phi_deg=list(req.phi_deg),
+                                dcsca_domega_nm2=dcs.tolist()))
+    return out
 
 
 # --- near fields -------------------------------------------------------------------

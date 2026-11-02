@@ -21,9 +21,10 @@ class FDTDOptions(BaseModel):
     pml_kappa: float = Field(1.0, ge=1, description="CPML kappa_max (>1 damps evanescent fields faster).")
     padding_nm: float | None = Field(
         None, ge=0, description="Gap between the particles' bounding box (periodic: the stack) and the TFSF "
-        "box (plane). Default 4 cells.")
+        "box (plane). Default 4 cells, and for scattering at least 3% of the longest wavelength in the medium.")
     pml_gap_nm: float | None = Field(
-        None, ge=0, description="Gap between the flux monitors and the CPML. Default 4 cells (scattering); "
+        None, ge=0, description="Gap between the flux monitors and the CPML. Scattering: 4 cells, at least 3% of the longest "
+        "wavelength in the medium; "
         "periodic: 3 decay lengths of the slowest evanescent diffraction order, 0.25-1.5 wavelengths.")
     courant: float = Field(0.95, gt=0, le=1, description="Time step as a fraction of the 3D Courant limit.")
     run_time_fs: float | None = Field(
@@ -34,7 +35,13 @@ class FDTDOptions(BaseModel):
     max_time_fs: float = Field(
         2000.0, gt=0, description="Hard cap on simulated time in fs (high-Q resonances need ps).")
     precision: Literal["auto", "single", "double"] = Field("auto", description="auto = single on GPU, double on CPU.")
-    subpixel: bool = Field(True, description="Anisotropic subpixel smoothing at interfaces (dispersive too).")
+    subpixel: bool = Field(True, description="Anisotropic subpixel smoothing at interfaces (dispersive too). "
+                           "False means staircase. Superseded by mesh_refinement when that is set.")
+    mesh_refinement: Literal["staircase", "volume_average", "subpixel", "conformal"] | None = Field(
+        None, description="Interface treatment. staircase: the medium at each field position. volume_average: "
+        "<eps> over the cell. subpixel: diagonal anisotropic averaging (Farjadpour 2006). conformal: the full "
+        "tensor with off-diagonal terms (Kottke 2008) between non-dispersive cells. Default: conformal, or "
+        "staircase when subpixel is False.")
     subpixel_samples: int = Field(8, ge=2, le=24, description="Supersamples per axis for interface cells.")
     dft_stride: int | None = Field(
         None, ge=1, description="Time steps between DFT samples. Default: from the source bandwidth (aliasing-safe).")

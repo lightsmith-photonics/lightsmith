@@ -65,6 +65,18 @@ def pole_coefficients(pole, dt: float) -> tuple[float, float, float]:
 
 
 @dataclass
+class OffDiagonal:
+    """Off-diagonal inverse-permittivity terms of tensor subpixel smoothing (Kottke et al., PRE 77, 036611 (2008)).
+
+    Row r is E_comp[r] at node idx3[r], with (1/eps)_cd = coef[r, d]: E_c couples to curl_d H at the four E_d
+    positions around it. Engine._build_offdiag symmetrises the coupling between each pair of cells."""
+
+    idx3: np.ndarray  # (n, 3) node indices
+    comp: np.ndarray  # (n,) component c
+    coef: np.ndarray  # (n, 3) (1/eps)_cd; column c is unused
+
+
+@dataclass
 class DispersiveGroup:
     """E cells integrated in D-form. ``media[s]`` with fraction ``frac[s]``; ``w`` = n_c^2 weight of the
     harmonic (series) path, None for pure cells (one medium, f = 1)."""
@@ -104,16 +116,32 @@ class DFTMonitor:
         return e, h
 
 
+@dataclass
+class TimeMonitor:
+    """E at ``e_idx`` recorded at every DFT sample (every ``dft_stride`` steps), up to ``n_max`` samples."""
+
+    e_idx: np.ndarray
+    n_max: int
+    buf: object = field(default=None, repr=False)
+    pos: object = field(default=None, repr=False)
+
+    def results(self, n: int) -> np.ndarray:
+        """(channels, samples) for the first n samples."""
+        return Device.to_numpy(self.buf)[:n].T
+
+
 # --- the engine ---------------------------------------------------------------
 
 
 class Engine:
     def __init__(self, device: Device, *, shape, dx, dt: float, single: bool, inv_eps: np.ndarray,
                  groups: list[DispersiveGroup], pml: PMLSpec, sources: list, monitors: list[DFTMonitor],
-                 dft_stride: int, periodic=(False, False, False), bloch=(0.0, 0.0, 0.0)):
+                 dft_stride: int, periodic=(False, False, False), bloch=(0.0, 0.0, 0.0),
+                 offdiag: OffDiagonal | None = None, time_monitors: tuple = ()):
         """dx: cell size, or (dx, dy, dz) for non-cubic cells. periodic: per axis; those axes carry ghost
         planes (see e_region) and no PML. bloch: Bloch wavevector per periodic axis (rad/nm); any nonzero
-        entry makes E, H and all auxiliary fields complex."""
+        entry makes E, H and all auxiliary fields complex. offdiag: tensor-smoothing terms of
+        non-dispersive interface cells."""
         self.device, self.xp = device, device.namespace()
         xp = self.xp
         self.shape, self.dt, self.single = tuple(int(n) for n in shape), float(dt), single
@@ -145,6 +173,7 @@ class Engine:
         self.cbE = [self.asarray(cdx * inv_eps[c][self.RE[c]]) for c in range(3)]
         self.cH = cdx
         self._build_pml(pml, inv_eps)
+        self._build_offdiag(offdiag, groups)
         self.groups = [_Group(self, g) for g in groups]
         self.sources = sources
         for s in sources:
@@ -152,6 +181,11 @@ class Engine:
         self.monitors = monitors
         for m in monitors:
             self._bind_monitor(m)
+        self.time_monitors = list(time_monitors)
+        for m in self.time_monitors:
+            m._e = self.index(m.e_idx)
+            m.buf = self.fzeros((m.n_max, len(m.e_idx)))
+            m.pos = self.device.asarray(np.zeros(1, dtype=np.int64))
         self.energy = self.zeros((1,))
 
     # array helpers
@@ -240,6 +274,78 @@ class Engine:
                                 self.asarray(kprime) if has_k else None, self.fzeros(cprime.shape))
                         (self.pml_E if field_ == "E" else self.pml_H).append(term)
 
+    # --- tensor smoothing ---------------------------------------------------------
+    def _build_offdiag(self, od: OffDiagonal | None, groups: list[DispersiveGroup]):
+        """Gather tables (e, h, w): row r adds sum_k w[r, k] * H_flat[h[r, k]] to E_flat[e[r]].
+
+        E_c at p couples to D_d (= the time integral of curl_d H) at the four E_d nodes q around it. The
+        coupling K(p, q) is symmetrised, K = (o_cd(p) + o_dc(q)) / 8 for both directions (Hermitian under a
+        Bloch phase), so the discrete 1/eps operator stays symmetric; the one-sided Meep-style average
+        o_cd(p) / 4 is not, and grows slowly at late times. Cells integrated in D-form (dispersive) take no
+        off-diagonal terms. Periodic axes wrap q onto the real cells with the Bloch phase of the period it
+        crossed."""
+        self.od = None
+        if od is None or not len(od.comp):
+            return
+        shape = self.shape
+        nflat = 3 * int(np.prod(shape))
+        idx3 = np.asarray(od.idx3, dtype=np.int64)
+        tgt, srcs, vals = [], [], []
+        t_flat = flat_index(od.comp, idx3[:, 0], idx3[:, 1], idx3[:, 2], shape)
+        for d in range(3):
+            for corner in range(4):
+                q = idx3.copy()
+                q += np.eye(3, dtype=np.int64)[od.comp] * (corner & 1)  # + e_c
+                q[:, d] -= corner >> 1  # - e_d
+                phase = np.ones(len(q), dtype=complex)
+                ok = (od.comp != d) & (od.coef[:, d] != 0)
+                for a in range(3):
+                    n = shape[a]
+                    if self.periodic[a]:
+                        kl = self.bloch[a] * (n - 2) * self.spacing[a]
+                        lo, hi = q[:, a] == 0, q[:, a] == n - 1
+                        q[lo, a], q[hi, a] = n - 2, 1
+                        phase[lo] *= np.exp(-1j * kl)
+                        phase[hi] *= np.exp(1j * kl)
+                    else:
+                        rd = e_region(d, shape)[a]
+                        ok &= (q[:, a] >= rd.start) & (q[:, a] < rd.stop)
+                tgt.append(t_flat[ok])
+                srcs.append(flat_index(d, q[ok, 0], q[ok, 1], q[ok, 2], shape))
+                vals.append(od.coef[ok, d] / 8 * phase[ok])
+        t, s_, v = np.concatenate(tgt), np.concatenate(srcs), np.concatenate(vals)
+        t, s_, v = np.concatenate([t, s_]), np.concatenate([s_, t]), np.concatenate([v, np.conj(v)])
+        if groups:
+            disp = np.concatenate([g.idx for g in groups])
+            keep = ~(np.isin(t, disp) | np.isin(s_, disp))
+            t, s_, v = t[keep], s_[keep], v[keep]
+        if not len(t):
+            return
+        key, inv = np.unique(t * nflat + s_, return_inverse=True)
+        v = np.bincount(inv, v.real, len(key)) + 1j * np.bincount(inv, v.imag, len(key))
+        t, s_ = key // nflat, key % nflat
+        targets, start, count = np.unique(t, return_index=True, return_counts=True)
+        slot = np.arange(len(t)) - np.repeat(start, count)
+        row = np.repeat(np.arange(len(targets)), count)
+        width = int(count.max())
+        h = np.ones((len(targets), 4 * width), dtype=np.int64)  # padding: index 1, weight 0
+        w = np.zeros((len(targets), 4 * width), dtype=complex)
+        d, rest = np.divmod(s_, int(np.prod(shape)))
+        q = np.stack(np.unravel_index(rest, shape), axis=1)
+        d1, d2 = (d + 1) % 3, (d + 2) % 3
+        inv_d = np.asarray(self.inv_d)
+        eye = np.eye(3, dtype=np.int64)
+        # curl_d H at q = (H_d2[q] - H_d2[q - e_d1]) / dx_d1 - (H_d1[q] - H_d1[q - e_d2]) / dx_d2
+        for k, (comp, back, sgn, inv_ax) in enumerate(((d2, None, 1.0, d1), (d2, d1, -1.0, d1),
+                                                       (d1, None, -1.0, d2), (d1, d2, 1.0, d2))):
+            p = q if back is None else q - eye[back]
+            h[row, 4 * slot + k] = flat_index(comp, p[:, 0], p[:, 1], p[:, 2], shape)
+            w[row, 4 * slot + k] = self.dt * sgn * inv_d[inv_ax] * v
+        if not self.complex:
+            w = w.real
+        self.od = (self.index(targets), self.index(h),
+                   self.device.asarray(w, dtype=self.cdt if self.complex else self.rdt))
+
     # --- monitors ----------------------------------------------------------------
     def _bind_monitor(self, m: DFTMonitor):
         m._omega = self.device.asarray(np.asarray(m.omega, dtype=float), dtype=self.xp.float64)
@@ -273,6 +379,9 @@ class Engine:
                     energy = v if energy is None else energy + v
         if energy is not None:
             self.energy[...] = energy
+        for m in self.time_monitors:
+            m.buf[m.pos] = self.E_flat[m._e][None, :]
+            m.pos += 1
 
     # --- time stepping -----------------------------------------------------------
     def _ghosts(self, F, low: bool):
@@ -330,6 +439,9 @@ class Engine:
             self._ghosts(H, low=True)
         for c in range(3):
             E[c][self.RE[c]] += self._curl(H, c, self.RE[c], -1, self.cbE[c])
+        if self.od is not None:
+            e_idx, h_idx, w = self.od
+            self.E_flat[e_idx] += self.xp.sum(w * self.H_flat[h_idx], axis=1)
         for c, src, d, Rs, b, cp, kp, psi in self.pml_E:
             der = H[src][Rs] - H[src][shift(Rs, d, -1)]
             psi *= b

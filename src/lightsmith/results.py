@@ -28,6 +28,15 @@ class FarFieldData(BaseModel):
     dcsca_domega_nm2: list[list[float]] = Field(description="dC_sca/dOmega in nm^2/sr, indexed [theta][phi].")
 
 
+class ResonanceData(BaseModel):
+    """One resonance: complex frequency omega - i gamma / 2 with Q = omega / gamma (exp(-i w t))."""
+
+    wavelength_nm: float = Field(description="Vacuum wavelength 2 pi c / omega.")
+    energy_ev: float
+    q: float = Field(description="Quality factor omega / gamma.")
+    amplitude: float = Field(description="Amplitude at the probes relative to the strongest resonance.")
+
+
 class Result(BaseModel):
     """Cross sections of a scattering problem."""
 
@@ -43,6 +52,7 @@ class Result(BaseModel):
     equivalent_radius_nm: float
     near_field: list[NearFieldData] | None = None
     far_field: list[FarFieldData] | None = None
+    resonances: list[ResonanceData] | None = None
     provenance: dict[str, Any] = Field(default_factory=dict)
     warnings: list[str] = Field(default_factory=list)
 
