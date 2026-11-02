@@ -1,0 +1,55 @@
+{
+ "rows": [
+  {
+   "wavelengths": 9,
+   "cpu_s": 0.000847299990709871,
+   "gpu_s": 0.3747204999672249,
+   "speedup": 0.002261151954013673,
+   "max_rel_diff": 3.8841989114294347e-16
+  },
+  {
+   "wavelengths": 1000,
+   "cpu_s": 0.00315869995392859,
+   "gpu_s": 0.3501770000439137,
+   "speedup": 0.009020295317889167,
+   "max_rel_diff": 1.0568656965604938e-15
+  },
+  {
+   "wavelengths": 10000,
+   "cpu_s": 0.033616599976085126,
+   "gpu_s": 0.33148090000031516,
+   "speedup": 0.1014133845300081,
+   "max_rel_diff": 1.0762326182544779e-15
+  },
+  {
+   "wavelengths": 100000,
+   "cpu_s": 0.7999312999891117,
+   "gpu_s": 0.3462110999971628,
+   "speedup": 2.31053048269009,
+   "max_rel_diff": 1.1595101986345517e-15
+  },
+  {
+   "wavelengths": 1000000,
+   "cpu_s": 6.964976600022055,
+   "gpu_s": 1.8795767999836244,
+   "speedup": 3.7056089435040573,
+   "max_rel_diff": 1.5448173391222404e-15
+  }
+ ],
+ "timestamp": "2026-11-02T00:16:01",
+ "note": "shared machine: timings provisional",
+ "doctor": {
+  "numpy": "2.4.6",
+  "torch": "2.11.0+cu128",
+  "cupy": null,
+  "cuda_gpus": [
+   "NVIDIA GeForce RTX 5070"
+  ],
+  "torch_cuda_build": "12.8",
+  "auto_device": {
+   "framework": "torch",
+   "device": "cuda:0",
+   "gpu_name": "NVIDIA GeForce RTX 5070"
+  }
+ }
+}
