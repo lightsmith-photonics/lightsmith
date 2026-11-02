@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .engine import DispersiveGroup, OffDiagonal, TensorMesh, flat_index
+from .engine import DispersiveGroup, OffDiagonal, TensorMesh, flat_index, pole_coefficients
 from .media import Medium
 
 FS = 299.792458  # normalised time units (nm/c) per femtosecond
@@ -21,10 +21,63 @@ def e_offset(c: int) -> np.ndarray:
     return o
 
 
+def _amplification(m: Medium, dt: float, kappa: np.ndarray) -> float:
+    """Largest |eigenvalue| of one step of the Yee + D-form ADE update in medium m, over spatial modes
+    whose discrete curl-curl eigenvalue is in `kappa`. State: D^n, D^{n-1}, and P_k^n, P_k^{n-1} per pole;
+    D^{n+1} - 2 D^n + D^{n-1} = -dt^2 kappa E^n, E^n = (D^n - sum P^n) / eps_inf."""
+    k = len(m.poles)
+    n = 2 + 2 * k
+    e = np.zeros(n)
+    e[0] = 1 / m.eps_inf
+    e[2::2] = -1 / m.eps_inf
+    A = np.zeros((kappa.size, n, n))
+    A[:, 0] = -(dt**2) * kappa[:, None] * e
+    A[:, 0, 0] += 2
+    A[:, 0, 1] -= 1
+    A[:, 1, 0] = 1
+    for j, p in enumerate(m.poles):
+        c1, c2, c3 = pole_coefficients(p, dt)
+        i = 2 + 2 * j
+        A[:, i] = c3 * e
+        A[:, i, i] += c1
+        A[:, i, i + 1] += c2
+        A[:, i + 1, i] = 1
+    return float(np.abs(np.linalg.eigvals(A)).max())
+
+
+def dispersive_dt_limit(media: list[Medium], kappa_max: float) -> float:
+    """Largest stable dt of the explicit ADE update over all dispersive media (inf if none).
+
+    Drude and Lorentz poles lower the permittivity at high grid frequencies below eps_inf, so the
+    Courant step computed from eps_inf can be unstable on coarse grids (von Neumann analysis of a
+    homogeneous medium, which bounds the subpixel-smoothed interface cells too)."""
+    kappa = np.linspace(0.0, kappa_max, 65)
+    limit = math.inf
+    for m in media:
+        if not m.dispersive:
+            continue
+        hi = 2 / math.sqrt(kappa_max / m.eps_inf)  # Courant limit of eps_inf alone
+        if _amplification(m, hi, kappa) <= 1 + 1e-6:
+            continue
+        lo = 0.0
+        for _ in range(40):
+            mid = 0.5 * (lo + hi)
+            lo, hi = (mid, hi) if _amplification(m, mid, kappa) <= 1 + 1e-6 else (lo, mid)
+        limit = min(limit, lo)
+    return limit
+
+
+def limit_dt(dt: float, courant: float, media: list[Medium], kappa_max: float) -> float:
+    """dt unchanged when every dispersive medium is stable at it, else `courant` times their limit."""
+    limit = dispersive_dt_limit(media, kappa_max)
+    return dt if dt <= limit else courant * limit
+
+
 def time_step(dx: float, courant: float, media: list[Medium]) -> float:
-    """Courant-stable dt; media with eps_inf < 1 shrink it."""
+    """Courant-stable dt; media with eps_inf < 1 shrink it, and so do dispersive media whose ADE
+    update would be unstable at that step (coarse grids)."""
     eps_min = min([1.0] + [m.eps_inf for m in media])
-    return courant * dx * math.sqrt(eps_min) / math.sqrt(3)
+    return limit_dt(courant * dx * math.sqrt(eps_min) / math.sqrt(3), courant, media, 12 / dx**2)
 
 
 # --- voxelisation ---------------------------------------------------------------

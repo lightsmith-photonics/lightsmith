@@ -50,7 +50,7 @@ from ...results import DiffractionOrder, SpectrumResult
 from .engine import DFTMonitor, Engine, PMLSpec, flat_index
 from .media import Medium, to_medium
 from .options import FDTDOptions
-from .setup import FS, mesh_mode, run_until_decayed, voxelise
+from .setup import FS, limit_dt, mesh_mode, run_until_decayed, voxelise
 from .tfsf import BlochPlaneSource, TFSFPlaneWave
 
 BIG = 10**9
@@ -313,6 +313,13 @@ def _time_step(cell: _Cell, opts, kpar=(0.0, 0.0)) -> float:
     return opts.courant / math.sqrt(inv2)
 
 
+def _dt(c, kpar=(0.0, 0.0)) -> float:
+    """Time step of one run: the Courant limit scaled by sqrt(min eps_inf), lowered further where a
+    dispersive medium's ADE update would be unstable (setup.limit_dt)."""
+    dt0 = _time_step(c.cell, c.opts, kpar)
+    return limit_dt(dt0 * c.dt_scale, c.opts.courant, c.media, 4 * (c.opts.courant / dt0) ** 2)
+
+
 def _oblique_half_width(problem, omega: float, kpar: float) -> float:
     """Pulse half-bandwidth for a fixed-k_par run aimed at omega: a quarter of the distance to the
     nearest frequency where the zeroth order is grazing in the superstrate or substrate (the pulse
@@ -385,7 +392,7 @@ def _run_normal(c: _Ctx, pol: str, p: dict, omega: np.ndarray):
     """One broadband real run at normal incidence: per-order (r, t) of shape (n_wl, nx, ny)."""
     cell, opts = c.cell, c.opts
     phi = 0.0 if isinstance(c.problem, LayerStackProblem) else math.radians(c.problem.incidence.phi_deg)
-    dt = _time_step(cell, opts) * c.dt_scale
+    dt = _dt(c)
     stride = p["stride"]
     max_steps = int(math.ceil((opts.run_time_fs or opts.max_time_fs) * FS / dt / stride)) * stride
     lam_max = 2 * np.pi / omega.min()
@@ -420,7 +427,7 @@ def _run_oblique(c: _Ctx, pol: str, kpar: tuple[float, float], wavelength: float
     cell, opts = c.cell, c.opts
     omega = 2 * np.pi / wavelength
     k = math.hypot(*kpar)
-    dt = _time_step(cell, opts, kpar) * c.dt_scale
+    dt = _dt(c, kpar)
     half = _oblique_half_width(c.problem, omega, k)
     stride = opts.dft_stride or max(1, int(2 * np.pi / (2 * omega + 4 * half) / dt))
     max_steps = int(math.ceil((opts.run_time_fs or opts.max_time_fs) * FS / dt / stride)) * stride
@@ -565,7 +572,7 @@ def solve(problem, opts: FDTDOptions, device: Device) -> SpectrumResult:
                   "polarisation), k_par = n_sup k0 sin(angle) matched to that wavelength, so every value is at "
                   "the stated angle and vacuum wavelength")
     prov = {**device.describe(), "grid": list(cell.shape), "real_cells": list(cell.n_cells) + [cell.shape[2]],
-            "cells": cell.cells, "spacing_nm": list(cell.spacing), "dt_fs": _time_step(cell, opts) * ctx.dt_scale / FS,
+            "cells": cell.cells, "spacing_nm": list(cell.spacing), "dt_fs": _dt(ctx) / FS,
             "dft_stride": p["stride"], "precision": "single" if single else "double",
             "subpixel": mesh_mode(opts) != "staircase", "mesh_refinement": mesh_mode(opts),
             "pml_cells": cell.pml, "runs": prov_runs, "steps": sum(r["steps"] for r in prov_runs),

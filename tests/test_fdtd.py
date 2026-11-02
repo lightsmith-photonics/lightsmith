@@ -84,13 +84,38 @@ def test_fdtd_lossy_constant_is_exact_at_single_wavelength():
     assert warn and "not causal" in warn[0]
 
 
-def test_fdtd_cpu_divergence_raises_before_float64_overflow():
+def test_fdtd_cpu_divergence_raises_before_float64_overflow(monkeypatch):
     # A lossy constant index (stiff Drude term) at under 3 cells per wavelength diverges from ~170 steps.
     # In float64 the fields stay finite well past 200 fs; the run used to return C_ext ~ 1e129.
+    # time_step now avoids this instability, so force the plain eps_inf Courant step to keep testing the check.
+    from lightsmith.backends._fdtd import scattering
+
+    monkeypatch.setattr(scattering, "time_step", lambda dx, courant, media: courant * dx / np.sqrt(3))
     sim = sphere_sim(ls.ConstantIndex(n_real=1.2, n_imag=0.2), 191, [500.0, 600.0, 700.0],
                      spacing_nm=191.0, pml_cells=4, run_time_fs=200.0)
     with pytest.raises(FloatingPointError, match="diverged.*finer mesh.*courant"):
         ls.solve(sim, "fdtd", "cpu")
+
+
+def test_fdtd_time_step_is_stable_for_dispersive_media_on_coarse_grids():
+    # Drude/Lorentz poles lower eps below eps_inf at high grid frequencies, so the eps_inf Courant step
+    # diverged for the gold fit at dx >= 20 nm and for lossy constants at dx ~ wavelength/2.
+    from lightsmith.backends._fdtd.media import to_medium
+    from lightsmith.backends._fdtd.setup import _amplification, time_step
+
+    gold = to_medium(LibraryMaterial(name="Au", dataset="Johnson-Christy"), np.linspace(400, 800, 9), [])
+    lossy = to_medium(ls.ConstantIndex(n_real=1.2, n_imag=0.05), np.linspace(500, 700, 5), [])
+    for m, coarse, fine in ((gold, 40.0, 5.0), (lossy, 382.0, 95.0)):
+        for dx in (coarse, fine):
+            dt = time_step(dx, 0.95, [m])
+            assert _amplification(m, dt, np.linspace(0, 12 / dx**2, 401)) <= 1 + 1e-6
+        assert time_step(coarse, 0.95, [m]) < 0.95 * coarse / np.sqrt(3)
+        assert time_step(fine, 0.95, [m]) == 0.95 * fine / np.sqrt(3)  # unchanged where already stable
+
+    wl = {"start_nm": 400.0, "stop_nm": 800.0, "num": 9}  # the 400-800 nm fit has a 5.3 eV, nearly lossless pole
+    sim = sphere_sim(LibraryMaterial(name="Au", dataset="Johnson-Christy"), 100, wl, spacing_nm=40.0, run_time_fs=40.0)
+    res = ls.solve(sim, "fdtd", "cpu")  # diverged after 366 steps before the dispersive limit
+    assert np.all(np.isfinite(res.c_ext_nm2)) and min(res.c_ext_nm2) > 0
 
 
 @pytest.mark.gpu
