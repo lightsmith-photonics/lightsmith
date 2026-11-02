@@ -140,4 +140,6 @@ cell (60°, 400 nm: 0.0095 → 0.0024), according to the test module docstring.
 
 **Both**
 - Raises an error above `max_cells` (increase `spacing_nm`).
-- Raises `FloatingPointError` on divergence (lower `courant` or check the material model).
+- Raises `FloatingPointError` on divergence: non-finite fields, or monitor energy above 1e8 times its
+  peak while the pulse passed (float64 CPU runs stay finite long after diverging). Refine the mesh,
+  lower `courant`, or give lossy materials as Drude/DrudeLorentz instead of a constant complex index.
