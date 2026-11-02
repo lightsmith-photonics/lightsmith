@@ -105,13 +105,19 @@ def _d1_down(z, n_max: int, n_start: int, xp) -> list:
 
 
 def _d3_up(z, d1: list, xp) -> list:
-    """D3_n(z) = xi_n'(z)/xi_n(z) by Yang's upward recursion (uses psi_n xi_n)."""
+    """D3_n(z) = xi_n'(z)/xi_n(z) by Yang's upward recursion (uses psi_n xi_n).
+
+    Near a zero of psi_n (real z), D1_n and i/(psi_n xi_n) are both huge and cancel (D3 off by ~10% within
+    1e-9 of the zero); there we take one step of the direct recurrence D3_n = 1/(n/z - D3_(n-1)) - n/z
+    instead, which is accurate because xi_n has no real zeros.
+    """
     psixi = 0.5 * (1 - xp.exp(2j * z))
     d3 = [xp.zeros_like(z) + 1j]
     for n in range(1, len(d1)):
         nz = n / z
         psixi = psixi * (nz - d1[n - 1]) * (nz - d3[n - 1])
-        d3.append(d1[n] + 1j / psixi)
+        near_zero = xp.abs(d1[n]) > 1e3 * (1 + xp.abs(nz))
+        d3.append(xp.where(near_zero, 1 / (nz - d3[n - 1]) - nz, d1[n] + 1j / psixi))
     return d3
 
 

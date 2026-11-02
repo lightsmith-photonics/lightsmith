@@ -86,15 +86,22 @@ def test_hard_cases_against_mpmath(n_part, radius, lam):
     assert cs[0] / g == pytest.approx(qs, rel=1e-11)
 
 
-@pytest.mark.parametrize("core_eps, shell_eps, lam", [(2.25, None, 600.0), (None, 2.1, 520.0), (12 + 0.5j, None, 500.0)])
-def test_coated_sphere_against_mpmath(core_eps, shell_eps, lam):
+@pytest.mark.parametrize("core_eps, shell_eps, lam, rc, rs", [
+    (2.25, None, 600.0, 30.0, 42.0),
+    (None, 2.1, 520.0, 30.0, 42.0),
+    (12 + 0.5j, None, 500.0, 30.0, 42.0),
+    (2.04, 7.156, 526.0, None, 380.0),  # psi_3(m2 x) = 0 at the core: D1 ~ 1e8 cancels in Yang's D3
+])
+def test_coated_sphere_against_mpmath(core_eps, shell_eps, lam, rc, rs):
     """Layered recursion vs. Bohren & Huffman's coated-sphere formulas (BH 8.1) in 40-digit arithmetic."""
     mp, psi, chi, dpsi, dchi = _mp_riccati()
-    med, rc, rs = 1.33, 30.0, 42.0
+    med = 1.33
     metal = complex(DRUDE.eps(np.array([lam]))[0])
     ec, es = (metal if core_eps is None else core_eps), (metal if shell_eps is None else shell_eps)
     m1, m2 = mp.mpc(np.sqrt(complex(ec)) / med), mp.mpc(np.sqrt(complex(es)) / med)
     k = 2 * mp.pi * med / lam
+    if rc is None:  # third zero of psi_3, z = 10.417...
+        rc = float(mp.findroot(lambda r: psi(3, m2.real * k * r), 10.4171 / float(m2.real * k)))
     x, y = k * rc, k * rs
 
     def ab(n):
