@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .engine import DispersiveGroup, OffDiagonal, flat_index
+from .engine import DispersiveGroup, OffDiagonal, TensorMesh, flat_index
 from .media import Medium
 
 FS = 299.792458  # normalised time units (nm/c) per femtosecond
@@ -43,7 +43,7 @@ def mesh_mode(opts) -> str:
 
 
 def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *, mode: str = "subpixel",
-             samples: int = 8, chunk: int = 2048):
+             samples: int = 8, chunk: int = 2048, periodic=(False, False, False)):
     """Material on the Yee E grid.
 
     slot_fn(points[..., 3] in nm) -> int medium index (0 = background) per point.
@@ -51,9 +51,11 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
     mode (MESH_MODES): "staircase" takes the medium at each E position; the others supersample interface
     cells. "volume_average" uses <eps>; "subpixel" the diagonal of the Kottke tensor
     1/eps = P <1/eps> + (1 - P) / <eps>, P = n n^T; "conformal" adds its off-diagonal terms
-    n_c n_d (<1/eps> - 1/<eps>) for non-dispersive cells (symmetrised; see Engine._build_offdiag).
+    n_c n_d (<1/eps> - 1/<eps>) for non-dispersive cells (symmetrised; see Engine._build_offdiag). In
+    "conformal" mode, interfaces with a dispersive medium take the full tensor at grid vertices instead
+    (vertex_tensor; the nodes around them leave the other groups and the off-diagonal terms).
     Returns (inv_eps[3, *shape] with 1/eps for non-dispersive cells and 1 for D-form cells,
-    list of DispersiveGroup, stats dict, OffDiagonal or None)."""
+    list of DispersiveGroup (and at most one TensorMesh), stats dict, OffDiagonal or None)."""
     if mode not in MESH_MODES:
         raise ValueError(f"mesh refinement {mode!r} is not one of {MESH_MODES}")
     subpixel = mode != "staircase"
@@ -141,9 +143,137 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
     offdiag = None
     if od_comp:
         offdiag = OffDiagonal(np.concatenate(od_idx3), np.concatenate(od_comp), np.concatenate(od_coef))
+    tm = None
+    if mode == "conformal" and disp.any():
+        tm = vertex_tensor(slot_fn, media, shape, origin, dx, roi_lo, roi_hi, samples=samples, chunk=chunk,
+                           periodic=periodic)
+    if tm is not None:
+        taken = tm.idx
+        inv_eps.reshape(-1)[taken] = 1.0
+        kept = []
+        for g in groups:
+            keep = ~np.isin(g.idx, taken)
+            if keep.any():
+                kept.append(DispersiveGroup(g.idx[keep], g.media, g.frac[:, keep], None if g.w is None else g.w[keep]))
+        groups = kept + [tm]
+        if offdiag is not None:
+            i = offdiag.idx3
+            keep = ~np.isin(flat_index(offdiag.comp, i[:, 0], i[:, 1], i[:, 2], shape), taken)
+            offdiag = OffDiagonal(i[keep], offdiag.comp[keep], offdiag.coef[keep]) if keep.any() else None
     stats = {"interface_cells": int(n_mixed), "dispersive_cells": int(sum(len(g.idx) for g in groups)),
-             "mesh_refinement": mode, "offdiagonal_cells": 0 if offdiag is None else len(offdiag.comp)}
+             "mesh_refinement": mode, "offdiagonal_cells": 0 if offdiag is None else len(offdiag.comp),
+             "tensor_vertices": 0 if tm is None else len(tm.normal)}
     return inv_eps, groups, stats, offdiag
+
+
+def _canonical(x: np.ndarray, shape, periodic):
+    """Real indices (n, 3) and period shifts for possibly wrapped node/vertex indices x (n, 3)."""
+    x = np.array(x, dtype=np.int64)
+    shift = np.zeros_like(x)
+    for a in range(3):
+        if periodic[a]:
+            P = shape[a] - 2
+            c = 1 + np.mod(x[:, a] - 1, P)
+            shift[:, a] = (x[:, a] - c) // P
+            x[:, a] = c
+    return x, shift
+
+
+def _pixel_average(slot_fn, pos, dx, S: int, samples: int, chunk: int):
+    """Medium fractions (S, n) and unit normals (n, 3) (0 where undefined) of cubes of side dx centred on pos."""
+    sub = ((np.arange(samples) + 0.5) / samples - 0.5)
+    sub3 = np.stack(np.meshgrid(sub, sub, sub, indexing="ij"), axis=-1).reshape(-1, 3)
+    frac, nhat = np.zeros((S, len(pos))), np.zeros((len(pos), 3))
+    for a in range(0, len(pos), chunk):
+        sl = slot_fn(pos[a:a + chunk][:, None, :] + sub3[None, :, :] * dx)
+        f = np.stack([(sl == s).mean(axis=1) for s in range(S)])
+        dom = np.argmax(f, axis=0)
+        chi = (sl == dom[:, None]).astype(float)
+        mom = (chi - chi.mean(axis=1, keepdims=True)) @ sub3 / dx
+        nrm = np.linalg.norm(mom, axis=1)
+        frac[:, a:a + chunk] = f
+        nhat[a:a + chunk] = np.where(nrm[:, None] > 1e-12, mom / np.where(nrm > 0, nrm, 1)[:, None], 0.0)
+    return frac, nhat
+
+
+def vertex_tensor(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *, samples: int = 8,
+                  chunk: int = 2048, periodic=(False, False, False)) -> TensorMesh | None:
+    """The TensorMesh of interfaces with a dispersive medium (None if there are none).
+
+    Tensor vertices: every vertex whose cube (side dx, centred on it) holds an interface with a dispersive
+    medium, plus every mixed vertex connected to one through shared nodes, so that each node next to a
+    tensor vertex has, at its other vertex, either another tensor vertex or a single medium."""
+    shape = tuple(shape)
+    S = len(media)
+    disp = np.array([m.dispersive for m in media])
+    dx3 = np.broadcast_to(np.asarray(dx, dtype=float), (3,))
+    rng = [np.arange(1, n - 1) if periodic[a] else np.arange(max(int(roi_lo[a]), 1), min(int(roi_hi[a]), n - 2) + 1)
+           for a, n in enumerate(shape)]
+    V = np.stack(np.meshgrid(*rng, indexing="ij"), axis=-1).reshape(-1, 3)
+    pos = origin + V * dx3
+    center = slot_fn(pos)
+    mixed = np.zeros(len(V), dtype=bool)
+    for o in _TEST:
+        if np.any(o):
+            mixed |= slot_fn(pos + o * dx3) != center
+    Vm = V[mixed]
+    if not len(Vm):
+        return None
+    frac, nhat = _pixel_average(slot_fn, pos[mixed], dx3, S, samples, chunk)
+    seed = (frac[disp] > 0).any(axis=0) & (frac.max(axis=0) < 1)
+    if not seed.any():
+        return None
+
+    def key(x):
+        return (x[:, 0] * shape[1] + x[:, 1]) * shape[2] + x[:, 2]
+
+    kv = key(Vm)
+    order = np.argsort(kv)
+    ks = kv[order]
+
+    def lookup(x):
+        """Position in Vm of the (real) vertices x, -1 where not mixed."""
+        k = key(x)
+        j = np.clip(np.searchsorted(ks, k), 0, len(ks) - 1)
+        return np.where(ks[j] == k, order[j], -1)
+
+    eye = np.eye(3, dtype=np.int64)
+    inT = seed.copy()
+    front = np.nonzero(seed)[0]
+    while len(front):
+        nb = np.concatenate([_canonical(Vm[front] + s * eye[a], shape, periodic)[0] for a in range(3) for s in (-1, 1)])
+        j = lookup(nb)
+        j = np.unique(j[j >= 0])
+        front = j[~inT[j]]
+        inT[front] = True
+    T = Vm[inT]
+    fracT, nT = frac[:, inT], nhat[inT]
+    nV = len(T)
+    # the two d-nodes of each vertex: E_d at index v - e_d (minus side) and v (plus side)
+    raw = np.stack([np.stack([T - eye[d], T], axis=1) for d in range(3)], axis=1)  # (nV, 3, 2, 3)
+    comp = np.broadcast_to(np.arange(3)[None, :, None], (nV, 3, 2)).reshape(-1)
+    real, shift = _canonical(raw.reshape(-1, 3), shape, periodic)
+    nkey = comp * int(np.prod(shape)) + key(real)
+    _, first, inv = np.unique(nkey, return_index=True, return_inverse=True)
+    node_comp, node_idx3 = comp[first], real[first]
+    nN = len(first)
+    # slots: the vertex at the node index (k = 0) and at index + e_c (k = 1)
+    tkey = key(T)
+    torder = np.argsort(tkey)
+    tks = tkey[torder]
+    slot_vert = np.full((nN, 2), -1, dtype=np.int64)
+    slot_medium = np.zeros((nN, 2), dtype=np.int64)
+    for k in range(2):
+        vx, _ = _canonical(node_idx3 + k * eye[node_comp], shape, periodic)
+        kk = key(vx)
+        j = np.clip(np.searchsorted(tks, kk), 0, len(tks) - 1)
+        hit = tks[j] == kk
+        slot_vert[hit, k] = torder[j[hit]]
+        if (~hit).any():
+            slot_medium[~hit, k] = slot_fn(origin + vx[~hit] * dx3)
+    return TensorMesh(media=list(media), frac=fracT, normal=nT, node_comp=node_comp, node_idx3=node_idx3,
+                      vert_nodes=inv.reshape(nV, 3, 2), shift=shift.reshape(nV, 3, 2, 3), slot_vert=slot_vert,
+                      slot_medium=slot_medium, shape=shape)
 
 
 # --- flux boxes -------------------------------------------------------------------

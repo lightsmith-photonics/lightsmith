@@ -3,8 +3,9 @@
 Measured (RTX 5070, double precision, dx = 2.5 nm): dipole 10 nm from an n = 2, r = 60 nm sphere,
 450-800 nm: Purcell factor within 0.07 % (radial) and 0.17 % (tangential) of Mie; a lone dipole's
 radiation pattern within 0.05 % of 3/(8 pi) sin^2(theta), integrating to 1.000. Single precision: 1-4 %.
-Near a Drude sphere (10 nm gap, dx = 2 nm) the errors are 10 % (radial) to 2.4x (tangential, off resonance):
-the metal interface cells absorb too much (see the FDTD page).
+Near a Drude sphere (r = 40 nm in water, 10 nm gap, dx = 2 nm, 480-600 nm), with the vertex tensor at the
+metal interface: Purcell factor within 7.9 % (radial) and 11.5 % (tangential) of Mie. Diagonal smoothing had
+the tangential factor up to 2.4x too high, from spurious absorption in the interface cells.
 """
 
 import numpy as np
@@ -96,3 +97,18 @@ def test_fdtd_lone_dipole_radiation_pattern():
         a = np.asarray(d.dp_domega)
         assert np.abs(a - ref[:, None]).max() < 2e-3 * ref.max()  # measured 5e-4
         assert 2 * np.pi * np.trapezoid(a[:, 0] * np.sin(t), t) == pytest.approx(1.0, abs=2e-3)
+
+
+@pytest.mark.gpu
+@needs_cuda
+def test_fdtd_emission_near_drude_sphere_matches_mie():
+    """A dipole tilted 45 degrees, 10 nm from a Drude sphere (r = 40 nm in water): quenching and plasmon
+    enhancement both within 15 % of Mie (measured 7.9 % radial, 11.5 % tangential, 480-600 nm)."""
+    drude = ls.Drude(eps_inf=9.5, wp_ev=9.0, gamma_ev=0.07)
+    prob = EmissionProblem(particles=sphere(40, drude), medium_index=1.33, wavelengths=[480.0, 534.0, 600.0],
+                           dipole=Dipole(position_nm=(0, 0, 50), orientation=(1, 0, 1)),
+                           options={"fdtd": {"spacing_nm": 2.0}})
+    f = ls.solve(prob, "fdtd", "gpu")
+    m = ls.solve(prob, "mie")
+    assert f.provenance["tensor_vertices"] > 0
+    np.testing.assert_allclose(f.purcell, m.purcell, rtol=0.15)

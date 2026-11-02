@@ -40,7 +40,8 @@ class FDTDOptions(BaseModel):
     mesh_refinement: Literal["staircase", "volume_average", "subpixel", "conformal"] | None = Field(
         None, description="Interface treatment. staircase: the medium at each field position. volume_average: "
         "<eps> over the cell. subpixel: diagonal anisotropic averaging (Farjadpour 2006). conformal: the full "
-        "tensor with off-diagonal terms (Kottke 2008) between non-dispersive cells. Default: conformal, or "
+        "tensor with off-diagonal terms (Kottke 2008); at interfaces with a dispersive medium (metals) it is "
+        "applied at grid vertices as a sum of passive congruences. Default: conformal, or "
         "staircase when subpixel is False.")
     subpixel_samples: int = Field(8, ge=2, le=24, description="Supersamples per axis for interface cells.")
     dft_stride: int | None = Field(

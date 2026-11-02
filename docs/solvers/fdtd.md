@@ -31,8 +31,15 @@ It runs on the CPU or a CUDA GPU.
 - **Dispersion.** Drude and Lorentz auxiliary differential equations.
 - **Interfaces.** Conformal meshing by tensor subpixel smoothing (Kottke, Farjadpour & Johnson 2008): each interface
   cell gets 1/ε = P⟨1/ε⟩ + (1 − P)/⟨ε⟩, P = n nᵀ, off-diagonal terms included. The off-diagonal coupling
-  between neighbouring cells is symmetrised, which keeps long runs stable. Dispersive cells use the
-  diagonal of the tensor, integrated as two parallel ADE paths. See `mesh_refinement` below.
+  between neighbouring cells is symmetrised, which keeps long runs stable. See `mesh_refinement` below.
+- **Metal interfaces.** Interfaces with a dispersive medium (metals) take the full tensor too, applied at
+  grid vertices. Each vertex has the tensor of the cube around it, with ⟨1/ε⟩ and 1/⟨ε⟩ as dispersive ADE
+  filters. It acts on the eight octant triads of E nodes around the vertex (one node per component), and
+  each triad term is a congruence Sᵀ η S of a passive tensor. The sum is therefore passive, so it cannot
+  grow, and in a uniform medium it reduces to the plain update. Adding the off-diagonal terms node by
+  node, as for dielectrics, diverges for metals. Using the diagonal alone mixes the tangential average,
+  whose pole lies inside the band, into every component, which turns each interface cell into a spurious
+  resonator.
 - **Spectra.** One broadband pulse covers every wavelength, and running DFTs give the spectra:
   - C_sca is the scattered flux leaving the TFSF box;
   - C_abs is the net total-field flux into the box;
@@ -91,7 +98,7 @@ It runs on the CPU or a CUDA GPU.
 | `max_time_fs` | `2000` | Hard cap on simulated time; high-Q resonances need picoseconds |
 | `precision` | `"auto"` | `"auto"` means single on the GPU and double on the CPU |
 | `subpixel` | `True` | Smooth interfaces; `False` means staircase. Superseded by `mesh_refinement`. |
-| `mesh_refinement` | `None` | `staircase`, `volume_average` (⟨ε⟩), `subpixel` (diagonal tensor, the 0.1 behaviour) or `conformal` (full tensor). Default: `conformal`, or `staircase` when `subpixel` is false. |
+| `mesh_refinement` | `None` | `staircase`, `volume_average` (⟨ε⟩), `subpixel` (diagonal tensor, the 0.1 behaviour) or `conformal` (full tensor; for metals at grid vertices). Default: `conformal`, or `staircase` when `subpixel` is false. |
 | `subpixel_samples` | `8` | Supersamples per axis for interface cells (2–24) |
 | `dft_stride` | `None` | Time steps between DFT samples. Default: aliasing-safe, from the source bandwidth. |
 | `cuda_graphs` | `True` | Replay time steps as CUDA graphs |
@@ -107,18 +114,21 @@ There are no gradients.
 |---|---|---|
 | `test_fdtd_dielectric_sphere_matches_mie_cpu`: n = 1.5, r = 40 nm, dx = 6 nm | Mie | C_ext, C_sca < 3 %; \|C_abs\| < 1e-3 C_ext |
 | `test_fdtd_gpu_matches_cpu` (gpu): GPU float32 with CUDA graphs | CPU float64 | 1e-4 |
-| `test_fdtd_drude_sphere_matches_mie` (gpu): Drude r = 40 nm in water, dx = 2 nm | Mie | peak within 4 nm; peak height < 15 %; C_sca < 30 % everywhere |
+| `test_fdtd_drude_sphere_matches_mie` (gpu): Drude r = 40 nm in water, dx = 2 nm | Mie | peak within 2 nm; peak height < 5 %; C_ext < 7 % and C_sca < 12 % everywhere |
 | `test_fdtd_layered_sphere_near_field_and_oblique_incidence` (gpu) | `lightsmith-mie` | C_ext < 3 %; near-field \|E\|² RMS < 6 % |
 | `test_fdtd_conformal_tensor_smoothing_beats_diagonal` (gpu): r = 60 nm, dx = 6 nm | Mie | conformal < 0.2 %, subpixel > 0.8 % |
 | `test_fdtd_far_field_matches_mie` (gpu): r = 60 nm, dx = 4 nm | `lightsmith-mie` | dC_sca/dΩ median < 0.2 %, max < 1 %; integral = C_sca within 0.5 % |
-| `test_fdtd_drude_sphere_resonance` (gpu): Drude r = 40 nm in water | Mie extinction peak | dipole within 3 nm; Q between 6 and 10 |
+| `test_fdtd_drude_sphere_resonance` (gpu): Drude r = 40 nm in water | Exact poles of Mie's a₁, a₂ | dipole within 3 nm, Q 7–10; quadrupole within 2 nm, Q 28–40 |
 | `test_fdtd_emission_near_dielectric_sphere_matches_mie` (gpu): dipole 10 nm from n = 2, r = 60 nm, tilted 45° | `lightsmith-mie` | Purcell and radiative < 0.5 % (measured 0.07 % radial, 0.17 % tangential) |
+| `test_fdtd_emission_near_drude_sphere_matches_mie` (gpu): dipole 10 nm from a Drude r = 40 nm sphere in water, tilted 45° | `lightsmith-mie` | Purcell < 15 % (measured 7.9 % radial, 11.5 % tangential) |
 | `test_fdtd_lone_dipole_radiation_pattern` (gpu) | 3/(8π) sin²θ | < 0.2 % of the peak (measured 0.05 %); integral 1 within 0.2 % |
 | `test_fdtd_gaussian_beam_focus_and_profile` (gpu): r = 40 nm sphere, 1 µm waist, at the focus and 333 nm off axis | Mie × the beam's |E|² | 0.5 % (measured 0.13 % at the focus, 0.1 % off axis) |
 | `test_fdtd_conformal_is_stable_at_late_times` (slow, gpu): n = 3.5 sphere, 3 ps | — | field decays below 1e-12 |
 | `test_fdtd_dielectric_sphere_fine_grid` (slow, gpu): r = 60 nm, dx = 2 nm | Mie | C_ext < 0.2 % |
-| `test_fdtd_drude_sphere_fine_grid` (slow, gpu): dx = 1.33 nm | Mie | peak within one 10 nm sample; height < 7 % |
-| `test_fdtd_gold_library_material_via_drude_lorentz_fit` (slow, gpu): Johnson–Christy gold | Mie | peak within 10 nm; height < 20 % |
+| `test_fdtd_drude_sphere_fine_grid` (slow, gpu): dx = 1.33 nm | Mie | peak within one 10 nm sample; height < 4 % |
+| `test_fdtd_gold_library_material_via_drude_lorentz_fit` (slow, gpu): Johnson–Christy gold | Mie | peak within 5 nm; height < 3 %; C_ext < 7 % everywhere |
+| `test_fdtd_metal_vertex_tensor_is_symmetric_and_bounded` (cpu) | Construction | the D → E map is symmetric, Rayleigh quotients within [1/ε∞,max, 1/ε_min] |
+| `test_fdtd_metal_vertex_tensor_is_stable_at_late_times` (slow, gpu): Drude r = 40 nm, 1.5 ps | Decay | below 1e-15 of peak (measured 6e-22) |
 
 Measured in the test module docstring (RTX 5070, float32; CPU float64 agrees to about 1e-7):
 
@@ -129,8 +139,17 @@ Measured in the test module docstring (RTX 5070, float32; CPU float64 agrees to 
   With the conformal default the remaining error is the source, monitor and PML floor, not the interfaces.
 - Far field of the same sphere at dx = 4 nm: median 0.01–0.03 % from Mie, worst 0.4 % (at 90° in the
   E-plane, where dC_sca/dΩ is near zero).
-- Drude r = 40 nm sphere: peak at 532–536 nm (Mie: 534 nm), with height errors of 5–13 %. The error does
-  not fall steadily as the grid is refined: it comes from excess absorption in interface cells.
+- Drude r = 40 nm sphere in water, RMS C_ext error over 480–600 nm at dx = 3, 2.5, 2, 1.6 and 1.33 nm:
+  - `conformal` (vertex tensor): 3.7 %, 3.5 %, 2.5 %, 2.3 % and 1.6 %; peak height within 1.5–3.6 %;
+  - `subpixel` (diagonal): 7.5 %, 9.1 %, 6.6 % and 6.1 % (to 1.6 nm), rippling across the band;
+  - `staircase`: 22 %, 17 %, 15 % and 13 %.
+
+  The vertex tensor still has a first-order term: averaging the tensors of two vertex cubes is not the
+  tensor of the node's own cube. Through it, a dielectric n = 1.5 sphere errs by 1.0 %, 0.65 % and 0.48 % at
+  dx = 6, 4 and 3 nm, against 0.04–0.07 % with the dielectric scheme, so dielectric interfaces keep that one.
+- Johnson–Christy gold (fitted), r = 40 nm, dx = 2 nm: peak at 550 nm as Mie, height within 0.7 %.
+- Ring-down of the same Drude sphere: dipole 535.6 nm, Q 8.2 (exact pole 533.8 nm, Q 8.74); quadrupole
+  488.4 nm, Q 31 (487.5 nm, Q 35.1). For a 10 nm sphere at dx = 0.5 nm: 500.6 nm, Q 31.9 (499.8 nm, Q 34.2).
 
 ### Periodic structures (`tests/test_fdtd_periodic.py`)
 
@@ -149,17 +168,14 @@ Differences are maximum absolute differences in R, T and A.
 - No substrate or orientation averaging. Near fields, far fields and resonances are supported.
 - Gaussian beams: no near-field output yet. Each oblique plane wave leaks ~0.1 % of the incident field,
   which matters only for particles with very small cross sections (1–3 % on a 20 nm glass sphere).
-- Resonances of metal particles include weak extra modes (amplitude ≤ 0.15 of the plasmon for a 10 nm
-  Drude sphere) from the interface cells, and the plasmon Q comes out about 10 % low (30.6 against 34.2
-  from Mie's line width, at 0.5 nm cells).
-- Emission near metals: the interface cells over-absorb (below), and a dipole a few cells from a metal
-  surface sees it as extra quenching. Dipole 10 nm from a Drude sphere (r = 40 nm in water, dx = 2 nm):
-  Purcell factor within 10 % of Mie for a radial dipole, but up to 2.4× too high for a tangential one off
-  resonance (6.8 against 2.9 at 600 nm). At a 20 nm gap the excess is about 0.4 (radial within 10 %,
-  tangential 0.94 against 0.56). Staircase meshing is 4–5× worse.
-- Metal interfaces: tensor smoothing is applied to non-dispersive cells only. Off-diagonal terms in Drude
-  cells diverged (the averaged ε crosses zero inside the band). Of staircase, volume average, harmonic and
-  diagonal averaging, the diagonal (default) gives the best plasmon peak, still about 10 % low.
+- Resonances of metal particles: the plasmon Q comes out 7–10 % low, and a weak extra mode can appear
+  next to the plasmon (amplitude 0.19 at 503.7 nm for a 10 nm Drude sphere). Broad modes (Q below about 10)
+  are the hardest to fit: allow `max_modes` of 10 or more.
+- Emission near metals: a dipole 10 nm from a Drude sphere (r = 40 nm in water, dx = 2 nm) has its Purcell
+  factor within 7.9 % (radial) and 11.5 % (tangential) of Mie over 480–600 nm. The radiative part is within
+  about 10 %, except where it is small (41 % at 480 nm, where it is 4 against a Purcell factor of 300).
+- Metal interfaces: the vertex tensor leaves a first-order error of about 2.5 % RMS in C_ext at r/20
+  resolution (see validation). It falls as dx is refined.
 - Warns about:
   - oblique incidence (about 0.1 % incident-field leakage);
   - fields that have not decayed by the time cap;

@@ -16,7 +16,7 @@ runs, and error bars on every result).
 | Hardware | CPU or one CUDA GPU (CUDA graphs) | CPU, MPI | GPU (local or cloud), multi-GPU |
 | Dimensions | 3D | 1D, 2D, 3D, cylindrical | 2D, 3D |
 | Grid | Uniform, non-cubic cells | Uniform | Non-uniform, graded, override regions |
-| Interfaces | Conformal (tensor) smoothing; dispersive media diagonal | Tensor subpixel smoothing (non-dispersive part) | Conformal meshing for dielectrics, metals and PEC |
+| Interfaces | Conformal (tensor) smoothing, metals included | Tensor subpixel smoothing (non-dispersive part) | Conformal meshing for dielectrics, metals and PEC |
 | Sources | Plane wave (TFSF; one-sided in periodic cells), Gaussian beam, point dipole | Point, current, Gaussian beam, eigenmode, plane wave | All of these, plus focused beams and imported fields |
 | Boundaries | CPML, periodic, Bloch | PML, absorber, periodic, Bloch, mirror symmetry | PML, periodic, Bloch, PEC, PMC, symmetry |
 | Materials | Drude, Lorentz, fitted tables | + conductivity, anisotropic, μ, χ2/χ3, gain, gyrotropic | + 2D sheets, index perturbation, multi-coefficient fits |
@@ -34,9 +34,10 @@ check each against analytic references (Mie for spheres, TMM for films).
 | `staircase` | Each cell takes the material at its centre | — | Done |
 | `volume_average` | Arithmetic average of ε over the cell | — | Done |
 | `subpixel` | Diagonal anisotropic averaging, dispersive media included | Farjadpour et al., Opt. Lett. 31, 2972 (2006) | Done (the 0.1 default) |
-| `conformal` | Full tensor averaging with symmetrised off-diagonal terms between non-dispersive cells; dispersive cells keep the diagonal | Kottke, Farjadpour & Johnson, PRE 77, 036611 (2008) | **Done, new default** |
-| `conformal` for metals | Off-diagonal terms in dispersive cells | Tensor terms as one extra input to the two dispersive ADE paths | Tried: diverges for Drude metals (see below) |
-| `conformal_metal` | Contour-path updates in metal partial cells | Mohammadi, Nadgaran & Agio, Opt. Express 13, 10367 (2005); Benkler, Chavannes & Kuster, IEEE TAP 54, 1843 (2006) for PEC | Planned (step 3) |
+| `conformal` | Full tensor averaging with symmetrised off-diagonal terms between non-dispersive cells | Kottke, Farjadpour & Johnson, PRE 77, 036611 (2008) | **Done, new default** |
+| `conformal` for metals | Full dispersive tensor at grid vertices, as a sum of passive congruences over octant triads | Ours (below) | **Done** (part of `conformal`) |
+| `conformal` for metals, first try | Off-diagonal terms in dispersive cells, node by node | Tensor terms as one extra input to the two dispersive ADE paths | Dropped: diverges for Drude metals |
+| PEC | Partial-cell contour path | Benkler, Chavannes & Kuster, IEEE TAP 54, 1843 (2006) | Not planned until there is a PEC material |
 
 Fill fractions and surface normals come from the exact geometry where the shape provides it, and from
 supersampling otherwise.
@@ -54,12 +55,27 @@ Two lessons:
   E_d nodes, weighted by its own coefficient) made a 3 ps run of an n = 3.5 sphere grow without bound.
   Symmetrising the coupling, K(p, q) = (o(p) + o(q)) / 8 for both directions, keeps the discrete 1/ε
   operator symmetric, and the same run decays to 2e-19.
-- **Metals need a different method.** On a Drude sphere (r = 40 nm in water, plasmon at 534 nm), off-diagonal
-  terms in metal cells diverge even when symmetrised. ⟨ε⟩ of a metal–water cell crosses zero inside the
-  band, so each such cell is a resonator. The other averages are no better: peak height errors at
-  dx = 2 nm are about −11 % (diagonal, the default), −5 % (staircase, with a 0–4 nm shift),
-  −16 % (volume average, 10 nm red shift) and −22 % (harmonic only, 10 nm red shift).
-  `conformal_metal` (step 3) is the next attempt.
+- **Metals need the full tensor, built to be passive.** On a Drude sphere (r = 40 nm in water, plasmon at
+  534 nm), off-diagonal terms added node by node diverge, even when symmetrised. The diagonal alone is
+  stable but wrong: it gives every component part of the tangential average 1/⟨ε⟩, whose pole lies inside
+  the band for cells about 20–40 % metal, so each such cell becomes a resonator. The C_ext error then
+  ripples across the band and hardly falls with dx. The fix is to apply the tensor at grid vertices, as a
+  sum of congruences Sᵀ η S over the octant triads of E nodes around each vertex. Each term is passive, so
+  the sum is too, and in a uniform medium it is the plain update. RMS C_ext error over 480–600 nm:
+
+  | dx | 3 nm | 2.5 nm | 2 nm | 1.6 nm | 1.33 nm |
+  |---|---|---|---|---|---|
+  | staircase | 22 % | 17 % | 15 % | 13 % | — |
+  | diagonal (`subpixel`) | 7.5 % | 9.1 % | 6.6 % | 6.1 % | — |
+  | vertex tensor (`conformal`) | 3.7 % | 3.5 % | 2.5 % | 2.3 % | 1.6 % |
+
+  Peak-height errors fall from 5–13 % to 1.5–3.6 %. Emission 10 nm from the sphere: the tangential
+  Purcell factor was up to 2.4× too high and is now within 11.5 % of Mie. Runs of 1.5 ps decay to 6e-22.
+  What remains is first order: a node's diagonal is the mean of its two vertex cubes' tensors, not the
+  tensor of its own cube, and 1/⟨ε⟩ is nonlinear in the fill fraction. A dielectric sphere through the
+  vertex tensor errs by 1.0 % at dx = 6 nm, against 0.04 % with the node scheme, so dielectric interfaces
+  keep that one. Larger vertex cubes (1.5×, 2×) do not remove the term. **Open:** a passive form whose node
+  diagonals equal the node-cube tensor.
 
 ## Order of work
 
@@ -101,8 +117,8 @@ merged. This table tracks the branch.
 |---|---|
 | Roadmap | Written |
 | 1. Conformal meshing (dielectrics) | Done: `mesh_refinement`, `conformal` default |
-| 1. Conformal meshing (metals) | Open: tensor terms diverge in Drude cells; next try contour-path |
+| 1. Conformal meshing (metals) | Done: full tensor at grid vertices (passive by construction); C_ext RMS error 2.5 % against 6.6 % at dx = 2 nm |
 | 3. Far field | Done: `outputs.far_field` for scattering |
 | 4. Resonances | Done: `outputs.resonances` for scattering; `lightsmith.resonance.harmonic_inversion` |
-| 2. Dipole source | Done: `kind: "emission"` (FDTD and exact Mie); within 0.2 % of Mie for dielectrics, 10 %–2.4× near metals (interface cells) |
+| 2. Dipole source | Done: `kind: "emission"` (FDTD and exact Mie); within 0.2 % of Mie for dielectrics, 8–12 % 10 nm from a Drude sphere |
 | 2. Gaussian-beam source | Done: `GaussianBeam` illumination; 0.13 % from Mie at the focus, 0.1 % from the beam profile off axis |

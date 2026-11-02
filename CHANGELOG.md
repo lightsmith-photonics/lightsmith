@@ -10,7 +10,10 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
 
 - **FDTD conformal meshing.** `mesh_refinement` (`staircase`, `volume_average`, `subpixel`, `conformal`). The
   new default, `conformal`, adds the off-diagonal terms of tensor subpixel smoothing, symmetrised for
-  stability. Dielectric sphere C_ext error at dx = 6 nm falls from 1.1 % to 0.04 %.
+  stability. Dielectric sphere C_ext error at dx = 6 nm falls from 1.1 % to 0.04 %. At metal interfaces
+  the full dispersive tensor is applied at grid vertices as a sum of passive congruences, so it is stable
+  by construction. On a Drude sphere's plasmon band it cuts the C_ext error 2–4× compared with diagonal
+  smoothing (2.5 % against 6.6 % RMS at dx = 2 nm), and the error now falls as the grid is refined.
 - **FDTD far field** (`outputs.far_field`): near-to-far-field projection of the scattered fields, within
   0.4 % of Mie.
 - **Dipole emission** (`kind: "emission"`): Purcell factor, radiative enhancement, efficiency and

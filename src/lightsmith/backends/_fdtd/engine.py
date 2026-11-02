@@ -88,6 +88,42 @@ class DispersiveGroup:
 
 
 @dataclass
+class TensorMesh:
+    """Interface cells with the full smoothed 1/eps tensor, applied at grid vertices (passive by construction).
+
+    Each vertex v carries the tensor of the cube of side dx centred on it, eta_v = a P + b (I - P),
+    P = n n^T, with a = <1/eps> (harmonic) and b = 1/<eps> (arithmetic), both dispersive. The six E nodes
+    around v (two per component, at v -/+ e_d/2) form eight octant triads, one node per component; the
+    vertex adds sum over octants of S_o^T eta_v S_o / 8 to the D -> E map. Every term is a congruence of a
+    passive tensor, so the sum is passive (no late-time growth, unlike off-diagonal terms added
+    node by node); in a uniform medium it is the plain diagonal update. Node p (component c) receives
+    (1/2) [eta_v D~]_c from each of its two vertices, D~ = D_p along c and the mean of the two d-nodes at v
+    along d != c: the diagonal (1/2) eta_cc(v) and the off-diagonal eta_cd(v)/4 to each of the four
+    d-neighbours, symmetric between the pair. A node next to a vertex without an interface takes half
+    of that vertex's plain medium instead.
+
+    Index arrays use real node indices; ``shift`` counts the periods (on periodic axes) between a node's
+    position next to v and its real index, for the Bloch phase."""
+
+    media: list
+    frac: np.ndarray  # (S, nV) medium fractions per tensor vertex
+    normal: np.ndarray  # (nV, 3) unit normal per tensor vertex
+    node_comp: np.ndarray  # (nN,) component of each node
+    node_idx3: np.ndarray  # (nN, 3) real node indices
+    vert_nodes: np.ndarray  # (nV, 3, 2) node number of the (minus, plus) d-node at v, per d
+    shift: np.ndarray  # (nV, 3, 2, 3) periods between that node and its real index
+    slot_vert: np.ndarray  # (nN, 2) tensor vertex of slot k (k = 0: vertex at the node index, plus side; 1: + e_c)
+    slot_medium: np.ndarray  # (nN, 2) medium of a plain slot (slot_vert == -1)
+    shape: tuple  # grid shape
+
+    @property
+    def idx(self) -> np.ndarray:
+        """Flat E indices of the nodes."""
+        i = self.node_idx3
+        return np.asarray(flat_index(self.node_comp, i[:, 0], i[:, 1], i[:, 2], self.shape), dtype=np.int64)
+
+
+@dataclass
 class PMLSpec:
     cells: tuple[tuple[int, int], ...]  # (low, high) CPML cells per axis; 0 = none
     m: float = 3.0
@@ -174,7 +210,7 @@ class Engine:
         self.cH = cdx
         self._build_pml(pml, inv_eps)
         self._build_offdiag(offdiag, groups)
-        self.groups = [_Group(self, g) for g in groups]
+        self.groups = [_Tensor(self, g) if isinstance(g, TensorMesh) else _Group(self, g) for g in groups]
         self.sources = sources
         for s in sources:
             s.bind(self)
@@ -578,5 +614,120 @@ class _Group:
                 self.Ea[...] = acc * self.inv_eps_a
                 parts.append((1 - self.w) * self.Ea)
             e_new = parts[0] if len(parts) == 1 else parts[0] + parts[1]
+        eng.E_flat[self.idx] = e_new
+        self.E_prev[...] = e_new
+
+
+class _Harmonic:
+    """y = <1/eps>[u] over slots with medium fractions F (S, n): y = sum_s F_s E_s, E_s = (u - P_s) / eps_inf_s,
+    each medium's poles driven by its own E_s (series combination)."""
+
+    def __init__(self, eng: Engine, media, F: np.ndarray):
+        n = F.shape[1]
+        self.h0 = eng.asarray(sum(F[s] / m.eps_inf for s, m in enumerate(media) if not m.dispersive) + 0 * F[0])
+        self.disp = [s for s, m in enumerate(media) if m.dispersive and np.any(F[s] > 0)]
+        self.f = {s: eng.asarray(F[s]) for s in self.disp}
+        self.inv = {s: 1.0 / media[s].eps_inf for s in self.disp}
+        self.coef = {s: [pole_coefficients(p, eng.dt) for p in media[s].poles] for s in self.disp}
+        self.E = {s: eng.fzeros((n,)) for s in self.disp}
+        self.P = {s: [(eng.fzeros((n,)), eng.fzeros((n,))) for _ in media[s].poles] for s in self.disp}
+
+    def __call__(self, u):
+        y = u * self.h0
+        for s in self.disp:
+            tot = _Group._advance(self.P[s], self.coef[s], self.E[s])
+            self.E[s][...] = (u - tot) * self.inv[s]
+            y = y + self.f[s] * self.E[s]
+        return y
+
+
+class _Arithmetic:
+    """y = (1/<eps>)[u]: y = (u - sum_s F_s P_s) / sum_s F_s eps_inf_s, all poles driven by y (parallel combination)."""
+
+    def __init__(self, eng: Engine, media, F: np.ndarray):
+        n = F.shape[1]
+        self.disp = [s for s, m in enumerate(media) if m.dispersive and np.any(F[s] > 0)]
+        self.f = {s: eng.asarray(F[s]) for s in self.disp}
+        self.inv_a = eng.asarray(1.0 / sum(F[s] * m.eps_inf for s, m in enumerate(media)))
+        self.coef = {s: [pole_coefficients(p, eng.dt) for p in media[s].poles] for s in self.disp}
+        self.y = eng.fzeros((n,))
+        self.P = {s: [(eng.fzeros((n,)), eng.fzeros((n,))) for _ in media[s].poles] for s in self.disp}
+
+    def __call__(self, u):
+        acc = u
+        for s in self.disp:
+            acc = acc - self.f[s] * _Group._advance(self.P[s], self.coef[s], self.y)
+        self.y[...] = acc * self.inv_a
+        return self.y
+
+
+class _Tensor:
+    """D-form update of the nodes of a TensorMesh (see there). Per step: D += curl increment; per vertex the mean
+    D of each component pair and s = n . D~; per (vertex, node) slot sigma = n . D~ with the node's own D along c,
+    then (1/2) (b[D_p - n_c sigma] + n_c a[sigma]), each slot with its own filter state; plain slots
+    (1/2) medium[D_p]. E_p is the sum of its two slots."""
+
+    def __init__(self, eng: Engine, g: TensorMesh):
+        nN, nV = len(g.node_comp), len(g.normal)
+        self.idx = eng.index(g.idx)
+        self.D = eng.fzeros((nN,))
+        self.E_prev = eng.fzeros((nN,))
+        self.out = eng.fzeros((2 * nN,))
+        # Bloch phase of each node position around each vertex
+        L = np.array([(n - 2) * d for n, d in zip(eng.shape, eng.spacing)])
+        ph = np.exp(1j * (g.shift * (np.asarray(eng.bloch) * L)).sum(-1))  # (nV, 3, 2)
+        self.complex = eng.complex
+        self.vn = eng.index(g.vert_nodes.reshape(-1))
+        self.nV = nV
+        if self.complex:
+            self.ph = eng.device.asarray(ph.reshape(-1), dtype=eng.cdt)
+        nrm = g.normal.astype(float)
+        self.n = eng.asarray(nrm)  # (nV, 3)
+        # tensor slots, ordered (k, node)
+        sv = g.slot_vert
+        tk, tnode = np.nonzero((sv >= 0).T)
+        tv = sv[tnode, tk]
+        tc = g.node_comp[tnode]
+        side = 1 - tk  # slot 0: the node is on the plus side of its vertex; slot 1: minus side
+        self.t_pos = eng.index(tk * nN + tnode)
+        self.t_v = eng.index(tv)
+        self.t_vc = eng.index(tv * 3 + tc)
+        self.t_g = eng.index((tv * 3 + tc) * 2 + side)
+        self.t_nc = eng.asarray(nrm[tv, tc])
+        if self.complex:
+            self.t_conj = eng.device.asarray(np.conj(ph[tv, tc, side]), dtype=eng.cdt)
+        F = g.frac[:, tv]
+        self.a = _Harmonic(eng, g.media, F)
+        self.b = _Arithmetic(eng, g.media, F)
+        # plain slots
+        pk, pnode = np.nonzero((sv < 0).T)
+        self.p_pos = eng.index(pk * nN + pnode)
+        self.p_node = eng.index(pnode)
+        onehot = np.zeros((len(g.media), len(pnode)))
+        onehot[g.slot_medium[pnode, pk], np.arange(len(pnode))] = 1.0
+        self.plain = _Harmonic(eng, g.media, onehot)
+        self.has_plain = len(pnode) > 0
+        self.nN = nN
+
+    def step(self, eng: Engine):
+        xp = eng.xp
+        e_now = eng.E_flat[self.idx]
+        self.D += e_now - self.E_prev
+        dv = self.D[self.vn]
+        if self.complex:
+            dv = dv * self.ph
+        dv = xp.reshape(dv, (self.nV, 3, 2))
+        dbar = 0.5 * (dv[..., 0] + dv[..., 1])  # (nV, 3)
+        s = xp.sum(self.n * dbar, axis=1)
+        dp = xp.reshape(dv, (-1,))[self.t_g]
+        nc = self.t_nc
+        sigma = s[self.t_v] + nc * (dp - xp.reshape(dbar, (-1,))[self.t_vc])
+        contrib = 0.5 * (self.b(dp - nc * sigma) + nc * self.a(sigma))
+        if self.complex:
+            contrib = contrib * self.t_conj
+        self.out[self.t_pos] = contrib
+        if self.has_plain:
+            self.out[self.p_pos] = 0.5 * self.plain(self.D[self.p_node])
+        e_new = self.out[:self.nN] + self.out[self.nN:]
         eng.E_flat[self.idx] = e_new
         self.E_prev[...] = e_new

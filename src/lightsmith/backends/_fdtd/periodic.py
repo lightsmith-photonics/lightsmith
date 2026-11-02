@@ -471,7 +471,7 @@ def solve(problem, opts: FDTDOptions, device: Device) -> SpectrumResult:
     roi_hi = np.array([cell.shape[0] - 1, cell.shape[1] - 1, cell.shape[2] - 1])
     inv_eps, groups, vstats, offdiag = voxelise(
         _slot_fn(problem, layer_slots, s_sup, s_sub, cell), media, cell.shape, cell.origin, cell.spacing, roi_lo,
-        roi_hi, mode=mesh_mode(opts), samples=opts.subpixel_samples)
+        roi_hi, mode=mesh_mode(opts), samples=opts.subpixel_samples, periodic=(True, True, False))
     t_vox = time.perf_counter() - t0
 
     eps_sup = media[0].eps_inf

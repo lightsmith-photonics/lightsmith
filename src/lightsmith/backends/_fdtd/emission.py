@@ -249,7 +249,7 @@ def solve(prob: EmissionProblem, opts: FDTDOptions, device: Device) -> EmissionR
             "dft_stride": p["stride"], "precision": "single" if single else "double", "cuda_graphs": scene["cuda_graphs"],
             "mesh_refinement": mesh_mode(opts), "decay_level": scene["decay_level"],
             "reference_balance": balance, "materials": [m.describe() for m in media],
-            **{k: v for k, v in scene.items() if k in ("interface_cells", "dispersive_cells", "offdiagonal_cells")},
+            **{k: v for k, v in scene.items() if k in ("interface_cells", "dispersive_cells", "offdiagonal_cells", "tensor_vertices")},
             "runtime_s": time.perf_counter() - t_start}
     return EmissionResult(method="fdtd", backend="lightsmith-fdtd", wavelengths_nm=wl.tolist(),
                           purcell=purcell.tolist(), radiative=radiative.tolist(),

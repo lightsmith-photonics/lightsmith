@@ -99,7 +99,9 @@ def test_fdtd_gpu_matches_cpu():
 @pytest.mark.gpu
 @needs_cuda
 def test_fdtd_drude_sphere_matches_mie():
-    """Plasmon peak of a Drude sphere: position within 4 nm, height within 15% at dx = 2 nm (r/20)."""
+    """Plasmon peak of a Drude sphere at dx = 2 nm (r/20). Vertex-tensor metal interfaces, measured: peak at
+    534 nm as Mie, height 2.6 %, C_ext within 4.3 % and C_sca within 8.2 % over 480-600 nm (diagonal smoothing:
+    height 5-13 %, C_ext rippling up to 25 %)."""
     wl = ls.WavelengthRange(start_nm=480, stop_nm=600, num=41)
     sim = sphere_sim(DRUDE, 40, wl, medium=1.33)  # default resolution: 20 cells per radius -> 2 nm
     res = ls.solve(sim, "fdtd", "gpu")
@@ -107,9 +109,11 @@ def test_fdtd_drude_sphere_matches_mie():
     assert res.provenance["spacing_nm"] == pytest.approx(2.0)
     w = np.asarray(res.wavelengths_nm)
     i, j = np.argmax(mie.c_ext_nm2), np.argmax(res.c_ext_nm2)
-    assert abs(w[i] - w[j]) <= 4.0
-    assert rel(res.c_ext_nm2[j], mie.c_ext_nm2[i]) < 0.15
-    assert rel(res.c_sca_nm2, mie.c_sca_nm2).max() < 0.30
+    assert res.provenance["tensor_vertices"] > 0
+    assert abs(w[i] - w[j]) <= 2.0
+    assert rel(res.c_ext_nm2[j], mie.c_ext_nm2[i]) < 0.05
+    assert rel(res.c_ext_nm2, mie.c_ext_nm2).max() < 0.07
+    assert rel(res.c_sca_nm2, mie.c_sca_nm2).max() < 0.12
     assert min(res.c_abs_nm2) > 0
 
 
@@ -171,6 +175,39 @@ def test_fdtd_oblique_tfsf_spheroid_matches_dda():
         assert rel(res.c_ext_nm2, ref.c_ext_nm2).max() < 0.02  # measured 0.5-1.1% (0.5% at dx=4 nm)
 
 
+def test_fdtd_metal_vertex_tensor_is_symmetric_and_bounded():
+    """The vertex tensor of metal interfaces (engine.TensorMesh) is a sum of congruences: its instantaneous
+    D -> E map (one step from rest) is symmetric with every Rayleigh quotient between 1/eps_inf,max and 1/eps_min."""
+    from lightsmith.backends._fdtd.engine import Engine, PMLSpec, TensorMesh, _Tensor
+    from lightsmith.backends._fdtd.media import Medium, Pole
+    from lightsmith.backends._fdtd.setup import voxelise
+    from lightsmith.device import Device
+
+    media = [Medium(1.77), Medium(9.5, (Pole(0.00208, 0.0, 1.8e-4),))]  # water, Drude metal (wp = 9 eV)
+    shape, c, r = (24, 24, 24), np.array([0.3, 0.1, -0.2]), 6.4
+    inv_eps, groups, stats, _ = voxelise(lambda p: (np.linalg.norm(p - c, axis=-1) < r).astype(int), media, shape,
+                                         np.full(3, -12.0), 1.0, np.full(3, 2), np.full(3, 22), mode="conformal")
+    tm = groups[-1]
+    assert isinstance(tm, TensorMesh) and stats["tensor_vertices"] > 100
+    eng = Engine(Device("numpy", "cpu"), shape=shape, dx=1.0, dt=0.5, single=False, inv_eps=inv_eps, groups=groups,
+                 pml=PMLSpec(cells=((0, 0),) * 3), sources=[], monitors=[], dft_stride=1)
+    idx = tm.idx
+
+    def apply(x):
+        g = _Tensor(eng, tm)
+        eng.E_flat[idx] = x
+        g.step(eng)
+        return np.array(eng.E_flat[idx])
+
+    rng = np.random.default_rng(0)
+    x, y = rng.standard_normal((2, len(idx)))
+    mx, my = apply(x), apply(y)
+    assert abs(x @ my - y @ mx) < 1e-12 * abs(x @ mx)
+    for z in rng.standard_normal((5, len(idx))):
+        q = z @ apply(z) / (z @ z)
+        assert 1 / 9.5 <= q <= 1 / 1.77
+
+
 @pytest.mark.gpu
 @needs_cuda
 def test_fdtd_conformal_tensor_smoothing_beats_diagonal():
@@ -212,14 +249,17 @@ def test_fdtd_far_field_matches_mie():
 @pytest.mark.gpu
 @needs_cuda
 def test_fdtd_drude_sphere_resonance():
-    """The dipole plasmon from the ring-down matches Mie's extinction peak (Q = peak / FWHM = 8.8)."""
+    """Dipole and quadrupole plasmons from the ring-down against the exact complex poles of Mie's a_1 and a_2
+    (533.8 nm, Q 8.74; 487.5 nm, Q 35.1). Measured: 535.6 nm, Q 8.2; 488.4 nm, Q 31. The broad dipole is the
+    harder fit: with only 5 modes allowed it lands at 537.8 nm."""
     sim = sphere_sim(DRUDE, 40, ls.WavelengthRange(start_nm=440, stop_nm=600, num=9), medium=1.33)
-    sim = sim.model_copy(update={"outputs": Outputs(resonances=ResonanceRequest(max_modes=5))})
+    sim = sim.model_copy(update={"outputs": Outputs(resonances=ResonanceRequest(max_modes=10))})
     res = ls.solve(sim, "fdtd", "gpu")
-    dipole = min(res.resonances, key=lambda m: abs(m.wavelength_nm - 534.0))
-    assert abs(dipole.wavelength_nm - 534.0) < 3  # measured 534.7 nm
-    assert 6 < dipole.q < 10 and dipole.amplitude > 0.5  # measured Q 7.8
-    assert res.resonances[0].amplitude == 1.0
+    dipole = min(res.resonances, key=lambda m: abs(m.wavelength_nm - 533.8))
+    quad = min(res.resonances, key=lambda m: abs(m.wavelength_nm - 487.5))
+    assert abs(dipole.wavelength_nm - 533.8) < 3 and 7 < dipole.q < 10 and dipole.amplitude > 0.5
+    assert abs(quad.wavelength_nm - 487.5) < 2 and 28 < quad.q < 40
+    assert max(m.amplitude for m in res.resonances) == 1.0
     assert all(440 <= m.wavelength_nm <= 600 for m in res.resonances)
 
 
@@ -265,6 +305,20 @@ def test_fdtd_conformal_is_stable_at_late_times():
 @pytest.mark.slow
 @pytest.mark.gpu
 @needs_cuda
+def test_fdtd_metal_vertex_tensor_is_stable_at_late_times():
+    """The vertex tensor of metal interfaces is passive: node-by-node off-diagonal terms diverged for this sphere.
+    Measured at dx = 3 nm over 1.5 ps: 6e-22 (double), 9e-14 (single)."""
+    sim = ls.Simulation(
+        particles=[ls.Particle(shape=ls.Sphere(radius_nm=40), material=DRUDE)], wavelengths=[500.0, 700.0, 900.0],
+        options={"fdtd": {"spacing_nm": 3.0, "run_time_fs": 1500, "max_time_fs": 1500, "precision": "double"}})
+    res = ls.solve(sim, "fdtd", "gpu")
+    assert res.provenance["tensor_vertices"] > 0 and res.provenance["steps"] > 250_000
+    assert res.provenance["decay_level"] < 1e-15
+
+
+@pytest.mark.slow
+@pytest.mark.gpu
+@needs_cuda
 def test_fdtd_dielectric_sphere_fine_grid():
     sim = sphere_sim(ls.ConstantIndex(n_real=1.5), 60, ls.WavelengthRange(start_nm=400, stop_nm=800, num=9),
                      spacing_nm=2.0)
@@ -283,7 +337,7 @@ def test_fdtd_drude_sphere_fine_grid():
     i, j = np.argmax(mie.c_ext_nm2), np.argmax(res.c_ext_nm2)
     assert abs(i - j) <= 1  # 10 nm sampling; Mie's 530 and 540 nm values differ by only 2%
     print("peak", res.wavelengths_nm[j], mie.wavelengths_nm[i], "height error", rel(res.c_ext_nm2[j], mie.c_ext_nm2[i]))
-    assert rel(res.c_ext_nm2[j], mie.c_ext_nm2[i]) < 0.07
+    assert rel(res.c_ext_nm2[j], mie.c_ext_nm2[i]) < 0.04  # measured 2.2 % (diagonal smoothing: 7 %)
 
 
 @pytest.mark.slow
@@ -296,6 +350,7 @@ def test_fdtd_gold_library_material_via_drude_lorentz_fit():
     mie = ls.solve(sim, "mie")
     w = np.asarray(res.wavelengths_nm)
     i, j = np.argmax(mie.c_ext_nm2), np.argmax(res.c_ext_nm2)
-    assert abs(w[i] - w[j]) <= 10.0
-    assert rel(res.c_ext_nm2[j], mie.c_ext_nm2[i]) < 0.2
+    assert abs(w[i] - w[j]) <= 5.0  # measured: same 5 nm sample (550 nm)
+    assert rel(res.c_ext_nm2[j], mie.c_ext_nm2[i]) < 0.03  # measured 0.7 %
+    assert rel(res.c_ext_nm2, mie.c_ext_nm2).max() < 0.07  # measured 4.2 %
     assert any("fitted" in m for m in res.warnings)
