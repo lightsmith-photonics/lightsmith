@@ -84,6 +84,15 @@ def test_fdtd_lossy_constant_is_exact_at_single_wavelength():
     assert warn and "not causal" in warn[0]
 
 
+def test_fdtd_cpu_divergence_raises_before_float64_overflow():
+    # A lossy constant index (stiff Drude term) at under 3 cells per wavelength diverges from ~170 steps.
+    # In float64 the fields stay finite well past 200 fs; the run used to return C_ext ~ 1e129.
+    sim = sphere_sim(ls.ConstantIndex(n_real=1.2, n_imag=0.2), 191, [500.0, 600.0, 700.0],
+                     spacing_nm=191.0, pml_cells=4, run_time_fs=200.0)
+    with pytest.raises(FloatingPointError, match="diverged.*finer mesh.*courant"):
+        ls.solve(sim, "fdtd", "cpu")
+
+
 @pytest.mark.gpu
 @needs_cuda
 def test_fdtd_gpu_matches_cpu():
