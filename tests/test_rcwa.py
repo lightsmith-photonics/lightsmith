@@ -137,6 +137,21 @@ def test_grating_orders_follow_grating_equation():
     assert orders == expect
 
 
+@pytest.mark.parametrize("harmonics", [10, 40])
+def test_rayleigh_anomaly_inside_uniform_layer(harmonics):
+    # Orders +-2 graze inside the n = 3.5 film when 2 * 1120 / 640 = 3.5 exactly (kz = 0 there).
+    # Solving with that layer's Q used to fail as singular; the result must be finite and continuous.
+    # With 40 harmonics the film also holds orders with |kz d| ~ 100, which a transfer matrix cannot.
+    film = PatternedLayer(thickness_nm=240, background=CI(n_real=3.5))
+    p = lamellar(640, 384, 3.5**2, h=240, wl=[1119.9, 1120.0, 1120.1], sub=1.0, harmonics=harmonics)
+    p = p.model_copy(update={"layers": [*p.layers, film]})
+    for dev in ("cpu", *(["gpu"] if _torch_cuda() else [])):
+        res = ls.solve(p, "rcwa", dev)
+        t = total(res, "t", "s")[0]
+        assert np.all(np.isfinite(t)) and abs(t[1] - (t[0] + t[2]) / 2) < 2e-3
+        assert abs(1 - t[1] - total(res, "r", "s")[0][1]) < 1e-6
+
+
 def test_estimate_reports_sizes():
     est = ls.estimate(hole_slab(5, [600.0]), method="rcwa", device="cpu")
     assert est["harmonics"] == 121 and est["matrix_size"] == 242 and est["eigensolves"] == 1
