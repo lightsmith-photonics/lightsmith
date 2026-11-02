@@ -23,7 +23,8 @@ def _torch_cuda() -> bool:
         return False
     import torch
 
-    return torch.cuda.is_available()
+    # is_available() can be True with no visible device (e.g. CUDA_VISIBLE_DEVICES="" on Windows).
+    return torch.cuda.is_available() and torch.cuda.device_count() > 0
 
 
 def _cupy_cuda() -> bool:
