@@ -13,10 +13,12 @@ from ...resonance import harmonic_inversion
 from ...results import FarFieldData, NearFieldData, ResonanceData
 from .beam import NA_MAX, BeamSource, plane_wave_components
 from .engine import DFTMonitor, Engine, PMLSpec, TimeMonitor, flat_index
+from ...materials import ConstantIndex, ConstantPermittivity
 from .media import HBARC_EV_NM, Medium, fit_module, needs_fit, to_medium
 from .options import FDTDOptions
 from .setup import (FS, far_field, flux, flux_points, mesh_mode, particle_bbox, particle_slot_fn,
                     run_until_decayed, scattering_layout, surface_samples, time_step, voxelise)
+from .layered import ObliqueLayeredPlaneWave
 from .substrate import LayeredPlaneWave, layered_background
 from .tfsf import TFSFPlaneWave
 
@@ -37,9 +39,14 @@ def _media(sim, warnings) -> tuple[list[Medium], list[list[int]]]:
 def substrate_unsupported(sim) -> str:
     """Why FDTD cannot run this substrate problem (empty if it can)."""
     k, _ = sim.illumination.unit_vectors()
-    if sim.illumination.kind != "plane_wave" or abs(k[0]) > 1e-9 or abs(k[1]) > 1e-9:
-        return ("with a substrate, FDTD supports plane waves at normal incidence (direction (0, 0, +-1)) only so far; "
-                "oblique incidence in layered media is on the roadmap")
+    if sim.illumination.kind != "plane_wave":
+        return "with a substrate, FDTD supports plane-wave illumination only (not Gaussian beams yet)"
+    if abs(k[2]) < 0.1:
+        return "with a substrate, the plane wave must not graze the interface (|direction_z| >= 0.1)"
+    oblique = abs(k[0]) > 1e-9 or abs(k[1]) > 1e-9
+    if oblique and k[2] > 0 and not isinstance(sim.substrate.material, (ConstantIndex, ConstantPermittivity)):
+        return ("oblique incidence through the substrate needs a constant-index substrate (a fixed angle in a "
+                "dispersive incidence medium has no fixed transverse slowness)")
     if sim.outputs.far_field is not None:
         return "does not support far_field output with a substrate (yet): it needs the layered-medium far field"
     mat = sim.substrate.material
@@ -113,6 +120,15 @@ def spacing(sim, opts: FDTDOptions, feature_nm: float | None = None) -> float:
     return min(dx, feature_nm / 4) if feature_nm else dx
 
 
+def _band_wavelengths(sim):
+    wl = sim.wavelength_array()
+    if sim.outputs.near_field is not None:
+        wl = np.concatenate([wl, sim.outputs.near_field.wavelengths_nm])
+    if sim.outputs.far_field is not None:
+        wl = np.concatenate([wl, sim.outputs.far_field.wavelengths_nm])
+    return wl
+
+
 def _band(sim):
     wl = sim.wavelength_array()
     if sim.outputs.near_field is not None:
@@ -135,8 +151,11 @@ def plan(sim, opts: FDTDOptions, single: bool, warnings: list[str] | None = None
     dt = time_step(dx, opts.courant, media)
     omega_c, omega_half, omega_max = _band(sim)
     # sampling every `stride` steps aliases source content above omega_c + 4 omega_half (amplitude
-    # < e^-16) onto the highest requested frequency, never below it
-    stride = opts.dft_stride or max(1, int(2 * np.pi / (omega_c + 4 * omega_half + omega_max) / dt))
+    # < e^-16) onto the highest requested frequency, never below it. An oblique wave over a substrate is
+    # compared with its exact background (absorption), which needs the e^-36 margin of 6 omega_half.
+    k, _ = sim.illumination.unit_vectors()
+    margin = 6 if sim.substrate is not None and (abs(k[0]) > 1e-9 or abs(k[1]) > 1e-9) else 4
+    stride = opts.dft_stride or max(1, int(2 * np.pi / (omega_c + margin * omega_half + omega_max) / dt))
     max_t = (opts.run_time_fs or opts.max_time_fs) * FS
     max_steps = int(math.ceil(max_t / dt / stride)) * stride
     # rough run-length guess: pulse + transit + slowest material damping
@@ -167,7 +186,7 @@ def solve(sim, opts: FDTDOptions, device: Device):
                          "increase spacing_nm or raise max_cells")
     khat, ehat = sim.illumination.unit_vectors()
     beam = sim.illumination if sim.illumination.kind == "gaussian_beam" else None
-    if beam is None and int(np.sum(np.abs(khat) > 1e-12)) != 1:
+    if beam is None and sim.substrate is None and int(np.sum(np.abs(khat) > 1e-12)) != 1:
         warnings.append("oblique incidence: TFSF source is interpolated; expect ~0.1% incident-field leakage")
     eps_b = sim.medium_index**2
     layered = sim.substrate is not None
@@ -193,7 +212,14 @@ def solve(sim, opts: FDTDOptions, device: Device):
     om_ff = (2 * np.pi / np.asarray(sim.outputs.far_field.wavelengths_nm, dtype=float)
              if sim.outputs.far_field is not None else np.zeros(0))
     beam_info = None
-    if layered:
+    oblique = layered and (abs(khat[0]) > 1e-9 or abs(khat[1]) > 1e-9)
+    if oblique:
+        src = ObliqueLayeredPlaneWave(shape=lay.shape, origin=lay.origin, spacing=dx, dt=dt, lo=lay.tfsf[0],
+                                      hi=lay.tfsf[1], khat=khat, ehat=ehat, inv_eps=inv_eps,
+                                      z_int=sim.substrate.interface_z_nm, host=media[0], sub=media[-1],
+                                      omega_c=p["omega_c"], omega_half=p["omega_half"], max_steps=tfsf["max_steps"],
+                                      omega_min=2 * np.pi / float(np.max(_band_wavelengths(sim))))
+    elif layered:
         down = khat[2] < 0
         k_launch = int(lay.tfsf[1][2] + 1 if down else lay.tfsf[0][2] - 1)
         src = LayeredPlaneWave(shape=lay.shape, origin=lay.origin, spacing=dx, dt=dt, lo=lay.tfsf[0], hi=lay.tfsf[1],
@@ -210,7 +236,10 @@ def solve(sim, opts: FDTDOptions, device: Device):
     tot = flux_points(*lay.tot, lay.shape, dx)
     mon_sca = DFTMonitor(omega, sca[0], sca[1], sca[2], energy=True)
     mon_tot = DFTMonitor(omega, tot[0], tot[1], tot[2], energy=2)
-    if layered:
+    if oblique:
+        mon_inc = DFTMonitor(omega, np.arange(3), source=src.view)
+        monitors = [mon_sca, mon_tot, mon_inc]
+    elif layered:
         mon_inc = DFTMonitor(omega, *src.plane_probe(src.k_ref), source=src.ref_view)
         mon_bg = [DFTMonitor(omega, *src.plane_probe(int(k)), source=src.col_view)
                   for k in (lay.tot[0][2], lay.tot[1][2])]
@@ -222,7 +251,11 @@ def solve(sim, opts: FDTDOptions, device: Device):
     else:
         monitors = [mon_sca, mon_tot, beam_mon]
     near = _near_monitor(sim, lay) if sim.outputs.near_field is not None else None
-    if near is not None and layered:
+    if near is not None and oblique:
+        near["inc"] = DFTMonitor(near["omega"], np.arange(3), source=src.view)
+        near["oblique"] = src
+        monitors += [near["mon"], near["inc"]]
+    elif near is not None and layered:
         near["inc"] = DFTMonitor(near["omega"], *src.plane_probe(src.k_ref), source=src.ref_view)
         near["bg"] = DFTMonitor(near["omega"], src.column_e(), source=src.col_view)
         near["layered"] = src
@@ -253,7 +286,17 @@ def solve(sim, opts: FDTDOptions, device: Device):
 
     # cross sections, per unit incident intensity (for a beam: at the focus)
     bg_out = 0.0
-    if layered:
+    if oblique:  # incident wave alone at the reference point: I = n |E|^2 / 2
+        e_ref = mon_inc.results()[0]
+        intensity = 0.5 * src.n_inc * np.sum(np.abs(e_ref) ** 2, axis=1)
+        # the background's own flux through the total-field box, from the same flux formula (the averaged-H
+        # flux is not exactly conserved by the grid, ~1e-6 of the box flux)
+        unit = src.incident_reference(omega)
+        amp = np.sum(e_ref * np.conj(unit), axis=1) / np.sum(np.abs(unit) ** 2, axis=1)
+        e_bg = amp[:, None] * src.background(omega, tot[0], "E")
+        h_bg = amp[:, None] * 0.5 * (src.background(omega, tot[1], "H") + src.background(omega, tot[2], "H"))
+        bg_out = flux(e_bg, h_bg, tot[3])
+    elif layered:
         intensity = np.abs(src.s_z(*mon_inc.results()))
         # net outward flux of the background through the total-field box (absorption in a lossy substrate)
         area = float(np.prod((lay.tot[1] - lay.tot[0])[:2])) * dx**2
@@ -284,7 +327,8 @@ def solve(sim, opts: FDTDOptions, device: Device):
             "decay_level": level, "materials": [m.describe() for m in media], **vstats,
             **({"gaussian_beam": beam_info} if beam_info else {}),
             **({"substrate": {"interface_z_nm": sim.substrate.interface_z_nm,
-                              "incidence": "from above" if khat[2] < 0 else "through the substrate"}}
+                              "incidence": "from above" if khat[2] < 0 else "through the substrate",
+                              "source": "layered tables (oblique)" if oblique else "column"}}
                if layered else {}),
             "runtime_s": time.perf_counter() - t_start, "time_loop_s": t_loop, "voxelise_s": t_vox}
     if np.any(c_abs < -1e-3 * np.max(np.abs(c_sca + c_abs))):
@@ -423,7 +467,14 @@ def _near_results(sim, lay, near, warnings=None):
     lo, hi = lay.tfsf
     out = []
     layered = near.get("layered")
-    if layered is None:
+    oblique = near.get("oblique")
+    if oblique is not None:
+        e_mon = near["inc"].results()[0]  # incident wave alone at the reference point, monitor units
+        unit = oblique.incident_reference(om)
+        amp = np.sum(e_mon * np.conj(unit), axis=1) / np.sum(np.abs(unit) ** 2, axis=1)
+        r_ref = np.array([*oblique.r_c, oblique.z_nodes[-1] if oblique.down else oblique.z_nodes[0]])
+        inc0 = (e_mon @ ehat) * np.exp(-1j * oblique.n_inc * om * (khat @ r_ref))
+    elif layered is None:
         inc0 = near["inc"].results()[0][:, 0]
     else:
         # incident wave alone (reference column) referred to z = 0, and the background (column) per z node
@@ -445,7 +496,11 @@ def _near_results(sim, lay, near, warnings=None):
             P = np.stack(np.meshgrid(*axes, indexing="ij"), axis=-1)
             U = np.meshgrid(*[rng[a] + off[a] for a in range(3)], indexing="ij")
             inside = np.all([(U[a] >= lo[a]) & (U[a] <= hi[a]) for a in range(3)], axis=0)
-            if layered is None:
+            if oblique is not None:
+                ijk = [np.floor(U[a] + 1e-9).astype(int).ravel() for a in range(3)]
+                flat = flat_index(c, *ijk, lay.shape)
+                inc = (amp[f] * oblique.background(om[f:f + 1], flat, "E")[0]).reshape(U[0].shape)
+            elif layered is None:
                 inc = ehat[c] * inc0[f] * np.exp(1j * k * ((P - lay.r0) @ khat))
             else:
                 kz = np.floor(U[2] + 1e-9).astype(int)
@@ -454,11 +509,11 @@ def _near_results(sim, lay, near, warnings=None):
             vals = e_all[f, c] + np.where(inside, 0.0, inc)
             interp = RegularGridInterpolator(axes, vals, bounds_error=False, fill_value=np.nan)
             comps.append(interp(pts))
-        ref = inc0[f] if layered is not None else inc0[f] * np.exp(-1j * k * (lay.r0 @ khat))
+        ref = inc0[f] if (layered is not None or oblique is not None) else inc0[f] * np.exp(-1j * k * (lay.r0 @ khat))
         e = np.stack(comps, axis=-1) / ref
-        if layered is not None and warnings is not None and np.isnan(e).any() and f == 0:
-            warnings.append("near_field: points outside the source box beyond the incident-field column's range "
-                            "(in the PML or above the source plane) are NaN")
+        if (layered is not None or oblique is not None) and warnings is not None and np.isnan(e).any() and f == 0:
+            warnings.append("near_field: points outside the source box, beyond the range where the background field "
+                            "is known (the PML, above the source plane, or beyond the oblique-incidence tables), are NaN")
         enh = np.sum(np.abs(e) ** 2, axis=-1)
         out.append(NearFieldData(
             wavelength_nm=float(lam), plane=req.plane, offset_nm=req.offset_nm, axis1_nm=u.tolist(),

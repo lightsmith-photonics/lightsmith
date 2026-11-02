@@ -22,11 +22,14 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
 - **Gaussian beams** (`illumination: GaussianBeam`, FDTD): a focused beam as a sum of TFSF plane waves at
   fixed angles (the waist scales with the wavelength, as for a lens of fixed NA); cross sections per unit
   focal intensity. Within 0.13 % of Mie at the focus and 0.1 % of the beam profile off axis.
-- **FDTD substrates** (`Simulation.substrate`): particles on or above a non-absorbing half-space, lit at
-  normal incidence from above or through the substrate. The TFSF box takes the background field
-  (incident, reflected and transmitted waves) from an auxiliary column, so it does not leak where it cuts
-  the interface. C_sca is within 0.25 % of a dipole reference for a sphere above glass. Near fields
-  are supported; oblique incidence, absorbing substrates and far fields are not yet.
+- **FDTD substrates** (`Simulation.substrate`): particles on or above a non-absorbing half-space, lit from
+  above at any angle or through the substrate, including total internal reflection. The TFSF box takes
+  the background field (incident, reflected and transmitted waves) from an auxiliary column at normal
+  incidence. At oblique incidence it comes from tables of the exact discrete background (a 1D discrete
+  problem along z per frequency, then an inverse FFT). Either way it does not leak where it cuts the
+  interface. C_sca is within 0.2–0.5 % of a dipole reference for a sphere above glass (1.7 % for p
+  under total internal reflection, where the dipole model is least exact). Near fields are supported;
+  absorbing substrates and far fields are not yet.
 - **Resonances** (`outputs.resonances`): wavelengths, Q factors and amplitudes from the FDTD ring-down,
   through the new `lightsmith.resonance.harmonic_inversion` (multi-channel matrix pencil).
 

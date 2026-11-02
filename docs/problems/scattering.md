@@ -36,9 +36,12 @@ polarisation. Cross sections are normalised by the intensity at the focus, ½ n 
 
 ### Substrates
 
-With a `substrate`, the background is the host above the plane and the substrate below; particles may sit on
-it or cut into it. FDTD supports plane waves at normal incidence, from above (direction (0, 0, −1)) or
-through a non-absorbing substrate (direction (0, 0, 1)); oblique incidence is not supported yet.
+With a `substrate`, the background is the host above the plane and the substrate below. Particles may sit
+on it or cut into it. FDTD supports plane waves:
+
+- from above, at any angle up to 84° from the normal;
+- through a non-absorbing substrate, normal to it, or at an angle when the substrate has a constant index.
+  Beyond the critical angle that is total internal reflection, with the particle in the evanescent field.
 
 - The incident field is the background's own solution (incident, reflected and transmitted waves), and
   cross sections are per unit intensity of the incident wave alone, in the medium it comes from.
@@ -86,7 +89,7 @@ solver is never picked automatically.
 | Far field | native | ✅ | ✅ | ✅ | ✅ |
 | Resonances (Q) | — | — | — | ✅ | — |
 | Orientation average | ✅ | ✅ (analytic) | ✅ (sampled) | — | ✅ |
-| Substrate | — | — | — | ✅ (normal incidence) | — |
+| Substrate | — | — | — | ✅ (plane waves, any angle) | — |
 | GPU | native | — | ✅ | ✅ | — |
 
 ## Example

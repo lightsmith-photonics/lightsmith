@@ -3,7 +3,7 @@
 Backend `lightsmith-fdtd` (method `fdtd`, modules `lightsmith.backends.fdtd` and
 `lightsmith.backends._fdtd`). A 3D finite-difference time-domain solver for four problem kinds:
 
-- [scattering](../problems/scattering.md), on a substrate too (normal incidence);
+- [scattering](../problems/scattering.md), on a substrate too;
 - [periodic structures](../problems/periodic.md) and [layer stacks](../problems/layer-stack.md), at normal
   incidence;
 - [dipole emission](../problems/emission.md): Purcell factor, radiative enhancement, efficiency and radiation
@@ -61,7 +61,25 @@ It runs on the CPU or a CUDA GPU.
   z nodes, layered background, CPML and time step, driven by a current sheet outside the box. At normal
   incidence the background does not vary in x and y, so the column's fields (incident, reflected and
   transmitted waves) are the main grid's background exactly, and the box does not leak wherever it cuts
-  the interface. A second column of the incidence medium alone gives the incident intensity. C_sca is
+  the interface. A second column of the incidence medium alone gives the incident intensity.
+  - **Oblique incidence.** At a fixed angle every frequency has the same transverse slowness
+    s = n sinθ, so the background is F(z, t − s·r∥). Per frequency, the Yee equations for fields
+    ∝ exp(iωs·r∥) reduce to a 1D discrete problem along z, solved with radiation conditions above and
+    below by a QR-stabilised sweep:
+    - transverse differences become iK with K = 2 sin(ωs dx/2)/dx;
+    - the leapfrog becomes Ω = 2 sin(ω dt/2)/dt;
+    - each node has its D-form ADE response.
+
+    An inverse FFT turns the solutions into tables F_c(z, τ). Every TFSF point reads its component at its
+    own height and delay, with quintic interpolation in τ. The tables satisfy the grid's own equations, so
+    the box does not leak, including under total internal reflection: C_sca of a null particle is below
+    1e-14 nm² in double precision, where the interpolated 1D-grid source leaks ~1e-3 of the incident
+    field. Two details keep the tables exact:
+    - The pulse starts at e⁻²⁵ and is high-passed below the band. Near-static evanescent content under
+      total internal reflection would otherwise ring for a very long time.
+    - The DFT stride uses a 6 ω_half margin, since absorption is measured against the exact background.
+
+  C_sca is
   the scattered flux leaving the outer box (both half-spaces). C_abs is the net total-field flux into the
   inner box minus the background's (from the column). The default PML is 16 cells with a substrate:
   steep waves scattered into the substrate need it (10 cells left 1.3 % at 800 nm, dx = 2 nm).
@@ -190,14 +208,20 @@ limit.
 | `test_sphere_lit_through_glass_matches_dipole_reference` (gpu): the same, lit through the glass | Dipole | C_sca < 0.5 % (measured 0.23 %) |
 | `test_substrate_near_field_is_the_standing_wave_cpu`: sphere of the host medium on glass | |e^{−ikz} + r e^{ikz}|² above, |t|² below | < 0.5 % (measured 0.03 % at dx = 2 nm); uniform in x to 1e-9 |
 
-At dx = 1.33 nm the same spheres are within 0.11 % and 0.19 %.
+| `test_discrete_layered_solver_matches_fresnel`: the discrete background solver, glass, 30° and 60° (TIR), s and p | Fresnel | \|r\| and phase < 2e-4 at dz = 1 nm |
+| `test_oblique_substrate_tfsf_does_not_leak_cpu`: null particle on glass, 40° | Zero; Fresnel standing wave | C_sca < 1e-12 nm²; near field < 0.2 % (measured 2e-4) |
+| `test_oblique_sphere_above_glass_matches_dipole_reference` (gpu): n = 2, r = 20 nm, 40 nm above glass | Dipole | 45° s / p from above: 0.17 % / 0.33 %; 30° p through the glass: 0.20 %; total internal reflection at 60°: s 0.47 %, p 0.7–1.7 % |
+
+At dx = 1.33 nm the normal-incidence spheres are within 0.11 % and 0.19 %. Under total internal reflection the
+evanescent field varies across the sphere, which the dipole model misses, hence its larger p deviation.
 
 ## Limits
 
 **Scattering**
 - No orientation averaging. Near fields, far fields and resonances are supported.
 - Substrates:
-  - normal incidence only;
+  - oblique incidence through the substrate needs a constant-index substrate (a fixed angle in a dispersive
+    incidence medium has no fixed transverse slowness); grazing angles (more than 84°) are refused;
   - non-absorbing substrates only: over an absorbing one, absorption near the particle mixes with the
     background's own, so box fluxes do not define c_abs and c_ext;
   - no far field;

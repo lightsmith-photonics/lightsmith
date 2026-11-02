@@ -86,9 +86,13 @@ Two lessons:
 3. Near-to-far-field projection (radiation patterns, far-field scattering).
 4. Resonance analysis: frequencies, Q factors and amplitudes by filter diagonalisation (as Harminv).
 5. Particles on substrates: a plane-wave source in layered media and a PML that ends inside the substrate.
-   Normal incidence on non-absorbing substrates is done; next, oblique incidence (fixed-angle column
-   in (z, t - x sin θ / c), Capoglu & Smith 2008), absorbing substrates (particle absorption and the
-   reflectance change), and the far field into both half-spaces.
+   Done for non-absorbing substrates at any angle, including total internal reflection. Oblique incidence
+   uses tables of the exact discrete background: per frequency a 1D discrete problem along z, then an
+   inverse FFT. That is leak-free, unlike the interpolated fixed-angle grid of Capoglu & Smith (2008).
+   Next: absorbing substrates (particle absorption and the reflectance change), and the far field into both
+   half-spaces. The same tables could replace the interpolated oblique source in a homogeneous medium,
+   which leaks about 1e-3 of the incident field (1–3 % on a 20 nm glass sphere), and the Gaussian-beam
+   components.
 6. Mirror symmetries (PEC/PMC planes), for 2×–8× smaller runs.
 7. Device problems: waveguide mode sources and mode-expansion monitors from the FDE mode solver, giving
    S-parameters that feed [circuits](../../problems/index.md) directly.
@@ -125,4 +129,4 @@ merged. This table tracks the branch.
 | 4. Resonances | Done: `outputs.resonances` for scattering; `lightsmith.resonance.harmonic_inversion` |
 | 2. Dipole source | Done: `kind: "emission"` (FDTD and exact Mie); within 0.2 % of Mie for dielectrics, 8–12 % 10 nm from a Drude sphere |
 | 2. Gaussian-beam source | Done: `GaussianBeam` illumination; 0.13 % from Mie at the focus, 0.1 % from the beam profile off axis |
-| 5. Substrates | Done for normal incidence on non-absorbing substrates: layered TFSF from an auxiliary column, leak-free; C_sca within 0.25 % of a dipole reference above glass. Open: oblique incidence, absorbing substrates, far field |
+| 5. Substrates | Done for non-absorbing substrates, any angle incl. total internal reflection: leak-free layered TFSF (auxiliary column at normal incidence, exact discrete background tables at oblique incidence); C_sca within 0.2–0.5 % of a dipole reference above glass (1.7 % for TIR p). Open: absorbing substrates, far field |
