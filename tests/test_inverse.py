@@ -148,6 +148,14 @@ def test_backend_protocol():
         inverse.check_backend(ls.get_backend("dda"))
 
 
+def test_optimisation_options_merge_per_method_key():
+    spec = bend_spec(dl=50.0)
+    spec = spec.model_copy(update={"options": {"fdfd": {"pml_reflection": 1e-6}}})
+    opt = inverse.TopologyOptimizer(spec)
+    assert opt.grid.dl == 50.0 and opt.grid.npml == (10, 10)  # device's grid settings survive
+    assert opt.device_problem.options["fdfd"] == {"dl_nm": 50.0, "pml_cells": 10, "pml_reflection": 1e-6}
+
+
 def test_design_region_must_not_touch_ports():
     spec = bend_spec()
     bad = spec.model_copy(update={"design_regions": [spec.design_regions[0].model_copy(

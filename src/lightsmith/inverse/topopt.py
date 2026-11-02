@@ -101,8 +101,10 @@ class TopologyOptimizer:
         self.backend = get_backend(problem.backend, kind="device")
         check_backend(self.backend)
         dev_problem = problem.device
-        if problem.options:  # optimisation-level solver options override the device's
-            dev_problem = dev_problem.model_copy(update={"options": {**dev_problem.options, **problem.options}})
+        if problem.options:  # optimisation-level solver options override the device's, key by key per method
+            dev_opts = dev_problem.options
+            merged = {m: {**dev_opts.get(m, {}), **problem.options.get(m, {})} for m in {*dev_opts, *problem.options}}
+            dev_problem = dev_problem.model_copy(update={"options": merged})
         self.device_problem = dev_problem
         self.ctx = self.backend.prepare(dev_problem) if hasattr(self.backend, "prepare") else {}
         self.grid = self.backend.design_grid(dev_problem)
