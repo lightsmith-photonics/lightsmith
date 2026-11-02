@@ -33,10 +33,10 @@ Tabulated/library materials are fitted with
 from __future__ import annotations
 
 from ..device import Device
-from ..problems import LayerStackProblem, PeriodicProblem, options_for
-from ..results import Result, SpectrumResult
+from ..problems import EmissionProblem, LayerStackProblem, PeriodicProblem, options_for
+from ..results import EmissionResult, Result, SpectrumResult
 from ..spec import Simulation
-from ._fdtd import periodic, scattering
+from ._fdtd import emission, periodic, scattering
 from ._fdtd.media import fit_module, needs_fit
 from ._fdtd.options import FDTDOptions
 from .base import Backend, register, unsupported_outputs
@@ -52,10 +52,12 @@ class NativeFDTD(Backend):
     citation = ("Taflove & Hagness, Computational Electrodynamics (2005); Roden & Gedney, MOTL 27, 334 (2000); "
                 "Oskooi et al., CPC 181, 687 (2010)")
     gpu = True
-    problem_kinds = ("scattering", "periodic", "layer_stack")
+    problem_kinds = ("scattering", "periodic", "layer_stack", "emission")
 
     @classmethod
     def supports(cls, sim):
+        if isinstance(sim, EmissionProblem):
+            return emission.supports(sim)
         if isinstance(sim, (PeriodicProblem, LayerStackProblem)):
             ok, why = periodic.supports(sim)
             if ok and any(needs_fit(m) for m in periodic._materials(sim)) and fit_module() is None:
@@ -63,7 +65,9 @@ class NativeFDTD(Backend):
             return ok, why
         if not isinstance(sim, Simulation):
             return False, "FDTD solves scattering, periodic and layer_stack problems"
-        why = unsupported_outputs(sim, near_field=True, far_field=True, resonances=True)
+        why = unsupported_outputs(sim, near_field=True, far_field=True, resonances=True, gaussian_beam=True)
+        if not why and sim.illumination.kind == "gaussian_beam" and sim.outputs.near_field is not None:
+            why = "does not support near_field output with gaussian_beam illumination (yet)"
         if not why and any(needs_fit(m) for p in sim.particles for m in p.region_materials()) \
                 and fit_module() is None:
             why = "tabulated/library materials need lightsmith.materials_fit (Drude-Lorentz fitting)"
@@ -77,6 +81,15 @@ class NativeFDTD(Backend):
     def estimate(cls, sim, device: Device):
         opts = cls._options(sim)
         single = opts.precision == "single" or (opts.precision == "auto" and device.is_gpu)
+        if isinstance(sim, EmissionProblem):
+            single = emission.uses_single(opts)
+            p = emission.plan(sim, opts, single)
+            lay = p["layout"]
+            return {"grid": list(lay.shape), "cells": lay.cells, "spacing_nm": p["dx"], "dt_fs": p["dt"] / scattering.FS,
+                    "steps_estimate": p["est_steps"], "steps_max": p["max_steps"], "runs": p["runs"],
+                    "dft_stride": p["stride"], "precision": "single" if single else "double",
+                    "memory_bytes": p["memory_bytes"], "fits": lay.cells <= opts.max_cells, "warnings": p["warnings"],
+                    "notes": "two runs: the scene, and the same dipole in the medium alone (P0)"}
         if isinstance(sim, (PeriodicProblem, LayerStackProblem)):
             p = periodic.plan(sim, opts, single)
             c = p["cell"]
@@ -98,10 +111,12 @@ class NativeFDTD(Backend):
                 "fits": lay.cells <= opts.max_cells, "warnings": p["warnings"]}
 
     @classmethod
-    def solve(cls, sim, device: Device) -> Result | SpectrumResult:
+    def solve(cls, sim, device: Device) -> Result | SpectrumResult | EmissionResult:
         ok, why = cls.supports(sim)
         if not ok:
             raise ValueError(f"{cls.name} {why}")
+        if isinstance(sim, EmissionProblem):
+            return emission.solve(sim, cls._options(sim), device)
         if isinstance(sim, (PeriodicProblem, LayerStackProblem)):
             return periodic.solve(sim, cls._options(sim), device)
         out = scattering.solve(sim, cls._options(sim), device)

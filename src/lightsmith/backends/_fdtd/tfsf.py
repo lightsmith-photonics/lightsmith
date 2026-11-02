@@ -49,9 +49,10 @@ def _matched_eps_1d(khat, omega, dt, dx, eps_b) -> float:
 
 class TFSFPlaneWave:
     def __init__(self, *, shape, origin, dx, dt, r0, lo, hi, khat, ehat, eps_b, omega_c, omega_half,
-                 max_steps: int, periodic=(False, False, False)):
+                 max_steps: int, periodic=(False, False, False), m0: int | None = None):
         """dx: cell size or (dx, dy, dz). lo/hi: TFSF box in node-index units; faces outside the grid
-        (e.g. +-1e9 along periodic axes) produce no corrections, giving a one-sided plane source."""
+        (e.g. +-1e9 along periodic axes) produce no corrections, giving a one-sided plane source.
+        m0: put s = 0 at least this far along the 1D grid (sources that must reach r0 at the same time)."""
         spacing = np.broadcast_to(np.asarray(dx, dtype=float), (3,)).copy()
         self.shape, self.dx, self.dt = tuple(shape), float(spacing[0]), float(dt)
         self.khat, self.ehat = np.asarray(khat, float), np.asarray(ehat, float)
@@ -114,7 +115,7 @@ class TFSFPlaneWave:
         s_all = np.concatenate([r[4].ravel() for r in raw] + [np.zeros(1)])
         ds = float(spacing[int(np.argmax(np.abs(self.khat)))]) if self.axis_aligned else float(spacing[0])
         self.m_src = PML1D + 2
-        self.m0 = int(self.m_src + 4 + np.ceil(-s_all.min() / ds))
+        self.m0 = max(int(self.m_src + 4 + np.ceil(-s_all.min() / ds)), m0 or 0)
         m_max = self.m0 + int(np.ceil(s_all.max() / ds)) + 4
         self.M = m_max + PML1D + 2
         self.slabs = []

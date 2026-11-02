@@ -98,6 +98,7 @@ nav:
       - Photonic bands: problems/bands.md
       - Circuits: problems/circuit.md
       - Inverse design: problems/optimization.md
+      - Dipole emission: problems/emission.md
   - Solvers:
       - solvers/index.md
       - Mie: solvers/mie.md

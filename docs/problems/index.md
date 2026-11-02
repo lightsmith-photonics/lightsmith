@@ -14,6 +14,7 @@ A problem is a pydantic model with a `kind` discriminator. That makes every prob
 | `bands` | `lightsmith.problems.BandProblem` | Photonic-crystal band structures | `BandResult` |
 | `circuit` | `lightsmith.problems.CircuitProblem` | Netlists of compact models | `SParameterResult` |
 | `optimization` | `lightsmith.inverse.OptimizationProblem` | Topology optimisation of a device | `OptimizationResult` |
+| `emission` | `lightsmith.problems.EmissionProblem` | A dipole emitter near particles | `EmissionResult` (Purcell factor, efficiency, radiation pattern) |
 
 `parse_problem` reads any kind from a model, a dict or a JSON string. A dict without `kind` is read as a
 `scattering` problem, which keeps 0.1 scattering specs valid.

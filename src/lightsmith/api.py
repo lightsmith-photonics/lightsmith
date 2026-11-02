@@ -29,6 +29,7 @@ AUTO_ORDER: dict[str, tuple[str, ...]] = {
     "bands": ("pwe", "fdfd"),
     "circuit": ("circuit",),
     "optimization": ("inverse",),
+    "emission": ("mie", "fdtd"),
 }
 
 

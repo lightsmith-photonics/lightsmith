@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 import math
 import time
 
@@ -10,6 +11,7 @@ import numpy as np
 from ...device import Device
 from ...resonance import harmonic_inversion
 from ...results import FarFieldData, NearFieldData, ResonanceData
+from .beam import NA_MAX, BeamSource, plane_wave_components
 from .engine import DFTMonitor, Engine, PMLSpec, TimeMonitor, flat_index
 from .media import HBARC_EV_NM, Medium, to_medium
 from .options import FDTDOptions
@@ -24,10 +26,15 @@ def _media(sim, warnings) -> tuple[list[Medium], list[list[int]]]:
         wl = np.concatenate([wl, sim.outputs.near_field.wavelengths_nm])
     if sim.outputs.far_field is not None:
         wl = np.concatenate([wl, sim.outputs.far_field.wavelengths_nm])
-    media = [Medium(sim.medium_index**2, (), "medium")]
+    return particle_media(sim.particles, sim.medium_index, wl, warnings)
+
+
+def particle_media(particles, medium_index: float, wl, warnings) -> tuple[list[Medium], list[list[int]]]:
+    """ADE media (0 = the host medium) and each particle's region -> medium slots."""
+    media = [Medium(medium_index**2, (), "medium")]
     keys: dict[str, int] = {}
     slot_of = []
-    for p in sim.particles:
+    for p in particles:
         slots = []
         for m in p.region_materials():
             key = m.model_dump_json()
@@ -39,7 +46,9 @@ def _media(sim, warnings) -> tuple[list[Medium], list[list[int]]]:
     return media, slot_of
 
 
-def spacing(sim, opts: FDTDOptions) -> float:
+def spacing(sim, opts: FDTDOptions, feature_nm: float | None = None) -> float:
+    """Cell size from the options, the wavelengths, the densest material and the smallest feature (the
+    smallest particle half-extent / cells_per_radius, and `feature_nm` / 4 when given)."""
     if opts.spacing_nm:
         return float(opts.spacing_nm)
     wl = sim.wavelength_array()
@@ -53,8 +62,10 @@ def spacing(sim, opts: FDTDOptions) -> float:
             n_max = max(n_max, float(np.abs(np.sqrt(eps.astype(complex))).max()))
             metal |= bool(np.any(eps.real < 0))
     cpr = opts.cells_per_radius or (20.0 if metal else 10.0)
-    feature = min(float(np.min(p.shape.bounding_half_extent())) for p in sim.particles)
-    return min(wl.min() / (n_max * opts.cells_per_wavelength), feature / cpr)
+    dx = wl.min() / (n_max * opts.cells_per_wavelength)
+    if sim.particles:
+        dx = min(dx, min(float(np.min(p.shape.bounding_half_extent())) for p in sim.particles) / cpr)
+    return min(dx, feature_nm / 4) if feature_nm else dx
 
 
 def _band(sim):
@@ -110,7 +121,8 @@ def solve(sim, opts: FDTDOptions, device: Device):
         raise ValueError(f"grid {lay.shape} has {lay.cells} cells > max_cells={opts.max_cells}; "
                          "increase spacing_nm or raise max_cells")
     khat, ehat = sim.illumination.unit_vectors()
-    if int(np.sum(np.abs(khat) > 1e-12)) != 1:
+    beam = sim.illumination if sim.illumination.kind == "gaussian_beam" else None
+    if beam is None and int(np.sum(np.abs(khat) > 1e-12)) != 1:
         warnings.append("oblique incidence: TFSF source is interpolated; expect ~0.1% incident-field leakage")
     eps_b = sim.medium_index**2
 
@@ -120,18 +132,28 @@ def solve(sim, opts: FDTDOptions, device: Device):
                                                 samples=opts.subpixel_samples)
     t_vox = time.perf_counter() - t0
 
-    src = TFSFPlaneWave(shape=lay.shape, origin=lay.origin, dx=dx, dt=dt, r0=lay.r0, lo=lay.tfsf[0],
-                        hi=lay.tfsf[1], khat=khat, ehat=ehat, eps_b=eps_b, omega_c=p["omega_c"],
-                        omega_half=p["omega_half"], max_steps=p["max_steps"] + 4 * stride)
+    tfsf = dict(shape=lay.shape, origin=lay.origin, dx=dx, dt=dt, lo=lay.tfsf[0], hi=lay.tfsf[1], eps_b=eps_b,
+                omega_c=p["omega_c"], omega_half=p["omega_half"], max_steps=p["max_steps"] + 4 * stride)
     wl = sim.wavelength_array()
     omega = 2 * np.pi / wl
+    om_ff = (2 * np.pi / np.asarray(sim.outputs.far_field.wavelengths_nm, dtype=float)
+             if sim.outputs.far_field is not None else np.zeros(0))
+    beam_info = None
+    if beam is None:
+        src = TFSFPlaneWave(r0=lay.r0, khat=khat, ehat=ehat, **tfsf)
+    else:
+        src, beam_info = _beam_source(sim, beam, lay, tfsf, warnings)
+        beam_mon = src.monitor(np.concatenate([omega, om_ff]))
     sca = flux_points(*lay.sca, lay.shape, dx)
     tot = flux_points(*lay.tot, lay.shape, dx)
     mon_sca = DFTMonitor(omega, sca[0], sca[1], sca[2], energy=True)
     mon_tot = DFTMonitor(omega, tot[0], tot[1], tot[2], energy=True)
-    pe, ph1, ph2 = src.probe()
-    mon_inc = DFTMonitor(omega, pe, ph1, ph2, source=src)
-    monitors = [mon_sca, mon_tot, mon_inc]
+    if beam is None:
+        pe, ph1, ph2 = src.probe()
+        mon_inc = DFTMonitor(omega, pe, ph1, ph2, source=src)
+        monitors = [mon_sca, mon_tot, mon_inc]
+    else:
+        monitors = [mon_sca, mon_tot, beam_mon]
     near = _near_monitor(sim, lay) if sim.outputs.near_field is not None else None
     if near is not None:
         near["inc"] = DFTMonitor(near["omega"], pe, ph1, ph2, source=src)
@@ -139,10 +161,11 @@ def solve(sim, opts: FDTDOptions, device: Device):
     far = None
     if sim.outputs.far_field is not None:
         surf = surface_samples(*lay.sca, lay.shape, dx)
-        om_ff = 2 * np.pi / np.asarray(sim.outputs.far_field.wavelengths_nm, dtype=float)
-        far = {"surf": surf, "omega": om_ff, "mon": DFTMonitor(om_ff, surf.e_idx, surf.h1, surf.h2),
-               "inc": DFTMonitor(om_ff, pe, ph1, ph2, source=src)}
-        monitors += [far["mon"], far["inc"]]
+        far = {"surf": surf, "omega": om_ff, "mon": DFTMonitor(om_ff, surf.e_idx, surf.h1, surf.h2)}
+        monitors.append(far["mon"])
+        if beam is None:
+            far["inc"] = DFTMonitor(om_ff, pe, ph1, ph2, source=src)
+            monitors.append(far["inc"])
     probes = ()
     if sim.outputs.resonances is not None:
         probes = (TimeMonitor(_resonance_probes(sim, lay), p["max_steps"] // stride + 4),)
@@ -159,15 +182,20 @@ def solve(sim, opts: FDTDOptions, device: Device):
         window=math.ceil(lam_max / (stride * dt)), warnings=warnings)
     t_loop = time.perf_counter() - t_loop
 
-    # cross sections
-    e_inc, h_inc = mon_inc.results()
-    intensity = 0.5 * np.real(e_inc[:, 0] * np.conj(h_inc[:, 0]))
+    # cross sections, per unit incident intensity (for a beam: at the focus)
+    if beam is None:
+        e_inc, h_inc = mon_inc.results()
+        intensity = 0.5 * np.real(e_inc[:, 0] * np.conj(h_inc[:, 0]))
+        inc_e2_ff = np.abs(far["inc"].results()[0][:, 0]) ** 2 if far is not None else None
+    else:
+        e2 = np.sum(np.abs(src.focus_field(beam_mon)) ** 2, axis=-1)
+        intensity, inc_e2_ff = 0.5 * sim.medium_index * e2[:len(omega)], e2[len(omega):]
     es, hs = mon_sca.results()
     et, ht = mon_tot.results()
     c_sca = flux(es, hs, sca[3]) / intensity
     c_abs = -flux(et, ht, tot[3]) / intensity
     near_data = _near_results(sim, lay, near) if near is not None else None
-    far_data = _far_results(sim, lay, far) if far is not None else None
+    far_data = _far_results(sim, lay, far, inc_e2_ff) if far is not None else None
     res_data = None
     if probes:
         n_skip = int(math.ceil(src.t_passed / (stride * dt)))
@@ -179,6 +207,7 @@ def solve(sim, opts: FDTDOptions, device: Device):
             "subpixel": mesh_mode(opts) != "staircase",
             "pml_cells": lay.pml, "tfsf_box_nm": float((lay.tfsf[1] - lay.tfsf[0])[0] * dx),
             "decay_level": level, "materials": [m.describe() for m in media], **vstats,
+            **({"gaussian_beam": beam_info} if beam_info else {}),
             "runtime_s": time.perf_counter() - t_start, "time_loop_s": t_loop, "voxelise_s": t_vox}
     if np.any(c_abs < -1e-3 * np.max(np.abs(c_sca + c_abs))):
         warnings.append("negative absorption beyond 0.1% of extinction: increase resolution or decay time")
@@ -228,7 +257,25 @@ def _resonances(sim, x: np.ndarray, dt: float, warnings: list[str]) -> list[Reso
 # --- far field ---------------------------------------------------------------------
 
 
-def _far_results(sim, lay, far) -> list[FarFieldData]:
+def _beam_source(sim, beam, lay, tfsf, warnings):
+    """BeamSource for a GaussianBeam, discretised for the TFSF box (see beam.py)."""
+    focus = np.asarray(beam.focus_nm, dtype=float)
+    k0, _ = beam.unit_vectors()
+    corners = lay.origin + np.array(list(itertools.product(*zip(lay.tfsf[0], lay.tfsf[1])))) * lay.dx - focus
+    rho = float(np.max(np.linalg.norm(corners - np.outer(corners @ k0, k0), axis=1)))
+    wl = sim.wavelength_array()
+    wl_ref = beam.waist_wavelength_nm or 0.5 * (wl.min() + wl.max())
+    comps, info = plane_wave_components(beam, sim.medium_index, wl_ref, rho)
+    if info["truncated"]:
+        warnings.append(f"gaussian_beam: a {beam.waist_nm:g} nm waist needs angles beyond NA {NA_MAX}; its angular "
+                        "spectrum is cut there, so the focus is non-paraxial (wider than the Gaussian, elongated "
+                        "along the polarisation)")
+    warnings.append(f"gaussian_beam: {info['plane_waves']} oblique TFSF plane waves; expect ~0.1% incident-field "
+                    "leakage")
+    return BeamSource(comps, r0=focus, **tfsf), info
+
+
+def _far_results(sim, lay, far, inc_e2) -> list[FarFieldData]:
     """dC_sca/dOmega from the scattered fields on the flux box (near-to-far-field transformation).
 
     theta is measured from the incident direction and phi from the polarization, as in the other backends."""
@@ -242,12 +289,11 @@ def _far_results(sim, lay, far) -> list[FarFieldData]:
     surf = far["surf"]
     r = lay.origin + surf.pos * lay.dx - lay.r0
     e_all, h_all = far["mon"].results()
-    inc = far["inc"].results()[0][:, 0]
     nb = sim.medium_index
     out = []
     for f, lam in enumerate(req.wavelengths_nm):
         ef = far_field(surf, e_all[f], h_all[f], r, nhat.reshape(-1, 3), nb * far["omega"][f], 1 / nb)
-        dcs = np.sum(np.abs(ef) ** 2, axis=-1).reshape(nhat.shape[:2]) / abs(inc[f]) ** 2
+        dcs = np.sum(np.abs(ef) ** 2, axis=-1).reshape(nhat.shape[:2]) / inc_e2[f]
         out.append(FarFieldData(wavelength_nm=float(lam), theta_deg=list(req.theta_deg), phi_deg=list(req.phi_deg),
                                 dcsca_domega_nm2=dcs.tolist()))
     return out

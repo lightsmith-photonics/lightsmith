@@ -22,7 +22,7 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .materials import Material
-from .spec import Simulation, WavelengthRange
+from .spec import Particle, Simulation, WavelengthRange
 
 Wavelengths = list[float] | WavelengthRange
 
@@ -266,17 +266,61 @@ class CircuitProblem(_Model):
     options: dict[str, dict[str, Any]] = Field(default_factory=dict)
 
 
+class Dipole(_Model):
+    """A point electric dipole emitter."""
+
+    position_nm: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    orientation: tuple[float, float, float] = Field((0.0, 0.0, 1.0), description="Dipole moment direction.")
+
+    @model_validator(mode="after")
+    def _nonzero(self):
+        if not np.any(self.orientation):
+            raise ValueError("dipole orientation must be non-zero")
+        return self
+
+    def unit(self) -> np.ndarray:
+        o = np.asarray(self.orientation, dtype=float)
+        return o / np.linalg.norm(o)
+
+
+class RadiationPatternRequest(_Model):
+    """Radiated power per solid angle. theta is measured from +z, phi from +x."""
+
+    theta_deg: list[float] = Field(min_length=1)
+    phi_deg: list[float] = Field([0.0, 90.0], min_length=1)
+    wavelengths_nm: list[float] = Field(min_length=1)
+
+
+class EmissionProblem(_Model):
+    """A point dipole near particles in a homogeneous medium.
+
+    Gives the decay-rate (Purcell) enhancement, the radiative enhancement, the efficiency and the radiation
+    pattern, all relative to the same dipole in the medium alone."""
+
+    kind: Literal["emission"] = "emission"
+    particles: list[Particle] = Field(default_factory=list)
+    medium_index: float = Field(1.0, gt=0, description="Real refractive index of the host medium.")
+    dipole: Dipole = Dipole()
+    wavelengths: Wavelengths = Field(description="Vacuum wavelengths in nm.")
+    radiation_pattern: RadiationPatternRequest | None = None
+    options: dict[str, dict[str, Any]] = Field(default_factory=dict)
+
+    def wavelength_array(self) -> np.ndarray:
+        return wavelength_array(self.wavelengths)
+
+
 # --- the union ------------------------------------------------------------------
 
 from .inverse.spec import OptimizationProblem  # noqa: E402  (it wraps DeviceProblem, defined above)
 
 Problem = Annotated[
     Union[Simulation, LayerStackProblem, PeriodicProblem, ModeProblem, DeviceProblem, BandProblem, CircuitProblem,
-          OptimizationProblem],
+          OptimizationProblem, EmissionProblem],
     Field(discriminator="kind"),
 ]
 
-PROBLEM_KINDS = ("scattering", "layer_stack", "periodic", "mode", "device", "bands", "circuit", "optimization")
+PROBLEM_KINDS = ("scattering", "layer_stack", "periodic", "mode", "device", "bands", "circuit", "optimization",
+                 "emission")
 
 
 class _Envelope(BaseModel):

@@ -8,6 +8,12 @@ method. There are two backends, both under method `mie`.
 | `miepython` | `lightsmith.backends.mie` | Sphere | — | CPU | — |
 | `lightsmith-mie` | `lightsmith.backends.mie_native` | Sphere, LayeredSphere | near and far | CPU or GPU (NumPy or PyTorch) | through `mie_cross_sections` |
 
+`lightsmith-mie` also solves [dipole emission](../problems/emission.md) next to one sphere (dipole outside it),
+exactly: the decay rates of radial and tangential dipoles from the Mie coefficients (Chew, J. Chem. Phys. 87,
+1355 (1987); Kim et al., Surf. Sci. 195, 1 (1988)), cos²-weighted for other orientations. Tests: a lossless
+sphere radiates everything, the rates tend to 1 far away, and the quenching by a small lossy sphere tends to
+the quasi-static result as (R/d)² (`tests/test_emission.py`). No radiation pattern yet.
+
 ## Method
 
 **`miepython`** wraps [miepython](https://github.com/scottprahl/miepython) (MIT), a core dependency.

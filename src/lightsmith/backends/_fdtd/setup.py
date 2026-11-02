@@ -286,8 +286,9 @@ def particle_bbox(sim) -> tuple[np.ndarray, np.ndarray]:
     return lo, hi
 
 
-def scattering_layout(sim, opts, dx: float) -> Layout:
-    lo, hi = particle_bbox(sim)
+def scattering_layout(sim, opts, dx: float, bbox=None) -> Layout:
+    """Grid around `bbox` (default: the particles' bounding box): TFSF box, flux boxes, gaps and CPML."""
+    lo, hi = particle_bbox(sim) if bbox is None else bbox
     ctr = (lo + hi) / 2
     half_cells = np.ceil((hi - lo) / 2 / dx - 1e-9).astype(int) + 1
     # default gaps: 4 cells, but no less than 3% of the longest wavelength in the medium, so that refining the

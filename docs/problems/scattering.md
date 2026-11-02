@@ -9,7 +9,7 @@ homogeneous, non-absorbing host medium, illuminated by a plane wave.
 |---|---|
 | `particles` | One or more `Particle(shape, material, position_nm)` |
 | `medium_index` | Real refractive index of the host (default 1) |
-| `illumination` | `PlaneWave(direction, polarization)`, default +z with x polarisation. `polarization` must be orthogonal to `direction`. |
+| `illumination` | `PlaneWave(direction, polarization)`, default +z with x polarisation. `polarization` must be orthogonal to `direction`. Or `GaussianBeam(direction, polarization, waist_nm, focus_nm, waist_wavelength_nm)` (FDTD only; see below). |
 | `wavelengths` | Vacuum wavelengths in nm (a list or a `WavelengthRange`) |
 | `orientation_average` | Average the cross sections over all particle orientations |
 | `outputs` | `cross_sections` (default on); optional `near_field` and `far_field` requests |
@@ -24,6 +24,15 @@ homogeneous, non-absorbing host medium, illuminated by a plane wave.
 | `layered_sphere` | `core_radius_nm`, `shells: [{thickness_nm, material}]` | The particle `material` is the core |
 | `spheroid` | `semi_axis_xy_nm`, `semi_axis_z_nm` | Symmetry axis along z |
 | `cylinder` | `radius_nm`, `length_nm` | Flat ends, axis along z |
+
+### Gaussian beams
+
+`GaussianBeam` is a focused beam with the angular spectrum exp(−(k_t w₀/2)²), each plane wave polarised
+by rotating `polarization` with its direction. The angular weights are fixed, so the beam behaves like
+one focused by a lens of fixed NA: the waist is `waist_nm` at `waist_wavelength_nm` (default: the middle
+of the band) and scales with the wavelength. Waists below about λ/n need angles beyond NA 0.95, where the
+spectrum is cut; such a focus is non-paraxial, wider than the Gaussian and elongated along the
+polarisation. Cross sections are normalised by the intensity at the focus, ½ n |E(focus)|².
 
 ### Field outputs
 
@@ -59,7 +68,8 @@ solver is never picked automatically.
 | Spheroids, cylinders | — | — | ✅ | ✅ | spheroids |
 | Several particles | — | ✅ (spheres) | ✅ | ✅ | — |
 | Near field | native | ✅ | ✅ | ✅ | — |
-| Far field | native | ✅ | ✅ | — | ✅ |
+| Far field | native | ✅ | ✅ | ✅ | ✅ |
+| Resonances (Q) | — | — | — | ✅ | — |
 | Orientation average | ✅ | ✅ (analytic) | ✅ (sampled) | — | ✅ |
 | GPU | native | — | ✅ | ✅ | — |
 

@@ -46,6 +46,8 @@ DESCRIPTIONS = {
                "S-parameters.",
     "optimization": "Inverse design (topology optimisation) of a device's design region against S-parameter or "
                     "field objectives.",
+    "emission": "A point dipole emitter near particles: Purcell (decay-rate) enhancement, radiative enhancement, "
+                "quantum efficiency of the antenna and radiation pattern.",
 }
 
 _SI = {"kind": "constant_index", "n_real": 3.48}
@@ -53,6 +55,14 @@ _SIO2 = {"kind": "constant_index", "n_real": 1.44}
 
 # One small, valid problem per kind (each solves in seconds on a CPU, except optimization).
 EXAMPLES: dict[str, dict[str, Any]] = {
+    "emission": {
+        "kind": "emission",
+        "particles": [{"shape": {"kind": "sphere", "radius_nm": 40},
+                       "material": {"kind": "library", "name": "Au", "dataset": "Johnson-Christy"}}],
+        "medium_index": 1.33,
+        "dipole": {"position_nm": [0, 0, 50], "orientation": [0, 0, 1]},
+        "wavelengths": {"start_nm": 500, "stop_nm": 700, "num": 41},
+    },
     "scattering": {
         "kind": "scattering",
         "particles": [{"shape": {"kind": "sphere", "radius_nm": 40},

@@ -223,6 +223,28 @@ def test_fdtd_drude_sphere_resonance():
     assert all(440 <= m.wavelength_nm <= 600 for m in res.resonances)
 
 
+@pytest.mark.gpu
+@needs_cuda
+def test_fdtd_gaussian_beam_focus_and_profile():
+    """C_ext of a small sphere at the focus equals Mie (normalised by the focal intensity); off the axis it
+    follows |E|^2 of the discretised beam (measured: 0.13 % and 0.1 %)."""
+    from lightsmith.backends._fdtd.beam import beam_field, plane_wave_components
+    from lightsmith.spec import GaussianBeam
+
+    wl = [500.0, 600.0, 700.0]
+    base = sphere_sim(ls.ConstantIndex(n_real=1.5), 40, wl, spacing_nm=4.0)
+    mie = np.asarray(ls.solve(base, "mie").c_ext_nm2)
+    for off in ((0.0, 0.0, 0.0), (333.0, 0.0, 0.0)):
+        beam = GaussianBeam(waist_nm=1000, focus_nm=tuple(-v for v in off))
+        res = ls.solve(base.model_copy(update={"illumination": beam}), "fdtd", "gpu")
+        comps, _ = plane_wave_components(beam, 1.0, 600.0, 500.0)
+        expect = [np.sum(np.abs(beam_field(comps, np.array([off]), 2 * np.pi / lam)) ** 2)
+                  / np.sum(np.abs(beam_field(comps, np.zeros((1, 3)), 2 * np.pi / lam)) ** 2) for lam in wl]
+        np.testing.assert_allclose(np.asarray(res.c_ext_nm2) / mie, expect, rtol=5e-3)
+        assert res.provenance["gaussian_beam"]["plane_waves"] > 50
+    assert not ls.get_backend("mie").supports(base.model_copy(update={"illumination": beam}))[0]
+
+
 # --- slow, tighter checks -----------------------------------------------------
 
 

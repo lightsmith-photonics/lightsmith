@@ -56,13 +56,15 @@ class Backend(ABC):
 
 def unsupported_outputs(sim: Simulation, *, near_field: bool = False, far_field: bool = False,
                         substrate: bool = False, orientation_average: bool = False,
-                        resonances: bool = False) -> str:
+                        resonances: bool = False, gaussian_beam: bool = False) -> str:
     """Helper for `supports`: name the requested features a backend lacks ('' if none)."""
     missing = []
     if sim.outputs.near_field is not None and not near_field:
         missing.append("near_field output")
     if sim.outputs.far_field is not None and not far_field:
         missing.append("far_field output")
+    if sim.illumination.kind == "gaussian_beam" and not gaussian_beam:
+        missing.append("gaussian_beam illumination")
     if sim.outputs.resonances is not None and not resonances:
         missing.append("resonances output (time-domain solvers only)")
     if sim.substrate is not None and not substrate:

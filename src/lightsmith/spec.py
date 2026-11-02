@@ -168,6 +168,29 @@ class PlaneWave(_Model):
         return k / np.linalg.norm(k), e / np.linalg.norm(e)
 
 
+class GaussianBeam(_Model):
+    """A focused Gaussian beam: plane waves with the angular spectrum exp(-(k_t w0 / 2)^2), each polarised by
+    rotating `polarization` with its direction (aplanatic).
+
+    The angular weights are fixed, so the beam behaves as if focused by a lens of fixed NA: the waist is
+    `waist_nm` at `waist_wavelength_nm` (default: the middle of the band) and scales with the wavelength.
+    Cross sections are normalised by the intensity at the focus."""
+
+    kind: Literal["gaussian_beam"] = "gaussian_beam"
+    direction: tuple[float, float, float] = Field((0.0, 0.0, 1.0), description="Beam axis (propagation).")
+    polarization: tuple[float, float, float] = Field((1.0, 0.0, 0.0), description="E-field direction at the axis.")
+    waist_nm: float = Field(gt=0, description="1/e^2 intensity radius at the focus.")
+    focus_nm: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    waist_wavelength_nm: float | None = Field(None, gt=0, description="Vacuum wavelength at which the waist is "
+                                              "waist_nm. Default: the middle of the band.")
+
+    @model_validator(mode="after")
+    def _orthogonal(self):
+        return PlaneWave._orthogonal(self)
+
+    unit_vectors = PlaneWave.unit_vectors
+
+
 class WavelengthRange(_Model):
     start_nm: float = Field(gt=0)
     stop_nm: float = Field(gt=0)
@@ -227,7 +250,7 @@ class Simulation(_Model):
     schema_version: Literal["0.1"] = SCHEMA_VERSION
     particles: list[Particle] = Field(min_length=1)
     medium_index: float = Field(1.0, gt=0, description="Real refractive index of the host medium.")
-    illumination: PlaneWave = PlaneWave()
+    illumination: PlaneWave | GaussianBeam = PlaneWave()
     wavelengths: list[float] | WavelengthRange = Field(description="Vacuum wavelengths in nm.")
     substrate: Substrate | None = Field(None, description="Optional half-space below the particles.")
     orientation_average: bool = Field(False, description="Average cross sections over all particle orientations.")

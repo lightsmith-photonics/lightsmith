@@ -16,12 +16,12 @@ runs, and error bars on every result).
 | Hardware | CPU or one CUDA GPU (CUDA graphs) | CPU, MPI | GPU (local or cloud), multi-GPU |
 | Dimensions | 3D | 1D, 2D, 3D, cylindrical | 2D, 3D |
 | Grid | Uniform, non-cubic cells | Uniform | Non-uniform, graded, override regions |
-| Interfaces | Diagonal subpixel smoothing, dispersive media included | Tensor subpixel smoothing (non-dispersive part) | Conformal meshing for dielectrics, metals and PEC |
-| Sources | Plane wave (TFSF; one-sided in periodic cells) | Point, current, Gaussian beam, eigenmode, plane wave | All of these, plus focused beams and imported fields |
+| Interfaces | Conformal (tensor) smoothing; dispersive media diagonal | Tensor subpixel smoothing (non-dispersive part) | Conformal meshing for dielectrics, metals and PEC |
+| Sources | Plane wave (TFSF; one-sided in periodic cells), Gaussian beam, point dipole | Point, current, Gaussian beam, eigenmode, plane wave | All of these, plus focused beams and imported fields |
 | Boundaries | CPML, periodic, Bloch | PML, absorber, periodic, Bloch, mirror symmetry | PML, periodic, Bloch, PEC, PMC, symmetry |
 | Materials | Drude, Lorentz, fitted tables | + conductivity, anisotropic, μ, χ2/χ3, gain, gyrotropic | + 2D sheets, index perturbation, multi-coefficient fits |
-| Outputs | Flux spectra, diffraction orders, near fields | + far field, Harminv, LDOS, forces, mode coefficients | + far field into substrates, Q analysis, S-parameters |
-| Problem kinds | scattering, periodic, layer_stack | — | + devices with ports |
+| Outputs | Flux spectra, diffraction orders, near and far fields, resonances (Q), Purcell factor | + far field, Harminv, LDOS, forces, mode coefficients | + far field into substrates, Q analysis, S-parameters |
+| Problem kinds | scattering, periodic, layer_stack, emission | — | + devices with ports |
 | Gradients | None | Adjoint (CPU) | Adjoint |
 
 ## Conformal meshing
@@ -104,4 +104,5 @@ merged. This table tracks the branch.
 | 1. Conformal meshing (metals) | Open: tensor terms diverge in Drude cells; next try contour-path |
 | 3. Far field | Done: `outputs.far_field` for scattering |
 | 4. Resonances | Done: `outputs.resonances` for scattering; `lightsmith.resonance.harmonic_inversion` |
-| 2. Dipole and Gaussian-beam sources | Next: needs an emission result type and a broadband beam model |
+| 2. Dipole source | Done: `kind: "emission"` (FDTD and exact Mie); within 0.2 % of Mie for dielectrics, 10 %–2.4× near metals (interface cells) |
+| 2. Gaussian-beam source | Done: `GaussianBeam` illumination; 0.13 % from Mie at the focus, 0.1 % from the beam profile off axis |

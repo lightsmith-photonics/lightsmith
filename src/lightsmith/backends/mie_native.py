@@ -45,7 +45,8 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..device import Device
-from ..results import FarFieldData, NearFieldData, Result
+from ..problems import EmissionProblem
+from ..results import EmissionResult, FarFieldData, NearFieldData, Result
 from ..spec import LayeredSphere, Simulation, Sphere
 from .base import Backend, register, unsupported_outputs
 
@@ -403,6 +404,55 @@ def _near_field(sim: Simulation, req, device: Device, opts: MieOptions) -> tuple
 # --- backend -----------------------------------------------------------------------
 
 
+def dipole_emission(radii_nm, eps, wavelength_nm, medium_index: float, distance_nm: float, cos2_radial):
+    """Decay-rate enhancements of a dipole outside a (multilayer) sphere: (total, radiative), each / P0.
+
+    radii_nm: outer radius of each layer, core first; eps: (layers, wavelengths) permittivities;
+    distance_nm: from the sphere centre to the dipole (> the outer radius); cos2_radial: the squared cosine
+    between the dipole and the radial direction. With Bohren-Huffman a_n, b_n, z = k d, h_n = h_n^(1) and
+    the Riccati functions psi_n = z j_n, xi_n = z h_n (Chew, J. Chem. Phys. 87, 1355 (1987);
+    Kim et al., Surf. Sci. 195, 1 (1988)):
+
+        radial:      total 1 - 3/2 Re sum n(n+1)(2n+1) a_n (h_n/z)^2
+                     rad   3/2 sum n(n+1)(2n+1) |(j_n - a_n h_n)/z|^2
+        tangential:  total 1 - 3/4 Re sum (2n+1) [b_n h_n^2 + a_n (xi_n'/z)^2]
+                     rad   3/4 sum (2n+1) [|j_n - b_n h_n|^2 + |(psi_n' - a_n xi_n')/z|^2]
+
+    Radial and tangential components do not interfere, so mixed orientations are cos^2-weighted sums."""
+    from scipy.special import spherical_jn, spherical_yn
+
+    wl = np.atleast_1d(np.asarray(wavelength_nm, dtype=float))
+    k = 2 * np.pi * medium_index / wl
+    x = [k * r for r in radii_nm]
+    m = [np.sqrt(np.asarray(e, dtype=complex)) / medium_index for e in eps]
+    m = [np.where(v.imag < 0, -v, v) for v in m]
+    ratio = distance_nm / radii_nm[-1]
+    if ratio <= 1:
+        raise ValueError("the dipole must lie outside the sphere")
+    z = (k * distance_nm)[:, None]
+    # the near-field terms fall off as (R/d)^(2n): enough orders for 1e-12, but stop before h_n^2 overflows
+    n_max = max(_n_max(x, m), int(math.ceil(28 / math.log(ratio))))
+    y_all = spherical_yn(np.arange(1, n_max + 1), z)
+    ok = np.all(np.abs(y_all) < 1e140, axis=0)
+    n_max = int(np.argmin(ok)) if not ok.all() else n_max
+    zmax = max(float(np.max(np.abs(mm * xx))) for mm, xx in zip(m, x))
+    a, b = _coefficients([v.astype(complex) for v in x], m, n_max, _n_start(max(zmax, float(np.max(x[-1]))), n_max), np)
+    n = np.arange(1, n_max + 1)
+    j, jd = spherical_jn(n, z), spherical_jn(n, z, derivative=True)
+    y, yd = y_all[:, :n_max], spherical_yn(n, z, derivative=True)
+    h, hd = j + 1j * y, jd + 1j * yd
+    psid, xid = j + z * jd, h + z * hd
+    nn = n * (n + 1) * (2 * n + 1)
+    # each sum is 1 (the homogeneous medium, all orders) plus the sphere's correction (orders <= n_max)
+    tot_r = 1 - 1.5 * np.real(np.sum(nn * a * (h / z) ** 2, axis=-1))
+    rad_r = 1 + 1.5 * np.sum(nn * (np.abs(j - a * h) ** 2 - j**2) / z**2, axis=-1)
+    tot_t = 1 - 0.75 * np.real(np.sum((2 * n + 1) * (b * h**2 + a * (xid / z) ** 2), axis=-1))
+    rad_t = 1 + 0.75 * np.sum((2 * n + 1) * (np.abs(j - b * h) ** 2 - j**2
+                                              + (np.abs(psid - a * xid) ** 2 - psid**2) / z**2), axis=-1)
+    c2 = float(cos2_radial)
+    return c2 * tot_r + (1 - c2) * tot_t, c2 * rad_r + (1 - c2) * rad_t
+
+
 def _radii(p) -> list[float]:
     return list(p.shape.radii_nm) if isinstance(p.shape, LayeredSphere) else [p.shape.radius_nm]
 
@@ -415,9 +465,12 @@ class NativeMie(Backend):
     citation = ("Bohren & Huffman (1983); Yang, Appl. Opt. 42, 1710 (2003); "
                 "Pena & Pal, Comput. Phys. Commun. 180, 2348 (2009)")
     gpu = True
+    problem_kinds = ("scattering", "emission")
 
     @classmethod
-    def supports(cls, sim: Simulation):
+    def supports(cls, sim: Simulation | EmissionProblem):
+        if isinstance(sim, EmissionProblem):
+            return cls._supports_emission(sim)
         if len(sim.particles) != 1:
             return False, "Mie handles exactly one particle; use 'tmatrix' or 'dda' for clusters"
         if not isinstance(sim.particles[0].shape, (Sphere, LayeredSphere)):
@@ -425,6 +478,33 @@ class NativeMie(Backend):
                            "use 'dda' or 'tmatrix'")
         why = unsupported_outputs(sim, near_field=True, far_field=True, orientation_average=True)
         return (not why), why
+
+    @classmethod
+    def _supports_emission(cls, prob: EmissionProblem):
+        if len(prob.particles) != 1 or not isinstance(prob.particles[0].shape, (Sphere, LayeredSphere)):
+            return False, "Mie emission needs exactly one sphere (plain or layered); use 'fdtd'"
+        p = prob.particles[0]
+        d = np.linalg.norm(np.asarray(prob.dipole.position_nm) - np.asarray(p.position_nm))
+        if d <= max(_radii(p)) * (1 + 1e-9):
+            return False, "Mie emission needs the dipole outside the sphere; use 'fdtd'"
+        if prob.radiation_pattern is not None:
+            return False, "Mie emission does not compute radiation patterns yet; use 'fdtd'"
+        return True, ""
+
+    @classmethod
+    def _solve_emission(cls, prob: EmissionProblem) -> EmissionResult:
+        t0 = time.perf_counter()
+        p = prob.particles[0]
+        wl = prob.wavelength_array()
+        rel = np.asarray(prob.dipole.position_nm, dtype=float) - np.asarray(p.position_nm, dtype=float)
+        d = float(np.linalg.norm(rel))
+        cos2 = float((rel @ prob.dipole.unit() / d) ** 2)
+        eps = [np.asarray(mat.eps(wl), dtype=complex) for mat in p.region_materials()]
+        tot, rad = dipole_emission(_radii(p), eps, wl, prob.medium_index, d, cos2)
+        return EmissionResult(method=cls.method, backend=cls.name, wavelengths_nm=wl.tolist(), purcell=tot.tolist(),
+                              radiative=rad.tolist(), efficiency=(rad / tot).tolist(),
+                              provenance={"distance_nm": d, "cos2_radial": cos2,
+                                          "runtime_s": time.perf_counter() - t0})
 
     @classmethod
     def _options(cls, sim) -> MieOptions:
@@ -448,6 +528,8 @@ class NativeMie(Backend):
 
     @classmethod
     def estimate(cls, sim, device):
+        if isinstance(sim, EmissionProblem):
+            return {"wavelengths": len(sim.wavelength_array()), "cost": "negligible"}
         opts = cls._options(sim)
         wl = sim.wavelength_array()
         _, x, m = cls._setup(sim, wl)
@@ -477,7 +559,9 @@ class NativeMie(Backend):
             yield sl, k[sl], a, b
 
     @classmethod
-    def solve(cls, sim: Simulation, device: Device) -> Result:
+    def solve(cls, sim: Simulation | EmissionProblem, device: Device) -> Result | EmissionResult:
+        if isinstance(sim, EmissionProblem):
+            return cls._solve_emission(sim)
         t0 = time.perf_counter()
         opts = cls._options(sim)
         single = opts.precision == "single"

@@ -121,6 +121,26 @@ class _ResultBase(BaseModel):
     warnings: list[str] = Field(default_factory=list)
 
 
+class RadiationPatternData(BaseModel):
+    wavelength_nm: float
+    theta_deg: list[float]
+    phi_deg: list[float]
+    dp_domega: list[list[float]] = Field(
+        description="Radiated power per steradian over P0 (the dipole's power in the medium alone), [theta][phi]. "
+        "Integrates to `radiative`.")
+
+
+class EmissionResult(_ResultBase):
+    """Dipole emission near particles, relative to the same dipole in the homogeneous medium."""
+
+    kind: Literal["emission"] = "emission"
+    wavelengths_nm: list[float]
+    purcell: list[float] = Field(description="Total decay-rate enhancement: emitted power / P0 (radiated + absorbed).")
+    radiative: list[float] = Field(description="Power reaching the far field / P0.")
+    efficiency: list[float] = Field(description="radiative / purcell: the fraction of the emitted power that escapes.")
+    radiation_pattern: list[RadiationPatternData] | None = None
+
+
 class DiffractionOrder(BaseModel):
     order: tuple[int, int]
     r: dict[str, list[list[float]]] = Field(description="Reflected power fraction per polarization, [angle][wavelength].")

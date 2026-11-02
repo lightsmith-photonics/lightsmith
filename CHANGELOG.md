@@ -13,6 +13,12 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
   stability. Dielectric sphere C_ext error at dx = 6 nm falls from 1.1 % to 0.04 %.
 - **FDTD far field** (`outputs.far_field`): near-to-far-field projection of the scattered fields, within
   0.4 % of Mie.
+- **Dipole emission** (`kind: "emission"`): Purcell factor, radiative enhancement, efficiency and
+  radiation pattern of a point dipole near particles. Exact for one sphere in native Mie; any geometry in
+  FDTD (within 0.2 % of Mie next to a dielectric sphere).
+- **Gaussian beams** (`illumination: GaussianBeam`, FDTD): a focused beam as a sum of TFSF plane waves at
+  fixed angles (the waist scales with the wavelength, as for a lens of fixed NA); cross sections per unit
+  focal intensity. Within 0.13 % of Mie at the focus and 0.1 % of the beam profile off axis.
 - **Resonances** (`outputs.resonances`): wavelengths, Q factors and amplitudes from the FDTD ring-down,
   through the new `lightsmith.resonance.harmonic_inversion` (multi-channel matrix pencil).
 
