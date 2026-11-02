@@ -115,10 +115,7 @@ nav:
       - PWE: solvers/pwe.md
       - Circuit: solvers/circuit.md
       - Inverse design: solvers/inverse.md
-  # Placeholders for features still on other branches; fill them in when those branches merge.
-  - In development:
-      - solvers/in-development/index.md
-      - 3D inverse design: solvers/in-development/inverse-3d.md
+      - 3D inverse design: solvers/inverse-3d.md
   - PDK flow: pdk.md
   - Materials: materials.md
   - Interfaces:

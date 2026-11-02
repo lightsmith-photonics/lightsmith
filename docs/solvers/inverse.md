@@ -5,8 +5,8 @@ optimisation of [optimization problems](../problems/optimization.md). It needs P
 extra), and runs on the CPU or a GPU.
 
 !!! note "3D inverse design"
-    Another branch is adding 3D inverse design. See
-    [3D inverse design](in-development/inverse-3d.md).
+    For full-vector 3D devices with extruded or volumetric design regions, see
+    [3D inverse design](inverse-3d.md).
 
 ## Method
 

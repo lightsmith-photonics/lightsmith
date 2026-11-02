@@ -82,10 +82,10 @@ wavelength.
 
 ## Worked example
 
-[`examples/inverse_design_3d_mode_converter.py`](../examples/inverse_design_3d_mode_converter.py)
+[`examples/inverse_design_3d_mode_converter.py`](https://github.com/lightsmith-photonics/lightsmith/blob/main/examples/inverse_design_3d_mode_converter.py)
 optimises an SOI TE0 -> TE1 mode converter (2.0 x 1.6 um extruded design region,
 120 nm minimum feature, 1530-1570 nm) from
-[`inverse_design_3d_mode_converter.json`](../examples/inverse_design_3d_mode_converter.json),
+[`inverse_design_3d_mode_converter.json`](https://github.com/lightsmith-photonics/lightsmith/blob/main/examples/inverse_design_3d_mode_converter.json),
 exports GDS, and validates the exported polygons with EME, an independent method.
 
 Results (one run, RTX 5070 and CPU shared with other jobs, so timings are not final):
