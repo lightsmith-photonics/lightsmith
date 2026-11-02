@@ -41,6 +41,19 @@ reference implementation)::
 
 Conventions: lengths in nm, vacuum wavelengths, exp(-i omega t) (Im eps > 0 = loss),
 power-normalised S-parameters.
+
+3D
+--
+
+With ``device.dimension == 3`` the FDFD backend solves full-vector Maxwell on a 3D
+Yee grid (``grid.shape`` = (Nx, Ny, Nz); fields come back as (n_wl, n_src, 3, Nx, Ny, Nz)).
+Each design region is then ``parametrization="extruded"`` (an (x, y) density through
+the region's thickness ``size_nm[2]``, i.e. one vertical etch; exported to GDS like 2D
+designs) or ``"volumetric"`` (a 3D density; 3D filter and length-scale constraints;
+exported as one slab per grid layer). Forward and adjoint solves are iterative
+(BiCGStab) and warm-started from the previous iteration; ``lightsmith.estimate``
+reports the cost per iteration and the memory, including the fields kept for the
+backward pass.
 """
 
 from importlib import import_module

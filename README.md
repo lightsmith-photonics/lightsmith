@@ -54,10 +54,12 @@ uv run lightsmith solve examples/drude_sphere.json --method dda --device gpu
 | `layer_stack` — thin films | TMM, RCWA, FDTD | ✅ | TMM, RCWA |
 | `periodic` — gratings, metasurfaces | RCWA, FDTD (normal incidence) | ✅ | RCWA |
 | `mode` — waveguide cross-sections | FDE (full vector, bends) | — | — |
-| `device` — S-parameters between ports | EME, FDFD (2D) | FDFD | FDFD |
+| `device` — S-parameters between ports | EME, FDFD (2D, 3D) | FDFD | FDFD |
 | `bands` — photonic crystals | PWE (2D TE/TM, 3D) | ✅ | dense path |
 | `circuit` — netlists of compact models | S-matrix circuit solver | ✅ | ✅ |
-| `optimization` — inverse design | topology optimisation on FDFD | ✅ | — |
+| `optimization` — inverse design | topology optimisation on FDFD (2D, 3D) | ✅ | — |
+
+Inverse design runs in 2D or 3D. In 3D the FDFD solver is full-vector (Yee grid, PML, exact port modes, BiCGStab on the GPU with warm-started adjoint solves), and design regions are either *extruded* through the device layer (one vertical etch, exported to GDS) or *volumetric*, with filter-and-projection minimum feature sizes. See [examples/inverse_design_3d_mode_converter.py](examples/inverse_design_3d_mode_converter.py) (SOI TE0→TE1 converter, validated with EME on the exported polygons) and [docs/inverse_design_3d.md](docs/inverse_design_3d.md).
 
 `lightsmith backends` lists what is installed. Materials: bundled CC0 datasets (Au, Ag, Al, Cu, Si, SiO2, TiO2, water) from the refractiveindex.info database, online fetch of any entry, and passive Drude–Lorentz fitting for time-domain solvers.
 
