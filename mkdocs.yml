@@ -102,6 +102,7 @@ nav:
       - solvers/index.md
       - Mie: solvers/mie.md
       - T-matrix: solvers/tmatrix.md
+      - BEM: solvers/bem.md
       - DDA: solvers/dda.md
       - FDTD: solvers/fdtd.md
       - Quasistatic: solvers/quasistatic.md
@@ -109,22 +110,23 @@ nav:
       - RCWA: solvers/rcwa.md
       - FDE: solvers/fde.md
       - EME: solvers/eme.md
+      - BPM: solvers/bpm.md
       - FDFD: solvers/fdfd.md
       - PWE: solvers/pwe.md
       - Circuit: solvers/circuit.md
       - Inverse design: solvers/inverse.md
-  # Placeholders for backends being added on other branches; fill them in when those branches merge.
+  # Placeholders for features still on other branches; fill them in when those branches merge.
   - In development:
       - solvers/in-development/index.md
-      - BEM: solvers/in-development/bem.md
-      - BPM: solvers/in-development/bpm.md
-      - FDTD oblique incidence: solvers/in-development/fdtd-oblique.md
       - 3D inverse design: solvers/in-development/inverse-3d.md
-      - PDK flow: solvers/in-development/pdk-flow.md
+  - PDK flow: pdk.md
   - Materials: materials.md
   - Interfaces:
       - Command line: cli.md
-      - MCP server: mcp-overview.md
+      - MCP server: mcp.md
+  - Benchmarks:
+      - benchmarks/index.md
+      - Agent benchmark: benchmarks/agents.md
   - API reference:
       - api/index.md
       - Top level: api/core.md
@@ -136,6 +138,7 @@ nav:
       - Circuits: api/circuits.md
       - Inverse design: api/inverse.md
       - Layout: api/layout.md
+      - PDK: api/pdk.md
   - Contributing: contributing.md
   - Related software: landscape.md
   - Changelog: changelog.md

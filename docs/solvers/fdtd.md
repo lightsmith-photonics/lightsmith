@@ -4,22 +4,19 @@ Backend `lightsmith-fdtd` (method `fdtd`, modules `lightsmith.backends.fdtd` and
 `lightsmith.backends._fdtd`). A 3D finite-difference time-domain solver for three problem kinds:
 
 - [scattering](../problems/scattering.md);
-- [periodic structures](../problems/periodic.md) and [layer stacks](../problems/layer-stack.md), at normal
-  incidence.
+- [periodic structures](../problems/periodic.md) and [layer stacks](../problems/layer-stack.md), at normal,
+  oblique and conical incidence up to 85° from the normal.
 
 It runs on the CPU or a CUDA GPU.
-
-!!! note "Oblique incidence on periodic structures"
-    Another branch is adding oblique incidence for periodic structures. See
-    [FDTD oblique incidence](in-development/fdtd-oblique.md).
 
 ## Method
 
 ### Scattering
 
 - **Grid and boundaries.** A Yee grid with a convolutional PML (Roden & Gedney 2000).
-- **Source.** A total-field/scattered-field plane-wave source fed by a 1D auxiliary grid. It has no
-  leakage for axis-aligned incidence and about 1e-3 for oblique incidence.
+- **Source.** A total-field/scattered-field plane-wave source fed by a 1D auxiliary grid, for any
+  incidence direction. It has no leakage for axis-aligned incidence. For other directions the 1D feed is
+  interpolated, with a leakage of about 1e-3 of the incident field.
 - **Dispersion.** Drude and Lorentz auxiliary differential equations.
 - **Interfaces.** Anisotropic subpixel smoothing (Farjadpour et al. 2006), extended to dispersive media.
 - **Spectra.** One broadband pulse covers every wavelength, and running DFTs give the spectra:
@@ -38,8 +35,22 @@ It runs on the CPU or a CUDA GPU.
   are non-cubic, so each period holds a whole number of cells.
 - **Source.** A one-sided plane-wave source in the superstrate.
 - **Diffraction orders.** The reflected and transmitted DFT planes are split into orders by a 2D FFT. R
-  and T are sums over the propagating orders, and A = 1 − R − T.
-- **Layer stacks.** A layer stack at normal incidence runs once and serves both s and p.
+  and T are sums over the propagating orders, and A = 1 − R − T. Order (m, n) has in-plane wavevector
+  k_∥ + m b₁ + n b₂, as in [RCWA](rcwa.md).
+- **Normal incidence.** Real fields and plain periodic boundaries. One broadband pulse per polarisation
+  gives every wavelength. A layer stack at normal incidence runs once and serves both s and p.
+- **Oblique and conical incidence.** Complex fields with Bloch-periodic boundaries,
+  F(x + L) = F(x) e^{i k_∥ L}, at a fixed in-plane wavevector k_∥ (the constant-transverse-wavenumber
+  method). The TFSF plane is fed by an auxiliary one-cell Bloch column that solves the same discrete
+  equations as the main grid, so the source does not leak at any angle or polarisation. This keeps the
+  usual Courant limit and works unchanged with the dispersive media, subpixel smoothing and the CPML.
+- **Fixed angle, not fixed k_∥.** Within one fixed-k_∥ run, each frequency sees a different angle. So every
+  (angle, wavelength, polarisation) gets its own run, with k_∥ = n_sup (2π/λ) sin θ and a pulse centred on
+  that wavelength, and every result is at the requested angle. The pulse is kept clear of the frequency
+  at which the zeroth order turns grazing, where fields ring for a long time. An oblique spectrum
+  therefore costs one run per wavelength; `estimate` reports the count (`runs`, `oblique_runs`).
+
+The design choices are explained in the docstring of `lightsmith.backends._fdtd.periodic`.
 
 ## Options
 
@@ -77,6 +88,8 @@ There are no gradients.
 | `test_fdtd_gpu_matches_cpu` (gpu): GPU float32 with CUDA graphs | CPU float64 | 1e-4 |
 | `test_fdtd_drude_sphere_matches_mie` (gpu): Drude r = 40 nm in water, dx = 2 nm | Mie | peak within 4 nm; peak height < 15 %; C_sca < 30 % everywhere |
 | `test_fdtd_layered_sphere_near_field_and_oblique_incidence` (gpu) | `lightsmith-mie` | C_ext < 3 %; near-field \|E\|² RMS < 6 % |
+| `test_fdtd_oblique_tfsf_sphere_is_direction_independent` (gpu): n = 1.5, r = 60 nm, dx = 6 nm, three directions | Mie; the other directions | C_ext, C_sca < 2 % (measured 1.0–1.2 %); spread between directions < 0.6 % (measured 0.35 %) |
+| `test_fdtd_oblique_tfsf_spheroid_matches_dda` (gpu): 80 × 160 nm spheroid, axial and off-axis | [DDA](dda.md), 80 dipoles per diameter | C_ext < 2 % (measured 0.5–1.1 %) |
 | `test_fdtd_dielectric_sphere_fine_grid` (slow, gpu): r = 60 nm, dx = 2 nm | Mie | C_ext < 0.6 % (measured 0.40 %) |
 | `test_fdtd_drude_sphere_fine_grid` (slow, gpu): dx = 1.33 nm | Mie | peak within one 10 nm sample; height < 7 % |
 | `test_fdtd_gold_library_material_via_drude_lorentz_fit` (slow, gpu): Johnson–Christy gold | Mie | peak within 10 nm; height < 20 % |
@@ -95,22 +108,32 @@ Differences are maximum absolute differences in R, T and A.
 |---|---|---|
 | `test_fdtd_layer_stack_matches_tmm_cpu`: 300 nm n = 2 slab; 30 nm Drude film | [TMM](tmm.md) | < 0.01 (slab); < 0.005 (film) |
 | `test_fdtd_layer_stack_gpu_matches_cpu_and_metal_film` (gpu): 40 nm Ag film | TMM; CPU | < 0.01; GPU vs CPU 2e-5 |
+| `test_fdtd_oblique_layer_stack_matches_tmm_cpu`: 300 nm n = 2 slab, 0°, 30°, 60°, s and p | TMM | < 0.008 (measured 0.0046, 0.0039, 0.0018) |
+| `test_fdtd_oblique_drude_film_gpu_matches_cpu_and_tmm` (gpu): 30 nm Drude film, 30° and 60° | TMM; CPU | < 0.003 (measured 0.0008, 0.0006); GPU vs CPU 5e-5 |
+| `test_fdtd_oblique_grating_matches_rcwa` (gpu): lamellar grating at 30°, 60° (slow) and conical 30°/30° | RCWA | total < 0.008 (measured ≤ 0.0043); per order 0.012 (measured ≤ 0.0071) |
+| `test_fdtd_oblique_2d_lattice_conical_matches_rcwa` (slow, gpu): disks, P = 400 nm, θ = 40°, φ = 20° | RCWA, 11 harmonics | total < 0.005 (measured 0.0015); per order 0.01 (measured ≤ 0.0039) |
 | `test_fdtd_1d_grating_matches_rcwa` (gpu): lamellar grating | [RCWA](rcwa.md), 30 harmonics | total < 0.015; per order 0.01 |
 | `test_fdtd_hole_array_guided_mode_resonance_matches_rcwa` (slow, gpu) | RCWA | resonance within 0.5 nm (measured 0.09 nm) |
+
+At oblique incidence the error on the n = 2 slab is the Yee grid's own: FDTD reproduces the discrete-Yee
+Fresnel coefficient of a bare interface to 1e-4, and the difference from TMM falls 4× per halving of the
+cell (60°, 400 nm: 0.0095 → 0.0024), according to the test module docstring.
 
 ## Limits
 
 **Scattering**
 - No far-field output, substrate or orientation averaging; near fields are supported.
 - Warns about:
-  - oblique incidence (about 0.1 % incident-field leakage);
+  - off-axis incidence (about 0.1 % incident-field leakage);
   - fields that have not decayed by the time cap;
   - negative absorption;
   - non-causal constant lossy materials;
   - fitted materials.
 
 **Periodic structures and layer stacks**
-- Normal incidence only. For oblique incidence, use [RCWA](rcwa.md) or [TMM](tmm.md).
+- Angles of incidence up to 85° from the normal. Beyond that, use [RCWA](rcwa.md) or [TMM](tmm.md).
+- An oblique spectrum costs one run per (angle, wavelength, polarisation), and runs at large angles use
+  longer, narrow-band pulses. For many angles or wavelengths, RCWA or TMM is far cheaper.
 - Rectangular lattices only: a1 along x and a2 along y.
 - The superstrate must be lossless and non-dispersive.
 - No incoherent layers.

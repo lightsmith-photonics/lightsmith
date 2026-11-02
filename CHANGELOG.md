@@ -6,6 +6,23 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
 
 ## [Unreleased]
 
+### Added
+
+- **BEM** (`lightsmith-bem`): PMCHWT surface integral equations on RWG meshes for spheres, spheroids,
+  cylinders, layered spheres and disjoint clusters, with near and far fields, on CPU or GPU. `auto` tries
+  it after T-matrix for scattering.
+- **BPM** (`lightsmith-bpm`): wide-angle Padé beam propagation for devices, 2D and 3D (semi- and
+  full-vectorial), with bends, on CPU or GPU.
+- **FDTD oblique and conical incidence** on layer stacks and periodic structures, up to 85° from the
+  normal, with Bloch-periodic boundaries at fixed in-plane wavevector. Scattering accepts any incidence
+  direction.
+- **PDK flow** (`lightsmith.pdk`): technologies as JSON (`generic_soi` from open data), parametric cells
+  with GDS output, simulation at the port reference planes, fitted and cached compact models, and
+  `pdk:<cell>` instances in circuit netlists.
+- **MCP server rewrite** on MCP SDK 2.x: jobs, budgets, resources, prompts, materials tools, and remote
+  mode. The `mcp` extra is now `mcp>=2.3,<3`.
+- **Agent benchmark** (`benchmarks/agents/`): 43 graded tasks for agents using the MCP server.
+
 ## [0.1.0] - 2026-11-01
 
 First public release.

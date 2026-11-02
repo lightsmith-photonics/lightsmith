@@ -28,7 +28,8 @@ wave.
 
 - [RCWA](../solvers/rcwa.md) is the default. It handles any lattice, conical incidence and metals, and is
   differentiable with respect to thicknesses and pixelated permittivity maps.
-- [FDTD](../solvers/fdtd.md) handles normal incidence on rectangular lattices only.
+- [FDTD](../solvers/fdtd.md) handles rectangular lattices at normal, oblique and conical incidence up to
+  85° from the normal. Oblique angles cost one run per angle, wavelength and polarisation.
 
 ## Example
 

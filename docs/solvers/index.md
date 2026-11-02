@@ -13,6 +13,7 @@ all, with licence, GPU support, differentiability and availability. You can choo
 |---|---|---|---|---|---|
 | [`mie`](mie.md) | `miepython`, `lightsmith-mie` | scattering | native | native (functional API) | miepython (core) |
 | [`tmatrix`](tmatrix.md) | `treams` | scattering | — | — | treams (`tmatrix` extra) |
+| [`bem`](bem.md) | `lightsmith-bem` | scattering | ✅ | — | — |
 | [`dda`](dda.md) | `lightsmith-dda` | scattering | ✅ | — | — |
 | [`fdtd`](fdtd.md) | `lightsmith-fdtd` | scattering, periodic, layer_stack | ✅ | — | — |
 | [`quasistatic`](quasistatic.md) | `lightsmith-quasistatic` | scattering | — | — | — |
@@ -20,6 +21,7 @@ all, with licence, GPU support, differentiability and availability. You can choo
 | [`rcwa`](rcwa.md) | `lightsmith-rcwa` | periodic, layer_stack | ✅ | ✅ | — |
 | [`fde`](fde.md) | `lightsmith-fde` | mode | — | — | — |
 | [`eme`](eme.md) | `lightsmith-eme` | device | — | — | — |
+| [`bpm`](bpm.md) | `lightsmith-bpm` | device | ✅ | — | — |
 | [`fdfd`](fdfd.md) | `lightsmith-fdfd` | device (2D) | ✅ | ✅ (adjoint) | — |
 | [`pwe`](pwe.md) | `lightsmith-pwe` | bands | ✅ | dense path | — |
 | [`circuit`](circuit.md) | `lightsmith-circuit` | circuit | ✅ | ✅ | — |
@@ -32,17 +34,21 @@ Every backend is MIT-licensed. GPL solvers ship as separate plugin packages (see
 
 | Problem kind | `auto` tries, in order |
 |---|---|
-| scattering | mie → tmatrix → dda → fdtd (then any other method, such as quasistatic) |
+| scattering | mie → tmatrix → bem → dda → fdtd (then any other method, such as quasistatic) |
 | layer_stack | tmm → rcwa → fdtd |
 | periodic | rcwa → fdtd |
 | mode | fde |
-| device | eme → fdfd |
+| device | eme → bpm → fdfd |
 | bands | pwe |
 | circuit | circuit |
 | optimization | inverse |
 
 For scattering by a single plain sphere with no field outputs, `auto` picks `miepython`. For a layered
-sphere, or when near or far fields are requested, it picks `lightsmith-mie`.
+sphere, or when near or far fields are requested, it picks `lightsmith-mie`. Non-spherical particles, and
+clusters that T-matrix does not take, go to BEM unless there is a substrate, which BEM does not support.
+
+For devices, BPM accepts the same port layouts as EME, so `auto` reaches it only when EME is unavailable or
+refuses the problem. Ask for it with `method="bpm"`.
 
 !!! tip "`method=\"mie\"` and layered spheres"
     `method="mie"` resolves to the first installed Mie backend, which is `miepython`, and miepython
