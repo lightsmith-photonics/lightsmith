@@ -12,6 +12,7 @@ from .engine import DispersiveGroup, flat_index
 from .media import Medium
 
 FS = 299.792458  # normalised time units (nm/c) per femtosecond
+DIVERGED_GROWTH = 1e8  # monitor energy / its peak during the pulse beyond which a run counts as diverged
 
 
 def e_offset(c: int) -> np.ndarray:
@@ -221,6 +222,7 @@ def particle_slot_fn(sim, slot_of: list[list[int]]):
 def run_until_decayed(eng, opts, *, max_steps: int, min_steps: int, window: int, warnings: list[str]):
     """Run chunks until the monitor energy has fallen below opts.decay_by of its peak (over a sliding
     window of `window` chunks, after `min_steps`), or until max_steps / opts.run_time_fs.
+    Raises FloatingPointError when the run diverges (non-finite or runaway monitor energy).
     Returns (steps, decay_level, used_cuda_graphs)."""
     from collections import deque
 
@@ -228,17 +230,25 @@ def run_until_decayed(eng, opts, *, max_steps: int, min_steps: int, window: int,
 
     run, graphs = eng.make_runner(opts.cuda_graphs)
     win = deque(maxlen=max(3, int(window)))
-    peak, level, steps = 0.0, float("nan"), 0
+    peak, ref, level, steps = 0.0, 0.0, float("nan"), 0
     try:
         while steps < max_steps:
             run()
             steps += eng.stride
             e = float(Device.to_numpy(eng.energy)[0])  # one sync per chunk
-            if not np.isfinite(e):
-                raise FloatingPointError(f"FDTD diverged after {steps} steps (non-finite fields); "
-                                         "lower courant or check the material model")
+            # float32 overflows to inf, but float64 (CPU) stays finite to ~1e300: also stop on growth far
+            # above the energy seen while the pulse passed (ref), which a passive structure cannot reach.
+            if not np.isfinite(e) or (steps > min_steps and e > DIVERGED_GROWTH * ref > 0):
+                why = "non-finite fields" if not np.isfinite(e) else \
+                    f"monitor energy grew to {e / ref:.0e} times its peak while the pulse passed"
+                raise FloatingPointError(
+                    f"FDTD diverged after {steps} steps ({why}); the results would be meaningless. "
+                    "Use a finer mesh (smaller spacing_nm or larger cells_per_wavelength), lower courant, "
+                    "or give lossy/dispersive materials as Drude/DrudeLorentz")
             win.append(e)
             peak = max(peak, e)
+            if steps <= min_steps:
+                ref = peak
             level = max(win) / peak if peak > 0 else float("nan")
             if not opts.run_time_fs and steps >= min_steps and len(win) == win.maxlen and level < opts.decay_by:
                 break
