@@ -65,9 +65,12 @@ class NativeFDTD(Backend):
             return ok, why
         if not isinstance(sim, Simulation):
             return False, "FDTD solves scattering, periodic and layer_stack problems"
-        why = unsupported_outputs(sim, near_field=True, far_field=True, resonances=True, gaussian_beam=True)
+        why = unsupported_outputs(sim, near_field=True, far_field=True, resonances=True, gaussian_beam=True,
+                                  substrate=True)
         if not why and sim.illumination.kind == "gaussian_beam" and sim.outputs.near_field is not None:
             why = "does not support near_field output with gaussian_beam illumination (yet)"
+        if not why and sim.substrate is not None:
+            why = scattering.substrate_unsupported(sim)
         if not why and any(needs_fit(m) for p in sim.particles for m in p.region_materials()) \
                 and fit_module() is None:
             why = "tabulated/library materials need lightsmith.materials_fit (Drude-Lorentz fitting)"

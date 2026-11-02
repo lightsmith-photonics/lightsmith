@@ -22,11 +22,20 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
 - **Gaussian beams** (`illumination: GaussianBeam`, FDTD): a focused beam as a sum of TFSF plane waves at
   fixed angles (the waist scales with the wavelength, as for a lens of fixed NA); cross sections per unit
   focal intensity. Within 0.13 % of Mie at the focus and 0.1 % of the beam profile off axis.
+- **FDTD substrates** (`Simulation.substrate`): particles on or above a non-absorbing half-space, lit at
+  normal incidence from above or through the substrate. The TFSF box takes the background field
+  (incident, reflected and transmitted waves) from an auxiliary column, so it does not leak where it cuts
+  the interface. C_sca is within 0.25 % of a dipole reference for a sphere above glass. Near fields
+  are supported; oblique incidence, absorbing substrates and far fields are not yet.
 - **Resonances** (`outputs.resonances`): wavelengths, Q factors and amplitudes from the FDTD ring-down,
   through the new `lightsmith.resonance.harmonic_inversion` (multi-channel matrix pencil).
 
 ### Changed
 
+- FDTD scattering stops when the scattered field has decayed, not the total field. The incident pulse
+  no longer sets the peak, so weak, sharp resonances are no longer cut off: a 15 nm Drude sphere's
+  spectrum rippled by ±10 %.
+- FDTD `pml_cells` defaults to 16 with a substrate (10 otherwise).
 - FDTD scattering: the default TFSF padding and PML gap are now at least 3 % of the longest wavelength
   in the medium, so refining the grid no longer moves the monitors closer to the particle.
 

@@ -21,7 +21,7 @@ runs, and error bars on every result).
 | Boundaries | CPML, periodic, Bloch | PML, absorber, periodic, Bloch, mirror symmetry | PML, periodic, Bloch, PEC, PMC, symmetry |
 | Materials | Drude, Lorentz, fitted tables | + conductivity, anisotropic, μ, χ2/χ3, gain, gyrotropic | + 2D sheets, index perturbation, multi-coefficient fits |
 | Outputs | Flux spectra, diffraction orders, near and far fields, resonances (Q), Purcell factor | + far field, Harminv, LDOS, forces, mode coefficients | + far field into substrates, Q analysis, S-parameters |
-| Problem kinds | scattering, periodic, layer_stack, emission | — | + devices with ports |
+| Problem kinds | scattering (also on a substrate), periodic, layer_stack, emission | — | + devices with ports |
 | Gradients | None | Adjoint (CPU) | Adjoint |
 
 ## Conformal meshing
@@ -86,6 +86,9 @@ Two lessons:
 3. Near-to-far-field projection (radiation patterns, far-field scattering).
 4. Resonance analysis: frequencies, Q factors and amplitudes by filter diagonalisation (as Harminv).
 5. Particles on substrates: a plane-wave source in layered media and a PML that ends inside the substrate.
+   Normal incidence on non-absorbing substrates is done; next, oblique incidence (fixed-angle column
+   in (z, t - x sin θ / c), Capoglu & Smith 2008), absorbing substrates (particle absorption and the
+   reflectance change), and the far field into both half-spaces.
 6. Mirror symmetries (PEC/PMC planes), for 2×–8× smaller runs.
 7. Device problems: waveguide mode sources and mode-expansion monitors from the FDE mode solver, giving
    S-parameters that feed [circuits](../../problems/index.md) directly.
@@ -122,3 +125,4 @@ merged. This table tracks the branch.
 | 4. Resonances | Done: `outputs.resonances` for scattering; `lightsmith.resonance.harmonic_inversion` |
 | 2. Dipole source | Done: `kind: "emission"` (FDTD and exact Mie); within 0.2 % of Mie for dielectrics, 8–12 % 10 nm from a Drude sphere |
 | 2. Gaussian-beam source | Done: `GaussianBeam` illumination; 0.13 % from Mie at the focus, 0.1 % from the beam profile off axis |
+| 5. Substrates | Done for normal incidence on non-absorbing substrates: layered TFSF from an auxiliary column, leak-free; C_sca within 0.25 % of a dipole reference above glass. Open: oblique incidence, absorbing substrates, far field |

@@ -16,8 +16,9 @@ class FDTDOptions(BaseModel):
         20.0, ge=6, description="Cells per shortest wavelength inside the optically densest material (|n|).")
     cells_per_radius: float | None = Field(
         None, ge=2, description="Minimum cells across the smallest particle half-extent. Default 10, "
-        "or 20 when a material has Re(eps) < 0 in the band (plasmonic; ~10% peak-height error at 20).")
-    pml_cells: int = Field(10, ge=4, description="CPML thickness in cells.")
+        "or 20 when a material has Re(eps) < 0 in the band (plasmonic; ~2.5% peak-height error at 20).")
+    pml_cells: int | None = Field(None, ge=4, description="CPML thickness in cells. Default: 10, or 16 with a "
+                                  "substrate (steep waves in the substrate need the thicker layer).")
     pml_kappa: float = Field(1.0, ge=1, description="CPML kappa_max (>1 damps evanescent fields faster).")
     padding_nm: float | None = Field(
         None, ge=0, description="Gap between the particles' bounding box (periodic: the stack) and the TFSF "

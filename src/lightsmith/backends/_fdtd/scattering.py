@@ -13,20 +13,65 @@ from ...resonance import harmonic_inversion
 from ...results import FarFieldData, NearFieldData, ResonanceData
 from .beam import NA_MAX, BeamSource, plane_wave_components
 from .engine import DFTMonitor, Engine, PMLSpec, TimeMonitor, flat_index
-from .media import HBARC_EV_NM, Medium, to_medium
+from .media import HBARC_EV_NM, Medium, fit_module, needs_fit, to_medium
 from .options import FDTDOptions
-from .setup import (FS, far_field, flux, flux_points, mesh_mode, particle_slot_fn, run_until_decayed,
-                    scattering_layout, surface_samples, time_step, voxelise)
+from .setup import (FS, far_field, flux, flux_points, mesh_mode, particle_bbox, particle_slot_fn,
+                    run_until_decayed, scattering_layout, surface_samples, time_step, voxelise)
+from .substrate import LayeredPlaneWave, layered_background
 from .tfsf import TFSFPlaneWave
 
 
 def _media(sim, warnings) -> tuple[list[Medium], list[list[int]]]:
+    """ADE media and particle slots; a substrate, if any, is the last medium."""
     wl = sim.wavelength_array()
     if sim.outputs.near_field is not None:
         wl = np.concatenate([wl, sim.outputs.near_field.wavelengths_nm])
     if sim.outputs.far_field is not None:
         wl = np.concatenate([wl, sim.outputs.far_field.wavelengths_nm])
-    return particle_media(sim.particles, sim.medium_index, wl, warnings)
+    media, slot_of = particle_media(sim.particles, sim.medium_index, wl, warnings)
+    if sim.substrate is not None:
+        media.append(to_medium(sim.substrate.material, wl, warnings))
+    return media, slot_of
+
+
+def substrate_unsupported(sim) -> str:
+    """Why FDTD cannot run this substrate problem (empty if it can)."""
+    k, _ = sim.illumination.unit_vectors()
+    if sim.illumination.kind != "plane_wave" or abs(k[0]) > 1e-9 or abs(k[1]) > 1e-9:
+        return ("with a substrate, FDTD supports plane waves at normal incidence (direction (0, 0, +-1)) only so far; "
+                "oblique incidence in layered media is on the roadmap")
+    if sim.outputs.far_field is not None:
+        return "does not support far_field output with a substrate (yet): it needs the layered-medium far field"
+    mat = sim.substrate.material
+    if needs_fit(mat) and fit_module() is None:
+        return "tabulated/library substrate materials need lightsmith.materials_fit"
+    eps = np.asarray(mat.eps(sim.wavelength_array()), dtype=complex)
+    if np.any(np.abs(eps.imag) > 1e-3 * np.abs(eps)):
+        return ("does not support absorbing substrates (yet): over one, the absorption near the particle mixes "
+                "with the background's own, so c_abs and c_ext are not defined by box fluxes; "
+                "planned: particle absorption and the reflectance change")
+    return ""
+
+
+def _slot_fn(sim, slot_of, n_media: int):
+    fn = particle_slot_fn(sim, slot_of)
+    if sim.substrate is None:
+        return fn
+    z_int, s_sub = sim.substrate.interface_z_nm, n_media - 1
+
+    def with_substrate(pts):
+        out = fn(pts)
+        return np.where((out == 0) & (pts[..., 2] < z_int), s_sub, out)
+    return with_substrate
+
+
+def _bbox(sim):
+    """Particles' bounding box, stretched along z to include the substrate interface."""
+    lo, hi = particle_bbox(sim)
+    if sim.substrate is not None:
+        z = sim.substrate.interface_z_nm
+        lo[2], hi[2] = min(lo[2], z), max(hi[2], z)
+    return lo, hi
 
 
 def particle_media(particles, medium_index: float, wl, warnings) -> tuple[list[Medium], list[list[int]]]:
@@ -84,7 +129,7 @@ def plan(sim, opts: FDTDOptions, single: bool, warnings: list[str] | None = None
     """Everything about the run that is cheap to compute (used by estimate and solve)."""
     warnings = [] if warnings is None else warnings
     dx = spacing(sim, opts)
-    lay = scattering_layout(sim, opts, dx)
+    lay = scattering_layout(sim, opts, dx, _bbox(sim))
     if media is None:
         media, _ = _media(sim, warnings)
     dt = time_step(dx, opts.courant, media)
@@ -125,12 +170,21 @@ def solve(sim, opts: FDTDOptions, device: Device):
     if beam is None and int(np.sum(np.abs(khat) > 1e-12)) != 1:
         warnings.append("oblique incidence: TFSF source is interpolated; expect ~0.1% incident-field leakage")
     eps_b = sim.medium_index**2
+    layered = sim.substrate is not None
 
     t0 = time.perf_counter()
-    inv_eps, groups, vstats, offdiag = voxelise(particle_slot_fn(sim, slot_of), media, lay.shape, lay.origin, dx,
+    base, background = None, ()
+    if layered:
+        base = layered_background(lay.shape, lay.origin, dx, sim.substrate.interface_z_nm, media[0], media[-1])
+        background = (0, len(media) - 1)
+    inv_eps, groups, vstats, offdiag = voxelise(_slot_fn(sim, slot_of, len(media)), media, lay.shape, lay.origin, dx,
                                                 lay.roi[0], lay.roi[1], mode=mesh_mode(opts),
-                                                samples=opts.subpixel_samples)
+                                                samples=opts.subpixel_samples, base=base, background=background)
+    del base
     t_vox = time.perf_counter() - t0
+    lam_max = float(sim.wavelength_array().max())
+    pml = PMLSpec(cells=((lay.pml, lay.pml),) * 3, kappa_max=opts.pml_kappa,
+                  alpha_max=0.05 * 2 * np.pi * sim.medium_index / lam_max, eps_ref=eps_b)
 
     tfsf = dict(shape=lay.shape, origin=lay.origin, dx=dx, dt=dt, lo=lay.tfsf[0], hi=lay.tfsf[1], eps_b=eps_b,
                 omega_c=p["omega_c"], omega_half=p["omega_half"], max_steps=p["max_steps"] + 4 * stride)
@@ -139,7 +193,15 @@ def solve(sim, opts: FDTDOptions, device: Device):
     om_ff = (2 * np.pi / np.asarray(sim.outputs.far_field.wavelengths_nm, dtype=float)
              if sim.outputs.far_field is not None else np.zeros(0))
     beam_info = None
-    if beam is None:
+    if layered:
+        down = khat[2] < 0
+        k_launch = int(lay.tfsf[1][2] + 1 if down else lay.tfsf[0][2] - 1)
+        src = LayeredPlaneWave(shape=lay.shape, origin=lay.origin, spacing=dx, dt=dt, lo=lay.tfsf[0], hi=lay.tfsf[1],
+                               down=down, ehat=ehat, inv_eps=inv_eps, z_int=sim.substrate.interface_z_nm,
+                               host=media[0], sub=media[-1], pml=pml, k_launch=k_launch,
+                               k_ref=k_launch - 2 if down else k_launch + 2, omega_c=p["omega_c"],
+                               omega_half=p["omega_half"], max_steps=tfsf["max_steps"])
+    elif beam is None:
         src = TFSFPlaneWave(r0=lay.r0, khat=khat, ehat=ehat, **tfsf)
     else:
         src, beam_info = _beam_source(sim, beam, lay, tfsf, warnings)
@@ -147,15 +209,25 @@ def solve(sim, opts: FDTDOptions, device: Device):
     sca = flux_points(*lay.sca, lay.shape, dx)
     tot = flux_points(*lay.tot, lay.shape, dx)
     mon_sca = DFTMonitor(omega, sca[0], sca[1], sca[2], energy=True)
-    mon_tot = DFTMonitor(omega, tot[0], tot[1], tot[2], energy=True)
-    if beam is None:
+    mon_tot = DFTMonitor(omega, tot[0], tot[1], tot[2], energy=2)
+    if layered:
+        mon_inc = DFTMonitor(omega, *src.plane_probe(src.k_ref), source=src.ref_view)
+        mon_bg = [DFTMonitor(omega, *src.plane_probe(int(k)), source=src.col_view)
+                  for k in (lay.tot[0][2], lay.tot[1][2])]
+        monitors = [mon_sca, mon_tot, mon_inc, *mon_bg]
+    elif beam is None:
         pe, ph1, ph2 = src.probe()
         mon_inc = DFTMonitor(omega, pe, ph1, ph2, source=src)
         monitors = [mon_sca, mon_tot, mon_inc]
     else:
         monitors = [mon_sca, mon_tot, beam_mon]
     near = _near_monitor(sim, lay) if sim.outputs.near_field is not None else None
-    if near is not None:
+    if near is not None and layered:
+        near["inc"] = DFTMonitor(near["omega"], *src.plane_probe(src.k_ref), source=src.ref_view)
+        near["bg"] = DFTMonitor(near["omega"], src.column_e(), source=src.col_view)
+        near["layered"] = src
+        monitors += [near["mon"], near["inc"], near["bg"]]
+    elif near is not None:
         near["inc"] = DFTMonitor(near["omega"], pe, ph1, ph2, source=src)
         monitors += [near["mon"], near["inc"]]
     far = None
@@ -170,9 +242,6 @@ def solve(sim, opts: FDTDOptions, device: Device):
     if sim.outputs.resonances is not None:
         probes = (TimeMonitor(_resonance_probes(sim, lay), p["max_steps"] // stride + 4),)
 
-    lam_max = wl.max()
-    pml = PMLSpec(cells=((lay.pml, lay.pml),) * 3, kappa_max=opts.pml_kappa,
-                  alpha_max=0.05 * 2 * np.pi * sim.medium_index / lam_max, eps_ref=eps_b)
     eng = Engine(device, shape=lay.shape, dx=dx, dt=dt, single=single, inv_eps=inv_eps, groups=groups, pml=pml,
                  sources=[src], monitors=monitors, dft_stride=stride, offdiag=offdiag, time_monitors=probes)
     del inv_eps
@@ -183,7 +252,13 @@ def solve(sim, opts: FDTDOptions, device: Device):
     t_loop = time.perf_counter() - t_loop
 
     # cross sections, per unit incident intensity (for a beam: at the focus)
-    if beam is None:
+    bg_out = 0.0
+    if layered:
+        intensity = np.abs(src.s_z(*mon_inc.results()))
+        # net outward flux of the background through the total-field box (absorption in a lossy substrate)
+        area = float(np.prod((lay.tot[1] - lay.tot[0])[:2])) * dx**2
+        bg_out = area * (src.s_z(*mon_bg[1].results()) - src.s_z(*mon_bg[0].results()))
+    elif beam is None:
         e_inc, h_inc = mon_inc.results()
         intensity = 0.5 * np.real(e_inc[:, 0] * np.conj(h_inc[:, 0]))
         inc_e2_ff = np.abs(far["inc"].results()[0][:, 0]) ** 2 if far is not None else None
@@ -193,8 +268,8 @@ def solve(sim, opts: FDTDOptions, device: Device):
     es, hs = mon_sca.results()
     et, ht = mon_tot.results()
     c_sca = flux(es, hs, sca[3]) / intensity
-    c_abs = -flux(et, ht, tot[3]) / intensity
-    near_data = _near_results(sim, lay, near) if near is not None else None
+    c_abs = -(flux(et, ht, tot[3]) - bg_out) / intensity
+    near_data = _near_results(sim, lay, near, warnings) if near is not None else None
     far_data = _far_results(sim, lay, far, inc_e2_ff) if far is not None else None
     res_data = None
     if probes:
@@ -208,6 +283,9 @@ def solve(sim, opts: FDTDOptions, device: Device):
             "pml_cells": lay.pml, "tfsf_box_nm": float((lay.tfsf[1] - lay.tfsf[0])[0] * dx),
             "decay_level": level, "materials": [m.describe() for m in media], **vstats,
             **({"gaussian_beam": beam_info} if beam_info else {}),
+            **({"substrate": {"interface_z_nm": sim.substrate.interface_z_nm,
+                              "incidence": "from above" if khat[2] < 0 else "through the substrate"}}
+               if layered else {}),
             "runtime_s": time.perf_counter() - t_start, "time_loop_s": t_loop, "voxelise_s": t_vox}
     if np.any(c_abs < -1e-3 * np.max(np.abs(c_sca + c_abs))):
         warnings.append("negative absorption beyond 0.1% of extinction: increase resolution or decay time")
@@ -326,7 +404,7 @@ def _near_monitor(sim, lay):
     return {"mon": DFTMonitor(om, idx), "inc": None, "ranges": rng, "omega": om}
 
 
-def _near_results(sim, lay, near):
+def _near_results(sim, lay, near, warnings=None):
     from scipy.interpolate import RegularGridInterpolator
 
     req = sim.outputs.near_field
@@ -344,7 +422,19 @@ def _near_results(sim, lay, near):
     khat, ehat = sim.illumination.unit_vectors()
     lo, hi = lay.tfsf
     out = []
-    inc0 = near["inc"].results()[0][:, 0]
+    layered = near.get("layered")
+    if layered is None:
+        inc0 = near["inc"].results()[0][:, 0]
+    else:
+        # incident wave alone (reference column) referred to z = 0, and the background (column) per z node
+        e_ref, h_ref = near["inc"].results()
+        n_inc = np.sqrt((layered.host if layered.down else layered.sub).eps(om).astype(complex)).real
+        z_ref = lay.origin[2] + layered.k_ref * lay.dx
+        inc0 = (e_ref[:, 0] * ehat[0] + e_ref[:, 1] * ehat[1]) * np.exp(-1j * n_inc * om * khat[2] * z_ref)
+        bg = near["bg"].results()[0].reshape(len(om), 2, -1)
+        # the column holds the background between its PML and the source sheet
+        nz = lay.shape[2]
+        k_ok = ((lay.pml + 1, layered.k_launch - 1) if layered.down else (layered.k_launch + 1, nz - lay.pml - 2))
     for f, lam in enumerate(req.wavelengths_nm):
         k = sim.medium_index * om[f]
         comps = []
@@ -355,11 +445,20 @@ def _near_results(sim, lay, near):
             P = np.stack(np.meshgrid(*axes, indexing="ij"), axis=-1)
             U = np.meshgrid(*[rng[a] + off[a] for a in range(3)], indexing="ij")
             inside = np.all([(U[a] >= lo[a]) & (U[a] <= hi[a]) for a in range(3)], axis=0)
-            vals = e_all[f, c] + np.where(inside, 0.0, ehat[c] * inc0[f] *
-                                          np.exp(1j * k * ((P - lay.r0) @ khat)))
+            if layered is None:
+                inc = ehat[c] * inc0[f] * np.exp(1j * k * ((P - lay.r0) @ khat))
+            else:
+                kz = np.floor(U[2] + 1e-9).astype(int)
+                ok = (kz >= k_ok[0]) & (kz <= k_ok[1])
+                inc = np.where(ok, bg[f, c][np.clip(kz, 0, nz - 1)] if c < 2 else 0.0, np.nan)
+            vals = e_all[f, c] + np.where(inside, 0.0, inc)
             interp = RegularGridInterpolator(axes, vals, bounds_error=False, fill_value=np.nan)
             comps.append(interp(pts))
-        e = np.stack(comps, axis=-1) * np.exp(1j * k * (lay.r0 @ khat)) / inc0[f]
+        ref = inc0[f] if layered is not None else inc0[f] * np.exp(-1j * k * (lay.r0 @ khat))
+        e = np.stack(comps, axis=-1) / ref
+        if layered is not None and warnings is not None and np.isnan(e).any() and f == 0:
+            warnings.append("near_field: points outside the source box beyond the incident-field column's range "
+                            "(in the PML or above the source plane) are NaN")
         enh = np.sum(np.abs(e) ** 2, axis=-1)
         out.append(NearFieldData(
             wavelength_nm=float(lam), plane=req.plane, offset_nm=req.offset_nm, axis1_nm=u.tolist(),

@@ -141,7 +141,7 @@ class DFTMonitor:
     e_idx: np.ndarray
     h_idx1: np.ndarray | None = None
     h_idx2: np.ndarray | None = None
-    energy: bool = False  # contributes to the decay-shutoff energy proxy
+    energy: int = 0  # decay-shutoff energy proxy: 1 (True) the decaying signal, 2 a reference (see run_until_decayed)
     source: object | None = None  # sample this object's E_flat/H_flat instead of the grid
     acc_e: object = field(default=None, repr=False)
     acc_h: object = field(default=None, repr=False)
@@ -222,7 +222,7 @@ class Engine:
             m._e = self.index(m.e_idx)
             m.buf = self.fzeros((m.n_max, len(m.e_idx)))
             m.pos = self.device.asarray(np.zeros(1, dtype=np.int64))
-        self.energy = self.zeros((1,))
+        self.energy = self.zeros((2,))
 
     # array helpers
     def zeros(self, shape, complex_=False):
@@ -399,7 +399,7 @@ class Engine:
         xp = self.xp
         t_e = xp.astype(self.n, xp.float64) * self.dt
         t_h = t_e - 0.5 * self.dt
-        energy = None
+        energy = [None, None]
         for m in self.monitors:
             ef, hf = (self.E_flat, self.H_flat) if m.source is None else (m.source.E_flat, m.source.H_flat)
             se = ef[m._e]
@@ -412,9 +412,11 @@ class Engine:
                         v = xp.sum(xp.real(se * xp.conj(se))) + xp.sum(xp.real(sh * xp.conj(sh)))
                     else:
                         v = xp.sum(se * se) + xp.sum(sh * sh)
-                    energy = v if energy is None else energy + v
-        if energy is not None:
-            self.energy[...] = energy
+                    g = int(m.energy) - 1
+                    energy[g] = v if energy[g] is None else energy[g] + v
+        for g, v in enumerate(energy):
+            if v is not None:
+                self.energy[g] = v
         for m in self.time_monitors:
             m.buf[m.pos] = self.E_flat[m._e][None, :]
             m.pos += 1

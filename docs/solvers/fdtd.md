@@ -3,7 +3,7 @@
 Backend `lightsmith-fdtd` (method `fdtd`, modules `lightsmith.backends.fdtd` and
 `lightsmith.backends._fdtd`). A 3D finite-difference time-domain solver for four problem kinds:
 
-- [scattering](../problems/scattering.md);
+- [scattering](../problems/scattering.md), on a substrate too (normal incidence);
 - [periodic structures](../problems/periodic.md) and [layer stacks](../problems/layer-stack.md), at normal
   incidence;
 - [dipole emission](../problems/emission.md): Purcell factor, radiative enhancement, efficiency and radiation
@@ -49,7 +49,22 @@ It runs on the CPU or a CUDA GPU.
 - **Resonances.** E at probes around each particle is recorded after the pulse has passed, and a
   multi-channel matrix pencil (`lightsmith.resonance.harmonic_inversion`) gives each mode's wavelength,
   Q and amplitude, as Harminv does in Meep.
-- **Stopping.** The run stops when the monitor energy has decayed by `decay_by`, or at the time cap.
+- **Stopping.** The run stops when the scattered-field energy on the outer flux box has decayed by
+  `decay_by` from its peak, or at the time cap. The peak counts as at least 1e-6 of the total-field
+  peak, so a particle that barely scatters still stops. Using the total field instead let the incident
+  pulse set the peak, which cut off the ring-down of weak, sharp resonances (a 15 nm Drude sphere's
+  spectrum rippled by ±10 %).
+- **Substrates.** The background is the host above the plane and the substrate below, meshed layer by
+  layer: a node's pixel holds a substrate fraction f, giving 1/⟨ε⟩ for E_x, E_y and ⟨1/ε⟩ for E_z, exact
+  for a plane. Particle meshing only touches pixels that hold a particle. The TFSF box takes its incident
+  field from an auxiliary column: a 3D engine 3 × 3 cells wide, periodic in x and y, with the main grid's
+  z nodes, layered background, CPML and time step, driven by a current sheet outside the box. At normal
+  incidence the background does not vary in x and y, so the column's fields (incident, reflected and
+  transmitted waves) are the main grid's background exactly, and the box does not leak wherever it cuts
+  the interface. A second column of the incidence medium alone gives the incident intensity. C_sca is
+  the scattered flux leaving the outer box (both half-spaces). C_abs is the net total-field flux into the
+  inner box minus the background's (from the column). The default PML is 16 cells with a substrate:
+  steep waves scattered into the substrate need it (10 cells left 1.3 % at 800 nm, dx = 2 nm).
 - **Materials.** A constant lossy permittivity becomes a Drude term matched exactly at the band centre,
   with a warning that it is not causal over a band. Tabulated and library materials are fitted with
   `fit_drude_lorentz`, with a warning that reports the RMS error.
@@ -88,7 +103,7 @@ It runs on the CPU or a CUDA GPU.
 | `spacing_nm` | `None` | Yee cell size. Overrides the two options below. |
 | `cells_per_wavelength` | `20` | Cells per shortest wavelength in the densest material |
 | `cells_per_radius` | `None` | Minimum cells across the smallest particle. Default 10, or 20 if a material is plasmonic (Re ε < 0) in the band. |
-| `pml_cells` | `10` | CPML thickness |
+| `pml_cells` | `None` | CPML thickness in cells. Default: 10, or 16 with a substrate. |
 | `pml_kappa` | `1.0` | CPML κ_max; values above 1 damp evanescent fields faster |
 | `padding_nm` | `None` | Gap between the particles (or the stack) and the TFSF box. Default 4 cells, and for scattering at least 3 % of the longest wavelength in the medium. |
 | `pml_gap_nm` | `None` | Gap between the flux monitors and the CPML. Default for scattering: 4 cells, at least 3 % of the longest wavelength in the medium. For periodic structures, 3 decay lengths of the slowest evanescent order (0.25–1.5 λ). |
@@ -162,10 +177,34 @@ Differences are maximum absolute differences in R, T and A.
 | `test_fdtd_1d_grating_matches_rcwa` (gpu): lamellar grating | [RCWA](rcwa.md), 30 harmonics | total < 0.015; per order 0.01 |
 | `test_fdtd_hole_array_guided_mode_resonance_matches_rcwa` (slow, gpu) | RCWA | resonance within 0.5 nm (measured 0.09 nm) |
 
+### Substrates (`tests/test_fdtd_substrate.py`)
+
+The reference treats a small sphere as a point dipole (Mie a₁ polarizability) driven by the incident and
+reflected waves and coupled to its own reflected field through Sommerfeld integrals, exact in the dipole
+limit.
+
+| Test | Reference | Tolerance |
+|---|---|---|
+| `test_substrate_tfsf_does_not_leak_cpu`: sphere of the host medium on glass | Zero | C_sca < 1e-9 nm², C_abs < 1e-6 nm² (float64) |
+| `test_sphere_above_glass_matches_dipole_reference` (gpu): n = 2, r = 20 nm, centre 40 and 100 nm above glass, dx = 2 nm | Dipole | C_sca < 0.5 % (measured 0.17 %, 0.23 %) |
+| `test_sphere_lit_through_glass_matches_dipole_reference` (gpu): the same, lit through the glass | Dipole | C_sca < 0.5 % (measured 0.23 %) |
+| `test_substrate_near_field_is_the_standing_wave_cpu`: sphere of the host medium on glass | |e^{−ikz} + r e^{ikz}|² above, |t|² below | < 0.5 % (measured 0.03 % at dx = 2 nm); uniform in x to 1e-9 |
+
+At dx = 1.33 nm the same spheres are within 0.11 % and 0.19 %.
+
 ## Limits
 
 **Scattering**
-- No substrate or orientation averaging. Near fields, far fields and resonances are supported.
+- No orientation averaging. Near fields, far fields and resonances are supported.
+- Substrates:
+  - normal incidence only;
+  - non-absorbing substrates only: over an absorbing one, absorption near the particle mixes with the
+    background's own, so box fluxes do not define c_abs and c_ext;
+  - no far field;
+  - near-field points outside the source box, beyond the incident-field column's range (in the PML or above
+    the source plane), are NaN;
+  - absorption of a weak absorber is limited by float32 cancellation, because the box carries the full
+    incident flux (~0.004 nm² for a 100 nm box); use `precision: "double"` for it.
 - Gaussian beams: no near-field output yet. Each oblique plane wave leaks ~0.1 % of the incident field,
   which matters only for particles with very small cross sections (1–3 % on a 20 nm glass sphere).
 - Resonances of metal particles: the plasmon Q comes out 7–10 % low, and a weak extra mode can appear

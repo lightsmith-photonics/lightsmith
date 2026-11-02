@@ -13,7 +13,7 @@ homogeneous, non-absorbing host medium, illuminated by a plane wave.
 | `wavelengths` | Vacuum wavelengths in nm (a list or a `WavelengthRange`) |
 | `orientation_average` | Average the cross sections over all particle orientations |
 | `outputs` | `cross_sections` (default on); optional `near_field` and `far_field` requests |
-| `substrate` | A half-space below the particles. Part of the schema, but no built-in backend supports it in 0.1. |
+| `substrate` | `Substrate(material, interface_z_nm)`: a half-space z < `interface_z_nm` below the particles (FDTD only; see below). |
 | `options` | Per-method solver options |
 
 ### Shapes
@@ -33,6 +33,21 @@ one focused by a lens of fixed NA: the waist is `waist_nm` at `waist_wavelength_
 of the band) and scales with the wavelength. Waists below about λ/n need angles beyond NA 0.95, where the
 spectrum is cut; such a focus is non-paraxial, wider than the Gaussian and elongated along the
 polarisation. Cross sections are normalised by the intensity at the focus, ½ n |E(focus)|².
+
+### Substrates
+
+With a `substrate`, the background is the host above the plane and the substrate below; particles may sit on
+it or cut into it. FDTD supports plane waves at normal incidence, from above (direction (0, 0, −1)) or
+through a non-absorbing substrate (direction (0, 0, 1)); oblique incidence is not supported yet.
+
+- The incident field is the background's own solution (incident, reflected and transmitted waves), and
+  cross sections are per unit intensity of the incident wave alone, in the medium it comes from.
+- `c_sca` is the power the particle scatters into both half-spaces.
+- `c_abs` is the power absorbed inside the source box beyond what the background absorbs there. Over a
+  lossy substrate that includes extra substrate absorption near the particle.
+- `c_ext = c_sca + c_abs` is the power the particle removes from the background field.
+
+Near fields are supported; far fields are not yet (they need the layered-medium far field).
 
 ### Field outputs
 
@@ -71,6 +86,7 @@ solver is never picked automatically.
 | Far field | native | ✅ | ✅ | ✅ | ✅ |
 | Resonances (Q) | — | — | — | ✅ | — |
 | Orientation average | ✅ | ✅ (analytic) | ✅ (sampled) | — | ✅ |
+| Substrate | — | — | — | ✅ (normal incidence) | — |
 | GPU | native | — | ✅ | ✅ | — |
 
 ## Example

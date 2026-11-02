@@ -177,16 +177,17 @@ def make_cell(problem, opts: FDTDOptions) -> _Cell:
     else:
         gap = max(_default_gap(problem, wl, periods, ncell, _kpar(problem, wl, a)) for a in _angles(problem))
     n_gap = max(4, math.ceil(gap / dz))
-    k_r = opts.pml_cells + n_gap
+    n_pml = opts.pml_cells or 10
+    k_r = n_pml + n_gap
     k_src = k_r + 2
     k_top = k_src + n_pad
     k_bot = k_top + math.ceil(H / dz - 1e-9)
     k_t = k_bot + 3
-    nz = k_t + n_gap + opts.pml_cells + 1
+    nz = k_t + n_gap + n_pml + 1
     shape = (ncell[0] + 2, ncell[1] + 2, nz)
     origin = np.array([-periods[0] / 2 - dx, -periods[1] / 2 - dy, -k_top * dz])
     return _Cell((periods[0], periods[1]), (ncell[0], ncell[1]), (dx, dy, dz), shape, origin, k_r, k_src, k_top,
-                 k_t, H, opts.pml_cells)
+                 k_t, H, n_pml)
 
 
 def _default_gap(problem, wl, periods, ncell, kpar=(0.0, 0.0)) -> float:

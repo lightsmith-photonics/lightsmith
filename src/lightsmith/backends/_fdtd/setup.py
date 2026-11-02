@@ -43,7 +43,7 @@ def mesh_mode(opts) -> str:
 
 
 def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *, mode: str = "subpixel",
-             samples: int = 8, chunk: int = 2048, periodic=(False, False, False)):
+             samples: int = 8, chunk: int = 2048, periodic=(False, False, False), base=None, background=()):
     """Material on the Yee E grid.
 
     slot_fn(points[..., 3] in nm) -> int medium index (0 = background) per point.
@@ -55,7 +55,11 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
     "conformal" mode, interfaces with a dispersive medium take the full tensor at grid vertices instead
     (vertex_tensor; the nodes around them leave the other groups and the off-diagonal terms).
     Returns (inv_eps[3, *shape] with 1/eps for non-dispersive cells and 1 for D-form cells,
-    list of DispersiveGroup (and at most one TensorMesh), stats dict, OffDiagonal or None)."""
+    list of DispersiveGroup (and at most one TensorMesh), stats dict, OffDiagonal or None).
+
+    base: (inv_eps, groups) of a layered background filled beforehand (e.g. layered_background), and
+    background the media indices it holds: nodes whose pixel holds only those media keep the base values,
+    so a planar interface is meshed the same inside the region of interest as everywhere else."""
     if mode not in MESH_MODES:
         raise ValueError(f"mesh refinement {mode!r} is not one of {MESH_MODES}")
     subpixel = mode != "staircase"
@@ -63,7 +67,10 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
     dx = np.broadcast_to(np.asarray(dx, dtype=float), (3,))  # cell size per axis
     S = len(media)
     eps0 = media[0].eps_inf
-    inv_eps = np.full((3,) + shape, 1.0 / eps0)
+    inv_eps = np.full((3,) + shape, 1.0 / eps0) if base is None else base[0].copy()
+    bg = np.zeros(S, dtype=bool)
+    bg[list(background)] = True
+    claimed = []
     disp = np.array([m.dispersive for m in media])
     eps_inf = np.array([m.eps_inf for m in media])
     pure_idx = {s: [] for s in range(S) if disp[s]}
@@ -88,8 +95,9 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
         flat = flat_index(c, idx3[:, 0], idx3[:, 1], idx3[:, 2], shape)
         for s in range(1, S):
             sel = (~mixed) & (center == s)
-            if not sel.any():
+            if bg[s] or not sel.any():
                 continue
+            claimed.append(flat[sel])
             if disp[s]:
                 pure_idx[s].append(flat[sel])
                 inv_eps.reshape(-1)[flat[sel]] = 1.0
@@ -97,12 +105,18 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
                 inv_eps.reshape(-1)[flat[sel]] = 1.0 / eps_inf[s]
         # interface cells: supersample
         mi = np.nonzero(mixed)[0]
-        n_mixed += len(mi)
         for a in range(0, len(mi), chunk):
             sel = mi[a:a + chunk]
             pts = pos[sel][:, None, :] + sub3[None, :, :] * dx
             sl = slot_fn(pts)  # (n, samples^3)
             frac = np.stack([(sl == s).mean(axis=1) for s in range(S)])  # (S, n)
+            if bg.any():
+                part = frac[~bg].sum(axis=0) > 0  # holds a particle medium
+                sel, sl, frac = sel[part], sl[part], frac[:, part]
+                if not len(sel):
+                    continue
+            claimed.append(flat[sel])
+            n_mixed += len(sel)
             dom = np.argmax(frac, axis=0)
             chi = (sl == dom[:, None]).astype(float)
             mom = (chi - chi.mean(axis=1, keepdims=True)) @ sub3 / dx  # (n, 3) first moment ~ normal
@@ -132,6 +146,12 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
                 mixed_w.append(w[has_disp])
                 inv_eps.reshape(-1)[f_idx[has_disp]] = 1.0
     groups = []
+    if base is not None:
+        taken = np.concatenate(claimed) if claimed else np.zeros(0, dtype=np.int64)
+        for g in base[1]:
+            keep = ~np.isin(g.idx, taken)
+            if keep.any():
+                groups.append(DispersiveGroup(g.idx[keep], g.media, g.frac[:, keep], None if g.w is None else g.w[keep]))
     for s, lst in pure_idx.items():
         if lst:
             groups.append(DispersiveGroup(np.concatenate(lst), [media[s]], np.ones((1, sum(map(len, lst)))), None))
@@ -146,7 +166,7 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
     tm = None
     if mode == "conformal" and disp.any():
         tm = vertex_tensor(slot_fn, media, shape, origin, dx, roi_lo, roi_hi, samples=samples, chunk=chunk,
-                           periodic=periodic)
+                           periodic=periodic, background=background)
     if tm is not None:
         taken = tm.idx
         inv_eps.reshape(-1)[taken] = 1.0
@@ -197,12 +217,13 @@ def _pixel_average(slot_fn, pos, dx, S: int, samples: int, chunk: int):
 
 
 def vertex_tensor(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *, samples: int = 8,
-                  chunk: int = 2048, periodic=(False, False, False)) -> TensorMesh | None:
+                  chunk: int = 2048, periodic=(False, False, False), background=()) -> TensorMesh | None:
     """The TensorMesh of interfaces with a dispersive medium (None if there are none).
 
     Tensor vertices: every vertex whose cube (side dx, centred on it) holds an interface with a dispersive
     medium, plus every mixed vertex connected to one through shared nodes, so that each node next to a
-    tensor vertex has, at its other vertex, either another tensor vertex or a single medium."""
+    tensor vertex has, at its other vertex, either another tensor vertex or a single medium. Vertices whose
+    cube holds only `background` media (a layered background, meshed apart) do not count as mixed."""
     shape = tuple(shape)
     S = len(media)
     disp = np.array([m.dispersive for m in media])
@@ -220,6 +241,11 @@ def vertex_tensor(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_h
     if not len(Vm):
         return None
     frac, nhat = _pixel_average(slot_fn, pos[mixed], dx3, S, samples, chunk)
+    if len(background):
+        part = np.delete(frac, list(background), axis=0).sum(axis=0) > 0
+        Vm, frac, nhat = Vm[part], frac[:, part], nhat[part]
+        if not len(Vm):
+            return None
     seed = (frac[disp] > 0).any(axis=0) & (frac.max(axis=0) < 1)
     if not seed.any():
         return None
@@ -427,7 +453,8 @@ def scattering_layout(sim, opts, dx: float, bbox=None) -> Layout:
     n_pad = max(4, math.ceil((floor if opts.padding_nm is None else opts.padding_nm) / dx - 1e-9))
     n_gap = max(4, math.ceil((floor if opts.pml_gap_nm is None else opts.pml_gap_nm) / dx - 1e-9))
     half_tfsf = half_cells + n_pad
-    half_tot = half_tfsf + 2 + n_gap + opts.pml_cells + 1
+    n_pml = opts.pml_cells or (16 if getattr(sim, "substrate", None) is not None else 10)
+    half_tot = half_tfsf + 2 + n_gap + n_pml + 1
     shape = tuple(int(v) for v in 2 * half_tot + 1)
     c = half_tot.astype(int)
     origin = ctr - c * dx
@@ -435,7 +462,7 @@ def scattering_layout(sim, opts, dx: float, bbox=None) -> Layout:
     roi_hi = np.minimum(c + half_cells + 3, np.asarray(shape) - 1)
     return Layout(dx=dx, shape=shape, origin=origin, center=c, tfsf=(c - half_tfsf, c + half_tfsf),
                   tot=(c - half_tfsf + 2, c + half_tfsf - 2), sca=(c - half_tfsf - 2, c + half_tfsf + 2),
-                  roi=(roi_lo, roi_hi), pml=opts.pml_cells)
+                  roi=(roi_lo, roi_hi), pml=n_pml)
 
 
 def particle_slot_fn(sim, slot_of: list[list[int]]):
@@ -456,6 +483,11 @@ def particle_slot_fn(sim, slot_of: list[list[int]]):
 def run_until_decayed(eng, opts, *, max_steps: int, min_steps: int, window: int, warnings: list[str]):
     """Run chunks until the monitor energy has fallen below opts.decay_by of its peak (over a sliding
     window of `window` chunks, after `min_steps`), or until max_steps / opts.run_time_fs.
+
+    The energy is that of the monitors with energy=1. Monitors with energy=2 give a reference: the peak is
+    taken as at least 1e-6 of theirs, so a signal that never rises above noise does not run to the cap
+    (scattering: the scattered field decays, the total field is the reference; a weak, long-ringing
+    resonance would otherwise be cut off by the incident pulse dominating the peak).
     Returns (steps, decay_level, used_cuda_graphs)."""
     from collections import deque
 
@@ -463,18 +495,19 @@ def run_until_decayed(eng, opts, *, max_steps: int, min_steps: int, window: int,
 
     run, graphs = eng.make_runner(opts.cuda_graphs)
     win = deque(maxlen=max(3, int(window)))
-    peak, level, steps = 0.0, float("nan"), 0
+    peak, peak_ref, level, steps = 0.0, 0.0, float("nan"), 0
     try:
         while steps < max_steps:
             run()
             steps += eng.stride
-            e = float(Device.to_numpy(eng.energy)[0])  # one sync per chunk
-            if not np.isfinite(e):
+            e, e_ref = (float(v) for v in Device.to_numpy(eng.energy))  # one sync per chunk
+            if not (np.isfinite(e) and np.isfinite(e_ref)):
                 raise FloatingPointError(f"FDTD diverged after {steps} steps (non-finite fields); "
                                          "lower courant or check the material model")
             win.append(e)
-            peak = max(peak, e)
-            level = max(win) / peak if peak > 0 else float("nan")
+            peak, peak_ref = max(peak, e), max(peak_ref, e_ref)
+            floor = max(peak, 1e-6 * peak_ref)
+            level = max(win) / floor if floor > 0 else float("nan")
             if not opts.run_time_fs and steps >= min_steps and len(win) == win.maxlen and level < opts.decay_by:
                 break
         else:
