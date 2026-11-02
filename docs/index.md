@@ -29,11 +29,11 @@ cmp = ls.compare(sim, ["mie", "dda", "fdtd"])   # cross-check methods
 
 | Problem kind | Solvers (auto order first) | GPU | Gradients |
 |---|---|---|---|
-| [`scattering`](problems/scattering.md): particles, clusters | [Mie](solvers/mie.md), [T-matrix](solvers/tmatrix.md), [DDA](solvers/dda.md), [FDTD](solvers/fdtd.md), [quasistatic](solvers/quasistatic.md) | Mie, DDA, FDTD | Mie (functional API) |
+| [`scattering`](problems/scattering.md): particles, clusters | [Mie](solvers/mie.md), [T-matrix](solvers/tmatrix.md), [BEM](solvers/bem.md), [DDA](solvers/dda.md), [FDTD](solvers/fdtd.md), [quasistatic](solvers/quasistatic.md) | Mie, BEM, DDA, FDTD | Mie (functional API) |
 | [`layer_stack`](problems/layer-stack.md): thin films | [TMM](solvers/tmm.md), [RCWA](solvers/rcwa.md), FDTD | ✅ | TMM, RCWA |
-| [`periodic`](problems/periodic.md): gratings, metasurfaces | [RCWA](solvers/rcwa.md), FDTD (normal incidence) | ✅ | RCWA |
+| [`periodic`](problems/periodic.md): gratings, metasurfaces | [RCWA](solvers/rcwa.md), FDTD (rectangular lattices) | ✅ | RCWA |
 | [`mode`](problems/mode.md): waveguide cross-sections | [FDE](solvers/fde.md) | — | — |
-| [`device`](problems/device.md): S-parameters between ports | [EME](solvers/eme.md), [FDFD](solvers/fdfd.md) (2D) | FDFD | FDFD (adjoint) |
+| [`device`](problems/device.md): S-parameters between ports | [EME](solvers/eme.md), [BPM](solvers/bpm.md), [FDFD](solvers/fdfd.md) (2D) | BPM, FDFD | FDFD (adjoint) |
 | [`bands`](problems/bands.md): photonic crystals | [PWE](solvers/pwe.md) | ✅ | dense path |
 | [`circuit`](problems/circuit.md): netlists of compact models | [S-matrix circuit solver](solvers/circuit.md) | ✅ | ✅ |
 | [`optimization`](problems/optimization.md): inverse design | [Topology optimisation on FDFD](solvers/inverse.md) | ✅ | — |
@@ -43,13 +43,15 @@ cmp = ls.compare(sim, ["mie", "dda", "fdtd"])   # cross-check methods
 - **Python**: `import lightsmith as ls`, then `ls.solve`, `ls.estimate` and `ls.compare`. See the
   [quick start](quickstart.md).
 - **Command line**: `lightsmith solve spec.json`. See the [CLI](cli.md).
-- **AI agents**: the `lightsmith-mcp` server. See [MCP](mcp-overview.md).
+- **AI agents**: the `lightsmith-mcp` server. See [MCP](mcp.md).
 
 ## Where to go next
 
 - [Installation](install.md): CPU, GPU and optional extras.
 - [Conventions](conventions.md): units, time convention, and how cross sections are normalised.
 - [Solvers](solvers/index.md): method, options, validation and limits for each solver.
+- [PDK flow](pdk.md): parametric components, their simulation, and fitted models for circuits.
+- [Benchmarks](benchmarks/index.md): cross-method accuracy and cost, and the agent benchmark.
 - [Contributing](contributing.md): how to write a solver backend or a plugin package.
 - [Related software](landscape.md): a survey of other open-source solvers.
 

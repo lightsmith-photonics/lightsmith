@@ -1,11 +1,26 @@
-# Lightsmith MCP server
+# MCP server
 
 `lightsmith-mcp` exposes the library to AI agents through the [Model Context Protocol](https://modelcontextprotocol.io).
 It is built on the official `mcp` Python SDK (2.x) and speaks protocol 2026-07-28, falling back to the older
 handshake for clients that need it. Transports: stdio (default) and streamable HTTP.
 
 Everything is JSON. Units are nm and vacuum wavelengths; the time convention is `exp(-iωt)` (see
-[AGENTS.md](../AGENTS.md)).
+[Conventions](conventions.md) and the repository's [AGENTS.md](https://github.com/lightsmith-photonics/lightsmith/blob/main/AGENTS.md)).
+
+It offers the same operations as the Python API and the [CLI](cli.md), with results as the same JSON models,
+including `provenance` and `warnings`.
+
+## Recommended agent workflow
+
+1. Read the schema (`get_schema(kind)`) before building a problem.
+2. Use nm and vacuum wavelengths, with `Im(ε) > 0` for loss (see [Conventions](conventions.md)).
+3. Estimate before solving grid-based problems.
+4. Solve, then check `warnings` before reporting numbers.
+5. Cross-check important results with a second method (`compare`).
+
+The repository's [AGENTS.md](https://github.com/lightsmith-photonics/lightsmith/blob/main/AGENTS.md) and [llms.txt](https://github.com/lightsmith-photonics/lightsmith/blob/main/llms.txt) give the same
+guidance in compact form. The [agent benchmark](benchmarks/agents.md) measures how well an agent follows
+it through this server.
 
 ## Install and run
 
@@ -62,7 +77,7 @@ for example `claude mcp add --transport http lightsmith http://127.0.0.1:8765/mc
 127.0.0.1 by default. It refuses any other address unless `LIGHTSMITH_MCP_HTTP_TOKEN` is set; clients must then
 send `Authorization: Bearer <token>`.
 
-**From Python**: see [`examples/mcp_client.py`](../examples/mcp_client.py).
+**From Python**: see [`examples/mcp_client.py`](https://github.com/lightsmith-photonics/lightsmith/blob/main/examples/mcp_client.py).
 
 ## Tools
 
@@ -192,7 +207,7 @@ applies.
 
 ## MCP registry
 
-[`server.json`](../server.json) describes the server for the MCP registry. Before publishing:
+[`server.json`](https://github.com/lightsmith-photonics/lightsmith/blob/main/server.json) describes the server for the MCP registry. Before publishing:
 
 1. Release the package on PyPI.
 2. Keep the `mcp-name` comment in the README; the registry uses it to verify ownership.

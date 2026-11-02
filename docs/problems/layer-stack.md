@@ -33,7 +33,8 @@ grids.
 
 - TMM is exact and fast, handles incoherent layers, and is differentiable.
 - RCWA treats an unpatterned stack as a single-harmonic problem.
-- FDTD handles normal incidence only.
+- FDTD handles angles up to 85° from the normal. Oblique angles cost one run per angle, wavelength and
+  polarisation.
 
 ## Example
 

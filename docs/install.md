@@ -29,7 +29,7 @@ lightsmith backends   # every solver backend, and whether it is available
 | Extra | Adds | Needed for |
 |---|---|---|
 | `gpu` | PyTorch (`torch>=2.7`) | GPU solvers, every gradient path, [inverse design](solvers/inverse.md) |
-| `mcp` | The MCP Python SDK (`mcp>=1.2,<2`) | The [`lightsmith-mcp`](mcp-overview.md) server |
+| `mcp` | The MCP Python SDK (`mcp>=2.3,<3`) | The [`lightsmith-mcp`](mcp.md) server |
 | `tmatrix` | [treams](https://github.com/tfp-photonics/treams) (Python < 3.14) | The [T-matrix](solvers/tmatrix.md) backend |
 | `layout` | [gdsfactory](https://gdsfactory.github.io/gdsfactory/) (Python ≥ 3.11) | Importing gdsfactory components and netlists. The built-in GDS reader needs no extra. |
 | `xarray` | xarray | Labelled-array conversions |
