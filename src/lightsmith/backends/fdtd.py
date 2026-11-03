@@ -15,6 +15,11 @@ One broadband Gaussian pulse covers all requested wavelengths. Running DFTs give
     C_abs = -(net flux of the total field inside the TFSF box) / I_inc
     C_ext = C_sca + C_abs
 
+Over an absorbing substrate the box would count the substrate's own absorption, so C_abs is the
+particles' own (the discrete Poynting balance on their nodes), C_sca the power scattered upward and C_ext
+the power taken from the reflected wave, both from the far field by reciprocity with the layered
+background (``_fdtd/absorption.py``, ``_fdtd/layered_far.py``).
+
 Periodic structures and planar stacks (``PeriodicProblem``, ``LayerStackProblem``) are
 solved in one unit cell: periodic x/y boundaries, CPML along z, non-cubic cells so each period
 holds a whole number of cells, a one-sided TFSF plane source, and reflection/transmission planes
@@ -104,6 +109,7 @@ class NativeFDTD(Backend):
                 out["notes"] = ("oblique incidence: one fixed-k_par complex-field run per (angle, wavelength, "
                                 "polarisation); runs at large angles use narrow-band, longer pulses")
             return out
+        single = scattering.uses_single(sim, opts, device)
         p = scattering.plan(sim, opts, single)
         lay = p["layout"]
         return {"grid": list(lay.shape), "cells": lay.cells, "spacing_nm": p["dx"], "dt_fs": p["dt"] / scattering.FS,

@@ -30,6 +30,15 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
   interface. C_sca is within 0.2–0.5 % of a dipole reference for a sphere above glass (1.7 % for p
   under total internal reflection, where the dipole model is least exact). Near fields are supported;
   absorbing substrates and far fields are not yet.
+- **FDTD absorbing substrates and far fields over substrates.** Particles over metals or other absorbing
+  substrates. Over one, `c_abs` is the particles' own absorption, from the grid's exact discrete Poynting
+  balance on their nodes; it equals the inflow through a closed box around the particle to 1e-6. `c_sca` is
+  the power scattered upward, and `c_ext` the power taken from the reflected wave (the reflectance change).
+  `outputs.far_field` now works over any substrate, into both half-spaces, by reciprocity with the grid's
+  own layered background. Against a multipole reference, a sphere over an absorbing dielectric is within
+  0.1 %, and one over a Drude metal within 0.14 %. Over glass the new quantities reproduce the box fluxes
+  to 3e-4. `precision: "auto"` runs double over an absorbing substrate: in float32 a metal's long
+  ring-down left rounding noise of up to 1.2 % in C_sca.
 - **Leak-free plane waves and Gaussian beams at any angle** (FDTD scattering). Every plane wave, and every
   component of a Gaussian beam, is fed from tables of the grid's exact discrete plane wave (the oblique
   substrate method, with a uniform background), so the TFSF box does not leak at any direction. A sphere's

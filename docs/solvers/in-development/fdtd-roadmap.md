@@ -20,7 +20,7 @@ runs, and error bars on every result).
 | Sources | Plane wave (TFSF; one-sided in periodic cells), Gaussian beam, point dipole | Point, current, Gaussian beam, eigenmode, plane wave | All of these, plus focused beams and imported fields |
 | Boundaries | CPML, periodic, Bloch | PML, absorber, periodic, Bloch, mirror symmetry | PML, periodic, Bloch, PEC, PMC, symmetry |
 | Materials | Drude, Lorentz, fitted tables | + conductivity, anisotropic, μ, χ2/χ3, gain, gyrotropic | + 2D sheets, index perturbation, multi-coefficient fits |
-| Outputs | Flux spectra, diffraction orders, near and far fields, resonances (Q), Purcell factor | + far field, Harminv, LDOS, forces, mode coefficients | + far field into substrates, Q analysis, S-parameters |
+| Outputs | Flux spectra, diffraction orders, near and far fields (into substrates too), resonances (Q), Purcell factor | + far field, Harminv, LDOS, forces, mode coefficients | + far field into substrates, Q analysis, S-parameters |
 | Problem kinds | scattering (also on a substrate), periodic, layer_stack, emission | — | + devices with ports |
 | Gradients | None | Adjoint (CPU) | Adjoint |
 
@@ -86,11 +86,13 @@ Two lessons:
 3. Near-to-far-field projection (radiation patterns, far-field scattering).
 4. Resonance analysis: frequencies, Q factors and amplitudes by filter diagonalisation (as Harminv).
 5. Particles on substrates: a plane-wave source in layered media and a PML that ends inside the substrate.
-   Done for non-absorbing substrates at any angle, including total internal reflection. Oblique incidence
+   Done for any substrate at any angle, including total internal reflection. Oblique incidence
    uses tables of the exact discrete background: per frequency a 1D discrete problem along z, then an
    inverse FFT. That is leak-free, unlike the interpolated fixed-angle grid of Capoglu & Smith (2008).
-   Next: absorbing substrates (particle absorption and the reflectance change), and the far field into both
-   half-spaces. The same tables now feed every plane wave and Gaussian-beam component in a uniform medium.
+   Absorbing substrates: the particles' own absorption from the D-form nodes (exact discrete Poynting
+   inflow), and C_sca and the reflectance change from the far field. That far field is computed by
+   reciprocity with the grid's discrete layered background, into both half-spaces.
+   The same tables now feed every plane wave and Gaussian-beam component in a uniform medium.
    They replace the 1D-fed source, which leaked about 1e-3 of the field off-axis and whose box flux did
    not cancel (up to 30 % of C_ext for a 20 nm sphere). Gaussian beams gain near fields.
 6. Mirror symmetries (PEC/PMC planes), for 2×–8× smaller runs.
@@ -129,4 +131,4 @@ merged. This table tracks the branch.
 | 4. Resonances | Done: `outputs.resonances` for scattering; `lightsmith.resonance.harmonic_inversion` |
 | 2. Dipole source | Done: `kind: "emission"` (FDTD and exact Mie); within 0.2 % of Mie for dielectrics, 8–12 % 10 nm from a Drude sphere |
 | 2. Gaussian-beam source | Done: `GaussianBeam` illumination; 0.13 % from Mie at the focus, 0.1 % from the beam profile off axis |
-| 5. Substrates | Done for non-absorbing substrates, any angle incl. total internal reflection: leak-free layered TFSF (auxiliary column at normal incidence, exact discrete background tables at oblique incidence); C_sca within 0.2–0.5 % of a dipole reference above glass (1.7 % for TIR p). Open: absorbing substrates, far field |
+| 5. Substrates | Done, any angle incl. total internal reflection: leak-free layered TFSF (auxiliary column at normal incidence, exact discrete background tables otherwise); C_sca within 0.2–0.5 % of a dipole reference above glass (1.7 % for TIR p). Absorbing substrates: particle absorption, upward scattering and reflectance change within 0.1 % of a multipole reference; far field into both half-spaces by reciprocity. Open: Gaussian beams on substrates |

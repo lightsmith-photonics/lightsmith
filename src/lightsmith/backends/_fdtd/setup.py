@@ -4,7 +4,7 @@ voxelisation with subpixel smoothing, and flux-box monitors."""
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -343,7 +343,9 @@ class Surface:
     """Equivalent-current samples on a closed box (the flux_points layout): J = n x H, M = -n x E.
 
     Sample s carries E component e_idx and the face-averaged H component (h1, h2) at the same point
-    pos (cell units, (n, 3)), so J = H_s * jdir and M = E_s * mdir, with area weight `area` (nm^2)."""
+    pos (cell units, (n, 3)), so J = H_s * jdir and M = E_s * mdir, with area weight `area` (nm^2).
+    ``blocks``: per (face, component pair) the sample range and its grid, (start, d, face, e_c, h_c, i1, i2),
+    samples ordered as meshgrid(i1, i2, indexing="ij") with i1 along (d + 1) % 3 and i2 along (d + 2) % 3."""
 
     e_idx: np.ndarray
     h1: np.ndarray
@@ -352,10 +354,12 @@ class Surface:
     jdir: np.ndarray
     mdir: np.ndarray
     area: np.ndarray
+    blocks: list = field(default_factory=list)
 
 
 def surface_samples(lo, hi, shape, dx: float) -> Surface:
     E_i, H1, H2, pos, jd, md, area = [], [], [], [], [], [], []
+    blocks, start = [], 0
     eye = np.eye(3)
     for d in range(3):
         a1, a2 = (d + 1) % 3, (d + 2) % 3
@@ -386,7 +390,9 @@ def surface_samples(lo, hi, shape, dx: float) -> Surface:
                 jd.append(np.broadcast_to(np.cross(nrm, eye[h_c]), (A.size, 3)))
                 md.append(np.broadcast_to(-np.cross(nrm, eye[e_c]), (A.size, 3)))
                 area.append(dx**2 * W)
-    return Surface(*(np.concatenate(v) for v in (E_i, H1, H2, pos, jd, md, area)))
+                blocks.append((start, d, int(face), e_c, h_c, i1, i2))
+                start += A.size
+    return Surface(*(np.concatenate(v) for v in (E_i, H1, H2, pos, jd, md, area)), blocks=blocks)
 
 
 def far_field(surf: Surface, e: np.ndarray, h: np.ndarray, r: np.ndarray, nhat: np.ndarray, k: float,

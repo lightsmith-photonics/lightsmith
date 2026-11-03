@@ -58,7 +58,8 @@ It runs on the CPU or a CUDA GPU.
   - C_abs is the net total-field flux into the box;
   - C_ext = C_sca + C_abs.
 - **Far field.** The scattered E and H on the outer flux box become equivalent surface currents, which are
-  projected to the requested directions (near-to-far-field transformation) to give dC_sca/dΩ.
+  projected to the requested directions (near-to-far-field transformation) to give dC_sca/dΩ. Over a
+  substrate the projection is by reciprocity (below).
 - **Resonances.** E at probes around each particle is recorded after the pulse has passed, and a
   multi-channel matrix pencil (`lightsmith.resonance.harmonic_inversion`) gives each mode's wavelength,
   Q and amplitude, as Harminv does in Meep.
@@ -95,6 +96,31 @@ It runs on the CPU or a CUDA GPU.
   the scattered flux leaving the outer box (both half-spaces). C_abs is the net total-field flux into the
   inner box minus the background's (from the column). The default PML is 16 cells with a substrate:
   steep waves scattered into the substrate need it (10 cells left 1.3 % at 800 nm, dx = 2 nm).
+  - **Far field over a substrate.** The scattered field outside the outer box is radiated by its
+    equivalent currents into the layered background. Reciprocity with a dipole far away in direction n̂
+    gives the far-zone amplitude: p·f = (iω/4π) Σ (F_E·J − F_H·M) dA, where F is the background field
+    (incident, reflected and transmitted waves) of the plane wave coming in from n̂. F is the grid's own
+    discrete background at each sample's Yee position, from the same 1D solver as the tables. On each
+    face the sum separates into the transverse phase and the z profile, so every face is two matrix
+    products over all directions. Into an absorbing substrate there is no far field.
+  - **Absorbing substrates.** The box fluxes would count the substrate's own absorption near the
+    particle, so over an absorbing substrate the cross sections are defined without them:
+    - C_abs is the particles' own absorption. The Yee update gives curl H = −iΩD at every E node exactly
+      (Ω = 2 sin(ω dt/2)/dt), so a node absorbs (Ω/2) Im(E*·D) dV. E and D are recorded on the dispersive
+      nodes whose pixel (for the vertex tensor, either of its vertices) holds a particle medium. That
+      set is closed under the tensor's coupling, so its sum is the discrete Poynting inflow: it equals
+      the inflow through a closed host box around a lifted sphere to 1e-6. Only where a particle touches
+      the substrate does a node hold both, and it is split by fraction × Im ε.
+    - C_sca is the power scattered into the upper half-space, from the far field. A Gauss–Legendre rule
+      in cos θ is split at the critical angle when the other side is optically thinner.
+    - C_ext is the power the particle takes from the reflected wave, by the optical theorem for that
+      wave: (4π/(ω n_inc |E₀|²)) Im(f(k_r)·E_r*), with f in the reflected wave's own direction. Over a
+      transparent substrate the same sum over the reflected and transmitted waves, with C_sca over both
+      half-spaces and the volume C_abs, gives the box values to 3e-4, including total internal reflection.
+    - C_ext − C_sca − C_abs is then the change of the substrate's own absorption, which can be negative.
+
+    The incident wave must come from above (it would decay in the substrate). Every incidence then uses
+    the tables, normal incidence included.
 - **Materials.** A constant lossy permittivity becomes a Drude term matched exactly at the band centre,
   with a warning that it is not causal over a band. Tabulated and library materials are fitted with
   `fit_drude_lorentz`, with a warning that reports the RMS error.
@@ -141,7 +167,7 @@ It runs on the CPU or a CUDA GPU.
 | `run_time_fs` | `None` | Fixed simulated time; disables the decay shut-off |
 | `decay_by` | `1e-5` | Stop when the monitor energy falls below this fraction of its peak |
 | `max_time_fs` | `2000` | Hard cap on simulated time; high-Q resonances need picoseconds |
-| `precision` | `"auto"` | `"auto"` means single on the GPU and double on the CPU |
+| `precision` | `"auto"` | `"auto"` means single on the GPU and double on the CPU, and double over an absorbing substrate |
 | `subpixel` | `True` | Smooth interfaces; `False` means staircase. Superseded by `mesh_refinement`. |
 | `mesh_refinement` | `None` | `staircase`, `volume_average` (⟨ε⟩), `subpixel` (diagonal tensor, the 0.1 behaviour) or `conformal` (full tensor; for metals at grid vertices). Default: `conformal`, or `staircase` when `subpixel` is false. |
 | `subpixel_samples` | `8` | Supersamples per axis for interface cells (2–24) |
@@ -227,6 +253,24 @@ limit.
 | `test_discrete_layered_solver_matches_fresnel`: the discrete background solver, glass, 30° and 60° (TIR), s and p | Fresnel | \|r\| and phase < 2e-4 at dz = 1 nm |
 | `test_oblique_substrate_tfsf_does_not_leak_cpu`: null particle on glass, 40° | Zero; Fresnel standing wave | C_sca < 1e-12 nm²; near field < 0.2 % (measured 2e-4) |
 | `test_oblique_sphere_above_glass_matches_dipole_reference` (gpu): n = 2, r = 20 nm, 40 nm above glass | Dipole | 45° s / p from above: 0.17 % / 0.33 %; 30° p through the glass: 0.20 %; total internal reflection at 60°: s 0.47 %, p 0.7–1.7 % |
+| `test_absorbing_substrate_null_particle_cpu`: null particle over an absorbing dielectric, normal and 40° | Zero | C_sca < 1e-12 nm²; C_abs exactly 0; \|C_ext\| < 1e-4 nm² (linear in the residual field); far field zero, exactly 0 into the substrate |
+| `test_transparent_substrate_far_field_quantities_match_box_cpu`: lossy sphere on glass, 45° p, with the absorbing-substrate definitions | The box fluxes | 0.2 % (measured 3e-4 at dx = 2.5 nm) |
+| `test_particle_absorption_equals_host_box_inflow_cpu`: lossy sphere lifted over an absorbing dielectric | Net inflow through a closed host box around it | 1e-6 (float64) |
+| `test_sphere_above_absorber_matches_multipole_reference` (gpu): n = 2, r = 20 nm, 100 nm above an absorbing dielectric (ε ≈ 14 + 3i), normal, 45° s and p | Multipole | C_sca < 0.2 % (measured 0.01–0.07 %); C_ext within 2e-3 of its interference scale (measured 5e-4); far field 0.5 % |
+| `test_lossy_sphere_above_absorber_matches_multipole_reference` (gpu): lossy sphere (ε ≈ 4.5 + 1i), the same geometry | Multipole, relative to the sphere in free space | C_abs 0.2 %, C_ext 0.4 %, C_sca 0.3 % (measured within 0.1 %) |
+
+Over absorbing substrates the reference is the sphere's full Mie response to the incident and reflected waves,
+plus its dipole's coupling to its own reflected field, radiating directly and by specular reflection. The
+dipole model alone is off by the b₁ and quadrupole terms (3 % of the dipole amplitude at x = 0.3). C_ext and
+absorption feel these at first order, because over a reflector C_ext depends on the sphere's reactive response.
+The lossy sphere's own discretisation at dx = 2 nm (C_abs −0.7 %, C_sca −1.4 %, the same in free space) is
+divided out. At a 20 nm gap the agreement is 0.3 %: the reference leaves out the higher multipoles' own
+coupling to the substrate. Over a gold-like Drude metal (ε ≈ −9.4 + 0.6i at 600 nm, sphere 100 nm above):
+C_sca is within 0.11–0.14 % and C_ext within 2e-5 of its scale (5e-4 at 400 nm, where the metal barely
+reflects), in double precision (`test_sphere_above_metal_matches_multipole_reference`, slow). In float32 the
+metal's long ring-down (65 000 steps) left rounding noise in the scattered field: C_sca was off by up to 1.2 %,
+and by 10 % with 100 nm more padding. So `precision: "auto"` runs double over an absorbing substrate, about 3×
+slower on a consumer GPU. Over the absorbing dielectric, float32 was within 0.07 % as well.
 
 At dx = 1.33 nm the normal-incidence spheres are within 0.11 % and 0.19 %. Under total internal reflection the
 evanescent field varies across the sphere, which the dipole model misses, hence its larger p deviation.
@@ -238,9 +282,10 @@ evanescent field varies across the sphere, which the dipole model misses, hence 
 - Substrates:
   - oblique incidence through the substrate needs a constant-index substrate (a fixed angle in a dispersive
     incidence medium has no fixed transverse slowness); grazing angles (more than 84°) are refused;
-  - non-absorbing substrates only: over an absorbing one, absorption near the particle mixes with the
-    background's own, so box fluxes do not define c_abs and c_ext;
-  - no far field;
+  - over an absorbing substrate: incidence from above only; C_ext ≠ C_sca + C_abs (the rest is the change of
+    the substrate's own absorption); where a particle touches the substrate, the nodes holding both are split
+    by fraction × Im ε, an O(dx) ambiguity at the contact;
+  - far field with incidence through the substrate at normal incidence needs a constant-index substrate;
   - near-field points outside the source box, beyond the incident-field column's range (in the PML or above
     the source plane), are NaN;
   - absorption of a weak absorber is limited by float32 cancellation, because the box carries the full

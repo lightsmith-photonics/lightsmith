@@ -35,7 +35,8 @@ class FDTDOptions(BaseModel):
         "this fraction of its peak (after the pulse has passed).")
     max_time_fs: float = Field(
         2000.0, gt=0, description="Hard cap on simulated time in fs (high-Q resonances need ps).")
-    precision: Literal["auto", "single", "double"] = Field("auto", description="auto = single on GPU, double on CPU.")
+    precision: Literal["auto", "single", "double"] = Field("auto", description="auto = single on GPU, double on CPU "
+                                                              "(and over an absorbing substrate).")
     subpixel: bool = Field(True, description="Anisotropic subpixel smoothing at interfaces (dispersive too). "
                            "False means staircase. Superseded by mesh_refinement when that is set.")
     mesh_refinement: Literal["staircase", "volume_average", "subpixel", "conformal"] | None = Field(

@@ -44,14 +44,24 @@ on it or cut into it. FDTD supports plane waves:
 - through a non-absorbing substrate, normal to it, or at an angle when the substrate has a constant index.
   Beyond the critical angle that is total internal reflection, with the particle in the evanescent field.
 
-- The incident field is the background's own solution (incident, reflected and transmitted waves), and
-  cross sections are per unit intensity of the incident wave alone, in the medium it comes from.
-- `c_sca` is the power the particle scatters into both half-spaces.
-- `c_abs` is the power absorbed inside the source box beyond what the background absorbs there. Over a
-  lossy substrate that includes extra substrate absorption near the particle.
-- `c_ext = c_sca + c_abs` is the power the particle removes from the background field.
+The incident field is the background's own solution (incident, reflected and transmitted waves), and
+cross sections are per unit intensity of the incident wave alone, in the medium it comes from.
 
-Near fields are supported; far fields are not yet (they need the layered-medium far field).
+Over a transparent substrate:
+- `c_sca` is the power the particle scatters into both half-spaces;
+- `c_abs` is the power it absorbs;
+- `c_ext = c_sca + c_abs` is the power it removes from the background field.
+
+Over an absorbing substrate (e.g. a metal or silicon), light scattered into the substrate is absorbed there,
+and the particle changes the substrate's own absorption, so:
+- `c_abs` is the particles' own absorption;
+- `c_sca` is the power scattered into the upper half-space (what reaches a detector above);
+- `c_ext` is the power the particle takes from the specularly reflected wave, so it is the reflectance
+  change: ΔR = −c_ext / A for a particle per area A.
+  `c_ext − c_sca − c_abs` is the change of the substrate's absorption, and can be negative.
+
+Near and far fields are supported. dC_sca/dΩ is zero for directions into an absorbing substrate. Into a
+transparent one it is per unit solid angle in the substrate.
 
 ### Field outputs
 

@@ -18,7 +18,9 @@ from .media import HBARC_EV_NM, Medium, fit_module, needs_fit, to_medium
 from .options import FDTDOptions
 from .setup import (FS, far_field, flux, flux_points, mesh_mode, particle_bbox, particle_slot_fn,
                     run_until_decayed, scattering_layout, surface_samples, time_step, voxelise)
+from .absorption import ParticleAbsorption
 from .layered import OMEGA_H, ObliqueLayeredPlaneWave
+from .layered_far import LayeredFarField, hemisphere, outgoing_waves
 from .substrate import LayeredPlaneWave, layered_background
 
 
@@ -46,17 +48,33 @@ def substrate_unsupported(sim) -> str:
     if oblique and k[2] > 0 and not isinstance(sim.substrate.material, (ConstantIndex, ConstantPermittivity)):
         return ("oblique incidence through the substrate needs a constant-index substrate (a fixed angle in a "
                 "dispersive incidence medium has no fixed transverse slowness)")
-    if sim.outputs.far_field is not None:
-        return "does not support far_field output with a substrate (yet): it needs the layered-medium far field"
     mat = sim.substrate.material
     if needs_fit(mat) and fit_module() is None:
         return "tabulated/library substrate materials need lightsmith.materials_fit"
-    eps = np.asarray(mat.eps(sim.wavelength_array()), dtype=complex)
-    if np.any(np.abs(eps.imag) > 1e-3 * np.abs(eps)):
-        return ("does not support absorbing substrates (yet): over one, the absorption near the particle mixes "
-                "with the background's own, so c_abs and c_ext are not defined by box fluxes; "
-                "planned: particle absorption and the reflectance change")
+    if k[2] > 0 and _absorbing(sim):
+        return "the plane wave cannot come in through an absorbing substrate (it decays there); illuminate from above"
+    if (k[2] > 0 and not oblique and sim.outputs.far_field is not None
+            and not isinstance(mat, (ConstantIndex, ConstantPermittivity))):
+        return ("far_field output with incidence through the substrate needs a constant-index substrate (the far field "
+                "uses the tabled source, which needs a non-dispersive incidence medium)")
     return ""
+
+
+def uses_single(sim, opts: FDTDOptions, device: Device) -> bool:
+    """float32 for "auto" on a GPU, except over an absorbing substrate: a metal's background rings for long, and
+    over such runs float32 rounding in the total-field region leaves noise in the scattered field (C_sca of a sphere
+    over a Drude metal off by up to 1.2 %, against 0.13 % in double)."""
+    if opts.precision != "auto":
+        return opts.precision == "single"
+    return device.is_gpu and not _absorbing(sim)
+
+
+def _absorbing(sim) -> bool:
+    """Whether the substrate absorbs in the band (Im eps > 1e-4 |eps| anywhere)."""
+    if sim.substrate is None:
+        return False
+    eps = np.asarray(sim.substrate.material.eps(_band_wavelengths(sim)), dtype=complex)
+    return bool(np.any(np.abs(eps.imag) > 1e-4 * np.abs(eps)))
 
 
 def _slot_fn(sim, slot_of, n_media: int):
@@ -142,11 +160,12 @@ def _band(sim):
 
 def _tabled(sim) -> bool:
     """Whether the source is fed from tables of its exact discrete field (layered.py, beam.py): every plane
-    wave and beam, except a plane wave at normal incidence on a substrate (an auxiliary column, substrate.py)."""
+    wave and beam, except a plane wave at normal incidence on a transparent substrate without far-field output
+    (an auxiliary column, substrate.py)."""
     if sim.substrate is None:
         return True
     k, _ = sim.illumination.unit_vectors()
-    return abs(k[0]) > 1e-9 or abs(k[1]) > 1e-9
+    return abs(k[0]) > 1e-9 or abs(k[1]) > 1e-9 or _absorbing(sim) or sim.outputs.far_field is not None
 
 
 def plan(sim, opts: FDTDOptions, single: bool, warnings: list[str] | None = None, media=None):
@@ -176,6 +195,9 @@ def plan(sim, opts: FDTDOptions, single: bool, warnings: list[str] | None = None
     n_flux = 2 * 12 * int(np.prod(lay.sca[1] - lay.sca[0] + 1) ** (2 / 3))
     n_f = len(sim.wavelength_array())
     mem = bytes_ * (12 * n_cells + 4 * n_flux * n_f) + _table_bytes(sim, lay, dt, omega_c, omega_half, media, bytes_)
+    if _absorbing(sim):  # DFTs of E and D on the particles' nodes, and of the surface for the far field
+        n_nodes = 3 * sum(p.shape.volume() for p in sim.particles) / dx**3 * 1.3
+        mem += bytes_ * 4 * n_f * (n_nodes + n_flux)
     return {"dx": dx, "layout": lay, "dt": dt, "stride": stride, "max_steps": max_steps, "est_steps": est_steps,
             "omega_c": omega_c, "omega_half": omega_half, "media": media, "memory_bytes": int(mem),
             "warnings": warnings}
@@ -202,7 +224,7 @@ def _table_bytes(sim, lay, dt, omega_c, omega_half, media, bytes_) -> int:
 def solve(sim, opts: FDTDOptions, device: Device):
     t_start = time.perf_counter()
     warnings: list[str] = []
-    single = opts.precision == "single" or (opts.precision == "auto" and device.is_gpu)
+    single = uses_single(sim, opts, device)
     media, slot_of = _media(sim, warnings)
     p = plan(sim, opts, single, warnings, media)
     lay, dx, dt, stride = p["layout"], p["dx"], p["dt"], p["stride"]
@@ -213,6 +235,7 @@ def solve(sim, opts: FDTDOptions, device: Device):
     beam = sim.illumination if sim.illumination.kind == "gaussian_beam" else None
     eps_b = sim.medium_index**2
     layered = sim.substrate is not None
+    absorbing = _absorbing(sim)
 
     t0 = time.perf_counter()
     base, background = None, ()
@@ -288,6 +311,16 @@ def solve(sim, opts: FDTDOptions, device: Device):
         if tabled:
             far["inc"] = DFTMonitor(om_ff, np.arange(3), source=src.view)
             monitors.append(far["inc"])
+        if layered:
+            far["lff"] = LayeredFarField(surf, origin=lay.origin, dx=dx, dt=dt, z_int=sim.substrate.interface_z_nm,
+                                         host=media[0], sub=media[-1])
+    # over an absorbing substrate: the particles' own absorption, and the far field for C_sca and C_ext
+    pabs = None
+    if absorbing:
+        pabs = ParticleAbsorption(groups, media[1:-1], omega, dt)
+        surf_cs = surface_samples(*lay.sca, lay.shape, dx)
+        mon_cs = DFTMonitor(omega, surf_cs.e_idx, surf_cs.h1, surf_cs.h2)
+        monitors += [*pabs.monitors, mon_cs]
     probes = ()
     if sim.outputs.resonances is not None:
         probes = (TimeMonitor(_resonance_probes(sim, lay), p["max_steps"] // stride + 4),)
@@ -295,6 +328,8 @@ def solve(sim, opts: FDTDOptions, device: Device):
     eng = Engine(device, shape=lay.shape, dx=dx, dt=dt, single=single, inv_eps=inv_eps, groups=groups, pml=pml,
                  sources=[src], monitors=monitors, dft_stride=stride, offdiag=offdiag, time_monitors=probes)
     del inv_eps
+    if pabs is not None:
+        pabs.bind(eng)
     t_loop = time.perf_counter()
     steps, level, graphs = run_until_decayed(
         eng, opts, max_steps=p["max_steps"], min_steps=int(src.t_passed / dt),
@@ -332,6 +367,15 @@ def solve(sim, opts: FDTDOptions, device: Device):
     et, ht = mon_tot.results()
     c_sca = flux(es, hs, sca[3]) / intensity
     c_abs = -(flux(et, ht, tot[3]) - bg_out) / intensity
+    c_ext = c_sca + c_abs
+    if absorbing:
+        # the box fluxes would count the substrate's absorption near the particle: C_abs is the particles' own, C_sca
+        # the far field (into the upper half-space), C_ext the power taken from the reflected wave
+        c_abs = pabs.power(dx**3) / intensity
+        lff = LayeredFarField(surf_cs, origin=lay.origin, dx=dx, dt=dt, z_int=sim.substrate.interface_z_nm,
+                              host=media[0], sub=media[-1])
+        c_sca, c_ext = _layered_cross_sections(sim, lay, lff, src, omega, *mon_cs.results(), amp,
+                                               np.sum(np.abs(e_ref) ** 2, axis=1))
     near_data = _near_results(sim, lay, near, warnings) if near is not None else None
     far_data = _far_results(sim, lay, far, inc_e2_ff) if far is not None else None
     res_data = None
@@ -349,12 +393,13 @@ def solve(sim, opts: FDTDOptions, device: Device):
             **({"tfsf_table_stride": src.m} if tabled or beam is not None else {}),
             **({"substrate": {"interface_z_nm": sim.substrate.interface_z_nm,
                               "incidence": "from above" if khat[2] < 0 else "through the substrate",
-                              "source": "layered tables (oblique)" if tabled else "column"}}
+                              "source": "layered tables" if tabled else "column", "absorbing": absorbing,
+                              **({"particle_absorption_nodes": pabs.nodes} if pabs is not None else {})}}
                if layered else {}),
             "runtime_s": time.perf_counter() - t_start, "time_loop_s": t_loop, "voxelise_s": t_vox}
     if np.any(c_abs < -1e-3 * np.max(np.abs(c_sca + c_abs))):
         warnings.append("negative absorption beyond 0.1% of extinction: increase resolution or decay time")
-    return {"c_sca": c_sca, "c_abs": c_abs, "c_ext": c_sca + c_abs, "near_field": near_data,
+    return {"c_sca": c_sca, "c_abs": c_abs, "c_ext": c_ext, "near_field": near_data,
             "far_field": far_data, "resonances": res_data, "provenance": prov, "warnings": warnings}
 
 
@@ -422,8 +467,37 @@ def _beam_source(sim, beam, lay, src_args, warnings):
     return BeamSource(comps, focus=focus, **src_args), info
 
 
+def _layered_cross_sections(sim, lay, lff, src, omega, es, hs, amp, e0sq):
+    """C_sca (the far field over every half-space it reaches) and C_ext (the optical theorem of each outgoing
+    background wave) over a substrate, from the layered far field (layered_far.py); e0sq = |E_inc|^2, the incident
+    intensity n_inc e0sq / 2 in the incidence medium."""
+    n1, n_inc = sim.medium_index, src.n_inc
+    R = 0.5 * float(np.linalg.norm(lay.sca[1] - lay.sca[0])) * lay.dx
+    waves = outgoing_waves(src, omega, amp)
+    c_sca, c_ext = np.zeros(len(omega)), np.zeros(len(omega))
+    for f, w in enumerate(omega):
+        n_sub = lff.side_index(w, False)
+        for up in (True, False):
+            n_this = n1 if up else n_sub
+            if n_this is None:
+                continue
+            n_other = lff.side_index(w, not up)
+            kr = n_this * w * R
+            dirs, wts = hemisphere(n_this, n_other if n_other is not None else 1j, up, int(1.5 * kr) + 10,
+                                   2 * int(1.5 * kr) + 20)
+            ff = lff.amplitudes(w, es[f], hs[f], dirs)
+            c_sca[f] += (n_this / n_inc) * np.sum(wts * np.sum(np.abs(ff) ** 2, axis=1)) / e0sq[f]
+        for wave in waves:
+            if wave is not None:
+                khat, eb, _ = wave
+                fb = lff.amplitudes(w, es[f], hs[f], khat[f:f + 1])[0]
+                c_ext[f] += 4 * np.pi * np.imag(fb @ np.conj(eb[f])) / (w * n_inc * e0sq[f])
+    return c_sca, c_ext
+
+
 def _far_results(sim, lay, far, inc_e2) -> list[FarFieldData]:
-    """dC_sca/dOmega from the scattered fields on the flux box (near-to-far-field transformation).
+    """dC_sca/dOmega from the scattered fields on the flux box (near-to-far-field transformation; over a substrate,
+    by reciprocity with the layered background, zero into an absorbing substrate).
 
     theta is measured from the incident direction and phi from the polarization, as in the other backends."""
     req = sim.outputs.far_field
@@ -438,9 +512,17 @@ def _far_results(sim, lay, far, inc_e2) -> list[FarFieldData]:
     e_all, h_all = far["mon"].results()
     nb = sim.medium_index
     out = []
+    lff = far.get("lff")
     for f, lam in enumerate(req.wavelengths_nm):
-        ef = far_field(surf, e_all[f], h_all[f], r, nhat.reshape(-1, 3), nb * far["omega"][f], 1 / nb)
-        dcs = np.sum(np.abs(ef) ** 2, axis=-1).reshape(nhat.shape[:2]) / inc_e2[f]
+        w = far["omega"][f]
+        if lff is None:
+            ef = far_field(surf, e_all[f], h_all[f], r, nhat.reshape(-1, 3), nb * w, 1 / nb)
+            ratio = 1.0
+        else:
+            ef = lff.amplitudes(w, e_all[f], h_all[f], nhat.reshape(-1, 3))  # per unit intensity n_inc |E|^2 / 2
+            n_inc = nb if khat[2] < 0 else lff.side_index(w, False)
+            ratio = np.where(nhat.reshape(-1, 3)[:, 2] >= 0, nb, lff.side_index(w, False) or 0.0) / n_inc
+        dcs = (ratio * np.sum(np.abs(ef) ** 2, axis=-1)).reshape(nhat.shape[:2]) / inc_e2[f]
         out.append(FarFieldData(wavelength_nm=float(lam), theta_deg=list(req.theta_deg), phi_deg=list(req.phi_deg),
                                 dcsca_domega_nm2=dcs.tolist()))
     return out
