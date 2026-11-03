@@ -4,11 +4,11 @@ voxelisation with subpixel smoothing, and flux-box monitors."""
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
-from .engine import DispersiveGroup, OffDiagonal, TensorMesh, flat_index, pole_coefficients
+from .engine import DispersiveGroup, OffDiagonal, TensorMesh, flat_index, mirror_fold, pole_coefficients
 from .media import Medium
 
 FS = 299.792458  # normalised time units (nm/c) per femtosecond
@@ -97,7 +97,8 @@ def mesh_mode(opts) -> str:
 
 
 def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *, mode: str = "subpixel",
-             samples: int = 8, chunk: int = 2048, periodic=(False, False, False)):
+             samples: int = 8, chunk: int = 2048, periodic=(False, False, False), base=None, background=(),
+             mirror=(0, 0, 0)):
     """Material on the Yee E grid.
 
     slot_fn(points[..., 3] in nm) -> int medium index (0 = background) per point.
@@ -109,7 +110,11 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
     "conformal" mode, interfaces with a dispersive medium take the full tensor at grid vertices instead
     (vertex_tensor; the nodes around them leave the other groups and the off-diagonal terms).
     Returns (inv_eps[3, *shape] with 1/eps for non-dispersive cells and 1 for D-form cells,
-    list of DispersiveGroup (and at most one TensorMesh), stats dict, OffDiagonal or None)."""
+    list of DispersiveGroup (and at most one TensorMesh), stats dict, OffDiagonal or None).
+
+    base: (inv_eps, groups) of a layered background filled beforehand (e.g. layered_background), and
+    background the media indices it holds: nodes whose pixel holds only those media keep the base values,
+    so a planar interface is meshed the same inside the region of interest as everywhere else."""
     if mode not in MESH_MODES:
         raise ValueError(f"mesh refinement {mode!r} is not one of {MESH_MODES}")
     subpixel = mode != "staircase"
@@ -117,7 +122,10 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
     dx = np.broadcast_to(np.asarray(dx, dtype=float), (3,))  # cell size per axis
     S = len(media)
     eps0 = media[0].eps_inf
-    inv_eps = np.full((3,) + shape, 1.0 / eps0)
+    inv_eps = np.full((3,) + shape, 1.0 / eps0) if base is None else base[0].copy()
+    bg = np.zeros(S, dtype=bool)
+    bg[list(background)] = True
+    claimed = []
     disp = np.array([m.dispersive for m in media])
     eps_inf = np.array([m.eps_inf for m in media])
     pure_idx = {s: [] for s in range(S) if disp[s]}
@@ -142,8 +150,9 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
         flat = flat_index(c, idx3[:, 0], idx3[:, 1], idx3[:, 2], shape)
         for s in range(1, S):
             sel = (~mixed) & (center == s)
-            if not sel.any():
+            if bg[s] or not sel.any():
                 continue
+            claimed.append(flat[sel])
             if disp[s]:
                 pure_idx[s].append(flat[sel])
                 inv_eps.reshape(-1)[flat[sel]] = 1.0
@@ -151,12 +160,18 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
                 inv_eps.reshape(-1)[flat[sel]] = 1.0 / eps_inf[s]
         # interface cells: supersample
         mi = np.nonzero(mixed)[0]
-        n_mixed += len(mi)
         for a in range(0, len(mi), chunk):
             sel = mi[a:a + chunk]
             pts = pos[sel][:, None, :] + sub3[None, :, :] * dx
             sl = slot_fn(pts)  # (n, samples^3)
             frac = np.stack([(sl == s).mean(axis=1) for s in range(S)])  # (S, n)
+            if bg.any():
+                part = frac[~bg].sum(axis=0) > 0  # holds a particle medium
+                sel, sl, frac = sel[part], sl[part], frac[:, part]
+                if not len(sel):
+                    continue
+            claimed.append(flat[sel])
+            n_mixed += len(sel)
             dom = np.argmax(frac, axis=0)
             chi = (sl == dom[:, None]).astype(float)
             mom = (chi - chi.mean(axis=1, keepdims=True)) @ sub3 / dx  # (n, 3) first moment ~ normal
@@ -186,6 +201,12 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
                 mixed_w.append(w[has_disp])
                 inv_eps.reshape(-1)[f_idx[has_disp]] = 1.0
     groups = []
+    if base is not None:
+        taken = np.concatenate(claimed) if claimed else np.zeros(0, dtype=np.int64)
+        for g in base[1]:
+            keep = ~np.isin(g.idx, taken)
+            if keep.any():
+                groups.append(DispersiveGroup(g.idx[keep], g.media, g.frac[:, keep], None if g.w is None else g.w[keep]))
     for s, lst in pure_idx.items():
         if lst:
             groups.append(DispersiveGroup(np.concatenate(lst), [media[s]], np.ones((1, sum(map(len, lst)))), None))
@@ -200,7 +221,7 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
     tm = None
     if mode == "conformal" and disp.any():
         tm = vertex_tensor(slot_fn, media, shape, origin, dx, roi_lo, roi_hi, samples=samples, chunk=chunk,
-                           periodic=periodic)
+                           periodic=periodic, background=background, mirror=mirror)
     if tm is not None:
         taken = tm.idx
         inv_eps.reshape(-1)[taken] = 1.0
@@ -251,12 +272,14 @@ def _pixel_average(slot_fn, pos, dx, S: int, samples: int, chunk: int):
 
 
 def vertex_tensor(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *, samples: int = 8,
-                  chunk: int = 2048, periodic=(False, False, False)) -> TensorMesh | None:
+                  chunk: int = 2048, periodic=(False, False, False), background=(),
+                  mirror=(0, 0, 0)) -> TensorMesh | None:
     """The TensorMesh of interfaces with a dispersive medium (None if there are none).
 
     Tensor vertices: every vertex whose cube (side dx, centred on it) holds an interface with a dispersive
     medium, plus every mixed vertex connected to one through shared nodes, so that each node next to a
-    tensor vertex has, at its other vertex, either another tensor vertex or a single medium."""
+    tensor vertex has, at its other vertex, either another tensor vertex or a single medium. Vertices whose
+    cube holds only `background` media (a layered background, meshed apart) do not count as mixed."""
     shape = tuple(shape)
     S = len(media)
     disp = np.array([m.dispersive for m in media])
@@ -274,6 +297,11 @@ def vertex_tensor(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_h
     if not len(Vm):
         return None
     frac, nhat = _pixel_average(slot_fn, pos[mixed], dx3, S, samples, chunk)
+    if len(background):
+        part = np.delete(frac, list(background), axis=0).sum(axis=0) > 0
+        Vm, frac, nhat = Vm[part], frac[:, part], nhat[part]
+        if not len(Vm):
+            return None
     seed = (frac[disp] > 0).any(axis=0) & (frac.max(axis=0) < 1)
     if not seed.any():
         return None
@@ -307,8 +335,13 @@ def vertex_tensor(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_h
     raw = np.stack([np.stack([T - eye[d], T], axis=1) for d in range(3)], axis=1)  # (nV, 3, 2, 3)
     comp = np.broadcast_to(np.arange(3)[None, :, None], (nV, 3, 2)).reshape(-1)
     real, shift = _canonical(raw.reshape(-1, 3), shape, periodic)
+    real, sign = mirror_fold(comp, real, mirror)  # ghost-side nodes of a vertex on a mirror plane: their images
+    live = sign != 0
     nkey = comp * int(np.prod(shape)) + key(real)
-    _, first, inv = np.unique(nkey, return_index=True, return_inverse=True)
+    _, first, inv_live = np.unique(nkey[live], return_index=True, return_inverse=True)
+    inv = np.zeros(len(nkey), dtype=np.int64)
+    inv[live] = inv_live
+    first = np.nonzero(live)[0][first]
     node_comp, node_idx3 = comp[first], real[first]
     nN = len(first)
     # slots: the vertex at the node index (k = 0) and at index + e_c (k = 1)
@@ -327,14 +360,15 @@ def vertex_tensor(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_h
             slot_medium[~hit, k] = slot_fn(origin + vx[~hit] * dx3)
     return TensorMesh(media=list(media), frac=fracT, normal=nT, node_comp=node_comp, node_idx3=node_idx3,
                       vert_nodes=inv.reshape(nV, 3, 2), shift=shift.reshape(nV, 3, 2, 3), slot_vert=slot_vert,
-                      slot_medium=slot_medium, shape=shape)
+                      slot_medium=slot_medium, shape=shape,
+                      sign=sign.reshape(nV, 3, 2).astype(float) if any(mirror) else None)
 
 
 # --- flux boxes -------------------------------------------------------------------
 
 
-def flux_points(lo, hi, shape, dx: float):
-    """Closed box with faces on E-node planes lo[d], hi[d].
+def flux_points(lo, hi, shape, dx: float, open_lo=()):
+    """Closed box with faces on E-node planes lo[d], hi[d] (no face at lo[d] for d in open_lo: a mirror plane).
 
     Returns (e_idx, h_idx1, h_idx2, coeff): outward flux = 0.5 Re sum coeff * E * conj(H),
     with E_a1 H_a2 and E_a2 H_a1 sampled at coincident in-plane points and H averaged
@@ -350,7 +384,7 @@ def flux_points(lo, hi, shape, dx: float):
         w1 = np.ones(len(nod1))
         w1[[0, -1]] = 0.5
         half2 = np.arange(lo[a2], hi[a2])
-        for face, sign in ((lo[d], -1.0), (hi[d], 1.0)):
+        for face, sign in ((lo[d], -1.0), (hi[d], 1.0))[d in open_lo:]:
             for e_comp, h_comp, i1, i2, ww, tsign in ((a1, a2, half, nod2, w2, 1.0), (a2, a1, nod1, half2, w1, -1.0)):
                 A, B = np.meshgrid(i1, i2, indexing="ij")
                 wgt = np.broadcast_to(ww[None, :] if tsign > 0 else ww[:, None], A.shape)
@@ -371,7 +405,9 @@ class Surface:
     """Equivalent-current samples on a closed box (the flux_points layout): J = n x H, M = -n x E.
 
     Sample s carries E component e_idx and the face-averaged H component (h1, h2) at the same point
-    pos (cell units, (n, 3)), so J = H_s * jdir and M = E_s * mdir, with area weight `area` (nm^2)."""
+    pos (cell units, (n, 3)), so J = H_s * jdir and M = E_s * mdir, with area weight `area` (nm^2).
+    ``blocks``: per (face, component pair) the sample range and its grid, (start, d, face, e_c, h_c, i1, i2),
+    samples ordered as meshgrid(i1, i2, indexing="ij") with i1 along (d + 1) % 3 and i2 along (d + 2) % 3."""
 
     e_idx: np.ndarray
     h1: np.ndarray
@@ -380,10 +416,12 @@ class Surface:
     jdir: np.ndarray
     mdir: np.ndarray
     area: np.ndarray
+    blocks: list = field(default_factory=list)
 
 
-def surface_samples(lo, hi, shape, dx: float) -> Surface:
+def surface_samples(lo, hi, shape, dx: float, open_lo=()) -> Surface:
     E_i, H1, H2, pos, jd, md, area = [], [], [], [], [], [], []
+    blocks, start = [], 0
     eye = np.eye(3)
     for d in range(3):
         a1, a2 = (d + 1) % 3, (d + 2) % 3
@@ -391,7 +429,7 @@ def surface_samples(lo, hi, shape, dx: float) -> Surface:
         w_n1[[0, -1]] = 0.5
         w_n2 = np.ones(hi[a2] - lo[a2] + 1)
         w_n2[[0, -1]] = 0.5
-        for face, sign in ((lo[d], -1.0), (hi[d], 1.0)):
+        for face, sign in ((lo[d], -1.0), (hi[d], 1.0))[d in open_lo:]:
             nrm = sign * eye[d]
             # E_a1 (half-integer along a1, nodes along a2) with H_a2; E_a2 with H_a1
             for e_c, h_c, i1, i2, w1, w2 in ((a1, a2, np.arange(lo[a1], hi[a1]), np.arange(lo[a2], hi[a2] + 1),
@@ -414,7 +452,9 @@ def surface_samples(lo, hi, shape, dx: float) -> Surface:
                 jd.append(np.broadcast_to(np.cross(nrm, eye[h_c]), (A.size, 3)))
                 md.append(np.broadcast_to(-np.cross(nrm, eye[e_c]), (A.size, 3)))
                 area.append(dx**2 * W)
-    return Surface(*(np.concatenate(v) for v in (E_i, H1, H2, pos, jd, md, area)))
+                blocks.append((start, d, int(face), e_c, h_c, i1, i2))
+                start += A.size
+    return Surface(*(np.concatenate(v) for v in (E_i, H1, H2, pos, jd, md, area)), blocks=blocks)
 
 
 def far_field(surf: Surface, e: np.ndarray, h: np.ndarray, r: np.ndarray, nhat: np.ndarray, k: float,
@@ -454,6 +494,7 @@ class Layout:
     sca: tuple[np.ndarray, np.ndarray]
     roi: tuple[np.ndarray, np.ndarray]
     pml: int
+    mirror: tuple = (0, 0, 0)  # mirror plane per axis at node 1 (see engine.e_region; symmetry.py)
 
     @property
     def cells(self) -> int:
@@ -481,7 +522,8 @@ def scattering_layout(sim, opts, dx: float, bbox=None) -> Layout:
     n_pad = max(4, math.ceil((floor if opts.padding_nm is None else opts.padding_nm) / dx - 1e-9))
     n_gap = max(4, math.ceil((floor if opts.pml_gap_nm is None else opts.pml_gap_nm) / dx - 1e-9))
     half_tfsf = half_cells + n_pad
-    half_tot = half_tfsf + 2 + n_gap + opts.pml_cells + 1
+    n_pml = opts.pml_cells or (16 if getattr(sim, "substrate", None) is not None else 10)
+    half_tot = half_tfsf + 2 + n_gap + n_pml + 1
     shape = tuple(int(v) for v in 2 * half_tot + 1)
     c = half_tot.astype(int)
     origin = ctr - c * dx
@@ -489,7 +531,7 @@ def scattering_layout(sim, opts, dx: float, bbox=None) -> Layout:
     roi_hi = np.minimum(c + half_cells + 3, np.asarray(shape) - 1)
     return Layout(dx=dx, shape=shape, origin=origin, center=c, tfsf=(c - half_tfsf, c + half_tfsf),
                   tot=(c - half_tfsf + 2, c + half_tfsf - 2), sca=(c - half_tfsf - 2, c + half_tfsf + 2),
-                  roi=(roi_lo, roi_hi), pml=opts.pml_cells)
+                  roi=(roi_lo, roi_hi), pml=n_pml)
 
 
 def particle_slot_fn(sim, slot_of: list[list[int]]):
@@ -510,6 +552,11 @@ def particle_slot_fn(sim, slot_of: list[list[int]]):
 def run_until_decayed(eng, opts, *, max_steps: int, min_steps: int, window: int, warnings: list[str]):
     """Run chunks until the monitor energy has fallen below opts.decay_by of its peak (over a sliding
     window of `window` chunks, after `min_steps`), or until max_steps / opts.run_time_fs.
+
+    The energy is that of the monitors with energy=1. Monitors with energy=2 give a reference: the peak is
+    taken as at least 1e-6 of theirs, so a signal that never rises above noise does not run to the cap
+    (scattering: the scattered field decays, the total field is the reference; a weak, long-ringing
+    resonance would otherwise be cut off by the incident pulse dominating the peak).
     Raises FloatingPointError when the run diverges (non-finite or runaway monitor energy).
     Returns (steps, decay_level, used_cuda_graphs)."""
     from collections import deque
@@ -518,26 +565,31 @@ def run_until_decayed(eng, opts, *, max_steps: int, min_steps: int, window: int,
 
     run, graphs = eng.make_runner(opts.cuda_graphs)
     win = deque(maxlen=max(3, int(window)))
-    peak, ref, level, steps = 0.0, 0.0, float("nan"), 0
+    peak, peak_ref, grown_ref, level, steps = 0.0, 0.0, 0.0, float("nan"), 0
+    # the growth reference: the peak while the pulse passes, but within the first half of the run, so the check
+    # still works when a source whose background rings on (coarse grids) sets min_steps beyond max_steps
+    ref_steps = min(min_steps, max_steps // 2)
     try:
         while steps < max_steps:
             run()
             steps += eng.stride
-            e = float(Device.to_numpy(eng.energy)[0])  # one sync per chunk
+            e, e_ref = (float(v) for v in Device.to_numpy(eng.energy))  # one sync per chunk
             # float32 overflows to inf, but float64 (CPU) stays finite to ~1e300: also stop on growth far
-            # above the energy seen while the pulse passed (ref), which a passive structure cannot reach.
-            if not np.isfinite(e) or (steps > min_steps and e > DIVERGED_GROWTH * ref > 0):
-                why = "non-finite fields" if not np.isfinite(e) else \
-                    f"monitor energy grew to {e / ref:.0e} times its peak while the pulse passed"
+            # above the energy seen while the pulse passed (grown_ref), which a passive structure cannot reach.
+            finite = np.isfinite(e) and np.isfinite(e_ref)
+            if not finite or (steps > ref_steps and e > DIVERGED_GROWTH * grown_ref > 0):
+                why = "non-finite fields" if not finite else \
+                    f"monitor energy grew to {e / grown_ref:.0e} times its peak while the pulse passed"
                 raise FloatingPointError(
                     f"FDTD diverged after {steps} steps ({why}); the results would be meaningless. "
                     "Use a finer mesh (smaller spacing_nm or larger cells_per_wavelength), lower courant, "
                     "or give lossy/dispersive materials as Drude/DrudeLorentz")
             win.append(e)
-            peak = max(peak, e)
-            if steps <= min_steps:
-                ref = peak
-            level = max(win) / peak if peak > 0 else float("nan")
+            peak, peak_ref = max(peak, e), max(peak_ref, e_ref)
+            if steps <= ref_steps:
+                grown_ref = peak
+            floor = max(peak, 1e-6 * peak_ref)
+            level = max(win) / floor if floor > 0 else float("nan")
             if not opts.run_time_fs and steps >= min_steps and len(win) == win.maxlen and level < opts.decay_by:
                 break
         else:

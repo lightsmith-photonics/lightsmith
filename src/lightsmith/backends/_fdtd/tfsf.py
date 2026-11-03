@@ -47,6 +47,58 @@ def _matched_eps_1d(khat, omega, dt, dx, eps_b) -> float:
     return float((np.sin(k * dx / 2) / dx) ** 2 / (np.sin(omega * dt / 2) / dt) ** 2)
 
 
+def tfsf_slabs(shape, lo, hi, dt: float, spacing, periodic=(False, False, False), mirror=(0, 0, 0)):
+    """TFSF corrections for a box [lo, hi] (node-index units; faces outside the grid give none). Only stepped
+    components get them (``mirror``: see engine.e_region).
+
+    Yields (kind, c, region, g, coef, q): the components ``kind``_c in the slab ``region`` (one cell thick)
+    were updated from a neighbour on the other side of the box face; they get += coef * F_g(q), with F the
+    incident H (kind "E", coef without the 1/eps of the node) or E (kind "H"), and q (slab shape + (3,)) the
+    index coordinates of that neighbour."""
+    spacing = np.broadcast_to(np.asarray(spacing, dtype=float), (3,))
+    lo, hi = np.asarray(lo), np.asarray(hi)
+    out = []
+    for kind in ("E", "H"):
+        for c in range(3):
+            R = e_region(c, shape, periodic, mirror) if kind == "E" else h_region(c, shape, periodic, mirror)
+            off = _offsets(kind, c)
+            d1, d2 = (c + 1) % 3, (c + 2) % 3
+            for d, g, s in ((d1, d2, 1.0), (d2, d1, -1.0)):
+                if kind == "H":
+                    s = -s
+                trans = {}
+                for a in range(3):
+                    if a == d:
+                        continue
+                    idx = np.arange(R[a].start, R[a].stop)
+                    ok = (idx + off[a] >= lo[a]) & (idx + off[a] <= hi[a])
+                    trans[a] = idx[ok]
+                if any(len(v) == 0 for v in trans.values()):
+                    continue
+                idx_d = np.arange(R[d].start, R[d].stop)
+                u = idx_d + off[d]
+
+                def inside(x, d=d):
+                    return ((x >= lo[d]) & (x <= hi[d])).astype(int)
+
+                for sign_q, du in ((1.0, 0.5), (-1.0, -0.5)):
+                    delta = inside(u) - inside(u + du)
+                    for i in np.nonzero(delta)[0]:
+                        region = [None] * 3
+                        region[d] = slice(int(idx_d[i]), int(idx_d[i]) + 1)
+                        axes = []
+                        for a in range(3):
+                            if a != d:
+                                region[a] = slice(int(trans[a][0]), int(trans[a][-1]) + 1)
+                                axes.append(trans[a] + off[a])
+                            else:
+                                axes.append(np.array([u[i] + du]))
+                        q = np.stack(np.meshgrid(*axes, indexing="ij"), axis=-1)
+                        coef = s * sign_q * delta[i] * (dt / spacing[d])
+                        out.append((kind, c, tuple(region), g, coef, q))
+    return out
+
+
 class TFSFPlaneWave:
     def __init__(self, *, shape, origin, dx, dt, r0, lo, hi, khat, ehat, eps_b, omega_c, omega_half,
                  max_steps: int, periodic=(False, False, False), m0: int | None = None):
@@ -65,52 +117,13 @@ class TFSFPlaneWave:
         origin, r0 = np.asarray(origin, float), np.asarray(r0, float)
         lo, hi = np.asarray(lo), np.asarray(hi)
 
-        # slabs: (kind, comp, region, coef, s-coordinate of the incident sample, projection)
         raw = []
-        for kind in ("E", "H"):
+        for kind, c, region, g, coef, q in tfsf_slabs(shape, lo, hi, dt, spacing, periodic):
             proj = self.hhat if kind == "E" else self.ehat  # E corrections need H_inc and vice versa
-            for c in range(3):
-                R = e_region(c, shape, periodic) if kind == "E" else h_region(c, shape, periodic)
-                off = _offsets(kind, c)
-                d1, d2 = (c + 1) % 3, (c + 2) % 3
-                for d, g, s in ((d1, d2, 1.0), (d2, d1, -1.0)):
-                    if abs(proj[g]) < 1e-12:
-                        continue
-                    if kind == "H":
-                        s = -s
-                    trans = {}
-                    for a in range(3):
-                        if a == d:
-                            continue
-                        idx = np.arange(R[a].start, R[a].stop)
-                        ok = (idx + off[a] >= lo[a]) & (idx + off[a] <= hi[a])
-                        trans[a] = idx[ok]
-                    if any(len(v) == 0 for v in trans.values()):
-                        continue
-                    idx_d = np.arange(R[d].start, R[d].stop)
-                    u = idx_d + off[d]
-
-                    def inside(x, d=d):
-                        return ((x >= lo[d]) & (x <= hi[d])).astype(int)
-
-                    for sign_q, du in ((1.0, 0.5), (-1.0, -0.5)):
-                        delta = inside(u) - inside(u + du)
-                        for i in np.nonzero(delta)[0]:
-                            region = [None] * 3
-                            region[d] = slice(int(idx_d[i]), int(idx_d[i]) + 1)
-                            axes = []
-                            for a in range(3):
-                                if a != d:
-                                    region[a] = slice(int(trans[a][0]), int(trans[a][-1]) + 1)
-                                    axes.append(trans[a] + off[a])
-                                else:
-                                    axes.append(np.array([u[i] + du]))
-                            q = np.stack(np.meshgrid(*axes, indexing="ij"), axis=-1)  # index coords of q
-                            sq = (origin + q * spacing - r0) @ self.khat
-                            coef = s * sign_q * delta[i] * (dt / spacing[d]) * proj[g]
-                            if kind == "E":
-                                coef /= eps_b
-                            raw.append((kind, c, tuple(region), coef, sq))
+            if abs(proj[g]) < 1e-12:
+                continue
+            sq = (origin + q * spacing - r0) @ self.khat
+            raw.append((kind, c, region, coef * proj[g] / (eps_b if kind == "E" else 1.0), sq))
 
         s_all = np.concatenate([r[4].ravel() for r in raw] + [np.zeros(1)])
         ds = float(spacing[int(np.argmax(np.abs(self.khat)))]) if self.axis_aligned else float(spacing[0])

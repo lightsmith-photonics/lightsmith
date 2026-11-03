@@ -7,7 +7,8 @@ The engine knows nothing about particles or plane waves. It takes
   integrated with auxiliary differential equations in D-form;
 * boundaries per axis: CPML with a PEC backstop, or periodic. A periodic axis with a nonzero Bloch
   wavevector k makes the fields complex (one Bloch mode, exp(i k x) times a periodic function: the
-  constant-transverse-wavenumber method); k = 0 keeps them real;
+  constant-transverse-wavenumber method); k = 0 keeps them real. The low side of a non-periodic axis can
+  instead be a mirror plane (see e_region): the grid then holds one half of a mirror-symmetric field;
 * sources (objects with ``correct_H``/``advance_H``/``correct_E``/``advance_E`` hooks,
   e.g. the TFSF plane wave in ``tfsf.py``);
 * DFT monitors (flat-index point sets on the stacked E and H arrays).
@@ -37,17 +38,56 @@ def shift(R: tuple, d: int, s: int) -> tuple:
     return tuple(R)
 
 
-def e_region(c: int, shape, periodic=(False, False, False)) -> tuple:
+def _mirror_start(c: int, a: int, m: int, kind: str) -> int:
+    """First stepped index along mirror axis a of E_c or H_c: 1, or 2 for the fields that vanish on an
+    antisymmetric plane (tangential E, normal H)."""
+    return 2 if m < 0 and (c != a) == (kind == "E") else 1
+
+
+def e_region(c: int, shape, periodic=(False, False, False), mirror=(0, 0, 0)) -> tuple:
     """Index region of E_c that is time-stepped (tangential E on the outer planes stays 0: PEC).
 
     Along a periodic axis the arrays carry one ghost plane at each end (index 0 and n-1);
-    the real cells are 1..n-2 and the ghosts are refreshed every half step."""
-    return tuple(slice(1, n - 1) if (periodic[a] or a != c) else slice(0, n - 1) for a, n in enumerate(shape))
+    the real cells are 1..n-2 and the ghosts are refreshed every half step.
+
+    mirror[a] = +1 or -1 makes node plane 1 along a a mirror plane, with a ghost plane at index 0. +1 (symmetric,
+    a PMC wall): E tangential to the plane is even, normal E odd, tangential H vanishes on the plane; the ghost of
+    tangential H is refreshed as minus its image before every E update. -1 (antisymmetric, a PEC wall): tangential
+    E is odd and vanishes on plane 1, which is then a wall like the outer planes (no ghost needed). Beyond the plane
+    E_c(image) = parity(c, a, m) E_c; the image of index j is 2 - j for nodes along a, 1 - j for half-integer
+    positions."""
+    return tuple(slice(_mirror_start(c, a, mirror[a], "E"), n - 1) if mirror[a] else
+                 (slice(1, n - 1) if (periodic[a] or a != c) else slice(0, n - 1)) for a, n in enumerate(shape))
 
 
-def h_region(c: int, shape, periodic=(False, False, False)) -> tuple:
-    return tuple(slice(1, n - 1) if periodic[a] else (slice(0, n) if a == c else slice(0, n - 1))
+def h_region(c: int, shape, periodic=(False, False, False), mirror=(0, 0, 0)) -> tuple:
+    return tuple(slice(_mirror_start(c, a, mirror[a], "H"), n if a == c else n - 1) if mirror[a] else
+                 (slice(1, n - 1) if periodic[a] else (slice(0, n) if a == c else slice(0, n - 1)))
                  for a, n in enumerate(shape))
+
+
+def parity(c: int, a: int, m: int) -> int:
+    """Mirror parity of E_c about a plane normal to axis a (m = +1 symmetric, -1 antisymmetric): m for the
+    tangential components, -m for the normal one. H_c has -parity(c, a, m)."""
+    return m if c != a else -m
+
+
+def mirror_fold(comp, idx3, mirror) -> tuple[np.ndarray, np.ndarray]:
+    """E nodes (comp (n,), idx3 (n, 3)) on the ghost side of the mirror planes mapped to their stepped images.
+    Returns (idx3, sign): the parity sign of the image, 0 for nodes that vanish on an antisymmetric plane."""
+    idx3 = np.array(idx3, dtype=np.int64)
+    comp = np.broadcast_to(np.asarray(comp), (len(idx3),))
+    sign = np.ones(len(idx3), dtype=np.int64)
+    for a, m in enumerate(mirror):
+        if not m:
+            continue
+        normal = comp == a
+        j = idx3[:, a]
+        ghost = j <= 0
+        idx3[:, a] = np.where(ghost, np.where(normal, 1 - j, 2 - j), j)
+        sign = np.where(ghost, sign * np.where(normal, -m, m), sign)
+        sign = np.where((m < 0) & ~normal & (idx3[:, a] == 1), 0, sign)
+    return idx3, sign
 
 
 def flat_index(c, i, j, k, shape) -> np.ndarray:
@@ -103,7 +143,8 @@ class TensorMesh:
     of that vertex's plain medium instead.
 
     Index arrays use real node indices; ``shift`` counts the periods (on periodic axes) between a node's
-    position next to v and its real index, for the Bloch phase."""
+    position next to v and its real index, for the Bloch phase. Next to a mirror plane, ``sign`` is the parity
+    of the image a node position maps to (mirror_fold; 0 for a node that vanishes on an antisymmetric plane)."""
 
     media: list
     frac: np.ndarray  # (S, nV) medium fractions per tensor vertex
@@ -115,6 +156,7 @@ class TensorMesh:
     slot_vert: np.ndarray  # (nN, 2) tensor vertex of slot k (k = 0: vertex at the node index, plus side; 1: + e_c)
     slot_medium: np.ndarray  # (nN, 2) medium of a plain slot (slot_vert == -1)
     shape: tuple  # grid shape
+    sign: np.ndarray | None = None  # (nV, 3, 2) mirror parity of each vertex node position, None without mirrors
 
     @property
     def idx(self) -> np.ndarray:
@@ -141,7 +183,7 @@ class DFTMonitor:
     e_idx: np.ndarray
     h_idx1: np.ndarray | None = None
     h_idx2: np.ndarray | None = None
-    energy: bool = False  # contributes to the decay-shutoff energy proxy
+    energy: int = 0  # decay-shutoff energy proxy: 1 (True) the decaying signal, 2 a reference (see run_until_decayed)
     source: object | None = None  # sample this object's E_flat/H_flat instead of the grid
     acc_e: object = field(default=None, repr=False)
     acc_h: object = field(default=None, repr=False)
@@ -173,11 +215,12 @@ class Engine:
     def __init__(self, device: Device, *, shape, dx, dt: float, single: bool, inv_eps: np.ndarray,
                  groups: list[DispersiveGroup], pml: PMLSpec, sources: list, monitors: list[DFTMonitor],
                  dft_stride: int, periodic=(False, False, False), bloch=(0.0, 0.0, 0.0),
-                 offdiag: OffDiagonal | None = None, time_monitors: tuple = ()):
+                 offdiag: OffDiagonal | None = None, time_monitors: tuple = (), mirror=(0, 0, 0)):
         """dx: cell size, or (dx, dy, dz) for non-cubic cells. periodic: per axis; those axes carry ghost
         planes (see e_region) and no PML. bloch: Bloch wavevector per periodic axis (rad/nm); any nonzero
         entry makes E, H and all auxiliary fields complex. offdiag: tensor-smoothing terms of
-        non-dispersive interface cells."""
+        non-dispersive interface cells. mirror: per axis 0, or +1 / -1 for a symmetric / antisymmetric mirror
+        plane at node plane 1 (see e_region; no PML on that side)."""
         self.device, self.xp = device, device.namespace()
         xp = self.xp
         self.shape, self.dt, self.single = tuple(int(n) for n in shape), float(dt), single
@@ -189,6 +232,10 @@ class Engine:
         if any(k and not per for k, per in zip(self.bloch, self.periodic)):
             raise ValueError("a Bloch wavevector needs a periodic axis")
         self.complex = any(self.bloch)
+        self.mirror = tuple(int(np.sign(m)) for m in mirror)
+        for a, m in enumerate(self.mirror):
+            if m and (self.periodic[a] or pml.cells[a][0]):
+                raise ValueError("a mirror plane needs a non-periodic axis without PML on its low side")
         self.rdt = xp.float32 if single else xp.float64
         self.cdt = xp.complex64 if single else xp.complex128
         self.stride = int(dft_stride)
@@ -204,8 +251,17 @@ class Engine:
         # uniform cells: coefficients carry dt/dx; otherwise dt, and differences are scaled by 1/d_axis
         cdx = self.dt / self.dx if self.uniform else self.dt
         self.inv_d = tuple(1.0 / d for d in self.spacing)
-        self.RE = [e_region(c, self.shape, self.periodic) for c in range(3)]
-        self.RH = [h_region(c, self.shape, self.periodic) for c in range(3)]
+        self.RE = [e_region(c, self.shape, self.periodic, self.mirror) for c in range(3)]
+        self.RH = [h_region(c, self.shape, self.periodic, self.mirror) for c in range(3)]
+        # PMC planes: (component, ghost plane, its image) of tangential H
+        self._mirror_ghosts = []
+        for a, m in enumerate(self.mirror):
+            if m > 0:
+                for t in range(3):
+                    if t != a:
+                        g, s = [slice(None)] * 3, [slice(None)] * 3
+                        g[a], s[a] = slice(0, 1), slice(1, 2)
+                        self._mirror_ghosts.append((t, tuple(g), tuple(s)))
         self.cbE = [self.asarray(cdx * inv_eps[c][self.RE[c]]) for c in range(3)]
         self.cH = cdx
         self._build_pml(pml, inv_eps)
@@ -222,7 +278,7 @@ class Engine:
             m._e = self.index(m.e_idx)
             m.buf = self.fzeros((m.n_max, len(m.e_idx)))
             m.pos = self.device.asarray(np.zeros(1, dtype=np.int64))
-        self.energy = self.zeros((1,))
+        self.energy = self.zeros((2,))
 
     # array helpers
     def zeros(self, shape, complex_=False):
@@ -319,22 +375,25 @@ class Engine:
         Bloch phase), so the discrete 1/eps operator stays symmetric; the one-sided Meep-style average
         o_cd(p) / 4 is not, and grows slowly at late times. Cells integrated in D-form (dispersive) take no
         off-diagonal terms. Periodic axes wrap q onto the real cells with the Bloch phase of the period it
-        crossed."""
+        crossed. Mirror planes: the rows' images across them are added, the couplings of ghost-side targets
+        dropped, and those from ghost-side nodes act through their stepped images with the parity sign
+        (mirror_fold), so the half grid steps exactly as the symmetric field of the whole one."""
         self.od = None
         if od is None or not len(od.comp):
             return
         shape = self.shape
         nflat = 3 * int(np.prod(shape))
-        idx3 = np.asarray(od.idx3, dtype=np.int64)
-        tgt, srcs, vals = [], [], []
-        t_flat = flat_index(od.comp, idx3[:, 0], idx3[:, 1], idx3[:, 2], shape)
+        idx3, comp, coef = np.asarray(od.idx3, dtype=np.int64), np.asarray(od.comp), np.asarray(od.coef, dtype=float)
+        if any(self.mirror):
+            idx3, comp, coef = self._mirror_rows(idx3, comp, coef)
+        tc, ti, sc, si, vals = [], [], [], [], []
         for d in range(3):
             for corner in range(4):
                 q = idx3.copy()
-                q += np.eye(3, dtype=np.int64)[od.comp] * (corner & 1)  # + e_c
+                q += np.eye(3, dtype=np.int64)[comp] * (corner & 1)  # + e_c
                 q[:, d] -= corner >> 1  # - e_d
                 phase = np.ones(len(q), dtype=complex)
-                ok = (od.comp != d) & (od.coef[:, d] != 0)
+                ok = (comp != d) & (coef[:, d] != 0)
                 for a in range(3):
                     n = shape[a]
                     if self.periodic[a]:
@@ -345,12 +404,23 @@ class Engine:
                         phase[hi] *= np.exp(1j * kl)
                     else:
                         rd = e_region(d, shape)[a]
-                        ok &= (q[:, a] >= rd.start) & (q[:, a] < rd.stop)
-                tgt.append(t_flat[ok])
-                srcs.append(flat_index(d, q[ok, 0], q[ok, 1], q[ok, 2], shape))
-                vals.append(od.coef[ok, d] / 8 * phase[ok])
-        t, s_, v = np.concatenate(tgt), np.concatenate(srcs), np.concatenate(vals)
-        t, s_, v = np.concatenate([t, s_]), np.concatenate([s_, t]), np.concatenate([v, np.conj(v)])
+                        ok &= (q[:, a] < rd.stop) & ((q[:, a] >= rd.start) | bool(self.mirror[a]))
+                tc.append(comp[ok])
+                ti.append(idx3[ok])
+                sc.append(np.full(int(ok.sum()), d))
+                si.append(q[ok])
+                vals.append(coef[ok, d] / 8 * phase[ok])
+        tc, ti, sc, si, v = (np.concatenate(x) for x in (tc, ti, sc, si, vals))
+        tc, sc = np.concatenate([tc, sc]), np.concatenate([sc, tc])
+        ti, si = np.concatenate([ti, si]), np.concatenate([si, ti])
+        v = np.concatenate([v, np.conj(v)])
+        if any(self.mirror):
+            ti_f, t_sign = mirror_fold(tc, ti, self.mirror)
+            si, s_sign = mirror_fold(sc, si, self.mirror)
+            keep = np.all(ti_f == ti, axis=1) & (t_sign != 0) & (s_sign != 0) & np.all(si < np.asarray(shape) - 1, axis=1)
+            tc, ti, sc, si, v = tc[keep], ti[keep], sc[keep], si[keep], v[keep] * s_sign[keep]
+        t = flat_index(tc, ti[:, 0], ti[:, 1], ti[:, 2], shape)
+        s_ = flat_index(sc, si[:, 0], si[:, 1], si[:, 2], shape)
         if groups:
             disp = np.concatenate([g.idx for g in groups])
             keep = ~(np.isin(t, disp) | np.isin(s_, disp))
@@ -382,6 +452,21 @@ class Engine:
         self.od = (self.index(targets), self.index(h),
                    self.device.asarray(w, dtype=self.cdt if self.complex else self.rdt))
 
+    def _mirror_rows(self, idx3, comp, coef):
+        """The off-diagonal rows plus their images across every mirror plane (rows on a plane are their own
+        images). An image's (1/eps)_cd changes sign when exactly one of c, d is the mirror axis."""
+        for a, m in enumerate(self.mirror):
+            if not m:
+                continue
+            normal = comp == a
+            new = normal | (idx3[:, a] != 1)
+            im = idx3[new].copy()
+            im[:, a] = np.where(normal[new], 1 - im[:, a], 2 - im[:, a])
+            flip = np.where((np.arange(3)[None, :] == a) != normal[new][:, None], -1.0, 1.0)
+            idx3, comp = np.concatenate([idx3, im]), np.concatenate([comp, comp[new]])
+            coef = np.concatenate([coef, coef[new] * flip])
+        return idx3, comp, coef
+
     # --- monitors ----------------------------------------------------------------
     def _bind_monitor(self, m: DFTMonitor):
         m._omega = self.device.asarray(np.asarray(m.omega, dtype=float), dtype=self.xp.float64)
@@ -399,7 +484,7 @@ class Engine:
         xp = self.xp
         t_e = xp.astype(self.n, xp.float64) * self.dt
         t_h = t_e - 0.5 * self.dt
-        energy = None
+        energy = [None, None]
         for m in self.monitors:
             ef, hf = (self.E_flat, self.H_flat) if m.source is None else (m.source.E_flat, m.source.H_flat)
             se = ef[m._e]
@@ -412,9 +497,11 @@ class Engine:
                         v = xp.sum(xp.real(se * xp.conj(se))) + xp.sum(xp.real(sh * xp.conj(sh)))
                     else:
                         v = xp.sum(se * se) + xp.sum(sh * sh)
-                    energy = v if energy is None else energy + v
-        if energy is not None:
-            self.energy[...] = energy
+                    g = int(m.energy) - 1
+                    energy[g] = v if energy[g] is None else energy[g] + v
+        for g, v in enumerate(energy):
+            if v is not None:
+                self.energy[g] = v
         for m in self.time_monitors:
             m.buf[m.pos] = self.E_flat[m._e][None, :]
             m.pos += 1
@@ -473,6 +560,8 @@ class Engine:
         E, H = self.E, self.H
         if any(self.periodic):
             self._ghosts(H, low=True)
+        for t, g, s in self._mirror_ghosts:
+            H[t][g] = -H[t][s]
         for c in range(3):
             E[c][self.RE[c]] += self._curl(H, c, self.RE[c], -1, self.cbE[c])
         if self.od is not None:
@@ -679,8 +768,11 @@ class _Tensor:
         self.complex = eng.complex
         self.vn = eng.index(g.vert_nodes.reshape(-1))
         self.nV = nV
-        if self.complex:
-            self.ph = eng.device.asarray(ph.reshape(-1), dtype=eng.cdt)
+        self.scaled = self.complex or g.sign is not None  # node positions carry a Bloch phase or mirror parity
+        if self.scaled:
+            scale = (ph if self.complex else np.ones(ph.shape)) * (1 if g.sign is None else g.sign)
+            self.ph = eng.device.asarray(scale.reshape(-1) if self.complex else scale.real.reshape(-1),
+                                         dtype=eng.cdt if self.complex else eng.rdt)
         nrm = g.normal.astype(float)
         self.n = eng.asarray(nrm)  # (nV, 3)
         # tensor slots, ordered (k, node)
@@ -714,7 +806,7 @@ class _Tensor:
         e_now = eng.E_flat[self.idx]
         self.D += e_now - self.E_prev
         dv = self.D[self.vn]
-        if self.complex:
+        if self.scaled:
             dv = dv * self.ph
         dv = xp.reshape(dv, (self.nV, 3, 2))
         dbar = 0.5 * (dv[..., 0] + dv[..., 1])  # (nV, 3)

@@ -15,6 +15,11 @@ One broadband Gaussian pulse covers all requested wavelengths. Running DFTs give
     C_abs = -(net flux of the total field inside the TFSF box) / I_inc
     C_ext = C_sca + C_abs
 
+Over an absorbing substrate the box would count the substrate's own absorption, so C_abs is the
+particles' own (the discrete Poynting balance on their nodes), C_sca the power scattered upward and C_ext
+the power taken from the reflected wave, both from the far field by reciprocity with the layered
+background (``_fdtd/absorption.py``, ``_fdtd/layered_far.py``).
+
 Periodic structures and planar stacks (``PeriodicProblem``, ``LayerStackProblem``) are
 solved in one unit cell: periodic x/y boundaries, CPML along z, non-cubic cells so each period
 holds a whole number of cells, a one-sided TFSF plane source, and reflection/transmission planes
@@ -22,7 +27,8 @@ whose DFT fields are split into diffraction orders by a 2D FFT (``_fdtd/periodic
 incidence is one broadband real run; oblique and conical incidence use Bloch-periodic boundaries
 at fixed in-plane wavevector (complex fields), one run per (angle, wavelength, polarisation) so
 that every result is at the requested angle. Scattering problems accept any incidence direction
-(the TFSF box interpolates its 1D feed off-axis).
+(the TFSF box reads tables of the grid's exact discrete plane wave, so it does not leak at any angle),
+and use PEC/PMC mirror planes when the particles and the plane wave allow them (``_fdtd/symmetry.py``).
 
 Written against the Python array API: the same code runs on NumPy (CPU) and
 PyTorch (CPU/CUDA); on CUDA the time loop is replayed as CUDA graphs.
@@ -65,9 +71,10 @@ class NativeFDTD(Backend):
             return ok, why
         if not isinstance(sim, Simulation):
             return False, "FDTD solves scattering, periodic and layer_stack problems"
-        why = unsupported_outputs(sim, near_field=True, far_field=True, resonances=True, gaussian_beam=True)
-        if not why and sim.illumination.kind == "gaussian_beam" and sim.outputs.near_field is not None:
-            why = "does not support near_field output with gaussian_beam illumination (yet)"
+        why = unsupported_outputs(sim, near_field=True, far_field=True, resonances=True, gaussian_beam=True,
+                                  substrate=True)
+        if not why and sim.substrate is not None:
+            why = scattering.substrate_unsupported(sim)
         if not why and any(needs_fit(m) for p in sim.particles for m in p.region_materials()) \
                 and fit_module() is None:
             why = "tabulated/library materials need lightsmith.materials_fit (Drude-Lorentz fitting)"
@@ -103,12 +110,13 @@ class NativeFDTD(Backend):
                 out["notes"] = ("oblique incidence: one fixed-k_par complex-field run per (angle, wavelength, "
                                 "polarisation); runs at large angles use narrow-band, longer pulses")
             return out
+        single = scattering.uses_single(sim, opts, device)
         p = scattering.plan(sim, opts, single)
         lay = p["layout"]
         return {"grid": list(lay.shape), "cells": lay.cells, "spacing_nm": p["dx"], "dt_fs": p["dt"] / scattering.FS,
                 "steps_estimate": p["est_steps"], "steps_max": p["max_steps"], "dft_stride": p["stride"],
                 "precision": "single" if single else "double", "memory_bytes": p["memory_bytes"],
-                "fits": lay.cells <= opts.max_cells, "warnings": p["warnings"]}
+                "fits": lay.cells <= opts.max_cells, "warnings": p["warnings"], "symmetry": p["symmetry"]}
 
     @classmethod
     def solve(cls, sim, device: Device) -> Result | SpectrumResult | EmissionResult:

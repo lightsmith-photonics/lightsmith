@@ -8,6 +8,13 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
 
 ### Added
 
+- **FDTD mirror symmetries** (`symmetry: "auto"`, the default; `"off"` turns them off). A scattering run
+  whose particles are mirror-symmetric about their centre, lit by a plane wave that travels in the mirror
+  plane and is polarised in it (a PMC plane) or normal to it (a PEC plane), keeps half the grid per plane:
+  2× or 4× fewer cells. The conformal tensors, metals' vertex tensor included, are folded across the
+  planes, so cross sections, near fields and far fields match the full run to 1e-11 in double precision,
+  over substrates and absorbing substrates too. On the GPU, runs of 1–5 M cells are 1.55–2.3× faster (3.7×
+  in steady state at 15 M cells). The provenance and `estimate` report the planes used.
 - **FDTD conformal meshing.** `mesh_refinement` (`staircase`, `volume_average`, `subpixel`, `conformal`). The
   new default, `conformal`, adds the off-diagonal terms of tensor subpixel smoothing, symmetrised for
   stability. Dielectric sphere C_ext error at dx = 6 nm falls from 1.1 % to 0.04 %. At metal interfaces
@@ -22,11 +29,39 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
 - **Gaussian beams** (`illumination: GaussianBeam`, FDTD): a focused beam as a sum of TFSF plane waves at
   fixed angles (the waist scales with the wavelength, as for a lens of fixed NA); cross sections per unit
   focal intensity. Within 0.13 % of Mie at the focus and 0.1 % of the beam profile off axis.
+- **FDTD substrates** (`Simulation.substrate`): particles on or above a non-absorbing half-space, lit from
+  above at any angle or through the substrate, including total internal reflection. The TFSF box takes
+  the background field (incident, reflected and transmitted waves) from an auxiliary column at normal
+  incidence. At oblique incidence it comes from tables of the exact discrete background (a 1D discrete
+  problem along z per frequency, then an inverse FFT). Either way it does not leak where it cuts the
+  interface. C_sca is within 0.2–0.5 % of a dipole reference for a sphere above glass (1.7 % for p
+  under total internal reflection, where the dipole model is least exact). Near fields are supported;
+  absorbing substrates and far fields are not yet.
+- **FDTD absorbing substrates and far fields over substrates.** Particles over metals or other absorbing
+  substrates. Over one, `c_abs` is the particles' own absorption, from the grid's exact discrete Poynting
+  balance on their nodes; it equals the inflow through a closed box around the particle to 1e-6. `c_sca` is
+  the power scattered upward, and `c_ext` the power taken from the reflected wave (the reflectance change).
+  `outputs.far_field` now works over any substrate, into both half-spaces, by reciprocity with the grid's
+  own layered background. Against a multipole reference, a sphere over an absorbing dielectric is within
+  0.1 %, and one over a Drude metal within 0.14 %. Over glass the new quantities reproduce the box fluxes
+  to 3e-4. `precision: "auto"` runs double over an absorbing substrate: in float32 a metal's long
+  ring-down left rounding noise of up to 1.2 % in C_sca.
+- **Leak-free plane waves and Gaussian beams at any angle** (FDTD scattering). Every plane wave, and every
+  component of a Gaussian beam, is fed from tables of the grid's exact discrete plane wave (the oblique
+  substrate method, with a uniform background), so the TFSF box does not leak at any direction. A sphere's
+  C_ext agrees between directions to 4e-5 (0.35 % before). A 20 nm sphere is within 0.1 % of Mie: with the
+  1D-fed source, the incident flux through the box did not cancel, giving errors up to 22 % at 800 nm. A beam
+  on a 40 nm sphere is within 0.04 % of Mie at the focus and off axis (0.13 % before). Gaussian beams now
+  support near-field output.
 - **Resonances** (`outputs.resonances`): wavelengths, Q factors and amplitudes from the FDTD ring-down,
   through the new `lightsmith.resonance.harmonic_inversion` (multi-channel matrix pencil).
 
 ### Changed
 
+- FDTD scattering stops when the scattered field has decayed, not the total field. The incident pulse
+  no longer sets the peak, so weak, sharp resonances are no longer cut off: a 15 nm Drude sphere's
+  spectrum rippled by ±10 %.
+- FDTD `pml_cells` defaults to 16 with a substrate (10 otherwise).
 - FDTD scattering: the default TFSF padding and PML gap are now at least 3 % of the longest wavelength
   in the medium, so refining the grid no longer moves the monitors closer to the particle.
 

@@ -13,7 +13,7 @@ homogeneous, non-absorbing host medium, illuminated by a plane wave.
 | `wavelengths` | Vacuum wavelengths in nm (a list or a `WavelengthRange`) |
 | `orientation_average` | Average the cross sections over all particle orientations |
 | `outputs` | `cross_sections` (default on); optional `near_field` and `far_field` requests |
-| `substrate` | A half-space below the particles. Part of the schema, but no built-in backend supports it in 0.1. |
+| `substrate` | `Substrate(material, interface_z_nm)`: a half-space z < `interface_z_nm` below the particles (FDTD only; see below). |
 | `options` | Per-method solver options |
 
 ### Shapes
@@ -32,7 +32,36 @@ by rotating `polarization` with its direction. The angular weights are fixed, so
 one focused by a lens of fixed NA: the waist is `waist_nm` at `waist_wavelength_nm` (default: the middle
 of the band) and scales with the wavelength. Waists below about λ/n need angles beyond NA 0.95, where the
 spectrum is cut; such a focus is non-paraxial, wider than the Gaussian and elongated along the
-polarisation. Cross sections are normalised by the intensity at the focus, ½ n |E(focus)|².
+polarisation. Cross sections are normalised by the intensity at the focus, ½ n |E(focus)|², and near
+fields by the beam's E at the focus along its polarisation.
+
+### Substrates
+
+With a `substrate`, the background is the host above the plane and the substrate below. Particles may sit
+on it or cut into it. FDTD supports plane waves:
+
+- from above, at any angle up to 84° from the normal;
+- through a non-absorbing substrate, normal to it, or at an angle when the substrate has a constant index.
+  Beyond the critical angle that is total internal reflection, with the particle in the evanescent field.
+
+The incident field is the background's own solution (incident, reflected and transmitted waves), and
+cross sections are per unit intensity of the incident wave alone, in the medium it comes from.
+
+Over a transparent substrate:
+- `c_sca` is the power the particle scatters into both half-spaces;
+- `c_abs` is the power it absorbs;
+- `c_ext = c_sca + c_abs` is the power it removes from the background field.
+
+Over an absorbing substrate (e.g. a metal or silicon), light scattered into the substrate is absorbed there,
+and the particle changes the substrate's own absorption, so:
+- `c_abs` is the particles' own absorption;
+- `c_sca` is the power scattered into the upper half-space (what reaches a detector above);
+- `c_ext` is the power the particle takes from the specularly reflected wave, so it is the reflectance
+  change: ΔR = −c_ext / A for a particle per area A.
+  `c_ext − c_sca − c_abs` is the change of the substrate's absorption, and can be negative.
+
+Near and far fields are supported. dC_sca/dΩ is zero for directions into an absorbing substrate. Into a
+transparent one it is per unit solid angle in the substrate.
 
 ### Field outputs
 
@@ -71,6 +100,7 @@ solver is never picked automatically.
 | Far field | native | ✅ | ✅ | ✅ | ✅ |
 | Resonances (Q) | — | — | — | ✅ | — |
 | Orientation average | ✅ | ✅ (analytic) | ✅ (sampled) | — | ✅ |
+| Substrate | — | — | — | ✅ (plane waves, any angle) | — |
 | GPU | native | — | ✅ | ✅ | — |
 
 ## Example

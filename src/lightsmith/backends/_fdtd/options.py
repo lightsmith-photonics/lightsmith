@@ -16,8 +16,9 @@ class FDTDOptions(BaseModel):
         20.0, ge=6, description="Cells per shortest wavelength inside the optically densest material (|n|).")
     cells_per_radius: float | None = Field(
         None, ge=2, description="Minimum cells across the smallest particle half-extent. Default 10, "
-        "or 20 when a material has Re(eps) < 0 in the band (plasmonic; ~10% peak-height error at 20).")
-    pml_cells: int = Field(10, ge=4, description="CPML thickness in cells.")
+        "or 20 when a material has Re(eps) < 0 in the band (plasmonic; ~2.5% peak-height error at 20).")
+    pml_cells: int | None = Field(None, ge=4, description="CPML thickness in cells. Default: 10, or 16 with a "
+                                  "substrate (steep waves in the substrate need the thicker layer).")
     pml_kappa: float = Field(1.0, ge=1, description="CPML kappa_max (>1 damps evanescent fields faster).")
     padding_nm: float | None = Field(
         None, ge=0, description="Gap between the particles' bounding box (periodic: the stack) and the TFSF "
@@ -34,7 +35,8 @@ class FDTDOptions(BaseModel):
         "this fraction of its peak (after the pulse has passed).")
     max_time_fs: float = Field(
         2000.0, gt=0, description="Hard cap on simulated time in fs (high-Q resonances need ps).")
-    precision: Literal["auto", "single", "double"] = Field("auto", description="auto = single on GPU, double on CPU.")
+    precision: Literal["auto", "single", "double"] = Field("auto", description="auto = single on GPU, double on CPU "
+                                                              "(and over an absorbing substrate).")
     subpixel: bool = Field(True, description="Anisotropic subpixel smoothing at interfaces (dispersive too). "
                            "False means staircase. Superseded by mesh_refinement when that is set.")
     mesh_refinement: Literal["staircase", "volume_average", "subpixel", "conformal"] | None = Field(
@@ -46,5 +48,9 @@ class FDTDOptions(BaseModel):
     subpixel_samples: int = Field(8, ge=2, le=24, description="Supersamples per axis for interface cells.")
     dft_stride: int | None = Field(
         None, ge=1, description="Time steps between DFT samples. Default: from the source bandwidth (aliasing-safe).")
+    symmetry: Literal["auto", "off"] = Field(
+        "auto", description="Scattering: use mirror planes through the particles' centre when the particles and the "
+        "plane wave allow them (PEC/PMC planes, chosen from the polarisation; 2x or 4x smaller runs, same results). "
+        "The provenance reports the planes used.")
     cuda_graphs: bool = Field(True, description="Replay time steps as CUDA graphs on PyTorch CUDA (much faster).")
     max_cells: int = Field(300_000_000, ge=1, description="Refuse grids larger than this.")
