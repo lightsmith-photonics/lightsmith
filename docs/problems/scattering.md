@@ -32,7 +32,8 @@ by rotating `polarization` with its direction. The angular weights are fixed, so
 one focused by a lens of fixed NA: the waist is `waist_nm` at `waist_wavelength_nm` (default: the middle
 of the band) and scales with the wavelength. Waists below about λ/n need angles beyond NA 0.95, where the
 spectrum is cut; such a focus is non-paraxial, wider than the Gaussian and elongated along the
-polarisation. Cross sections are normalised by the intensity at the focus, ½ n |E(focus)|².
+polarisation. Cross sections are normalised by the intensity at the focus, ½ n |E(focus)|², and near
+fields by the beam's E at the focus along its polarisation.
 
 ### Substrates
 

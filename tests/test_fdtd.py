@@ -9,9 +9,10 @@ Measured accuracy (RTX 5070, float32; CPU float64 agrees to ~1e-7):
 - Au (Johnson-Christy, Drude-Lorentz fit, 1.6% RMS), r=40 nm in water, dx=2 nm: peak 550 nm as Mie,
   height -3.9%.
 - layered sphere: 0.6%; near-field |E|^2 vs native Mie: 2.9% RMS; oblique incidence: ~1%.
-- off-axis incidence (n=1.5, dx=6 nm): sphere r=60 nm within 1.0-1.2% of Mie for (0,0,1), (1,0,1),
-  (1,1,1), (1,2,3), spread between directions 0.35%; spheroid 40x80 nm within 0.5-1.1% of DDA
-  (80 dipoles per diameter) for axial and off-axis directions, 0.3-0.5% at dx=4 nm.
+- any incidence direction (tables of the exact discrete plane wave; n=1.5, dx=6 nm): sphere r=60 nm within
+  0.08% of Mie for (0,0,1), (1,0,1), (1,1,1), (1,2,3), spread between directions 4e-5 (0.35% with the
+  former interpolated 1D feed); spheroid 40x80 nm within 0.5-1.1% of DDA (80 dipoles per diameter) for
+  axial and off-axis directions, 0.3-0.5% at dx=4 nm.
 """
 
 import numpy as np
@@ -140,11 +141,35 @@ def plane_wave(direction, polarization):
     return ls.PlaneWave(direction=tuple(k), polarization=tuple(e - (e @ k) / (k @ k) * k))
 
 
+def test_fdtd_oblique_tfsf_does_not_leak_cpu():
+    """Off-axis incidence is fed from tables of the grid's exact discrete plane wave (layered.py, here with a
+    uniform background), so a particle of the medium itself scatters nothing (measured ~1e-19 nm², where the
+    interpolated 1D feed leaked ~1e-3 of the field), and the near field is the plane wave (measured 3e-4,
+    the linear interpolation of the output grid)."""
+    k, e = np.array([1.0, 2.0, 3.0]), np.array([3.0, 0.0, -1.0])
+    sim = sphere_sim(ls.ConstantIndex(n_real=1.33), 10, [400.0, 800.0], medium=1.33, spacing_nm=4.0,
+                     precision="double", pml_cells=6, padding_nm=8).model_copy(update={
+                         "illumination": plane_wave(k, e),
+                         "outputs": Outputs(near_field=NearFieldRequest(plane="xz", half_width_nm=60, points=9,
+                                                                        wavelengths_nm=[600.0]),
+                                            far_field=FarFieldRequest(theta_deg=[0, 90], wavelengths_nm=[600.0]))})
+    res = ls.solve(sim, "fdtd", "cpu")
+    assert res.provenance["tfsf_table_stride"] >= 1
+    assert np.abs(res.c_sca_nm2).max() < 1e-12 and np.abs(res.c_abs_nm2).max() < 1e-6
+    assert np.abs(res.far_field[0].dcsca_domega_nm2).max() < 1e-15
+    nf = res.near_field[0]
+    E = np.asarray(nf.e_real) + 1j * np.asarray(nf.e_imag)
+    X, Z = np.meshgrid(nf.axis1_nm, nf.axis1_nm, indexing="ij")
+    kh, eh = k / np.linalg.norm(k), np.asarray(sim.illumination.unit_vectors()[1])
+    ana = eh[:, None, None] * np.exp(1j * 1.33 * 2 * np.pi / 600 * (kh[0] * X + kh[2] * Z))
+    assert np.abs(E - ana).max() < 1e-3
+
+
 @pytest.mark.gpu
 @needs_cuda
 def test_fdtd_oblique_tfsf_sphere_is_direction_independent():
-    """Off-axis incidence (interpolated TFSF feed) on a sphere: each direction vs Mie, and the spread
-    between directions, which isolates the oblique source from the common grid error."""
+    """Axial and off-axis incidence (tables of the exact discrete plane wave) on a sphere: each direction vs
+    Mie, and the spread between directions, which isolates the source from the common grid error."""
     wl = [400.0, 500.0, 650.0, 800.0]
     ref = ls.solve(sphere_sim(ls.ConstantIndex(n_real=1.5), 60, wl), "mie")
     ext = []
@@ -152,12 +177,28 @@ def test_fdtd_oblique_tfsf_sphere_is_direction_independent():
         sim = sphere_sim(ls.ConstantIndex(n_real=1.5), 60, wl, spacing_nm=6.0).model_copy(
             update={"illumination": plane_wave(k, e)})
         res = ls.solve(sim, "fdtd", "gpu")
-        assert rel(res.c_ext_nm2, ref.c_ext_nm2).max() < 0.02  # measured 1.0-1.2% (subpixel error at dx=6)
-        assert rel(res.c_sca_nm2, ref.c_sca_nm2).max() < 0.02
-        assert np.abs(res.c_abs_nm2).max() < 1e-3 * max(res.c_ext_nm2)
+        assert rel(res.c_ext_nm2, ref.c_ext_nm2).max() < 3e-3  # measured 0.08%
+        assert rel(res.c_sca_nm2, ref.c_sca_nm2).max() < 3e-3
+        assert np.abs(res.c_abs_nm2).max() < 1e-4 * max(res.c_ext_nm2)  # measured 1e-5
         ext.append(res.c_ext_nm2)
     ext = np.asarray(ext)
-    assert (ext.max(axis=0) / ext.min(axis=0) - 1).max() < 0.006  # measured 0.35%
+    assert (ext.max(axis=0) / ext.min(axis=0) - 1).max() < 5e-4  # measured 4e-5 (interpolated 1D feed: 0.35%)
+
+
+@pytest.mark.gpu
+@needs_cuda
+def test_fdtd_small_sphere_matches_mie():
+    """A 20 nm sphere, whose C_ext is ~1e-5 of the incident flux through the TFSF box. Measured 0.04-0.08%
+    for both directions; the former 1D-fed source gave C_abs = -0.29 C_ext at 800 nm, because its incident
+    flux through the box did not cancel (~1e-5 of it, depending on the DFT stride)."""
+    wl = [400.0, 500.0, 650.0, 800.0]
+    ref = ls.solve(sphere_sim(ls.ConstantIndex(n_real=1.5), 20, wl), "mie")
+    for k, e in (((0, 0, 1), (1, 0, 0)), ((1, 2, 3), (3, 0, -1))):
+        sim = sphere_sim(ls.ConstantIndex(n_real=1.5), 20, wl, spacing_nm=2.0, precision="double").model_copy(
+            update={"illumination": plane_wave(k, e)})
+        res = ls.solve(sim, "fdtd", "gpu")
+        assert rel(res.c_ext_nm2, ref.c_ext_nm2).max() < 3e-3
+        assert np.abs(res.c_abs_nm2).max() < 1e-4 * max(res.c_ext_nm2)
 
 
 @pytest.mark.gpu
@@ -267,7 +308,7 @@ def test_fdtd_drude_sphere_resonance():
 @needs_cuda
 def test_fdtd_gaussian_beam_focus_and_profile():
     """C_ext of a small sphere at the focus equals Mie (normalised by the focal intensity); off the axis it
-    follows |E|^2 of the discretised beam (measured: 0.13 % and 0.1 %)."""
+    follows |E|^2 of the discretised beam (measured: 0.04 % for both; 0.13 % and 0.1 % with 1D-fed components)."""
     from lightsmith.backends._fdtd.beam import beam_field, plane_wave_components
     from lightsmith.spec import GaussianBeam
 
@@ -280,9 +321,33 @@ def test_fdtd_gaussian_beam_focus_and_profile():
         comps, _ = plane_wave_components(beam, 1.0, 600.0, 500.0)
         expect = [np.sum(np.abs(beam_field(comps, np.array([off]), 2 * np.pi / lam)) ** 2)
                   / np.sum(np.abs(beam_field(comps, np.zeros((1, 3)), 2 * np.pi / lam)) ** 2) for lam in wl]
-        np.testing.assert_allclose(np.asarray(res.c_ext_nm2) / mie, expect, rtol=5e-3)
+        np.testing.assert_allclose(np.asarray(res.c_ext_nm2) / mie, expect, rtol=2e-3)
         assert res.provenance["gaussian_beam"]["plane_waves"] > 50
     assert not ls.get_backend("mie").supports(base.model_copy(update={"illumination": beam}))[0]
+
+
+@pytest.mark.gpu
+@needs_cuda
+def test_fdtd_gaussian_beam_near_field():
+    """A particle of the medium itself in a tight beam: no scattering, and the near field is the discretised
+    beam (normalised at the focus along the polarisation; measured 2e-4)."""
+    from lightsmith.backends._fdtd.beam import beam_field, plane_wave_components
+    from lightsmith.spec import GaussianBeam
+
+    beam = GaussianBeam(waist_nm=400)
+    sim = sphere_sim(ls.ConstantIndex(n_real=1.0), 10, [500.0, 700.0], spacing_nm=4.0).model_copy(update={
+        "illumination": beam, "outputs": Outputs(near_field=NearFieldRequest(plane="xz", half_width_nm=100, points=7,
+                                                                             wavelengths_nm=[600.0]))})
+    res = ls.solve(sim, "fdtd", "gpu")
+    assert np.abs(res.c_sca_nm2).max() < 1e-8  # float32; measured 2e-10
+    nf = res.near_field[0]
+    E = np.moveaxis(np.asarray(nf.e_real) + 1j * np.asarray(nf.e_imag), 0, -1)
+    X, Z = np.meshgrid(nf.axis1_nm, nf.axis1_nm, indexing="ij")
+    pts = np.stack([X, np.zeros_like(X), Z], axis=-1).reshape(-1, 3)
+    comps, _ = plane_wave_components(beam, 1.0, 600.0, 400.0)  # as the solve: wl_ref = band centre
+    k = 2 * np.pi / 600
+    ref = beam_field(comps, pts, k).reshape(E.shape) / beam_field(comps, np.zeros((1, 3)), k)[0, 0]
+    assert np.isfinite(E).all() and np.abs(E - ref).max() < 2e-3
 
 
 # --- slow, tighter checks -----------------------------------------------------

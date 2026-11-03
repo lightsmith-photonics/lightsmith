@@ -90,9 +90,9 @@ Two lessons:
    uses tables of the exact discrete background: per frequency a 1D discrete problem along z, then an
    inverse FFT. That is leak-free, unlike the interpolated fixed-angle grid of Capoglu & Smith (2008).
    Next: absorbing substrates (particle absorption and the reflectance change), and the far field into both
-   half-spaces. The same tables could replace the interpolated oblique source in a homogeneous medium,
-   which leaks about 1e-3 of the incident field (1–3 % on a 20 nm glass sphere), and the Gaussian-beam
-   components.
+   half-spaces. The same tables now feed every plane wave and Gaussian-beam component in a uniform medium.
+   They replace the 1D-fed source, which leaked about 1e-3 of the field off-axis and whose box flux did
+   not cancel (up to 30 % of C_ext for a 20 nm sphere). Gaussian beams gain near fields.
 6. Mirror symmetries (PEC/PMC planes), for 2×–8× smaller runs.
 7. Device problems: waveguide mode sources and mode-expansion monitors from the FDE mode solver, giving
    S-parameters that feed [circuits](../../problems/index.md) directly.

@@ -22,7 +22,7 @@ whose DFT fields are split into diffraction orders by a 2D FFT (``_fdtd/periodic
 incidence is one broadband real run; oblique and conical incidence use Bloch-periodic boundaries
 at fixed in-plane wavevector (complex fields), one run per (angle, wavelength, polarisation) so
 that every result is at the requested angle. Scattering problems accept any incidence direction
-(the TFSF box interpolates its 1D feed off-axis).
+(the TFSF box reads tables of the grid's exact discrete plane wave, so it does not leak at any angle).
 
 Written against the Python array API: the same code runs on NumPy (CPU) and
 PyTorch (CPU/CUDA); on CUDA the time loop is replayed as CUDA graphs.
@@ -67,8 +67,6 @@ class NativeFDTD(Backend):
             return False, "FDTD solves scattering, periodic and layer_stack problems"
         why = unsupported_outputs(sim, near_field=True, far_field=True, resonances=True, gaussian_beam=True,
                                   substrate=True)
-        if not why and sim.illumination.kind == "gaussian_beam" and sim.outputs.near_field is not None:
-            why = "does not support near_field output with gaussian_beam illumination (yet)"
         if not why and sim.substrate is not None:
             why = scattering.substrate_unsupported(sim)
         if not why and any(needs_fit(m) for p in sim.particles for m in p.region_materials()) \

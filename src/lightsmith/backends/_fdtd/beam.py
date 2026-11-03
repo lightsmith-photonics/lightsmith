@@ -5,8 +5,9 @@ discretised at fixed directions: Gauss-Legendre rings in k_t on [0, k_t,max] (A(
 numerical aperture of 0.95 if the waist is tighter than that allows) and uniform azimuths on each ring.
 Ring and azimuth counts follow the largest transverse distance rho from the focus inside the TFSF box, so
 the sampled spectrum reproduces the beam there (k_t rho / 2 + 6 rings, 2 k_t rho + 8 azimuths per ring).
-Each direction is one ``TFSFPlaneWave`` (its own 1D feed, phase reference at the focus) whose pulse is
-scaled by the quadrature weight; its polarisation is the axis polarisation rotated with the direction.
+Each direction is one plane wave fed from tables of its exact discrete field (``layered.py`` with a uniform
+background, so the TFSF box does not leak), delayed to reach the focus in phase with the others and scaled
+by the quadrature weight; its polarisation is the axis polarisation rotated with the direction.
 
 Weights are fixed, not per frequency, so every frequency sees the same set of angles: the beam of a lens
 of fixed NA, whose waist scales with the wavelength (waist_nm at waist_wavelength_nm).
@@ -14,10 +15,13 @@ of fixed NA, whose waist scales with the wavelength (waist_nm at waist_wavelengt
 
 from __future__ import annotations
 
+import itertools
+
 import numpy as np
 
 from .engine import DFTMonitor
-from .tfsf import TFSFPlaneWave
+from .layered import ObliqueLayeredPlaneWave, _View, read_tables
+from .setup import flux
 
 A_MIN = 1e-4  # angular spectrum cut-off
 KT_CUT = 2 * np.sqrt(np.log(1 / A_MIN))  # k_t w0 at the cut-off (6.07)
@@ -70,70 +74,69 @@ def beam_field(comps, r: np.ndarray, k: float) -> np.ndarray:
 class BeamSource:
     """Engine source for all beam components at once.
 
-    Each component is set up as a TFSFPlaneWave (its 1D feed and face corrections, phase reference at the
-    focus); their 1D grids are then stacked into one (N, M) array stepped together, and the corrections of
-    every component on the same face slab are merged into one gather-and-sum, so a step costs one set of
-    slab updates whatever the number of plane waves (one TFSFPlaneWave each was ~50x slower)."""
+    Each component is an ObliqueLayeredPlaneWave in the uniform medium, delayed so that it reaches the focus
+    t_focus after its unshifted pulse reaches its reference point, the same t_focus for all: the components
+    arrive there in phase. Their tables (scaled by the weights) are concatenated, and the corrections of
+    every component on the same face slab are read in one gather-and-sum. The view holds every component's
+    incident E at its reference point; with the exact unit solutions, that gives each component's amplitude,
+    hence the beam at the focus and its background field anywhere in the tables' range."""
 
-    def __init__(self, comps, **tfsf):
-        # every component must reach the focus (s = 0, at m0 on its 1D grid) at the same time, or the
-        # components are not in phase there: put s = 0 equally far from the 1D source cell in all of them
-        parts = [TFSFPlaneWave(khat=khat, ehat=ehat, **tfsf) for khat, ehat, _ in comps]
-        m0 = max(p.m0 for p in parts)
-        parts = [p if p.m0 == m0 else TFSFPlaneWave(khat=khat, ehat=ehat, m0=m0, **tfsf)
-                 for p, (khat, ehat, _) in zip(parts, comps)]
-        self.ehats = [eh for _, eh, _ in comps]
+    def __init__(self, comps, *, focus, shape, origin, spacing, dt, lo, hi, inv_eps, host, omega_c, omega_half,
+                 max_steps, omega_min):
+        self.focus = np.asarray(focus, dtype=float)
+        sp = np.broadcast_to(np.asarray(spacing, dtype=float), (3,))
+        lo, hi, origin = np.asarray(lo), np.asarray(hi), np.asarray(origin, dtype=float)
+        # no reference point is farther from the focus than the corners of the box widened by 2 cells
+        corners = origin + np.array(list(itertools.product(*zip(lo - 2, hi + 2)))) * sp
+        t_focus = np.sqrt(host.eps_inf) * float(np.max(np.linalg.norm(corners - self.focus, axis=1)))
+        parts = [ObliqueLayeredPlaneWave(shape=shape, origin=origin, spacing=spacing, dt=dt, lo=lo, hi=hi,
+                                         khat=khat, ehat=ehat, inv_eps=inv_eps, host=host, omega_c=omega_c,
+                                         omega_half=omega_half, max_steps=max_steps, omega_min=omega_min,
+                                         focus=self.focus, t_focus=t_focus)
+                 for khat, ehat, _ in comps]
+        self.parts = parts
+        self.khats = np.array([kh for kh, _, _ in comps])
+        self.ehats = np.array([eh for _, eh, _ in comps])
         self.weights = np.array([w for _, _, w in comps])
+        self.n = len(parts)
+        self.m = parts[0].m
         self.t_passed = max(p.t_passed for p in parts)
-        n, M = len(parts), max(p.M for p in parts)
-        self.n, self.M = n, M
-        # stacked 1D coefficients; cells past a component's own grid stay zero (ca = da = 1, cb = db = 0)
-        ca, cb, da, db = np.ones((n, M)), np.zeros((n, M)), np.ones((n, M)), np.zeros((n, M))
-        for j, p in enumerate(parts):
-            ca[j, :p.M], cb[j, :p.M], da[j, :p.M], db[j, :p.M] = p.ca, p.cb, p.da, p.db
-            cb[j, p.M - 1:] = 0  # a shorter grid keeps its PEC end
-        self.ca, self.cb, self.da, self.db = ca[:, 1:-1], cb[:, 1:-1], da[:, :-1], db[:, :-1]
-        if len({p.m_src for p in parts}) != 1:
-            raise ValueError("beam components must share the 1D source cell")
-        self.m_src = parts[0].m_src
-        self.wave = parts[0].wave
-        self.m0 = np.array([p.m0 for p in parts])
-        # merge slabs: key -> (kind, comp, region, shape, flat indices (P, S), weights (P, S), coefs (P,))
-        groups: dict[tuple, list] = {}
-        for j, p in enumerate(parts):
-            for kind, c, region, coef, i0, w, shape_ in p.slabs:
-                key = (kind, c, tuple((r.start, r.stop) for r in region))
-                groups.setdefault(key, [kind, c, region, shape_, [], [], []])
-                g = groups[key]
-                g[4].append(j * M + i0)
-                g[5].append(np.zeros(len(i0)) if w is None else w)
-                g[6].append(coef)
-        self.slabs = [(kind, c, region, shape_, np.stack(i0s), np.stack(ws), np.asarray(cs))
-                      for kind, c, region, shape_, i0s, ws, cs in groups.values()]
-
-    def probe(self):
-        """Flat indices (e, h1, h2) of every component's incident-field probe in the stacked 1D arrays."""
-        j = np.arange(self.n) * self.M
-        return j + self.m0, j + self.m0 - 1, j + self.m0
+        self.t_off = max(p.t_off for p in parts)
+        off = np.concatenate([[0], np.cumsum([p.tables.size for p in parts])[:-1]])
+        off_inc = np.concatenate([[0], np.cumsum([p.inc_table.size for p in parts])[:-1]])
+        self.tables = np.concatenate([w * p.tables.reshape(-1) for p, w in zip(parts, self.weights)])
+        self.inc_table = np.concatenate([p.inc_table.reshape(-1) for p in parts])
+        self.cmax = np.array([[p.cmax] for p in parts])
+        self.slabs = []
+        for i, (kind, c, region, _, _, _, arr, shape_) in enumerate(parts[0].slabs):
+            assert all(p.slabs[i][2] == region for p in parts)
+            self.slabs.append((kind, c, region, np.stack([p.slabs[i][3] + o for p, o in zip(parts, off)]),
+                               np.stack([p.slabs[i][4] for p in parts]), np.stack([p.slabs[i][5] for p in parts]),
+                               arr, shape_))
+        self.inc = (np.stack([p.inc[0] + o for p, o in zip(parts, off_inc)]), np.stack([p.inc[1] for p in parts]),
+                    np.stack([p.inc[2] for p in parts]))
+        for p in parts:  # keep only what the analysis needs (the 1D solutions)
+            del p.tables, p.inc_table
+            p.slabs = None
+        self.view = _View()
 
     def bind(self, eng):
-        a = eng.asarray
-        self.E1, self.H1 = eng.zeros((self.n, self.M)), eng.zeros((self.n, self.M))
-        self.E_flat, self.H_flat = eng.xp.reshape(self.E1, (-1,)), eng.xp.reshape(self.H1, (-1,))
-        self._ca, self._cb, self._da, self._db = a(self.ca), a(self.cb), a(self.da), a(self.db)
-        self._wave, self._w = a(self.wave), a(self.weights[:, None])
-        self._slabs = [(kind, c, region, shape_, eng.index(i0), a(w), a(cs[:, None]))
-                       for kind, c, region, shape_, i0, w, cs in self.slabs]
+        self._T, self._Tinc = eng.asarray(self.tables), eng.asarray(self.inc_table)
+        del self.tables, self.inc_table
+        self._cmax = eng.index(self.cmax)
+        self._slabs = [(kind, c, region, eng.index(base), eng.index(i0), eng.asarray(u0), eng.asarray(arr), shape_)
+                       for kind, c, region, base, i0, u0, arr, shape_ in self.slabs]
+        self._inc = tuple(f(a) for f, a in zip((eng.index, eng.index, eng.asarray), self.inc))
+        self.view.E_flat = eng.zeros((self.n * 3,))
+        self.view.H_flat = self.view.E_flat
 
     def _apply(self, eng, kind: str):
         target = eng.E if kind == "E" else eng.H
-        src = self.H_flat if kind == "E" else self.E_flat
-        for k, c, region, shape_, i0, w, cs in self._slabs:
-            if k != kind:
-                continue
-            lo = src[i0]
-            vals = eng.xp.sum(cs * (lo + w * (src[i0 + 1] - lo)), axis=0)
-            target[c][region] += eng.xp.reshape(vals, shape_)
+        xp = eng.xp
+        for k, c, region, base, i0, u0, arr, shape_ in self._slabs:
+            if k == kind:
+                vals = xp.sum(read_tables(xp, self._T, eng.n, self.m, self._cmax, base, i0, u0), axis=0)
+                target[c][region] += arr * xp.reshape(vals, shape_)
 
     def correct_H(self, eng):
         self._apply(eng, "H")
@@ -142,22 +145,52 @@ class BeamSource:
         self._apply(eng, "E")
 
     def advance_H(self, eng):
-        E, H = self.E1, self.H1
-        H[:, :-1] *= self._da
-        H[:, :-1] -= self._db * (E[:, 1:] - E[:, :-1])
+        pass
 
     def advance_E(self, eng):
-        E, H = self.E1, self.H1
-        E[:, 1:-1] *= self._ca
-        E[:, 1:-1] -= self._cb * (H[:, 1:-1] - H[:, :-2])
-        m = self.m_src
-        E[:, m:m + 1] += self._w * self._wave[eng.n]
+        vals = read_tables(eng.xp, self._Tinc, eng.n, self.m, self._cmax, *self._inc)
+        self.view.E_flat[...] = eng.xp.reshape(vals, (-1,))
 
     def monitor(self, omega) -> DFTMonitor:
-        """Incident-field probes at the focus, all components in one monitor."""
-        return DFTMonitor(omega, *self.probe(), source=self)
+        """Every component's incident E at its reference point, in one monitor."""
+        return DFTMonitor(np.asarray(omega, dtype=float), np.arange(self.n * 3), source=self.view)
 
-    def focus_field(self, mon: DFTMonitor) -> np.ndarray:
-        """Incident E at the focus, (frequencies, 3): each component's 1D amplitude times its polarisation."""
-        e = mon.results()[0]  # (frequencies, components)
-        return e @ np.asarray(self.ehats)
+    def amplitudes(self, mon: DFTMonitor, omega) -> np.ndarray:
+        """(frequencies, components): each component's amplitude against its unit solution."""
+        omega = np.asarray(omega, dtype=float)
+        e = mon.results()[0].reshape(len(omega), self.n, 3)
+        amp = np.zeros((len(omega), self.n), dtype=complex)
+        for j, p in enumerate(self.parts):
+            unit = p.incident_reference(omega)
+            amp[:, j] = np.sum(e[:, j] * np.conj(unit), axis=1) / np.sum(np.abs(unit) ** 2, axis=1)
+        return amp
+
+    def continuum(self, amp: np.ndarray, omega, r: np.ndarray) -> np.ndarray:
+        """E of the beam with component amplitudes amp (len(omega), components) at points r (..., 3) in grid
+        coordinates (nm), as continuum plane waves from each reference point: (len(omega), ..., 3)."""
+        omega, r = np.asarray(omega, dtype=float), np.asarray(r, dtype=float)
+        n_b = self.parts[0].n_inc
+        out = np.zeros((len(omega),) + r.shape, dtype=complex)
+        for j, (p, kh, eh, w) in enumerate(zip(self.parts, self.khats, self.ehats, self.weights)):
+            ph = np.exp(1j * n_b * omega.reshape((-1,) + (1,) * (r.ndim - 1)) * ((r - p.r_ref) @ kh)[None])
+            out += (w * amp[:, j]).reshape((-1,) + (1,) * (r.ndim - 1))[..., None] * ph[..., None] * eh
+        return out
+
+    def focus_field(self, amp: np.ndarray, omega) -> np.ndarray:
+        """Incident E at the focus, (frequencies, 3), for the component amplitudes amp."""
+        return self.continuum(amp, omega, self.focus[None, :])[:, 0]
+
+    def background(self, amp: np.ndarray, omega, flat: np.ndarray, kind: str = "E") -> np.ndarray:
+        """The beam's E or H at flat grid indices, (len(omega), n), for component amplitudes amp
+        (len(omega), components); NaN beyond any component's table range."""
+        out = 0
+        for j, (p, w) in enumerate(zip(self.parts, self.weights)):
+            out = out + w * amp[:, j:j + 1] * p.background(omega, flat, kind)
+        return out
+
+    def box_flux(self, amp: np.ndarray, omega, pts) -> np.ndarray:
+        """Net outward flux of the beam alone through a flux_points box (the grid's averaged-H flux of a sum
+        of plane waves need not be exactly conserved)."""
+        e = self.background(amp, omega, pts[0], "E")
+        h = 0.5 * (self.background(amp, omega, pts[1], "H") + self.background(amp, omega, pts[2], "H"))
+        return flux(e, h, pts[3])

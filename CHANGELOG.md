@@ -30,6 +30,13 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
   interface. C_sca is within 0.2–0.5 % of a dipole reference for a sphere above glass (1.7 % for p
   under total internal reflection, where the dipole model is least exact). Near fields are supported;
   absorbing substrates and far fields are not yet.
+- **Leak-free plane waves and Gaussian beams at any angle** (FDTD scattering). Every plane wave, and every
+  component of a Gaussian beam, is fed from tables of the grid's exact discrete plane wave (the oblique
+  substrate method, with a uniform background), so the TFSF box does not leak at any direction. A sphere's
+  C_ext agrees between directions to 4e-5 (0.35 % before). A 20 nm sphere is within 0.1 % of Mie: with the
+  1D-fed source, the incident flux through the box did not cancel, giving errors up to 22 % at 800 nm. A beam
+  on a 40 nm sphere is within 0.04 % of Mie at the focus and off axis (0.13 % before). Gaussian beams now
+  support near-field output.
 - **Resonances** (`outputs.resonances`): wavelengths, Q factors and amplitudes from the FDTD ring-down,
   through the new `lightsmith.resonance.harmonic_inversion` (multi-channel matrix pencil).
 

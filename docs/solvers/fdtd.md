@@ -20,14 +20,27 @@ It runs on the CPU or a CUDA GPU.
 ### Scattering
 
 - **Grid and boundaries.** A Yee grid with a convolutional PML (Roden & Gedney 2000).
-- **Source.** A total-field/scattered-field plane-wave source fed by a 1D auxiliary grid. It has no
-  leakage for axis-aligned incidence and about 1e-3 for oblique incidence.
+- **Source.** A total-field/scattered-field plane-wave source fed from tables of the grid's own discrete
+  plane wave, at any direction (the method of the oblique substrate source below, with a uniform
+  background). The 1D problem runs along the axis with the largest |k| component, relabelled to z by a
+  cyclic axis permutation, which keeps the Yee staggering. The box does not leak at any angle: C_sca of a
+  particle of the medium itself is about 1e-19 nm² in double precision. The interpolated 1D feed it
+  replaces leaked ~1e-3 of the field off-axis. That feed's incident flux through the box also failed to
+  cancel by ~1e-5 even on axis, which for a 20 nm sphere was up to 30 % of C_ext. C_abs subtracts the
+  background's own flux through the box, and the intensity is n|E|²/2 of the incident wave. The grid's
+  discrete Poynting flux differs from that by O((k dx)²), and differently with direction: about 1e-3
+  along an axis and 4e-4 along a diagonal at k dx = 0.1. With n|E|²/2, a sphere's C_ext agrees between
+  directions to 4e-5.
+  Tables are stored every m steps, the largest m with ω h ≤ 0.2 at the top of the pulse band; m is about 3
+  at 100 cells per wavelength. They are read with quintic interpolation, whose error (3e-7) only leaks.
 - **Gaussian beams.** A `GaussianBeam` is its angular spectrum at fixed directions: Gauss–Legendre rings in
   the transverse wavevector and uniform azimuths, as many as the TFSF box needs (about 60–120 plane waves).
-  Each is one TFSF plane wave with its phase reference at the focus. Their 1D feeds are stacked and stepped
-  together, their face corrections merged, and all put the focus equally far from their source cell so the
-  components arrive in phase. A beam run costs about 1.6× a plane-wave run. Cross sections are per unit
-  intensity at the focus.
+  Each is a table-fed plane wave, delayed so that all reach the focus in phase. Their tables are
+  concatenated and scaled by the quadrature weights, and each face slab reads every component in one
+  gather. A 65-component beam takes about 1 MB of tables per component at dx = 4 nm. Cross sections are per
+  unit intensity at the focus. Each component's amplitude is known exactly, so the beam's background
+  flux through the box is subtracted and near fields are available. Near fields are normalised by the
+  beam's E at the focus along its polarisation.
 - **Dispersion.** Drude and Lorentz auxiliary differential equations.
 - **Interfaces.** Conformal meshing by tensor subpixel smoothing (Kottke, Farjadpour & Johnson 2008): each interface
   cell gets 1/ε = P⟨1/ε⟩ + (1 − P)/⟨ε⟩, P = n nᵀ, off-diagonal terms included. The off-diagonal coupling
@@ -73,8 +86,7 @@ It runs on the CPU or a CUDA GPU.
     An inverse FFT turns the solutions into tables F_c(z, τ). Every TFSF point reads its component at its
     own height and delay, with quintic interpolation in τ. The tables satisfy the grid's own equations, so
     the box does not leak, including under total internal reflection: C_sca of a null particle is below
-    1e-14 nm² in double precision, where the interpolated 1D-grid source leaks ~1e-3 of the incident
-    field. Two details keep the tables exact:
+    1e-14 nm² in double precision. Two details keep the tables exact:
     - The pulse starts at e⁻²⁵ and is high-passed below the band. Near-static evanescent content under
       total internal reflection would otherwise ring for a very long time.
     - The DFT stride uses a 6 ω_half margin, since absorption is measured against the exact background.
@@ -155,7 +167,11 @@ There are no gradients.
 | `test_fdtd_emission_near_dielectric_sphere_matches_mie` (gpu): dipole 10 nm from n = 2, r = 60 nm, tilted 45° | `lightsmith-mie` | Purcell and radiative < 0.5 % (measured 0.07 % radial, 0.17 % tangential) |
 | `test_fdtd_emission_near_drude_sphere_matches_mie` (gpu): dipole 10 nm from a Drude r = 40 nm sphere in water, tilted 45° | `lightsmith-mie` | Purcell < 15 % (measured 7.9 % radial, 11.5 % tangential) |
 | `test_fdtd_lone_dipole_radiation_pattern` (gpu) | 3/(8π) sin²θ | < 0.2 % of the peak (measured 0.05 %); integral 1 within 0.2 % |
-| `test_fdtd_gaussian_beam_focus_and_profile` (gpu): r = 40 nm sphere, 1 µm waist, at the focus and 333 nm off axis | Mie × the beam's |E|² | 0.5 % (measured 0.13 % at the focus, 0.1 % off axis) |
+| `test_fdtd_oblique_tfsf_does_not_leak_cpu`: particle of the medium, direction (1, 2, 3) | Zero; the plane wave | C_sca < 1e-12 nm² (measured 1e-19); near field < 1e-3 (measured 3e-4, the output interpolation) |
+| `test_fdtd_oblique_tfsf_sphere_is_direction_independent` (gpu): r = 60 nm, dx = 6 nm, (0, 0, 1), (1, 1, 1), (1, 2, 3) | Mie; the other directions | C_ext < 0.3 % (measured 0.08 %); spread < 5e-4 (measured 4e-5) |
+| `test_fdtd_small_sphere_matches_mie` (gpu): r = 20 nm, dx = 2 nm, float64, axial and (1, 2, 3) | Mie | C_ext < 0.3 % (measured 0.04–0.08 %); \|C_abs\| < 1e-4 C_ext |
+| `test_fdtd_gaussian_beam_focus_and_profile` (gpu): r = 40 nm sphere, 1 µm waist, at the focus and 333 nm off axis | Mie × the beam's |E|² | 0.2 % (measured 0.04 % at both; 0.13 % and 0.1 % with 1D-fed components) |
+| `test_fdtd_gaussian_beam_near_field` (gpu): particle of the medium, 400 nm waist | The discretised beam | C_sca < 1e-8 nm²; near field < 2e-3 (measured 2e-4) |
 | `test_fdtd_conformal_is_stable_at_late_times` (slow, gpu): n = 3.5 sphere, 3 ps | — | field decays below 1e-12 |
 | `test_fdtd_dielectric_sphere_fine_grid` (slow, gpu): r = 60 nm, dx = 2 nm | Mie | C_ext < 0.2 % |
 | `test_fdtd_drude_sphere_fine_grid` (slow, gpu): dx = 1.33 nm | Mie | peak within one 10 nm sample; height < 4 % |
@@ -229,8 +245,8 @@ evanescent field varies across the sphere, which the dipole model misses, hence 
     the source plane), are NaN;
   - absorption of a weak absorber is limited by float32 cancellation, because the box carries the full
     incident flux (~0.004 nm² for a 100 nm box); use `precision: "double"` for it.
-- Gaussian beams: no near-field output yet. Each oblique plane wave leaks ~0.1 % of the incident field,
-  which matters only for particles with very small cross sections (1–3 % on a 20 nm glass sphere).
+- Gaussian beams: no substrate yet. Table memory grows with the number of components (about 1 MB each at
+  dx = 4 nm); `estimate` includes it.
 - Resonances of metal particles: the plasmon Q comes out 7–10 % low, and a weak extra mode can appear
   next to the plasmon (amplitude 0.19 at 503.7 nm for a 10 nm Drude sphere). Broad modes (Q below about 10)
   are the hardest to fit: allow `max_modes` of 10 or more.
@@ -240,7 +256,6 @@ evanescent field varies across the sphere, which the dipole model misses, hence 
 - Metal interfaces: the vertex tensor leaves a first-order error of about 2.5 % RMS in C_ext at r/20
   resolution (see validation). It falls as dx is refined.
 - Warns about:
-  - oblique incidence (about 0.1 % incident-field leakage);
   - fields that have not decayed by the time cap;
   - negative absorption;
   - non-causal constant lossy materials;

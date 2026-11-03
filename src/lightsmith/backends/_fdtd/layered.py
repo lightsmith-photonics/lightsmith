@@ -130,18 +130,30 @@ def solve(eta_t, eta_z, Kx, Ky, Om, dz, e_t, from_top: bool):
             "inc": np.stack([ui[:, 0], ui[:, 1], ez_i], axis=1)}
 
 
-_STENCIL = np.arange(-2, 4)  # quintic: error ~ (omega dt)^6, ~1e-11 at the top of the band (cubic: 1e-7)
+_STENCIL = np.arange(-2, 4)  # quintic: relative error ~5e-3 (omega h)^6 for samples h apart (cubic: 2e-2 (omega h)^4)
+_DENOM = [float(np.prod([xj - xk for xk in _STENCIL if xk != xj])) for xj in _STENCIL]
+OMEGA_H = 0.2  # table sample spacing h: omega h at omega_c + 3 omega_half (interpolation error 3e-7 there, 4e-8 at the band edge)
 
 
-def _lagrange(u: np.ndarray) -> np.ndarray:
-    """Lagrange weights (n, 6) for samples at _STENCIL and fractional position u in [0, 1)."""
-    u = np.asarray(u, dtype=float)[:, None]
-    w = np.ones((len(u), len(_STENCIL)))
-    for j, xj in enumerate(_STENCIL):
-        for xk in _STENCIL:
-            if xk != xj:
-                w[:, j] *= (u[:, 0] - xk) / (xj - xk)
-    return w
+def read_tables(xp, T, n, m: int, cmax, base, i0, u0):
+    """Quintic interpolation of tables sampled every m steps: sum_j w_j(u) T[base + c + j] with
+    (n + i0 + u0) / m = c + u, c clamped to cmax (zeros past the end). The fine position is split into the
+    integers n + i0 and the fraction u0 so that u keeps its precision in float32."""
+    q = n + i0
+    r = q % m
+    c = xp.minimum((q - r) // m, cmax)
+    u = (xp.astype(r, u0.dtype) + u0) / m
+    d = [u - float(x) for x in _STENCIL]
+    idx = base + c
+    out = None
+    for j in range(len(_STENCIL)):
+        w = None
+        for k in range(len(_STENCIL)):
+            if k != j:
+                w = d[k] if w is None else w * d[k]
+        term = (w / _DENOM[j]) * T[idx + j]
+        out = term if out is None else out + term
+    return out
 
 
 class _View:
@@ -158,21 +170,39 @@ class ObliqueLayeredPlaneWave:
 
     The background fields come from tables F_c(z, tau), tau = t - s . (r_par - r_c), built by `solve` at the
     frequencies of the pulse and an inverse FFT; every correction point reads its component at its own z
-    and delay with quintic interpolation (the time step resolves the band hundreds of times over). r_c is the
-    box corner the wave reaches first, so all delays are >= 0. The reference point for the incident wave is
+    and delay with quintic interpolation. r_c is the box corner the wave reaches first, so all delays are
+    >= 0. The reference point for the incident wave is
     the incidence-side end node of the table range at r_c. The incidence medium must be non-dispersive (a
-    fixed angle then has a fixed s)."""
+    fixed angle then has a fixed s). Tables are stored every m steps, the largest m with omega h <= OMEGA_H
+    (m ~ 3 at 100 cells per wavelength), so that many of them (a Gaussian beam) stay small; the interpolation
+    error only leaks, and C_sca of a null particle stays below 1e-16 nm^2.
+    With ``focus`` (grid coordinates, nm) the pulse is delayed so that it reaches the focus t_focus after the
+    unshifted pulse reaches the reference point: beam components given one t_focus arrive there in phase.
 
-    def __init__(self, *, shape, origin, spacing, dt, lo, hi, khat, ehat, inv_eps, z_int: float, host: Medium,
-                 sub: Medium, omega_c, omega_half, max_steps: int, omega_min: float | None = None):
+    Without ``sub`` the background is the uniform ``host`` (a leak-free TFSF plane wave at any angle). The
+    1D problem then runs along the axis with the largest |k| component: the grid is relabelled by the cyclic
+    axis permutation that takes that axis to z, which keeps the Yee staggering, and "z" below is that axis.
+    ``origin``, ``spacing``, ``r_c``, ``s`` and the tables are in the relabelled frame; ``shape``, the flat
+    indices given to `background`, the monitor view and `incident_reference` are in the grid's own frame."""
+
+    def __init__(self, *, shape, origin, spacing, dt, lo, hi, khat, ehat, inv_eps, host: Medium,
+                 z_int: float = -np.inf, sub: Medium | None = None, omega_c, omega_half, max_steps: int,
+                 omega_min: float | None = None, focus=None, t_focus: float = 0.0):
         from .tfsf import tfsf_slabs
 
-        self.shape, self.dt = tuple(shape), float(dt)
-        sp = np.broadcast_to(np.asarray(spacing, dtype=float), (3,)).copy()
-        self.origin, self.spacing = np.asarray(origin, dtype=float), sp
-        self.z_int, self.host, self.sub = float(z_int), host, sub
-        lo, hi = np.asarray(lo), np.asarray(hi)
         khat, ehat = np.asarray(khat, dtype=float), np.asarray(ehat, dtype=float)
+        a = 2 if sub is not None else int(np.argmax(np.abs(khat)))
+        self.perm = perm = np.array([(j + a + 1) % 3 for j in range(3)])  # relabelled axis j = grid axis perm[j]
+        self.inv = inv = np.argsort(perm)
+        self.shape, self.dt = tuple(shape), float(dt)
+        sp_grid = np.broadcast_to(np.asarray(spacing, dtype=float), (3,)).copy()
+        sp = sp_grid[perm]
+        self.origin, self.spacing = np.asarray(origin, dtype=float)[perm], sp
+        self.z_int, self.host, self.sub = float(z_int), host, host if sub is None else sub
+        sub = self.sub
+        lo_grid, hi_grid = np.asarray(lo), np.asarray(hi)
+        lo, hi = lo_grid[perm], hi_grid[perm]
+        khat, ehat = khat[perm], ehat[perm]
         self.down = bool(khat[2] < 0)
         inc_m = host if self.down else sub
         if inc_m.dispersive:
@@ -187,15 +217,24 @@ class ObliqueLayeredPlaneWave:
         corners = np.array([[x, y] for x in (lo[0], hi[0]) for y in (lo[1], hi[1])], dtype=float)
         corners = self.origin[:2] + corners * sp[:2]
         self.r_c = corners[np.argmin(corners @ s)]
+        r_ref = np.array([*self.r_c, self.z_nodes[-1] if self.down else self.z_nodes[0]])
+        self.r_ref = r_ref[inv]  # the reference point in grid coordinates
+        self.shift = 0.0
+        if focus is not None:
+            self.shift = float(t_focus - self.n_inc * (np.asarray(khat)[inv] @ (np.asarray(focus) - self.r_ref)))
+            if self.shift < 0:
+                raise ValueError("t_focus is too small for the focus to be reached after the reference point")
+        self.m = m = max(1, int(OMEGA_H / ((omega_c + 3 * omega_half) * dt)))
         raw = []
-        for kind, c, region, g, coef, q in tfsf_slabs(self.shape, lo, hi, dt, sp):
-            name = ("H" if kind == "E" else "E") + "xyz"[g]
+        for kind, c, region, g, coef, q in tfsf_slabs(self.shape, lo_grid, hi_grid, dt, sp_grid):
+            name = ("H" if kind == "E" else "E") + "xyz"[inv[g]]
+            q = q[..., perm]
             row = np.floor(q[..., 2] + 1e-9).astype(np.int64) - self.k0
             delay = ((self.origin[:2] + q[..., :2] * sp[:2]) - self.r_c) @ s
             shape_ = tuple(r.stop - r.start for r in region)
             arr = coef * (inv_eps[c][region] if kind == "E" else np.ones(shape_))
             raw.append((kind, c, region, name, row.reshape(-1), delay.reshape(-1), arr, shape_))
-        self.tau_lead = max(float(r[5].max()) for r in raw) + 6 * dt
+        self.tau_lead = max(float(r[5].max()) for r in raw) + 6 * m * dt
         self.tau_p = 2.0 / omega_half
         # the pulse starts at e^-25 (band-limited tables cannot follow a switch-on edge); the high-pass below
         # the band (near-static evanescent content under total internal reflection decays very slowly) spreads
@@ -203,11 +242,12 @@ class ObliqueLayeredPlaneWave:
         self.omega_lo = omega_min / 3 if omega_min else None
         self.t0 = max(5.0 * self.tau_p, 10.0 / self.omega_lo if self.omega_lo else 0.0)
         n_max = max(np.sqrt(host.eps_inf), np.sqrt(max(sub.eps_inf, 1.0)))
-        T = self.tau_lead + 2 * self.t0 + 4 * nk * dz * n_max + 4 * self.tau_p
+        T = self.tau_lead + self.shift + 2 * self.t0 + 4 * nk * dz * n_max + 4 * self.tau_p
         N = 1 << int(np.ceil(np.log2(T / dt)))
         while True:
             tau = np.arange(N) * dt - self.tau_lead
-            g = np.exp(-(((tau - self.t0) / self.tau_p) ** 2)) * np.sin(omega_c * (tau - self.t0))
+            t_c = tau - self.t0 - self.shift
+            g = np.exp(-((t_c / self.tau_p) ** 2)) * np.sin(omega_c * t_c)
             X = np.fft.rfft(g)
             om = 2 * np.pi * np.arange(len(X)) / (N * dt)
             if self.omega_lo:
@@ -220,29 +260,39 @@ class ObliqueLayeredPlaneWave:
             table = np.fft.irfft(spec, n=N, axis=-1)
             inc_spec = np.zeros((3, len(X)), dtype=complex)
             inc_spec[:, keep] = np.conj(f["inc"].T) * X[keep][None, :]
-            inc_table = np.fft.irfft(inc_spec, n=N, axis=-1)
+            inc_table = np.fft.irfft(inc_spec, n=N, axis=-1)[inv]  # the grid's E_x, E_y, E_z
             if np.abs(table[..., -N // 16:]).max() < 1e-6 * np.abs(table).max():
                 break
             if N >= 1 << 20:
                 raise ValueError("oblique layered source: the background field does not decay within the table")
             N *= 2
         self.N = N
-        pad = len(_STENCIL) + 2  # zeros after each row: reads past the end give 0
-        L = N + pad
+        # when the incident wave has passed every point (the latest reads tau = t - delay_max): t_passed, for
+        # the run, once the tables fall below 1e-11 of their peak (a truncated tail leaves its share of the box
+        # flux in C_abs); t_off, for the ring-down analysis, below 1e-6. The power-of-two table runs on longer.
+        env = np.abs(table).reshape(-1, N).max(axis=0)
+        i_off, i_end = (int(np.nonzero(env > tol * env.max())[0][-1]) for tol in (1e-6, 1e-11))
+        table, inc_table = table[..., ::m], inc_table[..., ::m]
+        n_c = table.shape[-1]
+        pad = len(_STENCIL) + 2  # zeros after each row: reads from cmax = n_c + 2 on give 0
+        L = n_c + pad
+        self.cmax = n_c + 2
         self.tables = np.concatenate([table, np.zeros(table.shape[:2] + (pad,))], axis=-1)
         self.inc_table = np.concatenate([inc_table, np.zeros((3, pad))], axis=-1)
-        self.t_passed = N * dt - self.tau_lead
-        # per point: flat index of the first stencil sample at n = 0, weights and the clamp on n
+        delay_max = max(float(r[5].max()) for r in raw)
+        self.t_passed = i_end * dt - self.tau_lead + delay_max
+        self.t_off = i_off * dt - self.tau_lead + delay_max
+        # per point: flat index of the first stencil sample (before the step's own c), and its fine position
+        # at n = 0 split into an integer and a fraction
         self.slabs = []
         for kind, c, region, nm, row, delay, arr, shape_ in raw:
             f0 = (self.tau_lead - delay) / dt + (0.5 if kind == "E" else 0.0)  # E corrections read H at n + 1/2
             i0 = np.floor(f0).astype(np.int64)
-            base = (_NAMES.index(nm) * nk + row) * L + i0 + _STENCIL[0]
-            self.slabs.append((kind, c, region, base, _lagrange(f0 - i0), L - pad - i0, arr, shape_))
-        i0 = int(np.floor(self.tau_lead / dt))
-        self.inc_base = np.arange(3) * L + i0 + _STENCIL[0]
-        self.inc_w = _lagrange(np.full(3, self.tau_lead / dt - i0))
-        self.inc_lim = np.full(3, L - pad - i0)
+            base = (_NAMES.index(nm) * nk + row) * L + _STENCIL[0]
+            self.slabs.append((kind, c, region, base, i0, f0 - i0, arr, shape_))
+        f0 = self.tau_lead / dt + 1  # the view holds E at the end of the step
+        i0 = int(np.floor(f0))
+        self.inc = (np.arange(3) * L + _STENCIL[0], np.full(3, i0), np.full(3, f0 - i0))
         self.view = _View()
 
     def _solve(self, w):
@@ -266,6 +316,7 @@ class ObliqueLayeredPlaneWave:
         else:
             off[:] = 0.5
             off[np.arange(len(comp)), comp] = 0.0
+        comp, idx3, off = self.inv[comp], idx3[:, self.perm], off[:, self.perm]
         w = np.asarray(omega, dtype=float)
         f = self._solve(w)
         rows = idx3[:, 2] - self.k0
@@ -279,32 +330,27 @@ class ObliqueLayeredPlaneWave:
         return np.where(ok[None, :], vals * phase, np.nan)
 
     def incident_reference(self, omega) -> np.ndarray:
-        """The incident wave alone at the reference point, (n_omega, 3), in the units of `background`."""
-        return self._solve(np.asarray(omega, dtype=float))["inc"]
+        """The incident wave alone at the reference point, (n_omega, 3) in grid components, in the units of
+        `background`."""
+        return self._solve(np.asarray(omega, dtype=float))["inc"][:, self.inv]
 
     def bind(self, eng):
         self._T = eng.asarray(self.tables.reshape(-1))
         self._Tinc = eng.asarray(self.inc_table.reshape(-1))
         del self.tables, self.inc_table
-        self._slabs = [(kind, c, region, eng.index(base), eng.asarray(wts), eng.index(lim), eng.asarray(arr), shape_)
-                       for kind, c, region, base, wts, lim, arr, shape_ in self.slabs]
-        self._inc = (eng.index(self.inc_base), eng.asarray(self.inc_w), eng.index(self.inc_lim))
+        self._slabs = [(kind, c, region, eng.index(base), eng.index(i0), eng.asarray(u0), eng.asarray(arr), shape_)
+                       for kind, c, region, base, i0, u0, arr, shape_ in self.slabs]
+        self._inc = tuple(f(a) for f, a in zip((eng.index, eng.index, eng.asarray), self.inc))
+        self._cmax = eng.index(np.array([self.cmax]))
         self.view.E_flat = eng.zeros((3,))
         self.view.H_flat = self.view.E_flat
 
-    @staticmethod
-    def _read(eng, T, base, wts, lim, n_off: int):
-        idx = base + eng.xp.minimum(eng.n + n_off, lim)
-        out = wts[:, 0] * T[idx]
-        for j in range(1, len(_STENCIL)):
-            out = out + wts[:, j] * T[idx + j]
-        return out
-
     def _apply(self, eng, kind: str):
         target = eng.E if kind == "E" else eng.H
-        for k, c, region, base, wts, lim, arr, shape_ in self._slabs:
+        for k, c, region, base, i0, u0, arr, shape_ in self._slabs:
             if k == kind:
-                target[c][region] += arr * eng.xp.reshape(self._read(eng, self._T, base, wts, lim, 0), shape_)
+                vals = read_tables(eng.xp, self._T, eng.n, self.m, self._cmax, base, i0, u0)
+                target[c][region] += arr * eng.xp.reshape(vals, shape_)
 
     def correct_H(self, eng):
         self._apply(eng, "H")
@@ -316,5 +362,4 @@ class ObliqueLayeredPlaneWave:
         pass
 
     def advance_E(self, eng):
-        base, wts, lim = self._inc
-        self.view.E_flat[...] = self._read(eng, self._Tinc, base, wts, lim, 1)  # E at the end of this step
+        self.view.E_flat[...] = read_tables(eng.xp, self._Tinc, eng.n, self.m, self._cmax, *self._inc)
