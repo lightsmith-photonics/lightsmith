@@ -6,6 +6,8 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-02
+
 ### Added
 
 - **BEM** (`lightsmith-bem`): PMCHWT surface integral equations on RWG meshes for spheres, spheroids,
@@ -21,7 +23,28 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
   `pdk:<cell>` instances in circuit netlists.
 - **MCP server rewrite** on MCP SDK 2.x: jobs, budgets, resources, prompts, materials tools, and remote
   mode. The `mcp` extra is now `mcp>=2.3,<3`.
+- **3D inverse design** on a full-vector 3D FDFD solver (`lightsmith-fdfd` with `dimension=3` devices):
+  exact discrete port modes, TF/SF mode sources, batched BiCGStab on CPU or GPU, and adjoint gradients
+  with warm starts across iterations.
 - **Agent benchmark** (`benchmarks/agents/`): 43 graded tasks for agents using the MCP server.
+
+### Changed
+
+- The documentation moved to <https://docs.lightsmith.dev/>. The old GitHub Pages address redirects there.
+
+### Fixed
+
+- Multilayer Mie: avoid cancellation near zeros of ψₙ, which gave errors up to 12% for coated spheres
+  whose interface sits on such a zero.
+- RCWA: grazing diffraction orders (kz = 0) inside uniform layers no longer make the layer S-matrix
+  singular.
+- FDTD: runs whose fields grow without bound now raise, also on CPU in float64, where they used to stay
+  finite and return cross sections off by many orders of magnitude.
+- Topology optimisation: `OptimizationProblem.options` now merges into the device's options key by key
+  within each method, instead of replacing the method's whole dictionary (which dropped `dl_nm`,
+  `pml_cells` and the like).
+- `device="auto"` falls back to CPU when CUDA is available but no device is visible
+  (`CUDA_VISIBLE_DEVICES=""`), instead of failing with "Invalid device id".
 
 ## [0.1.0] - 2026-11-01
 
@@ -63,5 +86,6 @@ First public release.
 - The `mcp` extra is pinned to `mcp>=1.2,<2`: the server uses the mcp 1.x `FastMCP` API, which mcp 2.x
   renamed.
 
-[Unreleased]: https://github.com/lightsmith-photonics/lightsmith/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/lightsmith-photonics/lightsmith/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/lightsmith-photonics/lightsmith/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/lightsmith-photonics/lightsmith/releases/tag/v0.1.0
