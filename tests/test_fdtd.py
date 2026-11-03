@@ -21,7 +21,7 @@ import pytest
 import lightsmith as ls
 from lightsmith.device import _torch_cuda
 from lightsmith.materials import LibraryMaterial
-from lightsmith.spec import FarFieldRequest, LayeredSphere, NearFieldRequest, Outputs, ResonanceRequest, Shell
+from lightsmith.spec import FarFieldRequest, GaussianBeam, LayeredSphere, NearFieldRequest, Outputs, ResonanceRequest, Shell
 
 needs_cuda = pytest.mark.skipif(not _torch_cuda(), reason="no CUDA GPU with PyTorch")
 DRUDE = ls.Drude(eps_inf=9.5, wp_ev=9.0, gamma_ev=0.07)
@@ -42,6 +42,7 @@ def test_fdtd_dielectric_sphere_matches_mie_cpu():
     res = ls.solve(sim, "fdtd", "cpu")
     mie = ls.solve(sim, "mie")
     assert res.provenance["framework"] == "numpy" and res.provenance["precision"] == "double"
+    assert res.provenance["symmetry"]["reduction"] == 4  # x antisymmetric, y symmetric: a quarter of the grid
     assert rel(res.c_ext_nm2, mie.c_ext_nm2).max() < 0.03
     assert rel(res.c_sca_nm2, mie.c_sca_nm2).max() < 0.03
     assert np.abs(res.c_abs_nm2).max() < 1e-3 * max(res.c_ext_nm2)  # lossless: no absorption
@@ -419,3 +420,153 @@ def test_fdtd_gold_library_material_via_drude_lorentz_fit():
     assert rel(res.c_ext_nm2[j], mie.c_ext_nm2[i]) < 0.03  # measured 0.7 %
     assert rel(res.c_ext_nm2, mie.c_ext_nm2).max() < 0.07  # measured 4.2 %
     assert any("fitted" in m for m in res.warnings)
+
+
+# --- mirror symmetries --------------------------------------------------------------------------------------
+
+
+def solve_both(sim, device="cpu"):
+    """The same run with mirror symmetry (auto) and without (off)."""
+    out = []
+    for sym in ("auto", "off"):
+        s = sim.model_copy(update={"options": {"fdtd": {**sim.options["fdtd"], "symmetry": sym}}})
+        out.append(ls.solve(s, "fdtd", device))
+    return out
+
+
+def assert_same_run(a, b, tol):
+    """Cross sections, far fields and near fields of two runs agree to tol relative to their largest value."""
+    for k in ("c_ext_nm2", "c_sca_nm2", "c_abs_nm2"):
+        x, y = np.asarray(getattr(a, k)), np.asarray(getattr(b, k))
+        assert np.abs(x - y).max() <= tol * np.abs(y).max(), k
+    for fa, fb in zip(a.far_field or [], b.far_field or []):
+        x, y = np.asarray(fa.dcsca_domega_nm2), np.asarray(fb.dcsca_domega_nm2)
+        assert np.abs(x - y).max() < tol * np.abs(y).max()
+    for na, nb in zip(a.near_field or [], b.near_field or []):
+        x = np.asarray(na.e_real) + 1j * np.asarray(na.e_imag)
+        y = np.asarray(nb.e_real) + 1j * np.asarray(nb.e_imag)
+        assert np.array_equal(np.isfinite(x), np.isfinite(y))
+        assert np.nanmax(np.abs(x - y)) < tol * np.nanmax(np.abs(y))
+
+
+MIRROR_CASES = {
+    # x-polarised along z: x antisymmetric (PEC), y symmetric (PMC); conformal off-diagonal terms cross both planes
+    "sphere, 2 planes, near and far field": (
+        ls.Simulation(particles=[ls.Particle(shape=ls.Sphere(radius_nm=30), material=ls.ConstantIndex(n_real=1.5))],
+                      wavelengths=[400.0, 600.0], options={"fdtd": {"spacing_nm": 5.0}},
+                      outputs=Outputs(far_field=FarFieldRequest(theta_deg=[0, 60, 120], phi_deg=[0, 45, 90],
+                                                                wavelengths_nm=[500.0]),
+                                      near_field=NearFieldRequest(plane="xy", half_width_nm=50, points=7,
+                                                                  wavelengths_nm=[500.0]))),
+        {"x": "antisymmetric (PEC)", "y": "symmetric (PMC)"}),
+    # oblique incidence in the yz plane, p-polarised: one symmetric plane, x
+    "spheroid, oblique, 1 plane": (
+        ls.Simulation(particles=[ls.Particle(shape=ls.Spheroid(semi_axis_xy_nm=25, semi_axis_z_nm=40),
+                                             material=ls.ConstantIndex(n_real=2.0))],
+                      wavelengths=[450.0, 650.0], options={"fdtd": {"spacing_nm": 5.0}},
+                      illumination=ls.PlaneWave(direction=(0, 1, 1), polarization=(0, 1, -1)),
+                      outputs=Outputs(near_field=NearFieldRequest(plane="xz", half_width_nm=50, points=7,
+                                                                  wavelengths_nm=[500.0]))),
+        {"x": "symmetric (PMC)"}),
+    # a Drude dimer along x lit with E along y: the vertex tensor of the metal interfaces is cut by both planes
+    "Drude dimer, 2 planes": (
+        ls.Simulation(particles=[ls.Particle(shape=ls.Sphere(radius_nm=20), material=DRUDE, position_nm=(-22, 0, 0)),
+                                 ls.Particle(shape=ls.Sphere(radius_nm=20), material=DRUDE, position_nm=(22, 0, 0))],
+                      wavelengths=[480.0, 560.0], options={"fdtd": {"spacing_nm": 4.0}},
+                      illumination=ls.PlaneWave(direction=(0, 0, 1), polarization=(0, 1, 0))),
+        {"x": "symmetric (PMC)", "y": "antisymmetric (PEC)"}),
+}
+
+
+@pytest.mark.parametrize("case", list(MIRROR_CASES))
+def test_fdtd_mirror_symmetry_matches_full_run_cpu(case):
+    """A run on the half (quarter) grid steps exactly as the symmetric field of the whole one: cross sections,
+    far and near fields agree with the full run to 1e-6 in double precision (measured 1e-15 to 1e-11 for the
+    dielectrics, 3e-11 for C_ext of the dimer and 7e-9 for its 1e-4 times smaller C_sca). Fixed run time, so
+    both runs stop at the same step."""
+    sim, mirrors = MIRROR_CASES[case]
+    sim = sim.model_copy(update={"options": {"fdtd": {**sim.options["fdtd"], "precision": "double",
+                                                       "run_time_fs": 6.0, "pml_cells": 6}}})
+    a, b = solve_both(sim)
+    sym = a.provenance["symmetry"]
+    assert sym["mirrors"] == mirrors and sym["reduction"] == 2 ** len(mirrors)
+    assert b.provenance["symmetry"]["mirrors"] == {} and "off" in b.provenance["symmetry"]["skipped"]
+    for ax, n in enumerate(b.provenance["grid"]):
+        assert a.provenance["grid"][ax] == ((n - 1) // 2 + 2 if "xyz"[ax] in mirrors else n)
+    assert_same_run(a, b, 1e-6)
+
+
+def test_fdtd_mirror_symmetry_detection():
+    """Mirror planes are used only when the particles and the plane wave are symmetric; estimate reports them."""
+    from lightsmith.backends._fdtd import symmetry
+    from lightsmith.backends._fdtd.options import FDTDOptions
+
+    auto = FDTDOptions()
+
+    def find(sim):
+        return symmetry.find(sim, auto)[0]
+
+    sphere = sphere_sim(ls.ConstantIndex(n_real=1.5), 30, [500.0])
+    assert find(sphere) == (-1, 1, 0)
+    assert find(sphere.model_copy(update={"illumination": ls.PlaneWave(polarization=(0, 1, 0))})) == (1, -1, 0)
+    assert find(sphere.model_copy(update={"illumination": plane_wave((0, 0, 1), (1, 1, 0))})) == (0, 0, 0)
+    assert find(sphere.model_copy(update={"illumination": plane_wave((1, 0, 1), (1, 0, -1))})) == (0, 1, 0)
+    side = ls.PlaneWave(direction=(1, 0, 0), polarization=(0, 0, 1))
+    assert find(sphere.model_copy(update={"illumination": side})) == (0, 1, -1)
+    assert symmetry.find(sphere, FDTDOptions(symmetry="off"))[0] == (0, 0, 0)
+    beam = sphere.model_copy(update={"illumination": GaussianBeam(waist_nm=500)})
+    assert find(beam) == (0, 0, 0) and "Gaussian" in symmetry.find(beam, auto)[1]["skipped"]
+    moved = sphere.model_copy(update={"particles": [sphere.particles[0].model_copy(update={"position_nm": (5, 0, 0)})]})
+    assert find(moved) == (-1, 1, 0)  # the planes pass through the particles' centre
+
+    def pair(m1, m2, xs=(-30, 30), shape=ls.Sphere(radius_nm=20)):
+        return sphere.model_copy(update={"particles": [
+            ls.Particle(shape=shape, material=m, position_nm=(x, 0, 0)) for m, x in zip((m1, m2), xs)]})
+
+    glass = ls.ConstantIndex(n_real=1.5)
+    assert find(pair(glass, glass)) == (-1, 1, 0)
+    assert find(pair(glass, DRUDE)) == (0, 1, 0)  # different materials: no x mirror
+    three = pair(glass, glass)
+    three = three.model_copy(update={"particles": [*three.particles, three.particles[0].model_copy(
+        update={"position_nm": (60.0, 0, 0)})]})
+    assert find(three) == (0, 1, 0)  # x = -30, 30, 60: no x mirror
+    # overlapping core-shell partners: the first listed wins the overlap, which breaks the x mirror
+    shell = LayeredSphere(core_radius_nm=10, shells=[Shell(thickness_nm=10, material=DRUDE)])
+    assert find(pair(glass, glass, (-12, 12), shell)) == (0, 1, 0)
+    assert find(pair(glass, glass, (-25, 25), shell)) == (-1, 1, 0)  # apart: symmetric
+    est = ls.estimate(sphere, method="fdtd", device="cpu")
+    full = ls.estimate(sphere.model_copy(update={"options": {"fdtd": {"symmetry": "off"}}}), method="fdtd",
+                       device="cpu")
+    assert est["symmetry"]["reduction"] == 4 and 3.6 < full["cells"] / est["cells"] < 4
+
+
+@pytest.mark.gpu
+@needs_cuda
+def test_fdtd_mirror_symmetry_speedup_gpu():
+    """Two mirror planes on the GPU (float32, CUDA graphs): the quarter grid gives the full run's cross sections
+    and accuracy against Mie, faster. Measured, sphere r = 60 nm, dx = 3 nm: 52 x 52 x 101 against 101^3 cells,
+    C_ext 5e-6 from the full run and 0.063 % from Mie for both, time loop 1.55x faster. The speed-up grows with
+    the grid as the fixed per-step cost (table interpolation on the TFSF faces, kernel launches) is amortised:
+    in steady state 1.6x at 1e6 full cells, 2.5x at 5e6, 3.7x at 1.5e7; a whole run at dx = 2 nm 1.84x."""
+    wl = [400.0, 500.0, 650.0, 800.0]
+    sim = sphere_sim(ls.ConstantIndex(n_real=1.5), 60, wl, spacing_nm=3.0)
+    a, b = solve_both(sim, "gpu")
+    mie = ls.solve(sim, "mie")
+    assert a.provenance["cuda_graphs"] and a.provenance["symmetry"]["reduction"] == 4
+    assert a.provenance["steps"] == b.provenance["steps"]
+    assert rel(a.c_ext_nm2, b.c_ext_nm2).max() < 3e-5 and rel(a.c_sca_nm2, b.c_sca_nm2).max() < 3e-5
+    assert rel(a.c_ext_nm2, mie.c_ext_nm2).max() < 2e-3
+    assert b.provenance["time_loop_s"] / a.provenance["time_loop_s"] > 1.3
+
+
+@pytest.mark.slow
+@pytest.mark.gpu
+@needs_cuda
+def test_fdtd_mirror_symmetry_speedup_fine_grid_gpu():
+    """The same sphere at dx = 1.5 nm (173^3 cells, 88 x 88 x 173 with symmetry): measured 2.3x faster for the whole
+    run (38.6 s against 88.2 s of time loop, 16390 steps each), C_ext 7e-6 from the full run, 0.04 % from Mie."""
+    sim = sphere_sim(ls.ConstantIndex(n_real=1.5), 60, [400.0, 500.0, 650.0, 800.0], spacing_nm=1.5)
+    a, b = solve_both(sim, "gpu")
+    assert rel(a.c_ext_nm2, b.c_ext_nm2).max() < 3e-5
+    assert rel(a.c_ext_nm2, ls.solve(sim, "mie").c_ext_nm2).max() < 2e-3
+    assert b.provenance["time_loop_s"] / a.provenance["time_loop_s"] > 1.8

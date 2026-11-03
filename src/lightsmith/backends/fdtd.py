@@ -27,7 +27,8 @@ whose DFT fields are split into diffraction orders by a 2D FFT (``_fdtd/periodic
 incidence is one broadband real run; oblique and conical incidence use Bloch-periodic boundaries
 at fixed in-plane wavevector (complex fields), one run per (angle, wavelength, polarisation) so
 that every result is at the requested angle. Scattering problems accept any incidence direction
-(the TFSF box reads tables of the grid's exact discrete plane wave, so it does not leak at any angle).
+(the TFSF box reads tables of the grid's exact discrete plane wave, so it does not leak at any angle),
+and use PEC/PMC mirror planes when the particles and the plane wave allow them (``_fdtd/symmetry.py``).
 
 Written against the Python array API: the same code runs on NumPy (CPU) and
 PyTorch (CPU/CUDA); on CUDA the time loop is replayed as CUDA graphs.
@@ -115,7 +116,7 @@ class NativeFDTD(Backend):
         return {"grid": list(lay.shape), "cells": lay.cells, "spacing_nm": p["dx"], "dt_fs": p["dt"] / scattering.FS,
                 "steps_estimate": p["est_steps"], "steps_max": p["max_steps"], "dft_stride": p["stride"],
                 "precision": "single" if single else "double", "memory_bytes": p["memory_bytes"],
-                "fits": lay.cells <= opts.max_cells, "warnings": p["warnings"]}
+                "fits": lay.cells <= opts.max_cells, "warnings": p["warnings"], "symmetry": p["symmetry"]}
 
     @classmethod
     def solve(cls, sim, device: Device) -> Result | SpectrumResult | EmissionResult:

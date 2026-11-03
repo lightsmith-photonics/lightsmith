@@ -8,6 +8,13 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
 
 ### Added
 
+- **FDTD mirror symmetries** (`symmetry: "auto"`, the default; `"off"` turns them off). A scattering run
+  whose particles are mirror-symmetric about their centre, lit by a plane wave that travels in the mirror
+  plane and is polarised in it (a PMC plane) or normal to it (a PEC plane), keeps half the grid per plane:
+  2× or 4× fewer cells. The conformal tensors, metals' vertex tensor included, are folded across the
+  planes, so cross sections, near fields and far fields match the full run to 1e-11 in double precision,
+  over substrates and absorbing substrates too. On the GPU, runs of 1–5 M cells are 1.55–2.3× faster (3.7×
+  in steady state at 15 M cells). The provenance and `estimate` report the planes used.
 - **FDTD conformal meshing.** `mesh_refinement` (`staircase`, `volume_average`, `subpixel`, `conformal`). The
   new default, `conformal`, adds the off-diagonal terms of tensor subpixel smoothing, symmetrised for
   stability. Dielectric sphere C_ext error at dx = 6 nm falls from 1.1 % to 0.04 %. At metal interfaces

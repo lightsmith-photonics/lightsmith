@@ -469,7 +469,8 @@ def test_transparent_substrate_far_field_quantities_match_box_cpu(monkeypatch):
 
 def test_particle_absorption_equals_host_box_inflow_cpu(monkeypatch):
     """A lossy sphere lifted over an absorbing substrate: its volume absorption, (Omega / 2) Im(E* D) over its
-    nodes, is the net discrete Poynting inflow through a closed box around it in the host (float64)."""
+    nodes, is the net discrete Poynting inflow through a closed box around it in the host (float64). The box is
+    built on the whole grid, so the run is without mirror symmetry."""
     from lightsmith.backends._fdtd import scattering
     from lightsmith.backends._fdtd.absorption import ParticleAbsorption
     from lightsmith.backends._fdtd.engine import DFTMonitor
@@ -479,7 +480,8 @@ def test_particle_absorption_equals_host_box_inflow_cpu(monkeypatch):
     sim = ls.Simulation(particles=[ls.Particle(shape=ls.Sphere(radius_nm=12), material=LOSSY, position_nm=(0, 0, 30))],
                         wavelengths=[450.0, 700.0], illumination=oblique(45, "p"),
                         substrate=Substrate(material=ABSORBER),
-                        options={"fdtd": {"spacing_nm": 4.0, "pml_cells": 6, "padding_nm": 8, "pml_gap_nm": 8}})
+                        options={"fdtd": {"spacing_nm": 4.0, "pml_cells": 6, "padding_nm": 8, "pml_gap_nm": 8,
+                                          "symmetry": "off"}})
     lay = scattering.plan(sim, FDTDOptions(**sim.options["fdtd"]), False)["layout"]
     dx = lay.dx
     lo = np.floor((np.array([0, 0, 30.0]) - 12 - 2 * dx - lay.origin) / dx).astype(int)
@@ -578,3 +580,32 @@ def test_sphere_above_metal_matches_multipole_reference():
     c_ext, c_sca, _, scale, _ = sphere_on_substrate(20, np.full(4, 4.0), 1.0, _eps(GOLD, wl), 100.0, wl, 0.0, "p")
     np.testing.assert_allclose(res.c_sca_nm2, c_sca, rtol=3e-3)
     assert np.all(np.abs(np.asarray(res.c_ext_nm2) - c_ext) < 2e-3 * scale)
+
+
+@pytest.mark.parametrize("sub, ill, far, mirrors", [
+    (GLASS, DOWN, False, {"x": "antisymmetric (PEC)", "y": "symmetric (PMC)"}),  # the column source
+    (GLASS, oblique(45, "s"), True, {"y": "antisymmetric (PEC)"}),  # layered tables, layered far field
+    (Substrate(material=ABSORBER), DOWN, True, {"x": "antisymmetric (PEC)", "y": "symmetric (PMC)"}),
+])
+def test_substrate_mirror_symmetry_matches_full_run_cpu(sub, ill, far, mirrors):
+    """A z-normal interface keeps the x and y mirrors. Over glass at normal incidence (auxiliary column) and at 45
+    deg (tables, with the far field into both half-spaces), and over an absorbing substrate (particle absorption,
+    far-field C_sca and C_ext), the half or quarter grid gives the full run's results to 1e-6 in double precision
+    (measured 1e-15 for the column, 2e-12 (5e-12 far field) for the tables, 4e-11 over the absorber)."""
+    sim = sim_on(sub, r=20.0, h=25.0, wl=(450.0, 650.0), illumination=ill, spacing_nm=4.0, pml_cells=8,
+                 precision="double", run_time_fs=6.0)
+    if far:
+        sim = sim.model_copy(update={"outputs": Outputs(far_field=FarFieldRequest(
+            theta_deg=[0, 60, 120, 180], phi_deg=[0, 45, 90], wavelengths_nm=[500.0]))})
+    out = {}
+    for sym in ("auto", "off"):
+        out[sym] = ls.solve(sim.model_copy(update={"options": {"fdtd": {**sim.options["fdtd"], "symmetry": sym}}}),
+                            "fdtd", "cpu")
+    a, b = out["auto"], out["off"]
+    assert a.provenance["symmetry"]["mirrors"] == mirrors and b.provenance["symmetry"]["reduction"] == 1
+    for k in ("c_ext_nm2", "c_sca_nm2", "c_abs_nm2"):
+        x, y = np.asarray(getattr(a, k)), np.asarray(getattr(b, k))
+        assert np.abs(x - y).max() <= 1e-6 * np.abs(y).max(), k
+    if far:
+        x, y = np.asarray(a.far_field[0].dcsca_domega_nm2), np.asarray(b.far_field[0].dcsca_domega_nm2)
+        assert np.abs(x - y).max() < 1e-6 * np.abs(y).max()

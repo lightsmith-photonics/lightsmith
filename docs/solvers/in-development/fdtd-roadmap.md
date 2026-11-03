@@ -18,7 +18,7 @@ runs, and error bars on every result).
 | Grid | Uniform, non-cubic cells | Uniform | Non-uniform, graded, override regions |
 | Interfaces | Conformal (tensor) smoothing, metals included | Tensor subpixel smoothing (non-dispersive part) | Conformal meshing for dielectrics, metals and PEC |
 | Sources | Plane wave (TFSF; one-sided in periodic cells), Gaussian beam, point dipole | Point, current, Gaussian beam, eigenmode, plane wave | All of these, plus focused beams and imported fields |
-| Boundaries | CPML, periodic, Bloch | PML, absorber, periodic, Bloch, mirror symmetry | PML, periodic, Bloch, PEC, PMC, symmetry |
+| Boundaries | CPML, periodic, Bloch, mirror symmetry (PEC/PMC planes) | PML, absorber, periodic, Bloch, mirror symmetry | PML, periodic, Bloch, PEC, PMC, symmetry |
 | Materials | Drude, Lorentz, fitted tables | + conductivity, anisotropic, μ, χ2/χ3, gain, gyrotropic | + 2D sheets, index perturbation, multi-coefficient fits |
 | Outputs | Flux spectra, diffraction orders, near and far fields (into substrates too), resonances (Q), Purcell factor | + far field, Harminv, LDOS, forces, mode coefficients | + far field into substrates, Q analysis, S-parameters |
 | Problem kinds | scattering (also on a substrate), periodic, layer_stack, emission | — | + devices with ports |
@@ -95,7 +95,8 @@ Two lessons:
    The same tables now feed every plane wave and Gaussian-beam component in a uniform medium.
    They replace the 1D-fed source, which leaked about 1e-3 of the field off-axis and whose box flux did
    not cancel (up to 30 % of C_ext for a 20 nm sphere). Gaussian beams gain near fields.
-6. Mirror symmetries (PEC/PMC planes), for 2×–8× smaller runs.
+6. Mirror symmetries (PEC/PMC planes), for 2×–8× smaller runs. Done for scattering: up to two planes (a
+   plane wave cannot lie in three), 2× or 4× smaller grids, results identical to the full run.
 7. Device problems: waveguide mode sources and mode-expansion monitors from the FDE mode solver, giving
    S-parameters that feed [circuits](../../problems/index.md) directly.
 
@@ -132,3 +133,4 @@ merged. This table tracks the branch.
 | 2. Dipole source | Done: `kind: "emission"` (FDTD and exact Mie); within 0.2 % of Mie for dielectrics, 8–12 % 10 nm from a Drude sphere |
 | 2. Gaussian-beam source | Done: `GaussianBeam` illumination; 0.13 % from Mie at the focus, 0.1 % from the beam profile off axis |
 | 5. Substrates | Done, any angle incl. total internal reflection: leak-free layered TFSF (auxiliary column at normal incidence, exact discrete background tables otherwise); C_sca within 0.2–0.5 % of a dipole reference above glass (1.7 % for TIR p). Absorbing substrates: particle absorption, upward scattering and reflectance change within 0.1 % of a multipole reference; far field into both half-spaces by reciprocity. Open: Gaussian beams on substrates |
+| 6. Mirror symmetries | Done for scattering: `symmetry: "auto"` picks PEC/PMC planes from the particles and the polarisation (substrates, metals, near and far fields included); identical to the full run to 1e-11 (float64); 1.55–2.3× faster on the GPU for 1–5 M-cell runs, 3.7× in steady state at 15 M cells. Open: the table source's fixed per-step cost (one interpolation per TFSF face slab), which limits the gain on small grids; Gaussian beams |

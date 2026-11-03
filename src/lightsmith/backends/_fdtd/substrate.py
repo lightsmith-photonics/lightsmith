@@ -73,11 +73,11 @@ class LayeredPlaneWave:
 
     ehat: in-plane polarisation. inv_eps: the main grid's 1/eps (scales the E corrections, 1 at D-form nodes).
     The sheet sits at node plane k_launch (outside the box, on the incidence side); the incident-only column
-    is probed at k_ref."""
+    is probed at k_ref. ``mirror``: the main grid's x/y mirror planes (only stepped components are corrected)."""
 
     def __init__(self, *, shape, origin, spacing, dt, lo, hi, down: bool, ehat, inv_eps, z_int: float,
                  host: Medium, sub: Medium, pml: PMLSpec, k_launch: int, k_ref: int, omega_c, omega_half,
-                 max_steps: int):
+                 max_steps: int, mirror=(0, 0, 0)):
         self.shape, self.dt = tuple(shape), float(dt)
         self.spacing = np.broadcast_to(np.asarray(spacing, dtype=float), (3,)).copy()
         self.origin = np.asarray(origin, dtype=float)
@@ -95,7 +95,7 @@ class LayeredPlaneWave:
         self.ehat = np.asarray(ehat, dtype=float)
         # corrections: component kind_c in `region` += coef * F_g(q), F from the column at q's z index
         self.slabs = []
-        for kind, c, region, g, coef, q in tfsf_slabs(self.shape, lo, hi, dt, self.spacing):
+        for kind, c, region, g, coef, q in tfsf_slabs(self.shape, lo, hi, dt, self.spacing, mirror=mirror):
             if g == 2:  # E_z and H_z of the background vanish at normal incidence
                 continue
             zq = np.floor(q[..., 2] + 1e-9).astype(np.int64)

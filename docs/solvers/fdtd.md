@@ -124,6 +124,29 @@ It runs on the CPU or a CUDA GPU.
 - **Materials.** A constant lossy permittivity becomes a Drude term matched exactly at the band centre,
   with a warning that it is not causal over a band. Tabulated and library materials are fitted with
   `fit_drude_lorentz`, with a warning that reports the RMS error.
+- **Mirror symmetries.** When the particles map onto themselves under x → −x about their centre (and/or
+  y, or z without a substrate), and the plane wave travels in that plane with its polarisation either in the
+  plane or normal to it, the incident and scattered fields are even or odd about it. The run then keeps only
+  one half of the grid per plane (2× or 4× fewer cells), as Meep's mirror symmetries do:
+  - Polarisation in the plane: tangential E is even, a PMC plane (symmetric). Polarisation normal to the
+    plane: tangential E is odd, a PEC plane (antisymmetric). A plane wave along z polarised along x has x
+    antisymmetric and y symmetric.
+  - The plane is node plane 1 of the half grid, with a ghost plane at index 0 and no PML on that side. A PEC
+    plane is a wall like the grid's outer planes. A PMC plane steps tangential E on the plane, reading a
+    ghost tangential H set to minus its image before every E update.
+  - The conformal tensors are folded, so the half grid steps exactly as the symmetric field of the whole one:
+    the off-diagonal rows' mirror images are added, and couplings to ghost-side nodes act through their
+    stepped images with the parity sign. Vertex-tensor vertices on the plane read their ghost-side nodes
+    the same way.
+  - Flux boxes are open on the planes (no flux crosses them; the faces they cut keep half weight on the
+    plane), and their fluxes and the particle absorption are doubled per plane. Far fields are the sum over
+    the mirror images of the box's part in the grid, E(n̂) = Σ σ_g g E_part(g n̂). Near fields beyond a plane
+    are the image's times the parity.
+
+  The symmetric run matches the full one to 1e-11 or better in double precision (cross sections, near and
+  far fields, metals, substrates). It is on by default (`symmetry: "auto"`). The provenance's `symmetry` lists
+  the planes used (`mirrors`, `reduction`) and why the others were not (`skipped`). Gaussian beams run
+  without it: their discrete angular spectrum is not always mirror-symmetric.
 - **GPU.** On PyTorch CUDA, the time loop is replayed as CUDA graphs.
 
 ### Dipole emission
@@ -172,6 +195,7 @@ It runs on the CPU or a CUDA GPU.
 | `mesh_refinement` | `None` | `staircase`, `volume_average` (⟨ε⟩), `subpixel` (diagonal tensor, the 0.1 behaviour) or `conformal` (full tensor; for metals at grid vertices). Default: `conformal`, or `staircase` when `subpixel` is false. |
 | `subpixel_samples` | `8` | Supersamples per axis for interface cells (2–24) |
 | `dft_stride` | `None` | Time steps between DFT samples. Default: aliasing-safe, from the source bandwidth. |
+| `symmetry` | `"auto"` | Scattering: use the PEC/PMC mirror planes the particles and plane wave allow (2× or 4× smaller runs, the same results); `"off"` runs the whole grid |
 | `cuda_graphs` | `True` | Replay time steps as CUDA graphs |
 | `max_cells` | `300000000` | Refuse grids larger than this |
 
@@ -204,6 +228,10 @@ There are no gradients.
 | `test_fdtd_gold_library_material_via_drude_lorentz_fit` (slow, gpu): Johnson–Christy gold | Mie | peak within 5 nm; height < 3 %; C_ext < 7 % everywhere |
 | `test_fdtd_metal_vertex_tensor_is_symmetric_and_bounded` (cpu) | Construction | the D → E map is symmetric, Rayleigh quotients within [1/ε∞,max, 1/ε_min] |
 | `test_fdtd_metal_vertex_tensor_is_stable_at_late_times` (slow, gpu): Drude r = 40 nm, 1.5 ps | Decay | below 1e-15 of peak (measured 6e-22) |
+| `test_fdtd_mirror_symmetry_matches_full_run_cpu`: sphere with near and far fields (2 planes), oblique spheroid (1 plane), Drude dimer (2 planes, vertex tensor), float64 | The full grid | 1e-6 relative (measured 1e-15–3e-11; 7e-9 for the dimer's 1e-4-smaller C_sca) |
+| `test_fdtd_mirror_symmetry_detection` | Construction | planes only for symmetric particles and plane waves; none for beams, `"off"`, asymmetric overlaps |
+| `test_fdtd_mirror_symmetry_speedup_gpu` (gpu): r = 60 nm, dx = 3 nm, float32, 2 planes | The full grid; Mie | 3e-5 (measured 5e-6); Mie 0.2 % (measured 0.063 % for both); time loop > 1.3× faster (measured 1.55×) |
+| `test_fdtd_mirror_symmetry_speedup_fine_grid_gpu` (slow, gpu): the same at dx = 1.5 nm | The full grid; Mie | 3e-5 (measured 7e-6); > 1.8× faster (measured 2.3×) |
 
 Measured in the test module docstring (RTX 5070, float32; CPU float64 agrees to about 1e-7):
 
@@ -218,6 +246,13 @@ Measured in the test module docstring (RTX 5070, float32; CPU float64 agrees to 
   - `conformal` (vertex tensor): 3.7 %, 3.5 %, 2.5 %, 2.3 % and 1.6 %; peak height within 1.5–3.6 %;
   - `subpixel` (diagonal): 7.5 %, 9.1 %, 6.6 % and 6.1 % (to 1.6 nm), rippling across the band;
   - `staircase`: 22 %, 17 %, 15 % and 13 %.
+
+  Mirror symmetry gives the same numbers: in double precision the half or quarter grid matches the whole one
+  to 1e-11 or better. On the GPU (float32), a quarter grid agrees with the full one to 5e-6. The speed-up
+  grows with the grid, because the source's per-step cost (table interpolation on the TFSF faces) and kernel
+  launches do not shrink as much as the volume. In steady state the quarter grid is 1.6× faster at 1e6 full
+  cells, 2.5× at 5e6 and 3.7× at 1.5e7. Whole runs of the r = 60 nm sphere: 1.55× at dx = 3 nm, 1.84× at 2 nm,
+  2.3× at 1.5 nm.
 
   The vertex tensor still has a first-order term: averaging the tensors of two vertex cubes is not the
   tensor of the node's own cube. Through it, a dielectric n = 1.5 sphere errs by 1.0 %, 0.65 % and 0.48 % at
@@ -258,6 +293,7 @@ limit.
 | `test_particle_absorption_equals_host_box_inflow_cpu`: lossy sphere lifted over an absorbing dielectric | Net inflow through a closed host box around it | 1e-6 (float64) |
 | `test_sphere_above_absorber_matches_multipole_reference` (gpu): n = 2, r = 20 nm, 100 nm above an absorbing dielectric (ε ≈ 14 + 3i), normal, 45° s and p | Multipole | C_sca < 0.2 % (measured 0.01–0.07 %); C_ext within 2e-3 of its interference scale (measured 5e-4); far field 0.5 % |
 | `test_lossy_sphere_above_absorber_matches_multipole_reference` (gpu): lossy sphere (ε ≈ 4.5 + 1i), the same geometry | Multipole, relative to the sphere in free space | C_abs 0.2 %, C_ext 0.4 %, C_sca 0.3 % (measured within 0.1 %) |
+| `test_substrate_mirror_symmetry_matches_full_run_cpu`: sphere on glass at normal incidence (column, 2 planes) and 45° s (tables and layered far field, 1 plane); over an absorbing dielectric (particle absorption, far-field C_sca and C_ext) | The full grid | 1e-6 relative (measured 1e-15, 5e-12, 4e-11) |
 
 Over absorbing substrates the reference is the sphere's full Mie response to the incident and reflected waves,
 plus its dipole's coupling to its own reflected field, radiating directly and by specular reflection. The
@@ -290,6 +326,12 @@ evanescent field varies across the sphere, which the dipole model misses, hence 
     the source plane), are NaN;
   - absorption of a weak absorber is limited by float32 cancellation, because the box carries the full
     incident flux (~0.004 nm² for a 100 nm box); use `precision: "double"` for it.
+- Mirror symmetry: planes through the particles' bounding-box centre, normal to x, y or z (not z over a
+  substrate), for plane waves polarised in the plane or normal to it; not for Gaussian beams or diagonal
+  planes. Resonances come from the probes on the grid's side (fewer, non-redundant channels), so the weaker
+  fitted modes can differ slightly from a full run's; modes of the other parity are not excited anyway.
+  The decay shut-off sees the energy of the box part, so a decaying run can stop one chunk apart from a full
+  one (well below `decay_by`).
 - Gaussian beams: no substrate yet. Table memory grows with the number of components (about 1 MB each at
   dx = 4 nm); `estimate` includes it.
 - Resonances of metal particles: the plasmon Q comes out 7–10 % low, and a weak extra mode can appear

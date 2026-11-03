@@ -183,11 +183,13 @@ class ObliqueLayeredPlaneWave:
     1D problem then runs along the axis with the largest |k| component: the grid is relabelled by the cyclic
     axis permutation that takes that axis to z, which keeps the Yee staggering, and "z" below is that axis.
     ``origin``, ``spacing``, ``r_c``, ``s`` and the tables are in the relabelled frame; ``shape``, the flat
-    indices given to `background`, the monitor view and `incident_reference` are in the grid's own frame."""
+    indices given to `background`, the monitor view and `incident_reference` are in the grid's own frame.
+    ``mirror``: the grid's mirror planes (engine.e_region); only stepped components are corrected, and the box's
+    lo is the image of hi there, so delays and tables are those of the whole box."""
 
     def __init__(self, *, shape, origin, spacing, dt, lo, hi, khat, ehat, inv_eps, host: Medium,
                  z_int: float = -np.inf, sub: Medium | None = None, omega_c, omega_half, max_steps: int,
-                 omega_min: float | None = None, focus=None, t_focus: float = 0.0):
+                 omega_min: float | None = None, focus=None, t_focus: float = 0.0, mirror=(0, 0, 0)):
         from .tfsf import tfsf_slabs
 
         khat, ehat = np.asarray(khat, dtype=float), np.asarray(ehat, dtype=float)
@@ -226,7 +228,7 @@ class ObliqueLayeredPlaneWave:
                 raise ValueError("t_focus is too small for the focus to be reached after the reference point")
         self.m = m = max(1, int(OMEGA_H / ((omega_c + 3 * omega_half) * dt)))
         raw = []
-        for kind, c, region, g, coef, q in tfsf_slabs(self.shape, lo_grid, hi_grid, dt, sp_grid):
+        for kind, c, region, g, coef, q in tfsf_slabs(self.shape, lo_grid, hi_grid, dt, sp_grid, mirror=mirror):
             name = ("H" if kind == "E" else "E") + "xyz"[inv[g]]
             q = q[..., perm]
             row = np.floor(q[..., 2] + 1e-9).astype(np.int64) - self.k0

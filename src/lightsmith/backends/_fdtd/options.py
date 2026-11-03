@@ -48,5 +48,9 @@ class FDTDOptions(BaseModel):
     subpixel_samples: int = Field(8, ge=2, le=24, description="Supersamples per axis for interface cells.")
     dft_stride: int | None = Field(
         None, ge=1, description="Time steps between DFT samples. Default: from the source bandwidth (aliasing-safe).")
+    symmetry: Literal["auto", "off"] = Field(
+        "auto", description="Scattering: use mirror planes through the particles' centre when the particles and the "
+        "plane wave allow them (PEC/PMC planes, chosen from the polarisation; 2x or 4x smaller runs, same results). "
+        "The provenance reports the planes used.")
     cuda_graphs: bool = Field(True, description="Replay time steps as CUDA graphs on PyTorch CUDA (much faster).")
     max_cells: int = Field(300_000_000, ge=1, description="Refuse grids larger than this.")

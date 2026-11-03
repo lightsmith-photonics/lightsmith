@@ -47,8 +47,9 @@ def _matched_eps_1d(khat, omega, dt, dx, eps_b) -> float:
     return float((np.sin(k * dx / 2) / dx) ** 2 / (np.sin(omega * dt / 2) / dt) ** 2)
 
 
-def tfsf_slabs(shape, lo, hi, dt: float, spacing, periodic=(False, False, False)):
-    """TFSF corrections for a box [lo, hi] (node-index units; faces outside the grid give none).
+def tfsf_slabs(shape, lo, hi, dt: float, spacing, periodic=(False, False, False), mirror=(0, 0, 0)):
+    """TFSF corrections for a box [lo, hi] (node-index units; faces outside the grid give none). Only stepped
+    components get them (``mirror``: see engine.e_region).
 
     Yields (kind, c, region, g, coef, q): the components ``kind``_c in the slab ``region`` (one cell thick)
     were updated from a neighbour on the other side of the box face; they get += coef * F_g(q), with F the
@@ -59,7 +60,7 @@ def tfsf_slabs(shape, lo, hi, dt: float, spacing, periodic=(False, False, False)
     out = []
     for kind in ("E", "H"):
         for c in range(3):
-            R = e_region(c, shape, periodic) if kind == "E" else h_region(c, shape, periodic)
+            R = e_region(c, shape, periodic, mirror) if kind == "E" else h_region(c, shape, periodic, mirror)
             off = _offsets(kind, c)
             d1, d2 = (c + 1) % 3, (c + 2) % 3
             for d, g, s in ((d1, d2, 1.0), (d2, d1, -1.0)):

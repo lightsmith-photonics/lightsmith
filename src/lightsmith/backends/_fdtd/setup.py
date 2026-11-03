@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from .engine import DispersiveGroup, OffDiagonal, TensorMesh, flat_index
+from .engine import DispersiveGroup, OffDiagonal, TensorMesh, flat_index, mirror_fold
 from .media import Medium
 
 FS = 299.792458  # normalised time units (nm/c) per femtosecond
@@ -43,7 +43,8 @@ def mesh_mode(opts) -> str:
 
 
 def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *, mode: str = "subpixel",
-             samples: int = 8, chunk: int = 2048, periodic=(False, False, False), base=None, background=()):
+             samples: int = 8, chunk: int = 2048, periodic=(False, False, False), base=None, background=(),
+             mirror=(0, 0, 0)):
     """Material on the Yee E grid.
 
     slot_fn(points[..., 3] in nm) -> int medium index (0 = background) per point.
@@ -166,7 +167,7 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
     tm = None
     if mode == "conformal" and disp.any():
         tm = vertex_tensor(slot_fn, media, shape, origin, dx, roi_lo, roi_hi, samples=samples, chunk=chunk,
-                           periodic=periodic, background=background)
+                           periodic=periodic, background=background, mirror=mirror)
     if tm is not None:
         taken = tm.idx
         inv_eps.reshape(-1)[taken] = 1.0
@@ -217,7 +218,8 @@ def _pixel_average(slot_fn, pos, dx, S: int, samples: int, chunk: int):
 
 
 def vertex_tensor(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *, samples: int = 8,
-                  chunk: int = 2048, periodic=(False, False, False), background=()) -> TensorMesh | None:
+                  chunk: int = 2048, periodic=(False, False, False), background=(),
+                  mirror=(0, 0, 0)) -> TensorMesh | None:
     """The TensorMesh of interfaces with a dispersive medium (None if there are none).
 
     Tensor vertices: every vertex whose cube (side dx, centred on it) holds an interface with a dispersive
@@ -279,8 +281,13 @@ def vertex_tensor(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_h
     raw = np.stack([np.stack([T - eye[d], T], axis=1) for d in range(3)], axis=1)  # (nV, 3, 2, 3)
     comp = np.broadcast_to(np.arange(3)[None, :, None], (nV, 3, 2)).reshape(-1)
     real, shift = _canonical(raw.reshape(-1, 3), shape, periodic)
+    real, sign = mirror_fold(comp, real, mirror)  # ghost-side nodes of a vertex on a mirror plane: their images
+    live = sign != 0
     nkey = comp * int(np.prod(shape)) + key(real)
-    _, first, inv = np.unique(nkey, return_index=True, return_inverse=True)
+    _, first, inv_live = np.unique(nkey[live], return_index=True, return_inverse=True)
+    inv = np.zeros(len(nkey), dtype=np.int64)
+    inv[live] = inv_live
+    first = np.nonzero(live)[0][first]
     node_comp, node_idx3 = comp[first], real[first]
     nN = len(first)
     # slots: the vertex at the node index (k = 0) and at index + e_c (k = 1)
@@ -299,14 +306,15 @@ def vertex_tensor(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_h
             slot_medium[~hit, k] = slot_fn(origin + vx[~hit] * dx3)
     return TensorMesh(media=list(media), frac=fracT, normal=nT, node_comp=node_comp, node_idx3=node_idx3,
                       vert_nodes=inv.reshape(nV, 3, 2), shift=shift.reshape(nV, 3, 2, 3), slot_vert=slot_vert,
-                      slot_medium=slot_medium, shape=shape)
+                      slot_medium=slot_medium, shape=shape,
+                      sign=sign.reshape(nV, 3, 2).astype(float) if any(mirror) else None)
 
 
 # --- flux boxes -------------------------------------------------------------------
 
 
-def flux_points(lo, hi, shape, dx: float):
-    """Closed box with faces on E-node planes lo[d], hi[d].
+def flux_points(lo, hi, shape, dx: float, open_lo=()):
+    """Closed box with faces on E-node planes lo[d], hi[d] (no face at lo[d] for d in open_lo: a mirror plane).
 
     Returns (e_idx, h_idx1, h_idx2, coeff): outward flux = 0.5 Re sum coeff * E * conj(H),
     with E_a1 H_a2 and E_a2 H_a1 sampled at coincident in-plane points and H averaged
@@ -322,7 +330,7 @@ def flux_points(lo, hi, shape, dx: float):
         w1 = np.ones(len(nod1))
         w1[[0, -1]] = 0.5
         half2 = np.arange(lo[a2], hi[a2])
-        for face, sign in ((lo[d], -1.0), (hi[d], 1.0)):
+        for face, sign in ((lo[d], -1.0), (hi[d], 1.0))[d in open_lo:]:
             for e_comp, h_comp, i1, i2, ww, tsign in ((a1, a2, half, nod2, w2, 1.0), (a2, a1, nod1, half2, w1, -1.0)):
                 A, B = np.meshgrid(i1, i2, indexing="ij")
                 wgt = np.broadcast_to(ww[None, :] if tsign > 0 else ww[:, None], A.shape)
@@ -357,7 +365,7 @@ class Surface:
     blocks: list = field(default_factory=list)
 
 
-def surface_samples(lo, hi, shape, dx: float) -> Surface:
+def surface_samples(lo, hi, shape, dx: float, open_lo=()) -> Surface:
     E_i, H1, H2, pos, jd, md, area = [], [], [], [], [], [], []
     blocks, start = [], 0
     eye = np.eye(3)
@@ -367,7 +375,7 @@ def surface_samples(lo, hi, shape, dx: float) -> Surface:
         w_n1[[0, -1]] = 0.5
         w_n2 = np.ones(hi[a2] - lo[a2] + 1)
         w_n2[[0, -1]] = 0.5
-        for face, sign in ((lo[d], -1.0), (hi[d], 1.0)):
+        for face, sign in ((lo[d], -1.0), (hi[d], 1.0))[d in open_lo:]:
             nrm = sign * eye[d]
             # E_a1 (half-integer along a1, nodes along a2) with H_a2; E_a2 with H_a1
             for e_c, h_c, i1, i2, w1, w2 in ((a1, a2, np.arange(lo[a1], hi[a1]), np.arange(lo[a2], hi[a2] + 1),
@@ -432,6 +440,7 @@ class Layout:
     sca: tuple[np.ndarray, np.ndarray]
     roi: tuple[np.ndarray, np.ndarray]
     pml: int
+    mirror: tuple = (0, 0, 0)  # mirror plane per axis at node 1 (see engine.e_region; symmetry.py)
 
     @property
     def cells(self) -> int:
