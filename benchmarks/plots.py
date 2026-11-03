@@ -368,7 +368,9 @@ def gpu_speedup(rows, out):
 PAPER_PROBLEMS = ("sphere-diel-x1-m1.5-k0.05-water", "sphere-diel-x5-m2-water", "sphere-au-jc-r20-water",
                   "sphere-ag-jc-r40-water", "coreshell-sio2-au-c30-s8-water", "dimer-au-r20-gap5-water",
                   "spheroid-au-ar2-req20-water", "rod-au-ar3-r10-water")
-PAPER_WHOLE = ("staircase_sphere-drude-r40-water", "gpu_speedup")  # figures copied unchanged
+PAPER_STAIRCASE = "sphere-drude-r40-water"
+PAPER_WHOLE = ("gpu_speedup",)  # figures copied unchanged
+PAPER_EXCLUDE = ("bem",)  # methods the report does not discuss
 
 
 def main(argv=None):
@@ -406,12 +408,15 @@ def main(argv=None):
         sub = out / "paper"
         sub.mkdir(exist_ok=True)
         keep = set(PAPER_PROBLEMS)
-        rows_p = [r for r in rows if r["problem_id"] in keep]
-        spec_p = [s for s in spec if s["problem_id"] in keep]
-        cheap_p = [c for c in cheap if c["problem_id"] in keep]
+        rows_p = [r for r in rows if r["problem_id"] in keep and r["method"] not in PAPER_EXCLUDE]
+        spec_p = [s for s in spec if s["problem_id"] in keep and s["backend"].removeprefix("lightsmith-")
+                  not in PAPER_EXCLUDE]
+        cheap_p = [c for c in cheap if c["problem_id"] in keep and c["method"] not in PAPER_EXCLUDE]
+        drude = [r for r in rows if r["problem_id"] == PAPER_STAIRCASE and r["method"] not in PAPER_EXCLUDE]
         for fn in (lambda: spectra(rows_p, spec_p, sub), lambda: error_vs_cost(rows_p, sub),
                    lambda: convergence(rows_p, sub), lambda: regime_map(cheap_p, sub),
-                   lambda: regime_map(cheap_p, sub, "err_ext_max", "regime_map_ext")):
+                   lambda: regime_map(cheap_p, sub, "err_ext_max", "regime_map_ext"),
+                   lambda: staircase(drude, sub)):
             fn()
         for f in list(sub.glob("*.pdf")) + [out / f"{n}.pdf" for n in PAPER_WHOLE]:
             shutil.copy2(f, dest / f.name)
