@@ -25,21 +25,22 @@ it through this server.
 ## Install and run
 
 ```bash
-uv sync --extra gpu --extra mcp          # from a clone
-uv run lightsmith-mcp                    # stdio: what MCP clients launch
-uv run lightsmith-mcp --http --port 8765 # streamable HTTP at http://127.0.0.1:8765/mcp
+uvx --from "lightsmith[mcp]" lightsmith-mcp                     # stdio, from PyPI: what MCP clients launch
+uvx --from "lightsmith[mcp]" lightsmith-mcp --http --port 8765  # streamable HTTP at http://127.0.0.1:8765/mcp
 ```
 
-`python -m lightsmith.mcp_server` is the same command. Once the package is on PyPI,
-`uvx --from "lightsmith[mcp]" lightsmith-mcp` runs it without a clone.
+Add the `gpu` extra (`"lightsmith[mcp,gpu]"`) for GPU solvers. From a clone, run `uv sync --extra gpu --extra mcp`
+and then `uv run lightsmith-mcp`. `python -m lightsmith.mcp_server` is the same command.
 
 ## Client configuration
 
-**Claude Code**, from a clone:
+**Claude Code**:
 
 ```bash
-claude mcp add lightsmith -- uv run --directory /path/to/lightsmith lightsmith-mcp
+claude mcp add lightsmith -- uvx --from "lightsmith[mcp]" lightsmith-mcp
 ```
+
+From a clone, use `-- uv run --directory /path/to/lightsmith lightsmith-mcp` instead.
 
 Add `-e LIGHTSMITH_MCP_MAX_MEMORY_GB=16` (or any other variable below) before `--` to configure it. To share the
 server with a project, put it in `.mcp.json` at the project root:
@@ -48,8 +49,8 @@ server with a project, put it in `.mcp.json` at the project root:
 {
   "mcpServers": {
     "lightsmith": {
-      "command": "uv",
-      "args": ["run", "--directory", "/path/to/lightsmith", "lightsmith-mcp"],
+      "command": "uvx",
+      "args": ["--from", "lightsmith[mcp]", "lightsmith-mcp"],
       "env": {"LIGHTSMITH_MCP_MAX_RUNTIME_S": "900"}
     }
   }
@@ -57,15 +58,16 @@ server with a project, put it in `.mcp.json` at the project root:
 ```
 
 **Claude Desktop**: the same `mcpServers` block goes into `claude_desktop_config.json` (Settings → Developer →
-Edit Config). Use absolute paths; on Windows write them as `C:/Users/you/lightsmith` or with escaped backslashes.
+Edit Config). For a clone, use `"command": "uv"` with `["run", "--directory", "/path/to/lightsmith", "lightsmith-mcp"]`
+and absolute paths; on Windows write them as `C:/Users/you/lightsmith` or with escaped backslashes.
 
 **VS Code** (`.vscode/mcp.json`), **Cursor** (`.cursor/mcp.json`) and most other clients take the same command:
 
 ```json
 {
   "servers": {
-    "lightsmith": {"type": "stdio", "command": "uv",
-                   "args": ["run", "--directory", "/path/to/lightsmith", "lightsmith-mcp"]}
+    "lightsmith": {"type": "stdio", "command": "uvx",
+                   "args": ["--from", "lightsmith[mcp]", "lightsmith-mcp"]}
   }
 }
 ```

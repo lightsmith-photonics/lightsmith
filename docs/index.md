@@ -21,7 +21,7 @@ cmp = ls.compare(sim, ["mie", "dda", "fdtd"])   # cross-check methods
 ```
 
 !!! warning "Pre-alpha"
-    Lightsmith 0.1 is pre-alpha, so the API may still change between minor versions. Each solver page
+    Lightsmith 0.2 is pre-alpha, so the API may still change between minor versions. Each solver page
     lists the validation behind it, with numbers taken from the test suite. Read the `warnings` on every
     result before you trust its numbers.
 

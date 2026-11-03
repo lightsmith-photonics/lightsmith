@@ -13,7 +13,7 @@ homogeneous, non-absorbing host medium, illuminated by a plane wave.
 | `wavelengths` | Vacuum wavelengths in nm (a list or a `WavelengthRange`) |
 | `orientation_average` | Average the cross sections over all particle orientations |
 | `outputs` | `cross_sections` (default on); optional `near_field` and `far_field` requests |
-| `substrate` | A half-space below the particles. Part of the schema, but no built-in backend supports it in 0.1. |
+| `substrate` | A half-space below the particles. Part of the schema, but no built-in backend supports it yet. |
 | `options` | Per-method solver options |
 
 ### Shapes
