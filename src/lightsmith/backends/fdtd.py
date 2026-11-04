@@ -39,9 +39,10 @@ Tabulated/library materials are fitted with
 from __future__ import annotations
 
 from ..device import Device
-from ..problems import EmissionProblem, LayerStackProblem, PeriodicProblem, options_for
-from ..results import EmissionResult, Result, SpectrumResult
+from ..problems import DeviceProblem, EmissionProblem, LayerStackProblem, PeriodicProblem, options_for
+from ..results import EmissionResult, Result, SParameterResult, SpectrumResult
 from ..spec import Simulation
+from ._fdtd import device as devices
 from ._fdtd import emission, periodic, scattering
 from ._fdtd.media import fit_module, needs_fit
 from ._fdtd.options import FDTDOptions
@@ -58,19 +59,21 @@ class NativeFDTD(Backend):
     citation = ("Taflove & Hagness, Computational Electrodynamics (2005); Roden & Gedney, MOTL 27, 334 (2000); "
                 "Oskooi et al., CPC 181, 687 (2010)")
     gpu = True
-    problem_kinds = ("scattering", "periodic", "layer_stack", "emission")
+    problem_kinds = ("scattering", "periodic", "layer_stack", "emission", "device")
 
     @classmethod
     def supports(cls, sim):
         if isinstance(sim, EmissionProblem):
             return emission.supports(sim)
+        if isinstance(sim, DeviceProblem):
+            return devices.supports(sim)
         if isinstance(sim, (PeriodicProblem, LayerStackProblem)):
             ok, why = periodic.supports(sim)
             if ok and any(needs_fit(m) for m in periodic._materials(sim)) and fit_module() is None:
                 ok, why = False, "tabulated/library materials need lightsmith.materials_fit"
             return ok, why
         if not isinstance(sim, Simulation):
-            return False, "FDTD solves scattering, periodic and layer_stack problems"
+            return False, "FDTD solves scattering, periodic, layer_stack, emission and device problems"
         why = unsupported_outputs(sim, near_field=True, far_field=True, resonances=True, gaussian_beam=True,
                                   substrate=True)
         if not why and sim.substrate is not None:
@@ -97,6 +100,15 @@ class NativeFDTD(Backend):
                     "dft_stride": p["stride"], "precision": "single" if single else "double",
                     "memory_bytes": p["memory_bytes"], "fits": lay.cells <= opts.max_cells, "warnings": p["warnings"],
                     "notes": "two runs: the scene, and the same dipole in the medium alone (P0)"}
+        if isinstance(sim, DeviceProblem):
+            single = devices.uses_single(opts, device)
+            p = devices.plan(sim, opts, single)
+            g = p["grid"]
+            return {"grid": list(g.shape), "cells": g.cells, "spacing_nm": g.dx, "dt_fs": p["dt"] / scattering.FS,
+                    "steps_max": p["max_steps"], "runs": p["runs"], "dft_stride": p["stride"],
+                    "precision": "single" if single else "double", "memory_bytes": p["memory_bytes"],
+                    "fits": g.cells <= opts.max_cells, "warnings": p["warnings"],
+                    "notes": "one run per port mode (each gives one column of S)"}
         if isinstance(sim, (PeriodicProblem, LayerStackProblem)):
             p = periodic.plan(sim, opts, single)
             c = p["cell"]
@@ -119,12 +131,14 @@ class NativeFDTD(Backend):
                 "fits": lay.cells <= opts.max_cells, "warnings": p["warnings"], "symmetry": p["symmetry"]}
 
     @classmethod
-    def solve(cls, sim, device: Device) -> Result | SpectrumResult | EmissionResult:
+    def solve(cls, sim, device: Device) -> Result | SpectrumResult | EmissionResult | SParameterResult:
         ok, why = cls.supports(sim)
         if not ok:
             raise ValueError(f"{cls.name} {why}")
         if isinstance(sim, EmissionProblem):
             return emission.solve(sim, cls._options(sim), device)
+        if isinstance(sim, DeviceProblem):
+            return devices.solve(sim, cls._options(sim), device)
         if isinstance(sim, (PeriodicProblem, LayerStackProblem)):
             return periodic.solve(sim, cls._options(sim), device)
         out = scattering.solve(sim, cls._options(sim), device)

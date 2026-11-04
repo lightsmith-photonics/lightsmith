@@ -1,13 +1,14 @@
 # FDTD
 
 Backend `lightsmith-fdtd` (method `fdtd`, modules `lightsmith.backends.fdtd` and
-`lightsmith.backends._fdtd`). A 3D finite-difference time-domain solver for four problem kinds:
+`lightsmith.backends._fdtd`). A 3D finite-difference time-domain solver for five problem kinds:
 
 - [scattering](../problems/scattering.md), on a substrate too;
 - [periodic structures](../problems/periodic.md) and [layer stacks](../problems/layer-stack.md), at normal
   incidence;
 - [dipole emission](../problems/emission.md): Purcell factor, radiative enhancement, efficiency and radiation
-  pattern.
+  pattern;
+- [devices](../problems/device.md): S-parameters between waveguide ports, in 3D or 2D (z-invariant).
 
 It runs on the CPU or a CUDA GPU.
 
@@ -164,6 +165,37 @@ It runs on the CPU or a CUDA GPU.
   ω_c + 6 ω_half (e⁻³⁶) out of the band, for the same reason.
 - **Radiation pattern.** The near-to-far-field projection of the fields on the box, normalised by P0.
 
+### Device problems
+
+- **Grid.** Cubic cells over the domain, plus a few cells on every side so that ports may sit on its faces,
+  with a CPML outside it. Structures, such as the waveguide stubs, continue through the CPML. A 2D device
+  (`dimension: 2`, invariant along z) is one periodic cell along z: a 2D run in which TE and TM do not couple.
+  `polarization` picks which one the ports launch.
+- **Port modes.** In a straight, uniform section of the grid, a field ∝ exp(−iωt + iβx) satisfies the 3D Yee
+  equations exactly when its transverse profile is an eigenmode of the 2D Yee cross-section problem (the
+  [FDE](fde.md) engine). The leapfrog frequency Ω = 2 sin(ω dt/2)/dt takes the place of k₀, and
+  B = 2 sin(β dx/2)/dx takes the place of β. Every node has the discrete response of its own update at ω.
+  E_t and H_n sit on node planes, and H_t and E_n half a cell later, as on the FDE grid. The port window's
+  edges are the FDE's PEC walls.
+- **Mode tables.** Each port's modes are solved at nested Chebyshev–Lobatto frequency sets (9, 17, 33, …)
+  over the source band, until the interpolant agrees with the next set to 1e-7. Each mode is tracked by its
+  overlap with the mode at the band centre and normalised to unit discrete power,
+  ½⟨e, h*⟩ cos(β dx/2) = 1.
+- **Source.** A one-sided TFSF plane on the port window. At every frequency the incident field is an exact
+  solution of the grid: nothing is launched backwards and no other mode is excited. In time it is a few real
+  basis profiles (an SVD of the table) times time series (inverse FFTs of the interpolated coefficients), so
+  each step costs two small matrix-vector products.
+- **Monitors.** DFTs of E_t on a node plane and of H_t on the next half plane. The discrete modes are
+  bi-orthogonal under ⟨e, h⟩ = Σ (e × h)·n dA over co-located Yee pairs, so p₁ = ⟨E, h_m⟩ and p₂ = ⟨e_m, H⟩
+  give the forward and backward amplitudes exactly: X = (u^−½ p₁ + p₂) / (2 cos(β dx/2) N) and
+  Y = (u^½ p₁ − p₂) / (2 cos(β dx/2) N), with u = e^{iβ dx} and N = ⟨e_m, h_m⟩.
+- **S-matrix.** One run per port mode. Each run gives one column, S[out, in] = c_out / a_in, with both
+  amplitudes taken at the ports' centres.
+- **Smoothing.** Port modes are exact only where the permittivity is diagonal, so device problems default to
+  `subpixel`. Under an explicit `conformal`, the off-diagonal terms are dropped in a slab of a few cells around
+  each port. Elsewhere they change a silicon wire's discrete neff by about 2.5e-4 through its corners, and the
+  slab's edges reflect about 2e-4.
+
 ### Periodic structures and layer stacks
 
 - **Cell and boundaries.** One unit cell, with periodic x and y boundaries and a CPML along z. The cells
@@ -197,6 +229,7 @@ It runs on the CPU or a CUDA GPU.
 | `dft_stride` | `None` | Time steps between DFT samples. Default: aliasing-safe, from the source bandwidth. |
 | `symmetry` | `"auto"` | Scattering: use the PEC/PMC mirror planes the particles and plane wave allow (2× or 4× smaller runs, the same results); `"off"` runs the whole grid |
 | `cuda_graphs` | `True` | Replay time steps as CUDA graphs |
+| `polarization` | `None` | 2D device problems: the port modes' polarisation. `te` means E in the xy plane (the default, as for FDFD and EME); `tm` means E along z. |
 | `max_cells` | `300000000` | Refuse grids larger than this |
 
 There are no gradients.
@@ -260,6 +293,27 @@ Measured in the test module docstring (RTX 5070, float32; CPU float64 agrees to 
 - Johnson–Christy gold (fitted), r = 40 nm, dx = 2 nm: peak at 550 nm as Mie, height within 0.7 %.
 - Ring-down of the same Drude sphere: dipole 535.6 nm, Q 8.2 (exact pole 533.8 nm, Q 8.74); quadrupole
   488.4 nm, Q 31 (487.5 nm, Q 35.1). For a 10 nm sphere at dx = 0.5 nm: 500.6 nm, Q 31.9 (499.8 nm, Q 34.2).
+
+### Device problems (`tests/test_fdtd_device.py`)
+
+| Test | Reference | Tolerance |
+|---|---|---|
+| `test_straight_waveguide_2d_is_exact_on_the_grid_cpu`: 500 nm silicon slab waveguide, TE and TM, dx = 25 nm | \|S21\| = 1, phase of the grid's discrete β | 1e-4 (measured 4e-5, the CPML's reflection); phase 1e-4 rad |
+| `test_multimode_ports_2d_cpu`: 1100 nm guide, two modes per port | No mode conversion | 1e-4 |
+| `test_width_step_2d_matches_fdfd` (gpu): 500 → 900 nm step, dx = 10 nm, TE and TM | [FDFD](fdfd.md) | \|S\|: TE 1e-4 (measured 3e-5), TM 5e-4 (measured 3.4e-4, from 1.8e-3 at 20 nm); phases 1e-2 rad (measured 3.5e-3, the leapfrog's dispersion) |
+| `test_straight_wire_3d_is_exact_on_the_grid` (gpu): 500 × 220 nm silicon wire, TE0 and TM0, float32 | \|S21\| = 1, the grid's phase | TE0 1e-4 (measured 1e-6), phase 1e-4 rad; reflection and conversion 2e-4 (measured 4e-5) |
+| `test_width_step_3d_is_reciprocal_passive_and_converged` (gpu): 500 → 700 nm wire step, dx = 25 nm | dx = 15 nm; reciprocity | \|S21\| = 0.99753 within 5e-4 (0.99739 at dx = 15 nm); S − Sᵀ < 2e-4 |
+| `test_pdk_mmi_1x2_in_3d` (slow, gpu): the PDK's 1×2 MMI on 220 nm SOI, 11 M cells, dx = 25 nm, float32 | [EME](eme.md) (20 modes); symmetry; reciprocity | \|S21\| = \|S31\| = 0.7008 against 0.7012; S − Sᵀ < 5e-4 (measured 1.3e-4) |
+
+At 20 nm the 2D TE step is already within 2e-3 of the converged values, and closer to them than FDFD at the
+same spacing. For the 3D step, EME converges slowly towards the FDTD value: in a 2 µm PEC box it gives 0.9930,
+0.9940 and 0.9954 with 30, 60 and 100 modes, and in a 3 µm box 0.9965, 0.9967 and 0.9972 with 100, 160 and
+240. With PML walls and 60 modes it gives 1.000008.
+
+In the MMI, light sent back into an output port reaches the input port with 0.49 of its power. The rest hits the
+MMI's input facet; part of it reflects and re-images onto both outputs, |S22| = |S32| = 0.155. EME with 20 modes
+gives 0.03: it does not resolve that reflection. The 3-port run took 8 min on an RTX 5070 that another job was
+sharing; of that, voxelisation took 43 s and the port-mode tables 43 s.
 
 ### Periodic structures (`tests/test_fdtd_periodic.py`)
 
@@ -354,6 +408,17 @@ evanescent field varies across the sphere, which the dipole model misses, hence 
 - The superstrate must be lossless and non-dispersive.
 - No incoherent layers.
 
-**Both**
+**Device problems**
+- Ports on node planes normal to x, y or z (x or y in 2D). The waveguide must be straight for a few cells on
+  both sides of each port plane. The window must hold the mode, since its edges are PEC walls for the mode
+  solve: a warning is raised when more than 1 % of the field lies on the window's edge.
+- One run per port mode. There are no mirror symmetries or adjoint gradients for devices yet.
+- A port that crosses a dispersive interface under `conformal` (the vertex tensor) makes the whole run use
+  `subpixel`.
+- Warns about waves entering through non-source ports above 1e-2 of the source (a CPML that is too thin),
+  about output power above input in a lossless device, and about mode tables that interpolate poorly
+  (near cutoff).
+
+**All problem kinds**
 - Raises an error above `max_cells` (increase `spacing_nm`).
 - Raises `FloatingPointError` on divergence (lower `courant` or check the material model).

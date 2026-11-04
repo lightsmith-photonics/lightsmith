@@ -26,11 +26,15 @@ coupler, splitter or bend, characterised by its S-matrix between ports.
 
 ## Solvers
 
-`auto` order: [EME](../solvers/eme.md), then [FDFD](../solvers/fdfd.md).
+`auto` order: [EME](../solvers/eme.md), [BPM](../solvers/bpm.md), [FDFD](../solvers/fdfd.md), then
+[FDTD](../solvers/fdtd.md).
 
 - EME needs every port on one of two opposite planes, and works in 2D and 3D.
 - FDFD is 2D only, runs on a GPU, and gives adjoint gradients. It is the engine behind
   [inverse design](optimization.md).
+- FDTD works in 3D and 2D with ports anywhere and in any orientation, and runs on a GPU. One broadband run per
+  port mode gives that column of S at every wavelength. Its port modes are exact for its grid, so a straight
+  guide transmits with |S21| = 1.
 
 ## Layout import
 

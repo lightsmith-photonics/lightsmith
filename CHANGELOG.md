@@ -8,6 +8,14 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
 
 ### Added
 
+- **FDTD device problems** (`kind: "device"`, 3D and 2D): S-parameters between waveguide ports. Each port
+  mode is an exact eigenmode of the FDTD grid itself: the FDE cross-section problem solved with the
+  leapfrog frequency, the discrete propagation constant and each node's discrete material response, then
+  interpolated over the band from Chebyshev nodes. So the TFSF mode sources launch one way only, and the
+  monitors split the fields into forward and backward modes exactly. A straight silicon wire transmits with
+  |S21| = 1 to 1e-6 and the grid's own phase. A 2D width step matches FDFD to 3e-5 (TE) and 3.4e-4 (TM) at
+  dl = 10 nm, and a 3D one is converged to 1e-4 between dx = 25 and 15 nm. Device problems default to
+  `subpixel` smoothing (port modes need a diagonal permittivity). `polarization` selects TE or TM in 2D.
 - **FDTD mirror symmetries** (`symmetry: "auto"`, the default; `"off"` turns them off). A scattering run
   whose particles are mirror-symmetric about their centre, lit by a plane wave that travels in the mirror
   plane and is polarised in it (a PMC plane) or normal to it (a PEC plane), keeps half the grid per plane:
@@ -62,6 +70,9 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
   no longer sets the peak, so weak, sharp resonances are no longer cut off: a 15 nm Drude sphere's
   spectrum rippled by ±10 %.
 - FDTD `pml_cells` defaults to 16 with a substrate (10 otherwise).
+- FDTD voxelisation evaluates the geometry once per point of the half-cell lattice, where it used to test each
+  field position's 26 neighbours separately for every component. The result is the same, and it is 4× faster
+  (45 s → 10 s for a 2.5 M-cell 3D MMI).
 - FDTD scattering: the default TFSF padding and PML gap are now at least 3 % of the longest wavelength
   in the medium, so refining the grid no longer moves the monitors closer to the particle.
 

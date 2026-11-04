@@ -14,7 +14,7 @@ all, with licence, GPU support, differentiability and availability. You can choo
 | [`mie`](mie.md) | `miepython`, `lightsmith-mie` | scattering | native | native (functional API) | miepython (core) |
 | [`tmatrix`](tmatrix.md) | `treams` | scattering | — | — | treams (`tmatrix` extra) |
 | [`dda`](dda.md) | `lightsmith-dda` | scattering | ✅ | — | — |
-| [`fdtd`](fdtd.md) | `lightsmith-fdtd` | scattering, periodic, layer_stack | ✅ | — | — |
+| [`fdtd`](fdtd.md) | `lightsmith-fdtd` | scattering, periodic, layer_stack, emission, device | ✅ | — | — |
 | [`quasistatic`](quasistatic.md) | `lightsmith-quasistatic` | scattering | — | — | — |
 | [`tmm`](tmm.md) | `lightsmith-tmm` | layer_stack | ✅ | ✅ | — |
 | [`rcwa`](rcwa.md) | `lightsmith-rcwa` | periodic, layer_stack | ✅ | ✅ | — |
@@ -36,7 +36,7 @@ Every backend is MIT-licensed. GPL solvers ship as separate plugin packages (see
 | layer_stack | tmm → rcwa → fdtd |
 | periodic | rcwa → fdtd |
 | mode | fde |
-| device | eme → fdfd |
+| device | eme → bpm → fdfd → fdtd |
 | bands | pwe |
 | circuit | circuit |
 | optimization | inverse |

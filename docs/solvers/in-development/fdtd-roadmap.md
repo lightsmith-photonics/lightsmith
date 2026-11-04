@@ -21,7 +21,7 @@ runs, and error bars on every result).
 | Boundaries | CPML, periodic, Bloch, mirror symmetry (PEC/PMC planes) | PML, absorber, periodic, Bloch, mirror symmetry | PML, periodic, Bloch, PEC, PMC, symmetry |
 | Materials | Drude, Lorentz, fitted tables | + conductivity, anisotropic, μ, χ2/χ3, gain, gyrotropic | + 2D sheets, index perturbation, multi-coefficient fits |
 | Outputs | Flux spectra, diffraction orders, near and far fields (into substrates too), resonances (Q), Purcell factor | + far field, Harminv, LDOS, forces, mode coefficients | + far field into substrates, Q analysis, S-parameters |
-| Problem kinds | scattering (also on a substrate), periodic, layer_stack, emission | — | + devices with ports |
+| Problem kinds | scattering (also on a substrate), periodic, layer_stack, emission, device (S-parameters) | — | + devices with ports |
 | Gradients | None | Adjoint (CPU) | Adjoint |
 
 ## Conformal meshing
@@ -98,7 +98,9 @@ Two lessons:
 6. Mirror symmetries (PEC/PMC planes), for 2×–8× smaller runs. Done for scattering: up to two planes (a
    plane wave cannot lie in three), 2× or 4× smaller grids, results identical to the full run.
 7. Device problems: waveguide mode sources and mode-expansion monitors from the FDE mode solver, giving
-   S-parameters that feed [circuits](../../problems/index.md) directly.
+   S-parameters that feed [circuits](../../problems/index.md) directly. Done: the port modes are exact
+   eigenmodes of the grid (leapfrog Ω, discrete β), so the sources are one-way and the monitors' modal
+   decomposition is exact.
 
 ### Tier 2: matching the commercial tools
 
@@ -134,3 +136,4 @@ merged. This table tracks the branch.
 | 2. Gaussian-beam source | Done: `GaussianBeam` illumination; 0.13 % from Mie at the focus, 0.1 % from the beam profile off axis |
 | 5. Substrates | Done, any angle incl. total internal reflection: leak-free layered TFSF (auxiliary column at normal incidence, exact discrete background tables otherwise); C_sca within 0.2–0.5 % of a dipole reference above glass (1.7 % for TIR p). Absorbing substrates: particle absorption, upward scattering and reflectance change within 0.1 % of a multipole reference; far field into both half-spaces by reciprocity. Open: Gaussian beams on substrates |
 | 6. Mirror symmetries | Done for scattering: `symmetry: "auto"` picks PEC/PMC planes from the particles and the polarisation (substrates, metals, near and far fields included); identical to the full run to 1e-11 (float64); 1.55–2.3× faster on the GPU for 1–5 M-cell runs, 3.7× in steady state at 15 M cells. Open: the table source's fixed per-step cost (one interpolation per TFSF face slab), which limits the gain on small grids; Gaussian beams |
+| 7. Device problems | Done: `kind: "device"` in 3D and 2D; exact discrete port modes, one-way TFSF mode sources, exact modal monitors; a straight wire transmits with \|S21\| = 1 to 1e-6 and its grid phase; 2D steps within 3e-5 (TE) and 3.4e-4 (TM) of FDFD; 3D steps converged to 1e-4 between dx = 25 and 15 nm. Open: mirror symmetries, adjoint gradients, broadband port tables for long multi-port layouts (one run per port mode) |

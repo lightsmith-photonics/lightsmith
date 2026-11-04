@@ -43,8 +43,8 @@ class FDTDOptions(BaseModel):
         None, description="Interface treatment. staircase: the medium at each field position. volume_average: "
         "<eps> over the cell. subpixel: diagonal anisotropic averaging (Farjadpour 2006). conformal: the full "
         "tensor with off-diagonal terms (Kottke 2008); at interfaces with a dispersive medium (metals) it is "
-        "applied at grid vertices as a sum of passive congruences. Default: conformal, or "
-        "staircase when subpixel is False.")
+        "applied at grid vertices as a sum of passive congruences. Default: conformal (device problems: subpixel, "
+        "so that the port modes are exact), or staircase when subpixel is False.")
     subpixel_samples: int = Field(8, ge=2, le=24, description="Supersamples per axis for interface cells.")
     dft_stride: int | None = Field(
         None, ge=1, description="Time steps between DFT samples. Default: from the source bandwidth (aliasing-safe).")
@@ -52,5 +52,8 @@ class FDTDOptions(BaseModel):
         "auto", description="Scattering: use mirror planes through the particles' centre when the particles and the "
         "plane wave allow them (PEC/PMC planes, chosen from the polarisation; 2x or 4x smaller runs, same results). "
         "The provenance reports the planes used.")
+    polarization: Literal["te", "tm"] | None = Field(
+        None, description="2D device problems: the port modes' polarisation, te = E in the xy plane (default, as "
+        "FDFD and EME), tm = E along z. The two do not couple in a z-invariant device.")
     cuda_graphs: bool = Field(True, description="Replay time steps as CUDA graphs on PyTorch CUDA (much faster).")
     max_cells: int = Field(300_000_000, ge=1, description="Refuse grids larger than this.")

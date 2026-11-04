@@ -81,17 +81,23 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
     axes_idx = [np.arange(roi_lo[a], roi_hi[a]) for a in range(3)]
     sub = ((np.arange(samples) + 0.5) / samples - 0.5)
     sub3 = np.stack(np.meshgrid(sub, sub, sub, indexing="ij"), axis=-1).reshape(-1, 3)
+    lat = _half_lattice(slot_fn, origin, dx, roi_lo, roi_hi)
     for c in range(3):
         idx3 = np.stack(np.meshgrid(*axes_idx, indexing="ij"), axis=-1).reshape(-1, 3)
         pos = origin + (idx3 + e_offset(c)) * dx
-        center = slot_fn(pos)
+        # slots at the E_c positions and at the 26 corners and edges of their cells, from the half-cell lattice
+        n = [hi - lo for lo, hi in zip(roi_lo, roi_hi)]
+
+        def at(o, c=c, n=n):
+            sl = tuple(slice(1 + (a == c) + o[a], 1 + (a == c) + o[a] + 2 * n[a], 2) for a in range(3))
+            return lat[sl].reshape(-1)
+
+        center = at((0, 0, 0)).astype(int)
+        mixed = np.zeros(len(pos), dtype=bool)
         if subpixel:
-            mixed = np.zeros(len(pos), dtype=bool)
             for o in _TEST:
                 if np.any(o):
-                    mixed |= slot_fn(pos + o * dx) != center
-        else:
-            mixed = np.zeros(len(pos), dtype=bool)
+                    mixed |= at(tuple(int(2 * v) for v in o)) != center
         # pure cells
         flat = flat_index(c, idx3[:, 0], idx3[:, 1], idx3[:, 2], shape)
         for s in range(1, S):
@@ -185,6 +191,22 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
              "mesh_refinement": mode, "offdiagonal_cells": 0 if offdiag is None else len(offdiag.comp),
              "tensor_vertices": 0 if tm is None else len(tm.normal)}
     return inv_eps, groups, stats, offdiag
+
+
+def _half_lattice(slot_fn, origin, dx, roi_lo, roi_hi, chunk: int = 1 << 22) -> np.ndarray:
+    """slot_fn on the half-cell lattice origin + (m / 2) dx, m = 2 lo - 1 .. 2 hi per axis: every E position of the
+    nodes in [roi_lo, roi_hi) and every corner and edge midpoint of their cells. One call per x plane batch, so
+    each point is evaluated once (instead of once per test offset and component)."""
+    ax = [origin[a] + (np.arange(2 * roi_lo[a] - 1, 2 * roi_hi[a] + 1) / 2) * dx[a] for a in range(3)]
+    shape = tuple(len(a) for a in ax)
+    out = np.empty(shape, dtype=np.int16)
+    yz = np.stack(np.meshgrid(ax[1], ax[2], indexing="ij"), axis=-1).reshape(-1, 2)
+    step = max(1, chunk // len(yz))
+    for i in range(0, shape[0], step):
+        x = ax[0][i:i + step]
+        pts = np.concatenate([np.repeat(x, len(yz))[:, None], np.tile(yz, (len(x), 1))], axis=1)
+        out[i:i + len(x)] = np.asarray(slot_fn(pts)).reshape(len(x), shape[1], shape[2])
+    return out
 
 
 def _canonical(x: np.ndarray, shape, periodic):
