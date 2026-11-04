@@ -149,6 +149,57 @@ It runs on the CPU or a CUDA GPU.
   without it: their discrete angular spectrum is not always mirror-symmetric.
 - **GPU.** On PyTorch CUDA, the time loop is replayed as CUDA graphs.
 
+### Graded grids (scattering)
+
+`grid: "auto"` or `mesh_override` make the grid non-uniform, as Lumerical's override regions and Tidy3D's
+graded grids do.
+
+- **Grid.** The grid is still a tensor product: along each axis the node planes are free, and the three axes
+  are independent. A spacing function sets the cell widths. It takes the base spacing and refines each region
+  [lo, hi] to that region's spacing s. Around a region the widths grow back no faster than
+  h(x) = s + (r − 1) dist(x, region), with r the `grading_ratio`. Cells are marched outward from the scene's
+  centre, and each takes the minimum of h over itself. Neighbouring cells therefore differ by at most r
+  (`max_ratio` in the provenance).
+- **Update.** Primary widths p_i = x_{i+1} − x_i separate nodes, and dual widths d_i = (p_{i−1} + p_i) / 2
+  separate the midpoints around node i. The H update divides E differences along an axis by the primary
+  widths. The E update divides H differences by the dual widths. Both use per-axis arrays through the array
+  API, so CPU, CUDA and CUDA graphs share one path. Weighted by the cell volumes (E_c: p_c d_a d_b; H_c:
+  d_c p_a p_b), the two curls are adjoint, so the scheme conserves the same discrete energy as the uniform
+  one. The time step comes from the smallest cell per axis, dt = courant / √(Σ_a 1 / h_min,a²).
+- **What follows the widths:**
+  - CPML: uniform cells; the conductivity profile takes the end cells' width.
+  - TFSF tables: the exact discrete background comes from the graded 1D problem along the incidence axis (one
+    transfer matrix per cell, primary and dual widths). The box stays leak-free for incidence along an axis.
+    Oblique incidence needs the grid uniform along the axes the wave varies along.
+  - The layered background and its auxiliary columns use each node's own cell along z.
+  - Subpixel and conformal smoothing: each node's pixel is its own cell (primary along its component, dual
+    along the others), not a cube.
+  - The vertex tensor of metal interfaces: each vertex's cell is its dual cell. Its D̃ along d is the mean
+    of the two d-nodes, weighted by their half-cells p_{j−1}/2 and p_j/2 inside it, so the octant triads
+    carry the volumes of the vertex's octants. The map stays a sum of passive congruences in the volume-weighted
+    inner product. The conformal off-diagonal coupling between nodes p and q becomes O(p, q) / (2 V(p)): their
+    overlap volume over p's volume, which keeps the operator symmetric in that inner product.
+  - Flux boxes, near-to-far-field surfaces and the layered far field use the cells' own widths as area
+    weights, and the samples' own positions.
+  - DFT monitors, near fields and resonance probes use world coordinates.
+  - Particle absorption over absorbing substrates uses each node's own volume.
+  - Mirror planes: along a mirror axis the spacing function is symmetric about the centre, and the half grid
+    keeps its node coordinates.
+- **Layout.** Every box face (TFSF and both flux boxes), the gaps and the CPML sit at least three cells beyond
+  the graded zone, where the grid is uniform along the face normal. The padding and gaps keep their physical
+  lengths.
+- **Grading reflects.** A change of cell size h reflects about (k h)²/16 of a wave, however gently it is
+  graded. The discrete line is an LC ladder whose node impedance Z₀ / √(1 − (k h)²/4) depends on h. The
+  graded zone is shorter than a wavelength, so its reflections add up to the full jump. With the base at
+  20 cells per vacuum wavelength this was 0.6 % at 400 nm, and it moved C_ext by up to 2 %. `grid: "auto"`
+  therefore sets the base to `background_cells_per_wavelength` (60) cells per shortest wavelength in the
+  background (0.07 %). The cells grow from the particle's spacing to that base.
+- **`grid: "auto"`.** Each particle's bounding box is refined to the uniform rule for that particle alone:
+  `cells_per_wavelength` in its material and its smallest half-extent / `cells_per_radius`. The refinement
+  extends a margin around the box for the near field: half the smallest half-extent, and at least two cells.
+  When no particle needs cells finer than the base, the grid is today's uniform one. `mesh_override` boxes
+  add their own spacings, with `spacing_nm` (or the uniform rule) as the base.
+
 ### Dipole emission
 
 - **Source.** A point current along the dipole, spread over the eight E nodes around it by trilinear weights.
@@ -196,6 +247,10 @@ It runs on the CPU or a CUDA GPU.
 | `subpixel_samples` | `8` | Supersamples per axis for interface cells (2–24) |
 | `dft_stride` | `None` | Time steps between DFT samples. Default: aliasing-safe, from the source bandwidth. |
 | `symmetry` | `"auto"` | Scattering: use the PEC/PMC mirror planes the particles and plane wave allow (2× or 4× smaller runs, the same results); `"off"` runs the whole grid |
+| `grid` | `"uniform"` | Scattering: `"auto"` grades the grid, refining each particle (see Graded grids) |
+| `mesh_override` | `[]` | Scattering: refinement boxes `{center_nm, size_nm, spacing_nm}` (one spacing or one per axis), graded to the base spacing around them |
+| `grading_ratio` | `1.25` | Largest cell-width growth from one cell to the next (1.05–1.5) |
+| `background_cells_per_wavelength` | `60` | `grid: "auto"`: base cells per shortest wavelength in the background |
 | `cuda_graphs` | `True` | Replay time steps as CUDA graphs |
 | `max_cells` | `300000000` | Refuse grids larger than this |
 
@@ -260,6 +315,40 @@ Measured in the test module docstring (RTX 5070, float32; CPU float64 agrees to 
 - Johnson–Christy gold (fitted), r = 40 nm, dx = 2 nm: peak at 550 nm as Mie, height within 0.7 %.
 - Ring-down of the same Drude sphere: dipole 535.6 nm, Q 8.2 (exact pole 533.8 nm, Q 8.74); quadrupole
   488.4 nm, Q 31 (487.5 nm, Q 35.1). For a 10 nm sphere at dx = 0.5 nm: 500.6 nm, Q 31.9 (499.8 nm, Q 34.2).
+
+### Graded grids (`tests/test_fdtd_graded.py`)
+
+| Test | Reference | Tolerance |
+|---|---|---|
+| `test_graded_axis_is_bounded_symmetric_and_refined`, `test_graded_layout_boxes_lie_in_uniform_cells` | — | growth ≤ `grading_ratio`; region spacing inside; box faces, gaps and CPML in uniform cells |
+| `test_graded_options_collapse_to_the_uniform_run` | uniform run | bit for bit |
+| `test_graded_code_path_reproduces_uniform_grid_cpu`: dielectric (2 mirrors, near and far field), Drude (vertex tensor), glass, absorbing substrate | uniform run through the old code | 1e-12 (measured 3e-15 to 6e-14) |
+| `test_graded_tfsf_does_not_leak_cpu`: n = 1 sphere, 10 → 2.5 nm | 0 | C_sca < 1e-10 πr² (measured 2e-15 nm²) |
+| `test_graded_mirror_symmetry_matches_full_run_cpu` | full graded run | 1e-6 |
+| `test_graded_engine_conserves_the_discrete_energy`: PEC box, ratio 1.4, 4000 steps | exact | 1e-10 |
+| `test_graded_vertex_tensor_is_symmetric_and_bounded` | — | symmetric in the volume-weighted inner product; Rayleigh quotients within [1/ε_∞,max, 1/ε_min] |
+| `test_graded_high_index_sphere_matches_uniform_and_mie` (gpu, slow): n = 3.5, r = 20 nm, 400–800 nm | uniform 2 nm run, converged domain | 0.2 % (measured 0.11 %, against the uniform run's 0.66–0.71 % error from Mie) |
+| `test_graded_drude_sphere_matches_uniform_with_fewer_cells` (gpu, slow): Drude r = 10 nm in water, 0.5 nm | uniform 0.5 nm run | ΔC_ext < 5 % of the uniform run's error (measured 7e-4 of the peak against 13 %); ≥ 3× fewer cells |
+| `test_graded_sphere_on_substrate_matches_uniform` (gpu, slow): n = 3.5, r = 20 nm touching glass (from below and above, column source) or an absorbing substrate (tables, layered far field) | uniform 2 nm run | 0.5 % (measured C_ext 0.16 %, 0.20 %, 0.34 %; C_sca 0.13 %, 0.12 %, 0.05 %) |
+| `test_graded_far_and_near_fields_match_mie` (gpu): n = 3.5, r = 20 nm | `lightsmith-mie` | dC_sca/dΩ median < 1 %, max < 1.2 % (measured 0.75 %, 0.79 %; uniform 2 nm: 0.68 %, 0.72 %); near-field \|E\|² beyond 4 nm from the surface: RMS < 2 % (measured 0.47 %) |
+| `test_graded_grid_is_stable_at_late_times` (gpu, slow): conformal n = 3.5 sphere (3 ps) and Drude sphere through the vertex tensor (1.5 ps), 3 nm graded to 10 and 8 nm | — | decay level < 1e-15 (measured 5e-20 and 9e-21; no growth at the transitions) |
+
+Cells and run times (RTX 5070, CUDA graphs):
+
+| Case | Uniform | Graded (`grid: "auto"`) |
+|---|---|---|
+| n = 3.5, r = 20 nm (2 nm cells), float64 | 242 k cells, 57 s | 153 k cells (6.7 nm base), 54 s |
+| Drude r = 10 nm in water (0.5 nm cells), float64 | 1.74 M cells, 662 s | 488 k cells (5.6 nm base), 319 s |
+| the same, float32 | 1.74 M cells, 305 s | 488 k cells, 269 s |
+
+Both use the time step of the finest cells. The small runs are dominated by the source tables' fixed per-step
+cost (one table interpolation per TFSF face slab; see the roadmap), so the time falls less than the cell count.
+Timings on a shared GPU vary by up to 2×; the cell counts are exact.
+
+The Drude sphere's off-peak values are sensitive to when the run stops. With the default `decay_by` (1e-5 of the
+energy, 3e-3 of the amplitude), the plasmon's truncated ring-down leaks about 3e-4 of the peak into the tails,
+and the two grids then differ by up to 8 % at 650 nm, where C_ext is 0.3 % of the peak. With `decay_by: 1e-8`
+they agree within 0.55 % at every wavelength, against 13–18 % errors from Mie.
 
 ### Periodic structures (`tests/test_fdtd_periodic.py`)
 
@@ -332,6 +421,21 @@ evanescent field varies across the sphere, which the dipole model misses, hence 
   fitted modes can differ slightly from a full run's; modes of the other parity are not excited anyway.
   The decay shut-off sees the energy of the box part, so a decaying run can stop one chunk apart from a full
   one (well below `decay_by`).
+- Graded grids (`grid: "auto"`, `mesh_override`):
+  - scattering only; emission, periodic and layer-stack problems refuse them;
+  - plane waves only, not Gaussian beams;
+  - oblique incidence needs the grid uniform along the axes the wave varies along (the tables are exact
+    only for a wave that does not vary along a graded axis); axis-aligned incidence works on any graded
+    grid, substrates included;
+  - every change of cell size reflects about (k h)²/16 of a wave. Keep the coarsest cells fine enough
+    (`background_cells_per_wavelength`, or `spacing_nm` with `mesh_override`): at 20 cells per wavelength the
+    reflection is 0.6 %, and C_ext moved by up to 2 %;
+  - the time step comes from the smallest cell, so a run is cheaper in proportion to its cells, not its steps.
+    On a consumer GPU in float32, the per-step cost of the TFSF tables dominates below a few million cells,
+    and the speed-up there is smaller than the cell ratio;
+  - over a substrate, the layered far field's transverse grid wavenumbers are those of the base spacing, so
+    samples on graded transverse cells carry an O((k h)²) phase error;
+  - along a mirror axis the refinement is made symmetric about the centre.
 - Gaussian beams: no substrate yet. Table memory grows with the number of components (about 1 MB each at
   dx = 4 nm); `estimate` includes it.
 - Resonances of metal particles: the plasmon Q comes out 7–10 % low, and a weak extra mode can appear

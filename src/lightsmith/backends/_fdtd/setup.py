@@ -20,9 +20,15 @@ def e_offset(c: int) -> np.ndarray:
     return o
 
 
-def time_step(dx: float, courant: float, media: list[Medium]) -> float:
-    """Courant-stable dt; media with eps_inf < 1 shrink it."""
+def time_step(dx: float, courant: float, media: list[Medium], grid=None) -> float:
+    """Courant-stable dt; media with eps_inf < 1 shrink it. On a graded grid the smallest cell per axis sets it,
+    dt = courant / sqrt(sum_a 1 / h_min,a^2) (each axis' difference operator is bounded by 2 / h_min,a)."""
     eps_min = min([1.0] + [m.eps_inf for m in media])
+    if grid is not None:
+        h = [grid.min_spacing(a) for a in range(3)]
+        if max(h) == min(h):  # cubic smallest cells: the uniform formula, to the last bit
+            return courant * h[0] * math.sqrt(eps_min) / math.sqrt(3)
+        return courant * math.sqrt(eps_min) / math.sqrt(sum(1 / v**2 for v in h))
     return courant * dx * math.sqrt(eps_min) / math.sqrt(3)
 
 
@@ -44,7 +50,7 @@ def mesh_mode(opts) -> str:
 
 def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *, mode: str = "subpixel",
              samples: int = 8, chunk: int = 2048, periodic=(False, False, False), base=None, background=(),
-             mirror=(0, 0, 0)):
+             mirror=(0, 0, 0), grid=None):
     """Material on the Yee E grid.
 
     slot_fn(points[..., 3] in nm) -> int medium index (0 = background) per point.
@@ -60,7 +66,10 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
 
     base: (inv_eps, groups) of a layered background filled beforehand (e.g. layered_background), and
     background the media indices it holds: nodes whose pixel holds only those media keep the base values,
-    so a planar interface is meshed the same inside the region of interest as everywhere else."""
+    so a planar interface is meshed the same inside the region of interest as everywhere else.
+
+    grid: a graded grid (grid.Grid); each node's pixel is then its own cell (primary along c, dual along the
+    other axes), not a cube of side dx."""
     if mode not in MESH_MODES:
         raise ValueError(f"mesh refinement {mode!r} is not one of {MESH_MODES}")
     subpixel = mode != "staircase"
@@ -83,13 +92,18 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
     sub3 = np.stack(np.meshgrid(sub, sub, sub, indexing="ij"), axis=-1).reshape(-1, 3)
     for c in range(3):
         idx3 = np.stack(np.meshgrid(*axes_idx, indexing="ij"), axis=-1).reshape(-1, 3)
-        pos = origin + (idx3 + e_offset(c)) * dx
+        if grid is None:
+            pos = origin + (idx3 + e_offset(c)) * dx
+            ctr, size = pos, dx
+        else:
+            pos = grid.coords(idx3 + e_offset(c))
+            ctr, size = grid.e_cells(c, idx3)
         center = slot_fn(pos)
         if subpixel:
             mixed = np.zeros(len(pos), dtype=bool)
             for o in _TEST:
                 if np.any(o):
-                    mixed |= slot_fn(pos + o * dx) != center
+                    mixed |= slot_fn(ctr + o * size) != center
         else:
             mixed = np.zeros(len(pos), dtype=bool)
         # pure cells
@@ -108,19 +122,22 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
         mi = np.nonzero(mixed)[0]
         for a in range(0, len(mi), chunk):
             sel = mi[a:a + chunk]
-            pts = pos[sel][:, None, :] + sub3[None, :, :] * dx
+            sz = size if grid is None else size[sel]
+            pts = ctr[sel][:, None, :] + sub3[None, :, :] * (sz if grid is None else sz[:, None, :])
             sl = slot_fn(pts)  # (n, samples^3)
             frac = np.stack([(sl == s).mean(axis=1) for s in range(S)])  # (S, n)
             if bg.any():
                 part = frac[~bg].sum(axis=0) > 0  # holds a particle medium
                 sel, sl, frac = sel[part], sl[part], frac[:, part]
+                if grid is not None:
+                    sz = sz[part]
                 if not len(sel):
                     continue
             claimed.append(flat[sel])
             n_mixed += len(sel)
             dom = np.argmax(frac, axis=0)
             chi = (sl == dom[:, None]).astype(float)
-            mom = (chi - chi.mean(axis=1, keepdims=True)) @ sub3 / dx  # (n, 3) first moment ~ normal
+            mom = (chi - chi.mean(axis=1, keepdims=True)) @ sub3 / sz  # (n, 3) first moment ~ normal
             nrm = np.linalg.norm(mom, axis=1)
             nhat = np.where(nrm[:, None] > 1e-12, mom / np.where(nrm > 0, nrm, 1)[:, None], 0.0)
             w = np.where(nrm > 1e-12, nhat[:, c] ** 2, 1 / 3)
@@ -167,7 +184,7 @@ def voxelise(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *,
     tm = None
     if mode == "conformal" and disp.any():
         tm = vertex_tensor(slot_fn, media, shape, origin, dx, roi_lo, roi_hi, samples=samples, chunk=chunk,
-                           periodic=periodic, background=background, mirror=mirror)
+                           periodic=periodic, background=background, mirror=mirror, grid=grid)
     if tm is not None:
         taken = tm.idx
         inv_eps.reshape(-1)[taken] = 1.0
@@ -201,16 +218,19 @@ def _canonical(x: np.ndarray, shape, periodic):
 
 
 def _pixel_average(slot_fn, pos, dx, S: int, samples: int, chunk: int):
-    """Medium fractions (S, n) and unit normals (n, 3) (0 where undefined) of cubes of side dx centred on pos."""
+    """Medium fractions (S, n) and unit normals (n, 3) (0 where undefined) of cubes of side dx centred on pos
+    (dx (3,), or per point (n, 3) for the cells of a graded grid)."""
     sub = ((np.arange(samples) + 0.5) / samples - 0.5)
     sub3 = np.stack(np.meshgrid(sub, sub, sub, indexing="ij"), axis=-1).reshape(-1, 3)
     frac, nhat = np.zeros((S, len(pos))), np.zeros((len(pos), 3))
+    dx = np.asarray(dx, dtype=float)
     for a in range(0, len(pos), chunk):
-        sl = slot_fn(pos[a:a + chunk][:, None, :] + sub3[None, :, :] * dx)
+        sz = dx if dx.ndim == 1 else dx[a:a + chunk]
+        sl = slot_fn(pos[a:a + chunk][:, None, :] + sub3[None, :, :] * (sz if dx.ndim == 1 else sz[:, None, :]))
         f = np.stack([(sl == s).mean(axis=1) for s in range(S)])
         dom = np.argmax(f, axis=0)
         chi = (sl == dom[:, None]).astype(float)
-        mom = (chi - chi.mean(axis=1, keepdims=True)) @ sub3 / dx
+        mom = (chi - chi.mean(axis=1, keepdims=True)) @ sub3 / sz
         nrm = np.linalg.norm(mom, axis=1)
         frac[:, a:a + chunk] = f
         nhat[a:a + chunk] = np.where(nrm[:, None] > 1e-12, mom / np.where(nrm > 0, nrm, 1)[:, None], 0.0)
@@ -219,7 +239,7 @@ def _pixel_average(slot_fn, pos, dx, S: int, samples: int, chunk: int):
 
 def vertex_tensor(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_hi, *, samples: int = 8,
                   chunk: int = 2048, periodic=(False, False, False), background=(),
-                  mirror=(0, 0, 0)) -> TensorMesh | None:
+                  mirror=(0, 0, 0), grid=None) -> TensorMesh | None:
     """The TensorMesh of interfaces with a dispersive medium (None if there are none).
 
     Tensor vertices: every vertex whose cube (side dx, centred on it) holds an interface with a dispersive
@@ -233,16 +253,21 @@ def vertex_tensor(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_h
     rng = [np.arange(1, n - 1) if periodic[a] else np.arange(max(int(roi_lo[a]), 1), min(int(roi_hi[a]), n - 2) + 1)
            for a, n in enumerate(shape)]
     V = np.stack(np.meshgrid(*rng, indexing="ij"), axis=-1).reshape(-1, 3)
-    pos = origin + V * dx3
+    if grid is None:
+        pos = origin + V * dx3
+        ctr, size = pos, dx3
+    else:  # a vertex's cell is its dual cell
+        pos = grid.coords(V)
+        ctr, size = grid.vertex_cells(V)
     center = slot_fn(pos)
     mixed = np.zeros(len(V), dtype=bool)
     for o in _TEST:
         if np.any(o):
-            mixed |= slot_fn(pos + o * dx3) != center
+            mixed |= slot_fn(ctr + o * size) != center
     Vm = V[mixed]
     if not len(Vm):
         return None
-    frac, nhat = _pixel_average(slot_fn, pos[mixed], dx3, S, samples, chunk)
+    frac, nhat = _pixel_average(slot_fn, ctr[mixed], size if grid is None else size[mixed], S, samples, chunk)
     if len(background):
         part = np.delete(frac, list(background), axis=0).sum(axis=0) > 0
         Vm, frac, nhat = Vm[part], frac[:, part], nhat[part]
@@ -303,22 +328,29 @@ def vertex_tensor(slot_fn, media: list[Medium], shape, origin, dx, roi_lo, roi_h
         hit = tks[j] == kk
         slot_vert[hit, k] = torder[j[hit]]
         if (~hit).any():
-            slot_medium[~hit, k] = slot_fn(origin + vx[~hit] * dx3)
+            slot_medium[~hit, k] = slot_fn(origin + vx[~hit] * dx3 if grid is None else grid.coords(vx[~hit]))
     return TensorMesh(media=list(media), frac=fracT, normal=nT, node_comp=node_comp, node_idx3=node_idx3,
                       vert_nodes=inv.reshape(nV, 3, 2), shift=shift.reshape(nV, 3, 2, 3), slot_vert=slot_vert,
                       slot_medium=slot_medium, shape=shape,
-                      sign=sign.reshape(nV, 3, 2).astype(float) if any(mirror) else None)
+                      sign=sign.reshape(nV, 3, 2).astype(float) if any(mirror) else None, vert_idx3=T)
 
 
 # --- flux boxes -------------------------------------------------------------------
 
 
-def flux_points(lo, hi, shape, dx: float, open_lo=()):
+def _face_weights(grid, a: int, lo: int, hi: int, half: bool) -> np.ndarray:
+    """Quadrature weights (nm) along axis a of a box face from lo to hi: the primary widths at the half-integer
+    positions lo..hi-1 (half=True), else trapezoid weights at the nodes lo..hi."""
+    return grid.prim(a)[lo:hi] if half else grid.node_weights(a, lo, hi)
+
+
+def flux_points(lo, hi, shape, dx: float, open_lo=(), grid=None):
     """Closed box with faces on E-node planes lo[d], hi[d] (no face at lo[d] for d in open_lo: a mirror plane).
 
     Returns (e_idx, h_idx1, h_idx2, coeff): outward flux = 0.5 Re sum coeff * E * conj(H),
     with E_a1 H_a2 and E_a2 H_a1 sampled at coincident in-plane points and H averaged
-    across the face (trapezoid weights along node directions)."""
+    across the face (trapezoid weights along node directions; on a graded grid the cells' own widths, the
+    faces lying where the grid is uniform along their normal)."""
     E_i, H1, H2, W = [], [], [], []
     for d in range(3):
         a1, a2 = (d + 1) % 3, (d + 2) % 3
@@ -342,7 +374,12 @@ def flux_points(lo, hi, shape, dx: float, open_lo=()):
                 H1.append(flat_index(h_comp, *idx, shape))
                 idx[d] = np.full(A.size, face)
                 H2.append(flat_index(h_comp, *idx, shape))
-                W.append(sign * tsign * dx**2 * wgt.ravel())
+                if grid is None:
+                    W.append(sign * tsign * dx**2 * wgt.ravel())
+                else:
+                    w_1 = _face_weights(grid, a1, lo[a1], hi[a1], tsign > 0)
+                    w_2 = _face_weights(grid, a2, lo[a2], hi[a2], tsign < 0)
+                    W.append(sign * tsign * np.outer(w_1, w_2).ravel())
     return np.concatenate(E_i), np.concatenate(H1), np.concatenate(H2), np.concatenate(W)
 
 
@@ -365,7 +402,8 @@ class Surface:
     blocks: list = field(default_factory=list)
 
 
-def surface_samples(lo, hi, shape, dx: float, open_lo=()) -> Surface:
+def surface_samples(lo, hi, shape, dx: float, open_lo=(), grid=None) -> Surface:
+    """The Surface of the box [lo, hi] (see flux_points; grid: a graded grid's cell widths as area weights)."""
     E_i, H1, H2, pos, jd, md, area = [], [], [], [], [], [], []
     blocks, start = [], 0
     eye = np.eye(3)
@@ -397,7 +435,11 @@ def surface_samples(lo, hi, shape, dx: float, open_lo=()) -> Surface:
                 pos.append(p)
                 jd.append(np.broadcast_to(np.cross(nrm, eye[h_c]), (A.size, 3)))
                 md.append(np.broadcast_to(-np.cross(nrm, eye[e_c]), (A.size, 3)))
-                area.append(dx**2 * W)
+                if grid is None:
+                    area.append(dx**2 * W)
+                else:
+                    area.append(np.outer(_face_weights(grid, a1, lo[a1], hi[a1], e_c == a1),
+                                         _face_weights(grid, a2, lo[a2], hi[a2], e_c == a2)).ravel())
                 blocks.append((start, d, int(face), e_c, h_c, i1, i2))
                 start += A.size
     return Surface(*(np.concatenate(v) for v in (E_i, H1, H2, pos, jd, md, area)), blocks=blocks)
@@ -421,6 +463,19 @@ def far_field(surf: Surface, e: np.ndarray, h: np.ndarray, r: np.ndarray, nhat: 
     return out
 
 
+def node_volumes(flat, shape, grid, mirror=(0, 0, 0)) -> np.ndarray:
+    """Volume (nm^3) of the cells of E nodes (flat indices) on a graded grid: primary width along the component,
+    dual widths along the other axes (the grid's energy weights)."""
+    comp, rest = np.divmod(np.asarray(flat, dtype=np.int64), int(np.prod(shape)))
+    idx3 = np.stack(np.unravel_index(rest, shape), axis=1)
+    v = np.ones(len(comp))
+    for a in range(3):
+        prim, dual = grid.prim(a), grid.dual(a, mirror[a])
+        j = idx3[:, a]
+        v *= np.where(comp == a, prim[np.clip(j, 0, len(prim) - 1)], dual[j])
+    return v
+
+
 def flux(e: np.ndarray, h: np.ndarray, coeff: np.ndarray) -> np.ndarray:
     """0.5 Re sum coeff E H*, per frequency (rows)."""
     return 0.5 * np.real((e * np.conj(h)) @ coeff)
@@ -441,6 +496,7 @@ class Layout:
     roi: tuple[np.ndarray, np.ndarray]
     pml: int
     mirror: tuple = (0, 0, 0)  # mirror plane per axis at node 1 (see engine.e_region; symmetry.py)
+    grid: object = None  # a graded grid (grid.Grid; dx is then its base spacing), None for a uniform one
 
     @property
     def cells(self) -> int:
@@ -448,7 +504,33 @@ class Layout:
 
     @property
     def r0(self) -> np.ndarray:
-        return self.origin + self.center * self.dx
+        return self.world(self.center)
+
+    def world(self, u) -> np.ndarray:
+        """World positions (..., 3) of fractional index triples u (..., 3)."""
+        if self.grid is None:
+            return self.origin + np.asarray(u) * self.dx
+        return self.grid.coords(u)
+
+    def coord(self, a: int, u) -> np.ndarray:
+        """World coordinate along axis a of fractional indices u."""
+        if self.grid is None:
+            return self.origin[a] + np.asarray(u) * self.dx
+        return self.grid.coord(a, u)
+
+    def index_of(self, a: int, x) -> np.ndarray:
+        """Fractional node index of world coordinate x along axis a."""
+        if self.grid is None:
+            return (np.asarray(x) - self.origin[a]) / self.dx
+        return self.grid.index_of(a, x)
+
+    @property
+    def min_spacing(self) -> float:
+        return self.dx if self.grid is None else self.grid.min_spacing()
+
+    def widths(self):
+        """Engine ``widths`` (None on a uniform grid)."""
+        return None if self.grid is None else self.grid.widths()
 
 
 def particle_bbox(sim) -> tuple[np.ndarray, np.ndarray]:
@@ -478,6 +560,63 @@ def scattering_layout(sim, opts, dx: float, bbox=None) -> Layout:
     return Layout(dx=dx, shape=shape, origin=origin, center=c, tfsf=(c - half_tfsf, c + half_tfsf),
                   tot=(c - half_tfsf + 2, c + half_tfsf - 2), sca=(c - half_tfsf - 2, c + half_tfsf + 2),
                   roi=(roi_lo, roi_hi), pml=n_pml)
+
+
+def graded_layout(sim, opts, base: float, regions, bbox=None, mirror=(0, 0, 0), ratio: float = 1.25) -> Layout:
+    """scattering_layout on a graded grid (grid.py): `base` spacing, refined in `regions` and graded at `ratio`.
+
+    Every box face (TFSF, flux boxes) lies at least three cells beyond the graded zone, where the grid is
+    uniform along the face normal, and so do the gaps and the CPML; the gaps and padding keep their physical
+    lengths. Returns the uniform layout when no region refines the grid. Along mirror axes the grid is symmetric
+    about the centre (symmetry.halve then keeps one half)."""
+    from .grid import Grid, axis_nodes
+
+    lo, hi = particle_bbox(sim) if bbox is None else bbox
+    ctr = (lo + hi) / 2
+    floor = 0.03 * float(np.max(sim.wavelength_array())) / sim.medium_index
+    pad = floor if opts.padding_nm is None else opts.padding_nm
+    n_gap = max(4, math.ceil((floor if opts.pml_gap_nm is None else opts.pml_gap_nm) / base - 1e-9))
+    n_pml = opts.pml_cells or (16 if getattr(sim, "substrate", None) is not None else 10)
+    nodes, idx = [], []
+    for a in range(3):
+        sides = axis_nodes(float(ctr[a]), base, regions, a, ratio, float(ctr[a] - lo[a]), float(hi[a] - ctr[a]),
+                           bool(mirror[a]))
+        counts, widths = [], []
+        for w, ext in zip(sides, (ctr[a] - lo[a], hi[a] - ctr[a])):
+            g = len(w)
+            dist = np.concatenate([[0.0], np.cumsum(w)])
+
+            def reach(d, dist=dist, g=g):
+                """First node index at distance >= d from the centre (base cells beyond the graded zone)."""
+                if d <= dist[-1] + 1e-9:
+                    return int(np.searchsorted(dist, d - 1e-9))
+                return g + math.ceil((d - dist[-1]) / base - 1e-9)
+
+            def at(i, dist=dist, g=g):
+                return dist[i] if i <= g else dist[-1] + (i - g) * base
+
+            i_p = reach(ext) + 1  # the particles' half extent plus one cell (scattering_layout's half_cells)
+            i_t = max(reach(at(i_p) + pad), i_p + 4, g + 3)
+            n_side = i_t + 2 + n_gap + n_pml + 1
+            counts.append((i_p, i_t, n_side))
+            widths.append(np.concatenate([w, np.full(n_side - g, base)]))
+        (p_lo, t_lo, n_lo), (p_hi, t_hi, n_hi) = counts
+        x = np.concatenate([ctr[a] - np.cumsum(widths[0])[::-1], [ctr[a]], ctr[a] + np.cumsum(widths[1])])
+        nodes.append(x)
+        idx.append((n_lo, p_lo, t_lo, p_hi, t_hi))
+    grid = Grid(tuple(nodes))
+    c = np.array([v[0] for v in idx])
+    p_lo, t_lo = np.array([v[1] for v in idx]), np.array([v[2] for v in idx])
+    p_hi, t_hi = np.array([v[3] for v in idx]), np.array([v[4] for v in idx])
+    shape = grid.shape
+    tfsf = (c - t_lo, c + t_hi)
+    roi_lo = np.maximum(c - p_lo - 2, 1)
+    roi_hi = np.minimum(c + p_hi + 3, np.asarray(shape) - 1)
+    lay = Layout(dx=float(base), shape=shape, origin=grid.origin, center=c, tfsf=tfsf, tot=(tfsf[0] + 2, tfsf[1] - 2),
+                 sca=(tfsf[0] - 2, tfsf[1] + 2), roi=(roi_lo, roi_hi), pml=n_pml, grid=grid)
+    if grid.uniform:
+        return scattering_layout(sim, opts, base, bbox)
+    return lay
 
 
 def particle_slot_fn(sim, slot_of: list[list[int]]):

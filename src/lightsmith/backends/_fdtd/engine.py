@@ -90,6 +90,16 @@ def mirror_fold(comp, idx3, mirror) -> tuple[np.ndarray, np.ndarray]:
     return idx3, sign
 
 
+def dual_widths(prim, mirror: int = 0) -> np.ndarray:
+    """Dual widths (n,) of primary widths (n - 1,): d_i = (p_{i-1} + p_i) / 2; the ends take their one cell,
+    except the ghost plane of a mirror axis (index 0, the image of node 2), which takes d_2."""
+    p = np.asarray(prim, dtype=float)
+    d = np.empty(len(p) + 1)
+    d[1:-1] = 0.5 * (p[:-1] + p[1:])
+    d[0], d[-1] = (d[2] if mirror and len(d) > 2 else p[0]), p[-1]
+    return d
+
+
 def flat_index(c, i, j, k, shape) -> np.ndarray:
     n0, n1, n2 = shape
     return ((np.asarray(c) * n0 + np.asarray(i)) * n1 + np.asarray(j)) * n2 + np.asarray(k)
@@ -142,6 +152,11 @@ class TensorMesh:
     d-neighbours, symmetric between the pair. A node next to a vertex without an interface takes half
     of that vertex's plain medium instead.
 
+    On a graded grid (grid.py) v's cell is its dual cell and D~ along d the mean of the two d-nodes weighted by
+    their half cells in it, p_{j-1} / 2 and p_j / 2: the octant triads then carry the volumes of v's octants and
+    the map stays a congruence sum in the grid's energy inner product (node volumes p_c d_a d_b); a node still
+    receives (1/2) [eta_v D~]_c from each vertex, and a uniform medium still gives the plain update.
+
     Index arrays use real node indices; ``shift`` counts the periods (on periodic axes) between a node's
     position next to v and its real index, for the Bloch phase. Next to a mirror plane, ``sign`` is the parity
     of the image a node position maps to (mirror_fold; 0 for a node that vanishes on an antisymmetric plane)."""
@@ -157,6 +172,7 @@ class TensorMesh:
     slot_medium: np.ndarray  # (nN, 2) medium of a plain slot (slot_vert == -1)
     shape: tuple  # grid shape
     sign: np.ndarray | None = None  # (nV, 3, 2) mirror parity of each vertex node position, None without mirrors
+    vert_idx3: np.ndarray | None = None  # (nV, 3) vertex indices (needed on graded grids)
 
     @property
     def idx(self) -> np.ndarray:
@@ -215,9 +231,11 @@ class Engine:
     def __init__(self, device: Device, *, shape, dx, dt: float, single: bool, inv_eps: np.ndarray,
                  groups: list[DispersiveGroup], pml: PMLSpec, sources: list, monitors: list[DFTMonitor],
                  dft_stride: int, periodic=(False, False, False), bloch=(0.0, 0.0, 0.0),
-                 offdiag: OffDiagonal | None = None, time_monitors: tuple = (), mirror=(0, 0, 0)):
-        """dx: cell size, or (dx, dy, dz) for non-cubic cells. periodic: per axis; those axes carry ghost
-        planes (see e_region) and no PML. bloch: Bloch wavevector per periodic axis (rad/nm); any nonzero
+                 offdiag: OffDiagonal | None = None, time_monitors: tuple = (), mirror=(0, 0, 0), widths=None):
+        """dx: cell size, or (dx, dy, dz) for non-cubic cells. widths: a graded grid (grid.py), per axis None
+        (uniform at dx) or the primary widths (n - 1,); the H update divides E differences by the primary widths,
+        the E update H differences by the dual ones (on a mirror axis the grid must be symmetric about node 1).
+        periodic: per axis; those axes carry ghost planes (see e_region) and no PML. bloch: Bloch wavevector per periodic axis (rad/nm); any nonzero
         entry makes E, H and all auxiliary fields complex. offdiag: tensor-smoothing terms of
         non-dispersive interface cells. mirror: per axis 0, or +1 / -1 for a symmetric / antisymmetric mirror
         plane at node plane 1 (see e_region; no PML on that side)."""
@@ -225,9 +243,14 @@ class Engine:
         xp = self.xp
         self.shape, self.dt, self.single = tuple(int(n) for n in shape), float(dt), single
         self.spacing = tuple(float(v) for v in np.broadcast_to(np.asarray(dx, dtype=float), (3,)))
-        self.uniform = len(set(self.spacing)) == 1
+        self.widths = tuple(None if w is None else np.asarray(w, dtype=float) for w in (widths or (None,) * 3))
+        self.graded = any(w is not None for w in self.widths)
+        self.uniform = len(set(self.spacing)) == 1 and not self.graded
         self.dx = self.spacing[0]
         self.periodic = tuple(bool(p) for p in periodic)
+        for a, w in enumerate(self.widths):
+            if w is not None and (self.periodic[a] or len(w) != self.shape[a] - 1):
+                raise ValueError("graded widths need a non-periodic axis and one width per cell")
         self.bloch = tuple(float(k) for k in bloch)
         if any(k and not per for k, per in zip(self.bloch, self.periodic)):
             raise ValueError("a Bloch wavevector needs a periodic axis")
@@ -253,6 +276,17 @@ class Engine:
         self.inv_d = tuple(1.0 / d for d in self.spacing)
         self.RE = [e_region(c, self.shape, self.periodic, self.mirror) for c in range(3)]
         self.RH = [h_region(c, self.shape, self.periodic, self.mirror) for c in range(3)]
+        # per axis 1/primary (H update) and 1/dual (E update) widths: arrays on graded axes, else 1/d
+        self.inv_prim, self.inv_dual = [], []
+        for a, w in enumerate(self.widths):
+            if w is None:
+                self.inv_prim.append(self.inv_d[a])
+                self.inv_dual.append(self.inv_d[a])
+            else:
+                self.inv_prim.append(1.0 / w)
+                self.inv_dual.append(1.0 / dual_widths(w, self.mirror[a]))
+        self._scale = {"E": [self._curl_scales(c, self.RE[c], self.inv_dual) for c in range(3)],
+                       "H": [self._curl_scales(c, self.RH[c], self.inv_prim) for c in range(3)]}
         # PMC planes: (component, ghost plane, its image) of tangential H
         self._mirror_ghosts = []
         for a, m in enumerate(self.mirror):
@@ -288,6 +322,18 @@ class Engine:
         """Zeros of the field dtype (complex under a Bloch phase, else real)."""
         return self.zeros(shape, complex_=self.complex)
 
+    def _axis_array(self, v, a: int, R) -> object:
+        """A per-axis factor v (float, or an array over the axis' indices) for region R, broadcastable along a."""
+        if np.ndim(v) == 0:
+            return float(v)
+        shape = [1, 1, 1]
+        shape[a] = R[a].stop - R[a].start
+        return self.asarray(np.asarray(v)[R[a]].reshape(shape))
+
+    def _curl_scales(self, c: int, R, inv) -> tuple:
+        d1, d2 = (c + 1) % 3, (c + 2) % 3
+        return self._axis_array(inv[d1], d1, R), self._axis_array(inv[d2], d2, R)
+
     def asarray(self, a, dtype=None):
         return self.device.asarray(np.asarray(a), dtype=dtype or self.rdt)
 
@@ -307,8 +353,10 @@ class Engine:
                 raise ValueError("a periodic axis cannot have a PML")
             N = self.shape[d]
             dx = self.spacing[d]
-            sig_lo = 0.8 * (spec.m + 1) / (np.sqrt(spec.eps_ref) * dx)
-            sig_hi = 0.8 * (spec.m + 1) / (np.sqrt(spec.eps_ref_high or spec.eps_ref) * dx)
+            w = self.widths[d]
+            dx_lo, dx_hi = (dx, dx) if w is None else (float(w[0]), float(w[-1]))  # graded: the (uniform) end cells
+            sig_lo = 0.8 * (spec.m + 1) / (np.sqrt(spec.eps_ref) * dx_lo)
+            sig_hi = 0.8 * (spec.m + 1) / (np.sqrt(spec.eps_ref_high or spec.eps_ref) * dx_hi)
 
             def profile(u):
                 r_lo = np.clip((lo_n - u) / lo_n, 0, 1) if lo_n else np.zeros_like(u)
@@ -357,7 +405,10 @@ class Engine:
                             scale = cd * inv_eps[c][Rs]  # slab-shaped
                         else:
                             scale = np.full([s.stop - s.start for s in Rs], cd)
-                        if not self.uniform:
+                        if w is not None:
+                            inv = (self.inv_prim if field_ == "H" else self.inv_dual)[d][a:b_]
+                            scale = scale * inv.reshape(bshape)
+                        elif not self.uniform:
                             scale = scale / dx
                         cprime = sgn * scale * cc.reshape(bshape)
                         kprime = sgn * scale * (1 / kk - 1).reshape(bshape)
@@ -386,7 +437,7 @@ class Engine:
         idx3, comp, coef = np.asarray(od.idx3, dtype=np.int64), np.asarray(od.comp), np.asarray(od.coef, dtype=float)
         if any(self.mirror):
             idx3, comp, coef = self._mirror_rows(idx3, comp, coef)
-        tc, ti, sc, si, vals = [], [], [], [], []
+        tc, ti, sc, si, vals, back = [], [], [], [], [], []
         for d in range(3):
             for corner in range(4):
                 q = idx3.copy()
@@ -409,11 +460,21 @@ class Engine:
                 ti.append(idx3[ok])
                 sc.append(np.full(int(ok.sum()), d))
                 si.append(q[ok])
-                vals.append(coef[ok, d] / 8 * phase[ok])
+                if self.graded:
+                    # weights O(p, q) / (2 V(p)) and O(p, q) / (2 V(q)), O the overlap of the two nodes' cells and V
+                    # their volumes (the energy weights): the coupling stays symmetric in the grid's inner product
+                    p_, q_, c_ = idx3[ok], q[ok], comp[ok]
+                    rows = np.arange(len(c_))
+                    fw = self._width_at(d, q_[:, d], False) / (8 * self._width_at(d, p_[:, d], True))
+                    bw = (self._width_at(c_, p_[rows, c_], False) / (8 * self._width_at(c_, q_[rows, c_], True)))
+                else:
+                    fw = bw = 1 / 8
+                vals.append(coef[ok, d] * fw * phase[ok])
+                back.append(np.conj(coef[ok, d] * phase[ok]) * bw)
         tc, ti, sc, si, v = (np.concatenate(x) for x in (tc, ti, sc, si, vals))
         tc, sc = np.concatenate([tc, sc]), np.concatenate([sc, tc])
         ti, si = np.concatenate([ti, si]), np.concatenate([si, ti])
-        v = np.concatenate([v, np.conj(v)])
+        v = np.concatenate([v, np.concatenate(back)])
         if any(self.mirror):
             ti_f, t_sign = mirror_fold(tc, ti, self.mirror)
             si, s_sign = mirror_fold(sc, si, self.mirror)
@@ -446,11 +507,35 @@ class Engine:
                                                        (d1, None, -1.0, d2), (d1, d2, 1.0, d2))):
             p = q if back is None else q - eye[back]
             h[row, 4 * slot + k] = flat_index(comp, p[:, 0], p[:, 1], p[:, 2], shape)
-            w[row, 4 * slot + k] = self.dt * sgn * inv_d[inv_ax] * v
+            if self.graded:  # 1/dual width along inv_ax at q's node
+                inv = 1 / self._width_at(inv_ax, q[np.arange(len(q)), inv_ax], True)
+            else:
+                inv = inv_d[inv_ax]
+            w[row, 4 * slot + k] = self.dt * sgn * inv * v
         if not self.complex:
             w = w.real
         self.od = (self.index(targets), self.index(h),
                    self.device.asarray(w, dtype=self.cdt if self.complex else self.rdt))
+
+    def _width_at(self, a, i, dual: bool) -> np.ndarray:
+        """Primary (dual=False, half-integer index i) or dual (node index i) widths along axes a (scalar or per
+        entry); on a mirror axis indices beyond the plane take their images' widths."""
+        a = np.broadcast_to(np.asarray(a), np.shape(i))
+        i = np.asarray(i, dtype=np.int64)
+        out = np.empty(i.shape)
+        for ax in range(3):
+            sel = a == ax
+            if not sel.any():
+                continue
+            j, w = i[sel], self.widths[ax]
+            if w is None:
+                out[sel] = self.spacing[ax]
+                continue
+            if self.mirror[ax]:
+                j = np.where(j < 1, (2 if dual else 1) - j, j)
+            arr = dual_widths(w, self.mirror[ax]) if dual else w
+            out[sel] = arr[np.clip(j, 0, len(arr) - 1)]
+        return out
 
     def _mirror_rows(self, idx3, comp, coef):
         """The off-diagonal rows plus their images across every mirror plane (rows on a plane are their own
@@ -535,8 +620,9 @@ class Engine:
             a = F[d2][R] - F[d2][shift(R, d1, -1)]
             b = F[d1][R] - F[d1][shift(R, d2, -1)]
         if not self.uniform:
-            a *= self.inv_d[d1]
-            b *= self.inv_d[d2]
+            s1, s2 = self._scale["H" if sgn > 0 else "E"][c]
+            a *= s1
+            b *= s2
         a -= b
         a *= coef
         return a
@@ -775,6 +861,15 @@ class _Tensor:
                                          dtype=eng.cdt if self.complex else eng.rdt)
         nrm = g.normal.astype(float)
         self.n = eng.asarray(nrm)  # (nV, 3)
+        # graded grid: D~ along d is the mean of the vertex's two d-nodes weighted by their half cells inside the
+        # vertex's dual cell (see TensorMesh), which keeps the map symmetric in the grid's energy inner product
+        self.wts = None
+        if eng.graded:
+            if g.vert_idx3 is None:
+                raise ValueError("a graded grid needs the tensor vertices' indices (TensorMesh.vert_idx3)")
+            wm = np.stack([eng._width_at(d, g.vert_idx3[:, d] - 1, False) for d in range(3)], axis=1)
+            wp = np.stack([eng._width_at(d, g.vert_idx3[:, d], False) for d in range(3)], axis=1)
+            self.wts = (eng.asarray(wm / (wm + wp)), eng.asarray(wp / (wm + wp)))
         # tensor slots, ordered (k, node)
         sv = g.slot_vert
         tk, tnode = np.nonzero((sv >= 0).T)
@@ -809,7 +904,10 @@ class _Tensor:
         if self.scaled:
             dv = dv * self.ph
         dv = xp.reshape(dv, (self.nV, 3, 2))
-        dbar = 0.5 * (dv[..., 0] + dv[..., 1])  # (nV, 3)
+        if self.wts is None:
+            dbar = 0.5 * (dv[..., 0] + dv[..., 1])  # (nV, 3)
+        else:
+            dbar = self.wts[0] * dv[..., 0] + self.wts[1] * dv[..., 1]
         s = xp.sum(self.n * dbar, axis=1)
         dp = xp.reshape(dv, (-1,))[self.t_g]
         nc = self.t_nc
