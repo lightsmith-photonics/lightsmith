@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from .layered import discrete_eps, layer_eta, solve
+from .layered import discrete_eps, graded_rows, layer_bounds, layer_eta, solve
 from .media import Medium
 
 
@@ -70,15 +70,23 @@ def hemisphere(n_this: complex, n_other: complex, up: bool, n_theta: int, n_phi:
 class LayeredFarField:
     """Far-zone amplitudes from the DFT samples of a Surface (setup.surface_samples) on the layered grid."""
 
-    def __init__(self, surf, *, origin, dx: float, dt: float, z_int: float, host: Medium, sub: Medium):
+    def __init__(self, surf, *, origin, dx: float, dt: float, z_int: float, host: Medium, sub: Medium, grid=None):
+        """grid: a graded grid (grid.Grid). The z profiles then come from the graded 1D problem and the transverse
+        phases from the samples' own positions; the transverse grid wavenumbers K are those of the base spacing,
+        where the faces lie, so samples on graded transverse cells carry an O((k h)^2) phase error."""
         self.origin, self.dx, self.dt = np.asarray(origin, dtype=float), float(dx), float(dt)
         self.z_int, self.host, self.sub = float(z_int), host, sub
-        self.surf = surf
+        self.surf, self.grid = surf, grid
         lo = min(min(f - 1, i1.min(), i2.min()) for _, d, f, _, _, i1, i2 in surf.blocks)
         hi = max(max(f, i1.max(), i2.max()) for _, d, f, _, _, i1, i2 in surf.blocks)
         self.k0 = int(lo) - 2
         self.nk = int(hi) + 2 - self.k0 + 1
-        self.z_nodes = self.origin[2] + (self.k0 + np.arange(self.nk)) * self.dx
+        rows = self.k0 + np.arange(self.nk)
+        if grid is None:
+            self.z_nodes = self.origin[2] + rows * self.dx
+            self.dz_prim = self.dz_dual = None
+        else:
+            self.z_nodes, self.dz_prim, self.dz_dual = graded_rows(grid, 2, rows)
         # per block and lookup (E at the sample, H at face - 1 and at face): per axis the index array and the
         # Yee offset; the field is P_comp(row along z) exp(i omega s . r_par)
         self.blocks = []
@@ -109,7 +117,7 @@ class LayeredFarField:
         """(B, len(idx)) factor of the field along one axis: the z profile, or the transverse phase."""
         if axis == 2:
             return prof[:, idx - self.k0]
-        x = self.origin[axis] + (idx + off) * self.dx
+        x = self.origin[axis] + (idx + off) * self.dx if self.grid is None else self.grid.coord(axis, idx + off)
         return np.exp(1j * w * np.outer(s[:, axis], x))
 
     def amplitudes(self, omega: float, e: np.ndarray, h: np.ndarray, nhat: np.ndarray) -> np.ndarray:
@@ -143,9 +151,16 @@ class LayeredFarField:
         Ky = 2 * np.sin(w * s[:, 1] * dz / 2) / dz
         Om = np.full(B, 2 * np.sin(w * self.dt / 2) / self.dt)
         wv = np.full(B, w)
-        eta_t = layer_eta(self.z_nodes, False, wv, self.dt, dz, self.z_int, self.host, self.sub)
-        eta_z = layer_eta(self.z_nodes + dz / 2, True, wv, self.dt, dz, self.z_int, self.host, self.sub)
-        f = solve(eta_t, eta_z, Kx, Ky, Om, dz, pol[:, :2], from_top)
+        if self.grid is None:
+            eta_t = layer_eta(self.z_nodes, False, wv, self.dt, dz, self.z_int, self.host, self.sub)
+            eta_z = layer_eta(self.z_nodes + dz / 2, True, wv, self.dt, dz, self.z_int, self.host, self.sub)
+            f = solve(eta_t, eta_z, Kx, Ky, Om, dz, pol[:, :2], from_top)
+        else:
+            zt, p = self.z_nodes, self.dz_prim
+            eta_t = layer_eta(zt, False, wv, self.dt, dz, self.z_int, self.host, self.sub,
+                              bounds=layer_bounds(zt, p, self.dz_dual))
+            eta_z = layer_eta(zt + p / 2, True, wv, self.dt, dz, self.z_int, self.host, self.sub, bounds=(zt, zt + p))
+            f = solve(eta_t, eta_z, Kx, Ky, Om, self.dz_dual, pol[:, :2], from_top, dzp=p)
         end = self.nk - 1 if from_top else 0
         kz = _kz(Om, eta_t[:, end], Kx, Ky, dz, -1 if from_top else 1)
         ref = np.exp(1j * kz * self.z_nodes[end])  # the incident wave is pol at the origin

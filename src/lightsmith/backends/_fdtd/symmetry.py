@@ -119,7 +119,9 @@ def halve(lay: Layout, mirror) -> Layout:
         return lay
     off = np.array([lay.center[a] - 1 if m else 0 for a, m in enumerate(mirror)], dtype=int)
     shape = tuple(int(n - o) for n, o in zip(lay.shape, off))
-    return replace(lay, shape=shape, origin=lay.origin + off * lay.dx, center=lay.center - off,
+    grid = None if lay.grid is None else lay.grid.crop(off)
+    origin = lay.origin + off * lay.dx if grid is None else grid.origin
+    return replace(lay, shape=shape, origin=origin, center=lay.center - off, grid=grid,
                    tfsf=tuple(v - off for v in lay.tfsf), tot=tuple(v - off for v in lay.tot),
                    sca=tuple(v - off for v in lay.sca),
                    roi=(np.maximum(lay.roi[0] - off, 1), lay.roi[1] - off), mirror=tuple(int(m) for m in mirror))
@@ -174,7 +176,7 @@ class UnfoldedFarField:
 
 def plane_positions(lay: Layout) -> np.ndarray:
     """World coordinate of each axis' mirror plane (node 1)."""
-    return lay.origin + lay.dx
+    return lay.world(np.ones(3))
 
 
 def fold_points(pts, lay: Layout) -> tuple[np.ndarray, np.ndarray]:
@@ -232,7 +234,7 @@ def node_index(pt, comp: int, lay: Layout) -> np.ndarray:
     p, _ = fold_points(np.asarray(pt, dtype=float)[None], lay)
     off = np.zeros(3)
     off[comp] = 0.5
-    i = np.rint((p[0] - lay.origin) / lay.dx - off).astype(int)
+    i = np.rint(np.array([lay.index_of(a, p[0][a]) for a in range(3)]) - off).astype(int)
     lo = np.array([1 + (lay.mirror[a] < 0 and comp != a) if lay.mirror[a] else 1 for a in range(3)])
     return np.clip(i, lo, np.asarray(lay.shape) - 2)
 

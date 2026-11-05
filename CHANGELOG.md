@@ -8,6 +8,21 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
 
 ### Added
 
+- **FDTD graded grids** (scattering): `grid: "auto"` refines each particle's bounding box to the spacing its
+  material and size need, and `mesh_override: [{center_nm, size_nm, spacing_nm}]` adds refinement boxes. The
+  cells grade back to the base spacing at most `grading_ratio` (1.25) per cell. The grid is a tensor product
+  with independent per-axis widths. The Yee update uses primary and dual width arrays, so it conserves the
+  same discrete energy as the uniform one, on the CPU and on CUDA with CUDA graphs. The CPML, TFSF tables
+  (exact discrete background of the graded 1D problem, still leak-free), layered substrates, conformal
+  smoothing (metals' vertex tensor included), flux and far-field surfaces, near fields, particle absorption
+  and mirror planes all follow the widths. An n = 3.5, r = 20 nm sphere is within 0.11 % of a uniform 2 nm run, whose own error against Mie is
+  0.7 %, with 153 k cells instead of 242 k. A Drude sphere of r = 10 nm at 0.5 nm cells needs 488 k cells
+  instead of 1.74 M (2.1× faster in double precision). Its spectrum differs from the uniform run by at most
+  7e-4 of the peak, against a 13 % discretisation error. Particles on glass or on an absorbing substrate
+  agree within 0.34 %, and far fields within 0.1 % of the uniform run's. The coarsest cells must stay fine:
+  any change of cell size h reflects about (k h)²/16 of a wave, so `grid: "auto"` uses 60 cells per
+  background wavelength (`background_cells_per_wavelength`). A uniform grid gives today's run bit for bit.
+  Scattering only, with plane waves along an axis (or graded only along the axes the wave does not vary along).
 - **FDTD mirror symmetries** (`symmetry: "auto"`, the default; `"off"` turns them off). A scattering run
   whose particles are mirror-symmetric about their centre, lit by a plane wave that travels in the mirror
   plane and is polarised in it (a PMC plane) or normal to it (a PEC plane), keeps half the grid per plane:
