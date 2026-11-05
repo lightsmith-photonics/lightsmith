@@ -335,17 +335,61 @@ def build_mesh(sim: Simulation, h: float, volume_correction: bool = True) -> Mes
     return Mesh(surfaces, materials)
 
 
-def check_overlaps(sim: Simulation, mesh: Mesh) -> str:
-    """'' if particles are disjoint, else a message naming the first overlapping pair."""
+def check_overlaps(sim: Simulation, mesh: Mesh, growth: list[np.ndarray] | None = None) -> str:
+    """'' if particles are disjoint, else a message naming the first overlapping pair.
+
+    Tests the outer-surface vertices of each particle against the exact shape of every other one.
+    `growth[j]` (per axis, >= 1) grows particle j's shape about its centre first: pass the
+    factors by which the volume-corrected mesh sits outside the exact shapes (:func:`surface_growth`)
+    to check the meshes the solve actually uses.
+    """
     outer = [s for s in mesh.surfaces if s.outer == 0]
     for i, pi in enumerate(sim.particles):
         for j, pj in enumerate(sim.particles):
             if i == j:
                 continue
-            ri = np.linalg.norm(pi.shape.bounding_half_extent())
-            rj = np.linalg.norm(pj.shape.bounding_half_extent())
+            gi = 1.0 if growth is None else float(np.max(growth[i]))
+            gj = np.ones(3) if growth is None else np.asarray(growth[j], float)
+            ri = gi * np.linalg.norm(pi.shape.bounding_half_extent())
+            rj = gj.max() * np.linalg.norm(pj.shape.bounding_half_extent())
             if np.linalg.norm(np.subtract(pi.position_nm, pj.position_nm)) > ri + rj:
                 continue
-            if np.any(pj.shape.contains(outer[i].verts - np.asarray(pj.position_nm))):
+            if np.any(pj.shape.contains((outer[i].verts - np.asarray(pj.position_nm)) / gj)):
                 return f"particles {i} and {j} overlap or touch; BEM needs disjoint particles"
     return ""
+
+
+def surface_growth(sim: Simulation, exact: Mesh, corrected: Mesh) -> list[np.ndarray]:
+    """Per particle and axis, how far the volume-corrected outer surface sits outside the exact shape.
+
+    Both meshes must come from :func:`build_mesh` with the same `h`, so they share vertices up to scaling.
+    """
+    ex = [s for s in exact.surfaces if s.outer == 0]
+    co = [s for s in corrected.surfaces if s.outer == 0]
+    out = []
+    for p, a, b in zip(sim.particles, ex, co):
+        pos = np.asarray(p.position_nm, float)
+        ea, eb = np.abs(a.verts - pos).max(axis=0), np.abs(b.verts - pos).max(axis=0)
+        out.append(np.maximum(np.where(ea > 0, eb / np.where(ea > 0, ea, 1.0), 1.0), 1.0))
+    return out
+
+
+def min_gaps(sim: Simulation, mesh: Mesh) -> list[tuple[int, int, float]]:
+    """(i, j, distance) of the closest outer-surface vertices of each pair of nearby particles.
+
+    It overestimates the true gap by at most about one mesh edge.
+    """
+    outer = [s for s in mesh.surfaces if s.outer == 0]
+    out = []
+    for i in range(len(outer)):
+        for j in range(i + 1, len(outer)):
+            a, b = outer[i].verts, outer[j].verts
+            ca, cb = a.mean(axis=0), b.mean(axis=0)
+            ra = np.linalg.norm(a - ca, axis=1).max()
+            rb = np.linalg.norm(b - cb, axis=1).max()
+            if np.linalg.norm(ca - cb) - ra - rb > 0.5 * (ra + rb):
+                continue
+            d = min(float(np.sqrt(((a[k:k + 512, None, :] - b[None, :, :]) ** 2).sum(-1)).min())
+                    for k in range(0, len(a), 512))
+            out.append((i, j, d))
+    return out

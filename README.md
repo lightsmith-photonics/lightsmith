@@ -2,7 +2,7 @@
 
 **The open photonics suite — GPU-native, differentiable, and built for AI agents.**
 
-Describe a photonics problem once, as typed JSON, and solve it with the method that fits: from nanoparticles and thin films to metasurfaces, waveguides, photonic crystals, devices and circuits. Every result comes back in the same units and conventions, with provenance, so methods can be cross-checked directly. Many solvers run on GPU and can be differentiated, which is what powers inverse design.
+Describe a photonics problem once and solve it with whichever method fits: from nanoparticles and thin films to metasurfaces, waveguides, photonic crystals, devices and circuits. Every result comes back in the same units and conventions, with provenance, so methods can be cross-checked directly. Many solvers run on GPU and can be differentiated, which is what powers inverse design.
 
 Documentation: <https://docs.lightsmith.dev/>
 
@@ -42,7 +42,7 @@ res = ls.solve(sim)                             # auto -> exact Mie for a sphere
 cmp = ls.compare(sim, ["mie", "dda", "fdtd"])   # cross-check methods
 ```
 
-The same from the shell, JSON in and out:
+The same from the shell, with the problem saved to a file:
 
 ```bash
 uv run lightsmith solve examples/drude_sphere.json --method dda --device gpu
@@ -71,7 +71,7 @@ FDTD handles oblique and conical incidence on layer stacks and periodic structur
 
 ## From components to circuits (`lightsmith.pdk`)
 
-An open design kit: a technology as data (`generic_soi()`: 220 nm Si on 2 µm oxide, open material data only; define others as JSON), parametric cells (straight, circular/Euler bends, taper, MMI 1×2/2×2, directional coupler, ring/racetrack, Y-branch, crossing, grating coupler, MZI) with gdsfactory-style ports and GDS output, and a flow that simulates each component through `solve` (EME, FDFD or whatever `AUTO_ORDER` picks), fits a compact model, caches it by parameter hash and uses it in netlists as `pdk:<cell>`:
+An open design kit: a technology as data (`generic_soi()`: 220 nm Si on 2 µm oxide, open material data only; define your own in Python or load one from a file), parametric cells (straight, circular/Euler bends, taper, MMI 1×2/2×2, directional coupler, ring/racetrack, Y-branch, crossing, grating coupler, MZI) with gdsfactory-style ports and GDS output, and a flow that simulates each component through `solve` (EME, FDFD or whatever `AUTO_ORDER` picks), fits a compact model, caches it by parameter hash and uses it in netlists as `pdk:<cell>`:
 
 ```python
 from lightsmith.pdk import get_component

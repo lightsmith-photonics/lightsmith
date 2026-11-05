@@ -2,7 +2,7 @@
 
 `lightsmith.pdk` takes photonic components from layout to circuit:
 
-1. a **technology** describes the layer stack and its materials as JSON;
+1. a **technology** describes the layer stack and its materials;
 2. parametric **cells** build a layout (polygons on GDS layers) and its ports;
 3. `flow.simulate` solves the component's [device problem](problems/device.md) with
    [`ls.solve`](api/core.md) and returns S-parameters at the component's ports;
@@ -34,7 +34,7 @@ A `Technology` lists named layers, each with a GDS `(layer, datatype)`, a `kind`
 Layers are listed in override order: where polygons overlap, later layers win. The technology also sets
 the `cladding`, the buried oxide (`box`, below z = 0, `box_thickness_nm`), an optional `substrate`, the
 `core_layer` that defines ports and mode solves, the default waveguide width and the polarisation family.
-It is a pydantic model, so a technology is plain JSON: `load_technology("tech.json")` reads one,
+It is a pydantic model, so you can save it to a file and load it back: `load_technology("tech.json")` reads one,
 `register_technology` makes it available by name, and `get_technology` accepts a name, a path, a dict or
 a `Technology`.
 

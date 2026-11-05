@@ -1,6 +1,6 @@
 # lightsmith
 
-> The open photonics suite: one typed JSON problem spec solved by Mie, T-matrix, BEM, DDA, FDTD, TMM, RCWA, FDE, EME, BPM, FDFD, PWE and circuit solvers on CPU or GPU, with differentiable inverse design and JSON-first Python, CLI and MCP interfaces.
+> The open photonics suite: one typed problem description solved by Mie, T-matrix, BEM, DDA, FDTD, TMM, RCWA, FDE, EME, BPM, FDFD, PWE and circuit solvers on CPU or GPU, with differentiable inverse design and Python, CLI and MCP interfaces.
 
 Units: nm, vacuum wavelengths. Time convention exp(-i omega t) (Im eps > 0 = loss). Problem kinds: scattering, layer_stack, periodic, mode, device, bands, circuit, optimization.
 

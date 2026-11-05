@@ -37,7 +37,7 @@ from ..device import Device
 from ..results import FarFieldData, NearFieldData, Result
 from ..spec import Simulation
 from ._bem import fields
-from ._bem.mesh import build_mesh, check_overlaps, default_mesh_size
+from ._bem.mesh import build_mesh, check_overlaps, default_mesh_size, min_gaps, surface_growth
 from ._bem.operators import Geometry, DeviceGeometry, assemble, gmres, incident_rhs
 from .base import Backend, register, unsupported_outputs
 
@@ -104,7 +104,29 @@ class NativeBEM(Backend):
         if len(sim.particles) < 2:
             return ""
         size = min(2 * p.shape.bounding_half_extent().min() for p in sim.particles)
-        return check_overlaps(sim, build_mesh(sim, size / 6, volume_correction=False))
+        why = check_overlaps(sim, build_mesh(sim, size / 6, volume_correction=False))
+        if why:
+            return why
+        try:
+            opts = cls._options(sim)
+        except ValueError:
+            return ""  # supports() reports invalid options separately
+        if not opts.volume_correction:
+            return ""
+        # The solve rescales each faceted surface to the true volume, which pushes it slightly outside the
+        # exact shape: check those meshes too, or nearly touching particles end up interpenetrating.
+        h = cls._mesh_size(sim, opts)
+        exact, corrected = build_mesh(sim, h, False), build_mesh(sim, h, True)
+        why = check_overlaps(sim, corrected, surface_growth(sim, exact, corrected))
+        if why:
+            return (why.replace("overlap or touch", "are so close that their volume-corrected meshes overlap")
+                    + "; set volume_correction=False, or a smaller mesh_size_nm")
+        return ""
+
+    @staticmethod
+    def _gap_warnings(sim: Simulation, mesh, h: float) -> list[str]:
+        return [f"particles {i} and {j} are about {d:.3g} nm apart, less than the mesh size {h:.3g} nm: the gap "
+                f"field is not resolved; set mesh_size_nm below the gap" for i, j, d in min_gaps(sim, mesh) if d < h]
 
     @classmethod
     def _options(cls, sim) -> BEMOptions:
@@ -176,7 +198,7 @@ class NativeBEM(Backend):
 
         c_ext, c_sca, c_abs, c_flux = (np.zeros(len(wl)) for _ in range(4))
         solutions: dict[float, np.ndarray] = {}
-        iterations, residuals, warnings = [], [], []
+        iterations, residuals, warnings = [], [], cls._gap_warnings(sim, mesh, h)
         t_asm = t_sol = 0.0
         for i, lam in enumerate(all_wl):
             ta = time.perf_counter()

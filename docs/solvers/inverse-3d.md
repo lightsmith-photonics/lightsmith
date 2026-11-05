@@ -2,7 +2,7 @@
 
 `OptimizationProblem` runs density-based topology optimisation on any differentiable
 backend. With `device.dimension = 3` the FDFD backend (`lightsmith-fdfd`) solves the
-full-vector Maxwell equations, so the same JSON problem, optimisers, filters and
+full-vector Maxwell equations, so the same problem description, optimisers, filters and
 exports work for 3D devices such as SOI components with a real 220 nm silicon layer
 and oxide cladding.
 

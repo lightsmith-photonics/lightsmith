@@ -1,6 +1,6 @@
 # Waveguide modes
 
-`kind: "mode"`, model `lightsmith.problems.ModeProblem`. The eigenmodes of a waveguide cross-section in
+Model `lightsmith.problems.ModeProblem`. The eigenmodes of a waveguide cross-section in
 the xy plane, propagating along +z. The waveguide can be straight or bent.
 
 ## Fields

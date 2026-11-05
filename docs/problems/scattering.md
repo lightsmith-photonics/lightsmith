@@ -1,6 +1,6 @@
 # Scattering
 
-`kind: "scattering"`, model [`lightsmith.Simulation`](../api/spec.md). One or more particles in a
+Model [`lightsmith.Simulation`](../api/spec.md). One or more particles in a
 homogeneous, non-absorbing host medium, illuminated by a plane wave.
 
 ## Fields
@@ -18,12 +18,12 @@ homogeneous, non-absorbing host medium, illuminated by a plane wave.
 
 ### Shapes
 
-| `kind` | Parameters | Notes |
+| Shape | Parameters | Notes |
 |---|---|---|
-| `sphere` | `radius_nm` | |
-| `layered_sphere` | `core_radius_nm`, `shells: [{thickness_nm, material}]` | The particle `material` is the core |
-| `spheroid` | `semi_axis_xy_nm`, `semi_axis_z_nm` | Symmetry axis along z |
-| `cylinder` | `radius_nm`, `length_nm` | Flat ends, axis along z |
+| `Sphere` | `radius_nm` | |
+| `LayeredSphere` | `core_radius_nm`, `shells`: a list of `Shell(thickness_nm, material)` | The particle `material` is the core |
+| `Spheroid` | `semi_axis_xy_nm`, `semi_axis_z_nm` | Symmetry axis along z |
+| `Cylinder` | `radius_nm`, `length_nm` | Flat ends, axis along z |
 
 ### Gaussian beams
 

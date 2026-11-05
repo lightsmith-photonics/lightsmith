@@ -172,6 +172,7 @@ def _optimization(r: dict[str, Any]) -> dict[str, Any]:
 def _compare(c: dict[str, Any]) -> dict[str, Any]:
     return {"reference": c["reference"], "methods": list(c["results"]),
             "relative_difference": c["relative_difference"],
+            **({"not_compared": c["not_compared"]} if c.get("not_compared") else {}),
             "per_method": {m: {"backend": r.get("backend"), "runtime_s": (r.get("provenance") or {}).get("runtime_s"),
                                "warnings": r.get("warnings", [])} for m, r in c["results"].items()},
             "reference_summary": summarize(c["results"][c["reference"]])}

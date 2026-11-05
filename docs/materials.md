@@ -1,16 +1,16 @@
 # Materials
 
-You can use a material anywhere a problem asks for one. Every material is a JSON object whose `kind` sets
-the model. Permittivities follow the `exp(-iωt)` convention, so loss means `Im(ε) > 0` and `Im(n) > 0`.
+You can use a material anywhere a problem asks for one: pass one of the models below. Permittivities
+follow the `exp(-iωt)` convention, so loss means `Im(ε) > 0` and `Im(n) > 0`.
 
-| `kind` | Model | Fields |
+| Model | Fields | Saved as `kind` |
 |---|---|---|
-| `constant_index` | `ConstantIndex` | `n_real`, `n_imag` (≥ 0) |
-| `constant_permittivity` | `ConstantPermittivity` | `eps_real`, `eps_imag` (≥ 0) |
-| `drude` | `Drude` | `eps_inf`, `wp_ev`, `gamma_ev`: ε(ω) = ε∞ − ωp² / (ω² + iγω), with energies in eV |
-| `drude_lorentz` | `DrudeLorentz` | `eps_inf`, `wp_ev`, `gamma_ev`, `poles: [{delta_eps, omega0_ev, gamma_ev}]` |
-| `tabulated` | `Tabulated` | `wavelength_nm`, `n_real`, `n_imag`, `source`: linear interpolation, no extrapolation |
-| `library` | `LibraryMaterial` | `name`, `dataset`: a bundled measured dataset (below) |
+| `ConstantIndex` | `n_real`, `n_imag` (≥ 0) | `constant_index` |
+| `ConstantPermittivity` | `eps_real`, `eps_imag` (≥ 0) | `constant_permittivity` |
+| `Drude` | `eps_inf`, `wp_ev`, `gamma_ev`: ε(ω) = ε∞ − ωp² / (ω² + iγω), with energies in eV | `drude` |
+| `DrudeLorentz` | `eps_inf`, `wp_ev`, `gamma_ev`, `poles: [{delta_eps, omega0_ev, gamma_ev}]` | `drude_lorentz` |
+| `Tabulated` | `wavelength_nm`, `n_real`, `n_imag`, `source`: linear interpolation, no extrapolation. Data in any order is sorted by wavelength; duplicate wavelengths are refused. | `tabulated` |
+| `LibraryMaterial` | `name`, `dataset`: a bundled measured dataset (below) | `library` |
 
 ## Bundled datasets
 
@@ -47,7 +47,7 @@ material's default is filled in, so a stored spec stays reproducible.
 ```python
 import lightsmith as ls
 
-ls.list_materials("Au")                      # datasets, ranges, references, ready-made JSON
+ls.list_materials("Au")                      # datasets, ranges and references
 gold = ls.LibraryMaterial(name="Au", dataset="McPeak")
 tab = ls.load_material("Au")                 # the default dataset as a Tabulated material
 ```

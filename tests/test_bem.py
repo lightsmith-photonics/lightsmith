@@ -217,6 +217,27 @@ def test_rejects_overlaps_and_substrates():
     assert not ok and "substrate" in why
 
 
+def _dimer(gap):
+    return sim(particles=[ls.Particle(shape=ls.Sphere(radius_nm=20), material=AU, position_nm=(s * (20 + gap / 2), 0, 0))
+                          for s in (-1, 1)], h=4.0)
+
+
+def test_nearly_touching_particles_are_checked_on_the_solve_mesh():
+    """Volume correction pushes each faceted sphere ~0.1 nm outside the exact one (R = 20 nm, default mesh):
+    a 0.1 nm gap passes the exact-shape check but the solve meshes would interpenetrate, so it is refused.
+    Gaps below the mesh size are accepted with a warning."""
+    from lightsmith.backends._bem.mesh import build_mesh
+
+    bem = ls.get_backend("bem")
+    ok, why = bem.supports(_dimer(0.1))
+    assert not ok and "volume-corrected meshes overlap" in why
+    assert bem.supports(_dimer(0.1).model_copy(update={"options": {"bem": {"mesh_size_nm": 4.0, "volume_correction": False}}}))[0]
+    assert bem.supports(_dimer(0.5))[0]
+    h = 4.0
+    assert bem._gap_warnings(_dimer(2.0), build_mesh(_dimer(2.0), h), h)
+    assert not bem._gap_warnings(_dimer(10.0), build_mesh(_dimer(10.0), h), h)
+
+
 # --- GPU ----------------------------------------------------------------------
 
 

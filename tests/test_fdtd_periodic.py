@@ -213,3 +213,17 @@ def test_fdtd_hole_array_guided_mode_resonance_matches_rcwa():
     assert abs(peak(rf) - peak(rr)) < 0.5  # measured 0.09 nm
     assert rf.max() > 0.9
     assert abs(rf[0] - rr[0]) < 0.01 and abs(rf[-1] - rr[-1]) < 0.02  # off resonance
+
+
+@needs_cuda
+@pytest.mark.parametrize("substrate,tol", [(LibraryMaterial(name="Si"), 0.02), (LibraryMaterial(name="Au"), 0.02)])
+def test_absorbing_substrate_transmission_is_taken_at_the_interface(substrate, tol):
+    """T is the flux into the substrate at the interface, as in TMM. The monitor sits a few cells inside the
+    substrate, so absorption over that distance is undone per order; a metal substrate must not report T = 0.
+    Measured max |dT| vs TMM, 80 nm SiO2 on Si / Au, 420-700 nm: 0.013 / 0.008 (Lorentz-fit error ~2%).
+    Before the fix: Si 0.071 low at 420 nm, Au T = 0 everywhere."""
+    p = LayerStackProblem(superstrate=CI(n_real=1.0), layers=[Layer(thickness_nm=80, material=CI(n_real=1.46))],
+                          substrate=substrate, wavelengths=ls.WavelengthRange(start_nm=420, stop_nm=700, num=5))
+    a, b = ls.solve(p, "tmm"), ls.solve(p, "fdtd", device="gpu")
+    np.testing.assert_allclose(b.t["s"][0], a.t["s"][0], atol=tol)
+    np.testing.assert_allclose(b.r["s"][0], a.r["s"][0], atol=tol)

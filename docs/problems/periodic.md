@@ -1,6 +1,6 @@
 # Periodic structures
 
-`kind: "periodic"`, model `lightsmith.problems.PeriodicProblem`. A stack of patterned layers that is
+Model `lightsmith.problems.PeriodicProblem`. A stack of patterned layers that is
 periodic in 1D or 2D, such as a grating, a metasurface or a photonic-crystal slab, illuminated by a plane
 wave.
 
