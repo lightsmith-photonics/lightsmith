@@ -40,4 +40,4 @@ cat spec.json | lightsmith solve - --method rcwa
 lightsmith compare examples/drude_sphere.json --methods mie,dda,fdtd
 ```
 
-The [MCP server](mcp-overview.md) exposes the same operations to AI agents.
+The [MCP server](mcp.md) exposes the same operations to AI agents.

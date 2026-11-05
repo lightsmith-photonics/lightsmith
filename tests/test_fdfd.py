@@ -201,7 +201,7 @@ def test_estimate_and_registration():
     b = ls.get_backend("fdfd", kind="device")
     assert b.differentiable and "device" in b.problem_kinds
     ok, why = b.supports(straight().model_copy(update={"dimension": 3}))
-    assert not ok and "3D" in why
+    assert ok, why  # 3D devices go to the full-vector engine (tests/test_fdfd3d.py)
 
 
 @pytest.mark.gpu

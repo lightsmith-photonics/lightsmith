@@ -56,10 +56,12 @@ uv run lightsmith solve examples/drude_sphere.json --method dda --device gpu
 | `layer_stack` — thin films | TMM, RCWA, FDTD | ✅ | TMM, RCWA |
 | `periodic` — gratings, metasurfaces | RCWA, FDTD (rectangular lattices) | ✅ | RCWA |
 | `mode` — waveguide cross-sections | FDE (full vector, bends) | — | — |
-| `device` — S-parameters between ports | EME, BPM (one-way, wide-angle; 2D and 3D semi/full-vector), FDFD (2D) | BPM, FDFD | FDFD |
+| `device` — S-parameters between ports | EME, BPM (one-way, wide-angle; 2D and 3D semi/full-vector), FDFD (2D, 3D) | BPM, FDFD | FDFD |
 | `bands` — photonic crystals | PWE (2D TE/TM, 3D) | ✅ | dense path |
 | `circuit` — netlists of compact models | S-matrix circuit solver | ✅ | ✅ |
-| `optimization` — inverse design | topology optimisation on FDFD | ✅ | — |
+| `optimization` — inverse design | topology optimisation on FDFD (2D, 3D) | ✅ | — |
+
+Inverse design runs in 2D or 3D. In 3D the FDFD solver is full-vector (Yee grid, PML, exact port modes, BiCGStab on the GPU with warm-started adjoint solves), and design regions are either *extruded* through the device layer (one vertical etch, exported to GDS) or *volumetric*, with filter-and-projection minimum feature sizes. See [examples/inverse_design_3d_mode_converter.py](examples/inverse_design_3d_mode_converter.py) (SOI TE0→TE1 converter, validated with EME on the exported polygons) and [docs/solvers/inverse-3d.md](docs/solvers/inverse-3d.md).
 
 BEM meshes only the particle surfaces (spheres, spheroids, cylinders, layered spheres, clusters; no substrate), so curved metal particles converge smoothly: a gold sphere of 40 nm radius is within 0.05 % of Mie on and off resonance at a few hundred triangles, where DDA and FDTD staircase (`benchmarks/bem_convergence.py`).
 

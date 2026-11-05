@@ -26,9 +26,12 @@ coupler, splitter or bend, characterised by its S-matrix between ports.
 
 ## Solvers
 
-`auto` order: [EME](../solvers/eme.md), then [FDFD](../solvers/fdfd.md).
+`auto` order: [EME](../solvers/eme.md), then [BPM](../solvers/bpm.md), then [FDFD](../solvers/fdfd.md).
 
 - EME needs every port on one of two opposite planes, and works in 2D and 3D.
+- BPM has the same port requirement and works in 2D and 3D, on the CPU or a GPU. It is one-way (no
+  reflections) and suits long, slowly varying devices. Since EME accepts the same devices, ask for BPM
+  with `method="bpm"`.
 - FDFD is 2D only, runs on a GPU, and gives adjoint gradients. It is the engine behind
   [inverse design](optimization.md).
 

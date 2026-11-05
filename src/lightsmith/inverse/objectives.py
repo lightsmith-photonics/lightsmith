@@ -55,12 +55,16 @@ def term_values(term, sol):
             raise ValueError("field objectives need with_fields=True")
         src = sol.inputs.index(port_label(sol.outputs, term.source_port, term.source_mode))
         sl = []
-        for a, coords in enumerate((sol.grid.x, sol.grid.y)):
+        axes = (sol.grid.x, sol.grid.y, sol.grid.z) if sol.fields.ndim == 6 else (sol.grid.x, sol.grid.y)
+        for a, coords in enumerate(axes):
             c, h = term.center_nm[a], term.size_nm[a] / 2
             idx = np.nonzero(np.abs(coords - c) <= h + 1e-9)[0]
             if len(idx) == 0:
                 idx = np.array([int(np.argmin(np.abs(coords - c)))])
             sl.append(slice(int(idx[0]), int(idx[-1]) + 1))
+        if sol.fields.ndim == 6:  # 3D: (n_wl, n_src, 3, Nx, Ny, Nz), intensity |E|^2 summed over components
+            f = sol.fields[:, src, :, sl[0], sl[1], sl[2]]
+            return (f.abs() ** 2).sum(1).reshape(f.shape[0], -1).mean(-1)
         f = sol.fields[:, src, sl[0], sl[1]]
         return (f.abs() ** 2).reshape(f.shape[0], -1).mean(-1)
     raise TypeError(f"unknown objective term {type(term).__name__}")

@@ -4,16 +4,12 @@ Backend `lightsmith-fdtd` (method `fdtd`, modules `lightsmith.backends.fdtd` and
 `lightsmith.backends._fdtd`). A 3D finite-difference time-domain solver for four problem kinds:
 
 - [scattering](../problems/scattering.md), on a substrate too;
-- [periodic structures](../problems/periodic.md) and [layer stacks](../problems/layer-stack.md), at normal
-  incidence;
+- [periodic structures](../problems/periodic.md) and [layer stacks](../problems/layer-stack.md), at normal,
+  oblique and conical incidence up to 85° from the normal;
 - [dipole emission](../problems/emission.md): Purcell factor, radiative enhancement, efficiency and radiation
   pattern.
 
 It runs on the CPU or a CUDA GPU.
-
-!!! note "Oblique incidence on periodic structures"
-    Another branch is adding oblique incidence for periodic structures. See
-    [FDTD oblique incidence](in-development/fdtd-oblique.md).
 
 ## Method
 
@@ -221,8 +217,22 @@ graded grids do.
   are non-cubic, so each period holds a whole number of cells.
 - **Source.** A one-sided plane-wave source in the superstrate.
 - **Diffraction orders.** The reflected and transmitted DFT planes are split into orders by a 2D FFT. R
-  and T are sums over the propagating orders, and A = 1 − R − T.
-- **Layer stacks.** A layer stack at normal incidence runs once and serves both s and p.
+  and T are sums over the propagating orders, and A = 1 − R − T. Order (m, n) has in-plane wavevector
+  k_∥ + m b₁ + n b₂, as in [RCWA](rcwa.md).
+- **Normal incidence.** Real fields and plain periodic boundaries. One broadband pulse per polarisation
+  gives every wavelength. A layer stack at normal incidence runs once and serves both s and p.
+- **Oblique and conical incidence.** Complex fields with Bloch-periodic boundaries,
+  F(x + L) = F(x) e^{i k_∥ L}, at a fixed in-plane wavevector k_∥ (the constant-transverse-wavenumber
+  method). The TFSF plane is fed by an auxiliary one-cell Bloch column that solves the same discrete
+  equations as the main grid, so the source does not leak at any angle or polarisation. This keeps the
+  usual Courant limit and works unchanged with the dispersive media, subpixel smoothing and the CPML.
+- **Fixed angle, not fixed k_∥.** Within one fixed-k_∥ run, each frequency sees a different angle. So every
+  (angle, wavelength, polarisation) gets its own run, with k_∥ = n_sup (2π/λ) sin θ and a pulse centred on
+  that wavelength, and every result is at the requested angle. The pulse is kept clear of the frequency
+  at which the zeroth order turns grazing, where fields ring for a long time. An oblique spectrum
+  therefore costs one run per wavelength; `estimate` reports the count (`runs`, `oblique_runs`).
+
+The design choices are explained in the docstring of `lightsmith.backends._fdtd.periodic`.
 
 ## Options
 
@@ -287,6 +297,7 @@ There are no gradients.
 | `test_fdtd_mirror_symmetry_detection` | Construction | planes only for symmetric particles and plane waves; none for beams, `"off"`, asymmetric overlaps |
 | `test_fdtd_mirror_symmetry_speedup_gpu` (gpu): r = 60 nm, dx = 3 nm, float32, 2 planes | The full grid; Mie | 3e-5 (measured 5e-6); Mie 0.2 % (measured 0.063 % for both); time loop > 1.3× faster (measured 1.55×) |
 | `test_fdtd_mirror_symmetry_speedup_fine_grid_gpu` (slow, gpu): the same at dx = 1.5 nm | The full grid; Mie | 3e-5 (measured 7e-6); > 1.8× faster (measured 2.3×) |
+| `test_fdtd_oblique_tfsf_spheroid_matches_dda` (gpu): 80 × 160 nm spheroid, axial and off-axis | [DDA](dda.md), 80 dipoles per diameter | C_ext < 2 % (measured 0.5–1.1 %) |
 
 Measured in the test module docstring (RTX 5070, float32; CPU float64 agrees to about 1e-7):
 
@@ -358,8 +369,16 @@ Differences are maximum absolute differences in R, T and A.
 |---|---|---|
 | `test_fdtd_layer_stack_matches_tmm_cpu`: 300 nm n = 2 slab; 30 nm Drude film | [TMM](tmm.md) | < 0.01 (slab); < 0.005 (film) |
 | `test_fdtd_layer_stack_gpu_matches_cpu_and_metal_film` (gpu): 40 nm Ag film | TMM; CPU | < 0.01; GPU vs CPU 2e-5 |
+| `test_fdtd_oblique_layer_stack_matches_tmm_cpu`: 300 nm n = 2 slab, 0°, 30°, 60°, s and p | TMM | < 0.008 (measured 0.0046, 0.0039, 0.0018) |
+| `test_fdtd_oblique_drude_film_gpu_matches_cpu_and_tmm` (gpu): 30 nm Drude film, 30° and 60° | TMM; CPU | < 0.003 (measured 0.0008, 0.0006); GPU vs CPU 5e-5 |
+| `test_fdtd_oblique_grating_matches_rcwa` (gpu): lamellar grating at 30°, 60° (slow) and conical 30°/30° | RCWA | total < 0.008 (measured ≤ 0.0043); per order 0.012 (measured ≤ 0.0071) |
+| `test_fdtd_oblique_2d_lattice_conical_matches_rcwa` (slow, gpu): disks, P = 400 nm, θ = 40°, φ = 20° | RCWA, 11 harmonics | total < 0.005 (measured 0.0015); per order 0.01 (measured ≤ 0.0039) |
 | `test_fdtd_1d_grating_matches_rcwa` (gpu): lamellar grating | [RCWA](rcwa.md), 30 harmonics | total < 0.015; per order 0.01 |
 | `test_fdtd_hole_array_guided_mode_resonance_matches_rcwa` (slow, gpu) | RCWA | resonance within 0.5 nm (measured 0.09 nm) |
+
+At oblique incidence the error on the n = 2 slab is the Yee grid's own: FDTD reproduces the discrete-Yee
+Fresnel coefficient of a bare interface to 1e-4, and the difference from TMM falls 4× per halving of the
+cell (60°, 400 nm: 0.0095 → 0.0024), according to the test module docstring.
 
 ### Substrates (`tests/test_fdtd_substrate.py`)
 
@@ -453,7 +472,9 @@ evanescent field varies across the sphere, which the dipole model misses, hence 
   - fitted materials.
 
 **Periodic structures and layer stacks**
-- Normal incidence only. For oblique incidence, use [RCWA](rcwa.md) or [TMM](tmm.md).
+- Angles of incidence up to 85° from the normal. Beyond that, use [RCWA](rcwa.md) or [TMM](tmm.md).
+- An oblique spectrum costs one run per (angle, wavelength, polarisation), and runs at large angles use
+  longer, narrow-band pulses. For many angles or wavelengths, RCWA or TMM is far cheaper.
 - Rectangular lattices only: a1 along x and a2 along y.
 - The superstrate must be lossless and non-dispersive.
 - No incoherent layers.

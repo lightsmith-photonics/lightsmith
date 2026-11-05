@@ -50,6 +50,7 @@ settings. Aliases are in parentheses.
 | `grating_coupler` (`gc`) | o1, o2 | `peak_loss_db`, `wl0_nm`, `bandwidth_1db_nm`, optional reflections |
 | `terminator` (`termination`, `absorber`) | o1 | optional `reflection_db` |
 | `sparams:<path>` | from the file | a Touchstone `.sNp` file or a Lightsmith `SParameterResult` JSON. Settings: `port_names`, `time_convention`, `interpolation`, `out_of_range`. |
+| `pdk:<cell>` | those of the cell | a simulated, fitted and cached component of the [PDK flow](../pdk.md). Settings: the cell's parameters plus the flow settings (technology, band, solver, fit). |
 
 **Touchstone files.** `lightsmith.circuits.touchstone` reads and writes Touchstone 1.x and the common
 Touchstone 2.0 keywords (full matrix format only).

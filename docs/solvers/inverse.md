@@ -5,13 +5,13 @@ optimisation of [optimization problems](../problems/optimization.md). It needs P
 extra), and runs on the CPU or a GPU.
 
 !!! note "3D inverse design"
-    Another branch is adding 3D inverse design. See
-    [3D inverse design](in-development/inverse-3d.md).
+    For full-vector 3D devices with extruded or volumetric design regions, see
+    [3D inverse design](inverse-3d.md).
 
 ## Method
 
 - **Backends.** The optimiser works with any backend that is differentiable and implements
-  `differentiable_solve`. In 0.1 that is [`lightsmith-fdfd`](fdfd.md) (2D), the default.
+  `differentiable_solve`. That is [`lightsmith-fdfd`](fdfd.md), the default.
 - **Density pipeline.** For each design region:
   1. raw density ρ ∈ [0, 1];
   2. mirror symmetry;
@@ -72,7 +72,8 @@ All tests are in `tests/test_inverse.py` and need PyTorch.
 
 ## Limits
 
-- 2D in 0.1: the filters and the region mapping are 2D, and FDFD is 2D.
+- 2D on this page: the filters and the region mapping are 2D. For 3D devices see
+  [3D inverse design](inverse-3d.md).
 - Design regions must stay at least 3 cells from every port plane, and span at least 2 grid cells.
 - Warns when the final design is less than 90 % binary (raise `beta_max` or `max_iter`). Warnings from
   the validation solve are passed on with the prefix `validation:`.
