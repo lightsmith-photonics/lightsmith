@@ -1,0 +1,12 @@
+{
+ "base": "results\\20261102-full-paper",
+ "new": "results\\20261104-fdtd-only",
+ "method": "fdtd",
+ "backends": [
+  "lightsmith-fdtd"
+ ],
+ "runs_replaced": 538,
+ "runs_added": 647,
+ "base_wall_s_of_method": 4015.390580899548,
+ "new_suite_wall_s": 6227.071866499959
+}

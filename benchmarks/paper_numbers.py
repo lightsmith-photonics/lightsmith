@@ -82,7 +82,7 @@ def main(argv=None):
 
     # finest-resolution errors of the volume methods, by family, device and variant
     fin = {}
-    for method in ("dda", "fdtd", "quasistatic"):
+    for method in ("dda", "fdtd", "quasistatic", "bem"):
         for family in sorted(set(fam.values())):
             for dev in ("gpu", "cpu"):
                 for variant in ("center", "weighted", "extrapolate", "default"):
@@ -135,17 +135,21 @@ def main(argv=None):
                                 and r["is_reference"]), None)
 
     # CPU vs GPU: matched runs (same problem, backend, variant, resolution)
-    key = lambda r: (r["problem_id"], r["backend"], r["variant"], r["resolution"])  # noqa: E731
+    def _res(x):
+        x = _f(x)
+        return None if math.isnan(x) else x  # BEM runs at its default mesh have no resolution
+
+    key = lambda r: (r["problem_id"], r["backend"], r["variant"], _res(r["resolution"]))  # noqa: E731
     by = defaultdict(dict)
     for r in rows:
-        if r["status"] == "ok" and r["method"] in ("dda", "fdtd", "mie"):
+        if r["status"] == "ok" and r["method"] in ("dda", "fdtd", "mie", "bem"):
             by[key(r)][r["device"]] = r
     spec = {}
     with open(d / "runs.jsonl", encoding="utf-8") as f:
         for line in f:
             j = json.loads(line)
-            if j.get("status") == "ok" and j.get("method") in ("dda", "fdtd", "mie"):
-                spec[(j["problem_id"], j["backend"], j["variant"], _f(j["resolution"]), j["device"])] = j
+            if j.get("status") == "ok" and j.get("method") in ("dda", "fdtd", "mie", "bem"):
+                spec[(j["problem_id"], j["backend"], j["variant"], _res(j["resolution"]), j["device"])] = j
     agree, speed = defaultdict(list), defaultdict(list)
     for k, dv in by.items():
         if "cpu" in dv and "gpu" in dv:
@@ -186,11 +190,11 @@ def main(argv=None):
     # and the number of problems where some run reaches each target
     fam_tab = {}
     for family in sorted(set(fam.values())):
-        for method in ("dda", "fdtd", "quasistatic", "tmatrix"):
+        for method in ("dda", "fdtd", "quasistatic", "tmatrix", "bem"):
             best = defaultdict(lambda: math.inf)
             for r in rows:
                 if r["family"] == family and r["method"] == method and r["status"] == "ok" \
-                        and not r["is_reference"] and np.isfinite(r["err_headline"]):
+                        and r["variant"] != "ladder" and not r["is_reference"] and np.isfinite(r["err_headline"]):
                     best[r["problem_id"]] = min(best[r["problem_id"]], r["err_headline"])
             if best:
                 v = np.array(list(best.values()))
@@ -208,7 +212,7 @@ def main(argv=None):
     fin_spec = {}
     for (p, b, v, dev, res), ss in spec_rows.items():
         if dev != "gpu" or v not in ("center", "default") or b not in ("lightsmith-dda", "lightsmith-fdtd") \
-                or fam.get(p) not in ("metal_sphere", "core_shell", "dimer"):
+                or fam.get(p) not in ("metal_sphere", "core_shell", "dimer", "spheroid", "rod"):
             continue
         fine = res if b == "lightsmith-dda" else -res
         if (p, b) not in fin_spec or fine > fin_spec[(p, b)][0]:
@@ -242,6 +246,28 @@ def main(argv=None):
         if diff > 1e-3:
             unconv[f"{a['method']}/above_1e-3/{'unconverged' if flagged else 'converged'}"] += 1
     out["cpu_gpu_disagreement"] = dict(unconv)
+
+    # spheroids and rods rescored against a BEM mesh ladder (benchmarks/rereference.py): the reference's
+    # self-change and estimated error, and per method the lowest headline error and how many problems
+    # have it above the reference's estimated error (an error the benchmark resolves)
+    rr = d / "rereference.json"
+    if rr.exists():
+        probs = json.loads(rr.read_text(encoding="utf-8"))["problems"]
+        bref = {"self_change": stats([v["self_change"] for v in probs.values()]),
+                "uncertainty": stats([v["reference_uncertainty"] for v in probs.values()])}
+        for family in ("spheroid", "rod"):
+            for method in ("dda", "fdtd", "quasistatic", "bem"):
+                best = {}
+                for r in rows:
+                    if r["family"] == family and r["method"] == method and r["status"] == "ok" and \
+                            r["variant"] != "ladder" and not r["is_reference"] and np.isfinite(r["err_headline"]):
+                        best[r["problem_id"]] = min(best.get(r["problem_id"], math.inf), r["err_headline"])
+                if best:
+                    bref[f"{family}/{method}"] = {
+                        "problems": len(best), "median_best": float(np.median(list(best.values()))),
+                        "above_uncertainty": sum(e > probs[p]["reference_uncertainty"] for p, e in best.items()),
+                        "within_uncertainty": sum(e <= probs[p]["reference_uncertainty"] for p, e in best.items())}
+        out["bem_reference"] = bref
 
     (d / "paper_numbers.json").write_text(json.dumps(out, indent=1, default=str), encoding="utf-8")
     print(json.dumps(out, indent=1, default=str))

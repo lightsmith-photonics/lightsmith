@@ -37,7 +37,7 @@ sys.path.insert(0, str(HERE))
 from analyze import TARGETS, load_runs  # noqa: E402
 
 METHOD_COLORS = {"mie": "#000000", "quasistatic": "#7f7f7f", "dda": "#1f77b4", "fdtd": "#ff7f0e",
-                 "tmatrix": "#2ca02c", "none": "#ffffff"}
+                 "tmatrix": "#2ca02c", "bem": "#9467bd", "none": "#ffffff"}
 EXTRA_COLORS = ["#9467bd", "#8c564b", "#e377c2", "#17becf", "#bcbd22"]
 VARIANT_STYLE = {"center": "-", "weighted": "--", "extrapolate": ":", "default": "-"}
 DEVICE_MARKER = {"cpu": "o", "gpu": "s"}
@@ -370,7 +370,7 @@ PAPER_PROBLEMS = ("sphere-diel-x1-m1.5-k0.05-water", "sphere-diel-x5-m2-water", 
                   "spheroid-au-ar2-req20-water", "rod-au-ar3-r10-water")
 PAPER_STAIRCASE = "sphere-drude-r40-water"
 PAPER_WHOLE = ("gpu_speedup",)  # figures copied unchanged
-PAPER_EXCLUDE = ("bem",)  # methods the report does not discuss
+PAPER_EXCLUDE: tuple[str, ...] = ()  # methods the report does not discuss
 
 
 def main(argv=None):
