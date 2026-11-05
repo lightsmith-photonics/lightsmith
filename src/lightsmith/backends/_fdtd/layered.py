@@ -187,6 +187,61 @@ def read_tables(xp, T, n, m: int, cmax, base, i0, u0):
     return out
 
 
+def bind_slabs(eng, slabs):
+    """The table-fed slabs of each kind ("E", "H"), joined so that a step reads all of a kind's table values in
+    one interpolation and adds them to the fields in a few indexed updates: one set of array operations per
+    kind instead of one per face slab, whose launch overhead dominated the step on small grids.
+
+    Slabs are grouped so that no group writes a node twice (box edges belong to two faces), which keeps the
+    indexed `+=` exact. base, i0 and u0 are joined along their last axis (a beam's leading axis is its parts).
+    Returns {kind: (base, i0, u0, coef, [(flat index, start, stop) per group])}."""
+    n_cells = int(np.prod(eng.shape))
+    grid = np.arange(n_cells).reshape(eng.shape)
+    fused = {}
+    for kind in ("E", "H"):
+        groups = []  # [(slabs, written nodes)]
+        for s in slabs:
+            if s[0] != kind:
+                continue
+            _, c, region, base, i0, u0, arr, shape_ = s
+            nodes = grid[region]
+            assert nodes.shape == tuple(shape_) and np.broadcast_shapes(np.shape(arr), nodes.shape) == nodes.shape
+            nodes = c * n_cells + nodes.reshape(-1)
+            coef = np.broadcast_to(arr, shape_).reshape(-1)
+            for g in groups:
+                if not np.intersect1d(g[1], nodes).size:
+                    g[0].append((base, i0, u0, coef, nodes))
+                    g[1] = np.union1d(g[1], nodes)
+                    break
+            else:
+                groups.append([[(base, i0, u0, coef, nodes)], nodes])
+        if not groups:
+            continue
+        order = [e for g in groups for e in g[0]]
+        cat = [np.concatenate([e[j] for e in order], axis=-1) for j in range(5)]
+        bounds, start = [], 0
+        for g in groups:
+            stop = start + sum(e[4].size for e in g[0])
+            bounds.append((eng.index(cat[4][start:stop]), start, stop))
+            start = stop
+        fused[kind] = (eng.index(cat[0]), eng.index(cat[1]), eng.asarray(cat[2]), eng.asarray(cat[3]), bounds)
+    return fused
+
+
+def apply_fused(eng, T, m: int, cmax, fused, kind: str, combine=None):
+    """Add a kind's table values times their coefficients to the fields (combine: reduce a beam's parts)."""
+    if kind not in fused:
+        return
+    base, i0, u0, coef, groups = fused[kind]
+    vals = read_tables(eng.xp, T, eng.n, m, cmax, base, i0, u0)
+    if combine is not None:
+        vals = combine(vals)
+    vals = coef * vals
+    target = eng.E_flat if kind == "E" else eng.H_flat
+    for nodes, a, b in groups:
+        target[nodes] += vals[a:b]
+
+
 class _View:
     """E_flat / H_flat for DFTMonitor(source=...): the incident wave alone (E_x, E_y, E_z) at the reference point."""
 
@@ -320,8 +375,13 @@ class ObliqueLayeredPlaneWave:
         # when the incident wave has passed every point (the latest reads tau = t - delay_max): t_passed, for
         # the run, once the tables fall below 1e-11 of their peak (a truncated tail leaves its share of the box
         # flux in C_abs); t_off, for the ring-down analysis, below 1e-6. The power-of-two table runs on longer.
+        # The tail is searched between the peak and the quietest sample after it: beyond that, the end of the
+        # periodic inverse FFT holds the pulse's wrapped leading edge (~1e-11), which would otherwise set
+        # t_passed to the whole table and more than double the run.
         env = np.abs(table).reshape(-1, N).max(axis=0)
-        i_off, i_end = (int(np.nonzero(env > tol * env.max())[0][-1]) for tol in (1e-6, 1e-11))
+        i_pk = int(np.argmax(env))
+        i_q = i_pk + int(np.argmin(env[i_pk:]))
+        i_off, i_end = (i_pk + int(np.nonzero(env[i_pk:i_q + 1] > tol * env[i_pk])[0][-1]) for tol in (1e-6, 1e-11))
         table, inc_table = table[..., ::m], inc_table[..., ::m]
         n_c = table.shape[-1]
         pad = len(_STENCIL) + 2  # zeros after each row: reads from cmax = n_c + 2 on give 0
@@ -400,19 +460,14 @@ class ObliqueLayeredPlaneWave:
         self._T = eng.asarray(self.tables.reshape(-1))
         self._Tinc = eng.asarray(self.inc_table.reshape(-1))
         del self.tables, self.inc_table
-        self._slabs = [(kind, c, region, eng.index(base), eng.index(i0), eng.asarray(u0), eng.asarray(arr), shape_)
-                       for kind, c, region, base, i0, u0, arr, shape_ in self.slabs]
+        self._fused = bind_slabs(eng, self.slabs)
         self._inc = tuple(f(a) for f, a in zip((eng.index, eng.index, eng.asarray), self.inc))
         self._cmax = eng.index(np.array([self.cmax]))
         self.view.E_flat = eng.zeros((3,))
         self.view.H_flat = self.view.E_flat
 
     def _apply(self, eng, kind: str):
-        target = eng.E if kind == "E" else eng.H
-        for k, c, region, base, i0, u0, arr, shape_ in self._slabs:
-            if k == kind:
-                vals = read_tables(eng.xp, self._T, eng.n, self.m, self._cmax, base, i0, u0)
-                target[c][region] += arr * eng.xp.reshape(vals, shape_)
+        apply_fused(eng, self._T, self.m, self._cmax, self._fused, kind)
 
     def correct_H(self, eng):
         self._apply(eng, "H")

@@ -92,7 +92,7 @@ def test_fdtd_cpu_divergence_raises_before_float64_overflow(monkeypatch):
     # time_step now avoids this instability, so force the plain eps_inf Courant step to keep testing the check.
     from lightsmith.backends._fdtd import scattering
 
-    monkeypatch.setattr(scattering, "time_step", lambda dx, courant, media: courant * dx / np.sqrt(3))
+    monkeypatch.setattr(scattering, "time_step", lambda dx, courant, media, grid=None: courant * dx / np.sqrt(3))
     sim = sphere_sim(ls.ConstantIndex(n_real=1.2, n_imag=0.2), 191, [500.0, 600.0, 700.0],
                      spacing_nm=191.0, pml_cells=4, run_time_fs=200.0)
     with pytest.raises(FloatingPointError, match="diverged.*finer mesh.*courant"):
