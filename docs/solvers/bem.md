@@ -113,7 +113,10 @@ machine and are indicative only.
 ## Limits
 
 - No substrate: BEM uses the homogeneous-space Green's function. Use [DDA](dda.md) or [FDTD](fdtd.md).
-- Particles must be disjoint; overlapping or touching particles are refused.
+- Particles must be disjoint. Overlapping or touching particles are refused, and so are particles so close
+  that their volume-corrected meshes, which sit slightly outside the exact shapes, would overlap (about
+  0.1 nm for 20 nm spheres at the default mesh). A gap smaller than the mesh size is accepted with a
+  warning, because the field in the gap is not resolved: set `mesh_size_nm` below the gap.
 - Near and far fields are not available together with `orientation_average`.
 - Raises an error above `max_unknowns` (increase `mesh_size_nm`). The dense matrix limits practical
   meshes to some tens of thousands of unknowns.

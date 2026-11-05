@@ -37,7 +37,7 @@ All tests are in `tests/test_tmm.py`.
 | `test_fresnel_single_interface` (0–89°) | Fresnel equations | amplitudes 1e-13 |
 | `test_brewster_angle` | R_p = 0 | < 1e-28 |
 | `test_total_internal_reflection` | R = 1, evanescent Fresnel amplitudes | 1e-14, 1e-13 |
-| `test_frustrated_tir_and_energy_conservation`: random 12-layer stack | R + T = 1 (lossless); R + T + A = 1 | 1e-12; 1e-14 |
+| `test_frustrated_tir_and_energy_conservation`: random 12-layer stack | R + T = 1 (lossless) | 1e-12 (A is computed as 1 − R − T, so R + T + A = 1 holds by construction) |
 | `test_quarter_wave_ar_coating` | R = 0 at λ₀; single-film Airy formula | < 1e-28; 1e-14 |
 | `test_bragg_mirror_stop_band`: 10 pairs | analytic admittance at the centre | 1e-12 |
 | `test_incoherent_thick_slab_matches_closed_form`: 1 mm slab | closed form | 1e-10 |

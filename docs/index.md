@@ -2,9 +2,8 @@
 
 **The open photonics suite — GPU-native, differentiable, and built for AI agents.**
 
-Lightsmith lets you describe a photonics problem once, as typed JSON, and solve it with the method that
-fits. It covers nanoparticles, thin films, metasurfaces, waveguides, photonic crystals, devices and
-circuits. Every result uses the same units and conventions and records its provenance, so you can
+Lightsmith lets you describe a photonics problem once and solve it with whichever method fits. It covers
+nanoparticles, thin films, metasurfaces, waveguides, photonic crystals, devices and circuits. Every result uses the same units and conventions and records its provenance, so you can
 cross-check methods directly. Many solvers run on a GPU and can be differentiated, which is what powers
 inverse design.
 
@@ -33,12 +32,15 @@ cmp = ls.compare(sim, ["mie", "dda", "fdtd"])   # cross-check methods
 | [`layer_stack`](problems/layer-stack.md): thin films | [TMM](solvers/tmm.md), [RCWA](solvers/rcwa.md), FDTD | ✅ | TMM, RCWA |
 | [`periodic`](problems/periodic.md): gratings, metasurfaces | [RCWA](solvers/rcwa.md), FDTD (rectangular lattices) | ✅ | RCWA |
 | [`mode`](problems/mode.md): waveguide cross-sections | [FDE](solvers/fde.md) | — | — |
-| [`device`](problems/device.md): S-parameters between ports | [EME](solvers/eme.md), [BPM](solvers/bpm.md), [FDFD](solvers/fdfd.md) (2D) | BPM, FDFD | FDFD (adjoint) |
+| [`device`](problems/device.md): S-parameters between ports | [EME](solvers/eme.md), [BPM](solvers/bpm.md), [FDFD](solvers/fdfd.md) | BPM, FDFD | FDFD (adjoint) |
 | [`bands`](problems/bands.md): photonic crystals | [PWE](solvers/pwe.md) | ✅ | dense path |
 | [`circuit`](problems/circuit.md): netlists of compact models | [S-matrix circuit solver](solvers/circuit.md) | ✅ | ✅ |
 | [`optimization`](problems/optimization.md): inverse design | [Topology optimisation on FDFD](solvers/inverse.md) | ✅ | — |
 
-## Three ways in, all JSON
+## Three ways in
+
+All three take the same problem description, so a problem you build in Python can be saved to a file,
+run from the shell, or handed to an agent unchanged.
 
 - **Python**: `import lightsmith as ls`, then `ls.solve`, `ls.estimate` and `ls.compare`. See the
   [quick start](quickstart.md).

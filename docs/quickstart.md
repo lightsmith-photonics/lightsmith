@@ -32,7 +32,7 @@ print(res.warnings)          # always check these
 - optional `near_field` and `far_field`;
 - `provenance` and `warnings`.
 
-`res.model_dump()` turns it into plain JSON-ready data.
+`res.model_dump()` turns it into plain Python data (dicts, lists and numbers).
 
 ## Estimate before you solve
 
@@ -50,6 +50,12 @@ cmp = ls.compare(sim, ["mie", "dda"])
 cmp["reference"]             # "mie": Mie is the reference for spheres
 cmp["relative_difference"]   # per method: c_ext/c_sca/c_abs relative differences
 ```
+
+Mie is the reference whenever it runs. Otherwise the reference is the first method you list or, with no
+list, the method `auto` would pick. Cross sections are compared relative to the reference, but never
+relative to less than 0.1 % of its extinction, so the near-zero absorption of a lossless particle does not
+blow up. The other problem kinds report absolute differences: R, T and A for spectra, |S|² and S for
+devices and circuits, n_eff and n_g for modes, and a/λ for bands.
 
 Method-specific options go in `options`, keyed by method (or by backend name):
 
@@ -77,30 +83,30 @@ spec = ls.solve(ar)               # auto -> TMM
 spec.r["s"][0]                    # reflectance, s-polarised, first angle, per wavelength
 ```
 
-## JSON in, JSON out
+## Saving a problem and using the command line
 
-Every problem is plain JSON, and `kind` selects the problem type. A missing `kind` means `scattering`.
+Every problem, and every result, can be saved to a file and loaded back exactly:
 
-```json
-{
-  "particles": [
-    {"shape": {"kind": "sphere", "radius_nm": 40},
-     "material": {"kind": "drude", "eps_inf": 9.5, "wp_ev": 9.0, "gamma_ev": 0.07}}
-  ],
-  "medium_index": 1.33,
-  "wavelengths": {"start_nm": 400, "stop_nm": 800, "num": 41},
-  "options": {"dda": {"dipoles_per_diameter": 16}}
-}
+```python
+from pathlib import Path
+from lightsmith.problems import parse_problem
+
+Path("gold_sphere.json").write_text(sim.model_dump_json(indent=2))
+sim2 = parse_problem(Path("gold_sphere.json").read_text())   # any problem kind
 ```
+
+A saved problem is what the command line takes. It is the same problem, so the same methods and options
+apply:
 
 ```bash
-lightsmith estimate drude_sphere.json --method dda
-lightsmith solve drude_sphere.json --method dda --device gpu -o result.json
-lightsmith compare drude_sphere.json --methods mie,dda
+lightsmith estimate gold_sphere.json --method dda
+lightsmith solve gold_sphere.json --method dda --device gpu -o result.json
+lightsmith compare gold_sphere.json --methods mie,dda
 ```
 
-From Python, `ls.solve` also accepts a dict or a JSON string. `lightsmith schema` prints the JSON Schema of
-every problem kind; that is what an AI agent reads before it builds a problem.
+You rarely need to write these files by hand. If you do, `examples/drude_sphere.json` in the repository is
+a complete one, and `lightsmith schema` lists every field of every problem kind. AI agents use that same
+schema through the [MCP server](mcp.md).
 
 ## Next steps
 

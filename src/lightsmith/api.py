@@ -36,8 +36,32 @@ def _kind(problem: BaseModel) -> str:
     return getattr(problem, "kind", "scattering")
 
 
+_SIZE_KEYS = ("unknowns", "dipoles", "modes", "cells", "edges")
+
+
+def _fits(b: type[Backend], problem: BaseModel) -> tuple[bool, str]:
+    """Whether `problem` is within the backend's own size limit, from its (cheap, never-solving) estimate.
+
+    Lets `auto` fall through to the next method rather than pick one that would refuse at solve time.
+    An estimate that fails says nothing about size, so the backend is kept and `solve` reports the error.
+    """
+    try:
+        est = b.estimate(problem, resolve_device("cpu"))
+    except Exception:  # noqa: BLE001
+        return True, ""
+    if est.get("fits", True) is False:
+        size = ", ".join(f"{k}={est[k]}" for k in _SIZE_KEYS if k in est)
+        return False, (f"too large for its size limit ({size}); pass method={b.name!r} with a larger "
+                       "limit in its options to run it anyway")
+    return True, ""
+
+
 def choose_method(problem: BaseModel | dict | str) -> tuple[type[Backend], list[str]]:
-    """Pick the preferred available backend for `problem`; also return why others were skipped."""
+    """Pick the preferred available backend for `problem`; also return why others were skipped.
+
+    A backend is skipped when it is unavailable, does not support the problem, or reports in its
+    estimate that the problem exceeds its size limit (BEM unknowns, DDA dipoles, T-matrix modes, ...).
+    """
     problem = parse_problem(problem)
     kind = _kind(problem)
     skipped = []
@@ -51,6 +75,8 @@ def choose_method(problem: BaseModel | dict | str) -> tuple[type[Backend], list[
             ok, why = b.available()
             if ok:
                 ok, why = b.supports(problem)
+            if ok:
+                ok, why = _fits(b, problem)
             if ok:
                 return b, skipped
             skipped.append(f"{b.name}: {why}")
@@ -89,26 +115,41 @@ def estimate(problem: BaseModel | dict | str, method: str = "auto", device: str 
 
 def compare(problem: BaseModel | dict | str, methods: list[str] | None = None, device: str = "auto",
             reference: str | None = None) -> dict[str, Any]:
-    """Solve with several methods and report relative differences against a reference.
+    """Solve with several methods and report differences against a reference.
 
-    By default runs every available backend that supports `problem`, using Mie as the
-    reference for scattering when it applies (otherwise the first result).
+    By default runs every available backend that supports `problem`, in ``AUTO_ORDER``. The
+    reference is Mie when it ran, otherwise the first method: the one `auto` would pick when
+    `methods` is not given, or the first one listed. Scattering results report relative
+    differences of the cross sections; the other kinds report absolute differences (R/T/A,
+    |S|^2 and S, neff and ng, band frequencies). Methods whose results cannot be compared
+    with the reference are listed under ``not_compared``.
     """
     problem = parse_problem(problem)
     kind = _kind(problem)
     if methods is None:
-        methods = [b.name for b in all_backends()
-                   if kind in b.problem_kinds and b.available()[0] and b.supports(problem)[0]]
+        order = AUTO_ORDER.get(kind, ())
+        found = [b for b in all_backends()
+                 if kind in b.problem_kinds and b.available()[0] and b.supports(problem)[0]]
+        found.sort(key=lambda b: order.index(b.method) if b.method in order else len(order))
+        methods = [b.name for b in found]
+    if not methods:
+        raise ValueError(f"no available backend supports this {kind!r} problem")
     results = {m: solve(problem, m, device) for m in methods}
     if reference is None:
         reference = next((m for m, r in results.items() if getattr(r, "method", None) == "mie"), methods[0])
     ref = results[reference]
     diffs: dict[str, Any] = {}
+    not_compared: list[str] = []
     for m, r in results.items():
         if m == reference:
             continue
         if isinstance(r, Result) and isinstance(ref, Result):
             diffs[m] = {q: relative_difference(r, ref, q) for q in ("c_ext_nm2", "c_sca_nm2", "c_abs_nm2")}
-        elif hasattr(r, "difference"):
+        elif hasattr(r, "difference") and type(r) is type(ref):
             diffs[m] = r.difference(ref)
-    return {"reference": reference, "results": results, "relative_difference": diffs}
+        else:
+            not_compared.append(m)
+    out = {"reference": reference, "results": results, "relative_difference": diffs}
+    if not_compared:
+        out["not_compared"] = not_compared
+    return out

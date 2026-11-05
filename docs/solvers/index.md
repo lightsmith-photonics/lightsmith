@@ -4,7 +4,9 @@ Each solver is a *backend*, which wraps one implementation of one method. `light
 all, with licence, GPU support, differentiability and availability. You can choose a backend in three ways:
 
 - `method="auto"` (the default) picks the first backend in the problem kind's preference order that is
-  installed and accepts the problem. If none does, the error lists why each one was skipped.
+  installed, accepts the problem, and is within its own size limit (for example BEM's `max_unknowns` or
+  DDA's `max_dipoles`), so a problem too large for BEM falls through to DDA. If none qualifies, the error
+  lists why each one was skipped.
 - `method="<method>"`, for example `"dda"`, picks the first *available* backend for that method. It does
   not check whether that backend accepts the problem.
 - `method="<backend name>"`, for example `"lightsmith-mie"`, picks exactly that implementation.
@@ -22,7 +24,7 @@ all, with licence, GPU support, differentiability and availability. You can choo
 | [`fde`](fde.md) | `lightsmith-fde` | mode | — | — | — |
 | [`eme`](eme.md) | `lightsmith-eme` | device | — | — | — |
 | [`bpm`](bpm.md) | `lightsmith-bpm` | device | ✅ | — | — |
-| [`fdfd`](fdfd.md) | `lightsmith-fdfd` | device (2D) | ✅ | ✅ (adjoint) | — |
+| [`fdfd`](fdfd.md) | `lightsmith-fdfd` | device | ✅ | ✅ (adjoint) | — |
 | [`pwe`](pwe.md) | `lightsmith-pwe` | bands | ✅ | dense path | — |
 | [`circuit`](circuit.md) | `lightsmith-circuit` | circuit | ✅ | ✅ | — |
 | [`inverse`](inverse.md) | `lightsmith-inverse` | optimization | ✅ | — | PyTorch (`gpu` extra) |

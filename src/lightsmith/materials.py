@@ -122,6 +122,28 @@ class Tabulated(_Material):
     n_imag: list[float]
     source: str | None = Field(None, description="Citation / provenance of the data.")
 
+    @model_validator(mode="before")
+    @classmethod
+    def _sort_by_wavelength(cls, data: Any) -> Any:
+        """Accept data in any order (energy-ordered files list wavelengths descending); store it ascending.
+
+        Linear interpolation needs ascending, distinct wavelengths, and silently returns nonsense otherwise.
+        """
+        if not isinstance(data, dict) or not all(k in data for k in ("wavelength_nm", "n_real", "n_imag")):
+            return data
+        wl, n, k = (np.asarray(data[key], dtype=float) for key in ("wavelength_nm", "n_real", "n_imag"))
+        if not (wl.ndim == n.ndim == k.ndim == 1 and len(wl) == len(n) == len(k)):
+            raise ValueError("wavelength_nm, n_real and n_imag must be lists of the same length")
+        if len(wl) < 2:
+            raise ValueError("tabulated data needs at least two wavelengths")
+        if not np.all(np.isfinite(wl)) or np.any(wl <= 0):
+            raise ValueError("wavelength_nm must be positive and finite")
+        order = np.argsort(wl, kind="stable")
+        wl = wl[order]
+        if np.any(np.diff(wl) == 0):
+            raise ValueError(f"duplicate wavelengths in tabulated data: {sorted({float(w) for w in wl[1:][np.diff(wl) == 0]})}")
+        return {**data, "wavelength_nm": wl.tolist(), "n_real": n[order].tolist(), "n_imag": k[order].tolist()}
+
     @classmethod
     def from_csv(cls, path: str | Path, unit: Literal["nm", "um"] = "nm", source: str | None = None):
         """Load a 3-column CSV (wavelength, n, k), e.g. a refractiveindex.info export."""

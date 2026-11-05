@@ -215,6 +215,36 @@ def test_slab_bend_loss_matches_the_fde_bend_mode():
     assert loss == pytest.approx(ref, rel=0.02)
 
 
+def _strip3d(along, bend_radius_nm=None, length=3000.0):
+    """220 x 500 nm Si strip in SiO2 running along `along`, ports on the two end planes."""
+    big, w = length + 2000, (2400, 1600)
+    if along == "x":
+        box, dom = Box(size_nm=(big, 500, 220)), (length, *w)
+        ends = [(-length / 2, 0, 0), (length / 2, 0, 0)]
+        size = (0, *w)
+    else:
+        box, dom = Box(size_nm=(500, big, 220)), (w[0], length, w[1])
+        ends = [(0, -length / 2, 0), (0, length / 2, 0)]
+        size = (w[0], 0, w[1])
+    opts = {"grid_spacing_nm": 50, "directions": "forward", "vector": "semi", "polarization": "te"}
+    if bend_radius_nm:
+        opts["bend_radius_nm"] = bend_radius_nm
+    return DeviceProblem(structures=[Structure(geometry=box, material=SI)], background=SIO2, domain_size_nm=dom,
+                         wavelengths=[1550], options={"bpm": opts},
+                         ports=[Port(name="o1", center_nm=ends[0], size_nm=size, direction="+"),
+                                Port(name="o2", center_nm=ends[1], size_nm=size, direction="-")])
+
+
+@pytest.mark.parametrize("radius", [None, 3000.0])
+def test_3d_results_do_not_depend_on_the_propagation_axis(radius):
+    """A strip along y is the strip along x rotated in the chip plane: 'te' must launch the same in-plane-E
+    mode and a bend must curve in the chip plane, so S21 agrees exactly. (Before the fix, ports normal to y
+    mapped local x to global z: 'te' launched the vertical-E mode and bends curved out of plane.)"""
+    a = ls.solve(_strip3d("x", radius), "bpm", device="cpu").s()[0][1, 0]
+    b = ls.solve(_strip3d("y", radius), "bpm", device="cpu").s()[0][1, 0]
+    assert abs(a - b) < 1e-9
+
+
 def ybranch(Lb=15000.0, Ls=3000.0, w=500.0, sep=3000.0):
     """Stem 500 -> 1000 nm over Ls, then two 500 nm arms diverging linearly to `sep` apart over Lb."""
     x0, x1, c1 = -Ls - 1000, Lb + 1000, sep / 2

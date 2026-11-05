@@ -30,7 +30,8 @@ when reflections or abrupt high-contrast junctions matter.
     quasi-TM: Hx) on the 2D cross-section (Huang & Xu 1993).
 - **Boundaries.** Stretched-coordinate PMLs on the transverse walls.
 - **Bends.** `bend_radius_nm` propagates along a circular arc through a conformal transformation, as for
-  FDE bend modes. The device is given unrolled.
+  FDE bend modes. The device is given unrolled. The bend is in the chip (xy) plane whether the ports face
+  x or y.
 - **S-parameters.** One run from the lower port plane fills S(upper ← lower), and a second run from the
   upper plane fills S(lower ← upper). Entries between ports on the same plane, including reflections, are
   set to 0.

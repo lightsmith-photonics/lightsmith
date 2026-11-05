@@ -1,6 +1,6 @@
 # Devices
 
-`kind: "device"`, model `lightsmith.problems.DeviceProblem`. A photonic device, such as a waveguide,
+Model `lightsmith.problems.DeviceProblem`. A photonic device, such as a waveguide,
 coupler, splitter or bend, characterised by its S-matrix between ports.
 
 ## Fields
@@ -32,7 +32,7 @@ coupler, splitter or bend, characterised by its S-matrix between ports.
 - BPM has the same port requirement and works in 2D and 3D, on the CPU or a GPU. It is one-way (no
   reflections) and suits long, slowly varying devices. Since EME accepts the same devices, ask for BPM
   with `method="bpm"`.
-- FDFD is 2D only, runs on a GPU, and gives adjoint gradients. It is the engine behind
+- FDFD works in 2D and 3D, runs on a GPU, and gives adjoint gradients. It is the engine behind
   [inverse design](optimization.md).
 
 ## Layout import

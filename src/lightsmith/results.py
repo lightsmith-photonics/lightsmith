@@ -90,13 +90,24 @@ class Result(BaseModel):
         return ds
 
 
-def relative_difference(a: Result, b: Result, quantity: str = "c_ext_nm2") -> dict[str, float]:
-    """Max and RMS relative difference of `quantity` between two results on the same wavelengths."""
+def relative_difference(a: Result, b: Result, quantity: str = "c_ext_nm2", floor: float = 1e-3) -> dict[str, float]:
+    """Max and RMS relative difference of `quantity` between `a` and the reference `b` (same wavelengths).
+
+    The difference is divided by the reference value, but never by less than `floor` times the
+    reference extinction at that wavelength. Without that floor a near-zero reference (the absorption
+    of a lossless particle, ~1e-19 of C_ext) would turn round-off into enormous relative errors.
+    """
     if not np.allclose(a.wavelengths_nm, b.wavelengths_nm):
         raise ValueError("results are on different wavelength grids")
     x, y = np.asarray(getattr(a, quantity)), np.asarray(getattr(b, quantity))
-    rel = np.abs(x - y) / np.maximum(np.abs(y), 1e-300)
+    scale = np.maximum(np.abs(y), floor * np.abs(np.asarray(b.c_ext_nm2)))
+    rel = np.abs(x - y) / np.maximum(scale, 1e-300)
     return {"max": float(rel.max()), "rms": float(np.sqrt(np.mean(rel**2)))}
+
+
+def _stats(d) -> dict[str, float]:
+    d = np.abs(np.asarray(d, dtype=float)).ravel()
+    return {"max": float(d.max()), "rms": float(np.sqrt(np.mean(d**2)))} if d.size else {"max": 0.0, "rms": 0.0}
 
 
 # --- results of the other problem kinds ------------------------------------
@@ -168,6 +179,19 @@ class ModeResult(_ResultBase):
         description="[wavelength][mode], sorted by decreasing neff_real (by overlap with the previous wavelength "
         "when the solver option track_modes=True).")
 
+    def difference(self, other: "ModeResult") -> dict[str, dict[str, float]]:
+        """Max and RMS absolute difference of neff (real, imag) and ng, mode by mode, over the modes both have."""
+        if not np.allclose(self.wavelengths_nm, other.wavelengths_nm):
+            raise ValueError("mode results are on different wavelength grids")
+        d: dict[str, list[float]] = {"neff_real": [], "neff_imag": [], "ng": []}
+        for ma, mb in zip(self.modes, other.modes):
+            for x, y in zip(ma, mb):
+                d["neff_real"].append(x.neff_real - y.neff_real)
+                d["neff_imag"].append(x.neff_imag - y.neff_imag)
+                if x.ng is not None and y.ng is not None:
+                    d["ng"].append(x.ng - y.ng)
+        return {k: _stats(v) for k, v in d.items() if v}
+
 
 class SParameterResult(_ResultBase):
     kind: Literal["sparameters"] = "sparameters"
@@ -179,6 +203,21 @@ class SParameterResult(_ResultBase):
     def s(self) -> np.ndarray:
         return np.asarray(self.s_real) + 1j * np.asarray(self.s_imag)
 
+    def difference(self, other: "SParameterResult") -> dict[str, dict[str, float]]:
+        """Max and RMS absolute difference of |S|^2 (power) and of complex S, over every entry and wavelength.
+
+        Entries are matched by port name, so the two results may list ports in different orders.
+        One-way solvers (BPM) set same-plane entries such as S11 to 0; that shows up here as a
+        difference in reflected power.
+        """
+        if not np.allclose(self.wavelengths_nm, other.wavelengths_nm):
+            raise ValueError("S-parameters are on different wavelength grids")
+        if set(self.ports) != set(other.ports):
+            raise ValueError(f"different ports: {self.ports} vs {other.ports}")
+        idx = [other.ports.index(p) for p in self.ports]
+        a, b = self.s(), other.s()[:, idx][:, :, idx]
+        return {"power": _stats(np.abs(a) ** 2 - np.abs(b) ** 2), "amplitude": _stats(np.abs(a - b))}
+
 
 class BandResult(_ResultBase):
     kind: Literal["bands"] = "bands"
@@ -187,3 +226,15 @@ class BandResult(_ResultBase):
     k_labels: dict[int, str] = Field(description="Index into k_reduced -> label, e.g. {0: 'Γ'}.")
     frequencies: dict[str, list[list[float]]] = Field(
         description="Polarization ('te'/'tm'/'all') -> normalised frequency a/λ, [k][band].")
+
+    def difference(self, other: "BandResult") -> dict[str, dict[str, float]]:
+        """Max and RMS absolute difference of the normalised frequencies a/λ per polarization, over the bands
+        both results have."""
+        if not np.allclose(np.asarray(self.k_reduced), np.asarray(other.k_reduced)):
+            raise ValueError("band structures are on different k paths")
+        out = {}
+        for pol in set(self.frequencies) & set(other.frequencies):
+            a, b = np.asarray(self.frequencies[pol]), np.asarray(other.frequencies[pol])
+            n = min(a.shape[1], b.shape[1])
+            out[pol] = _stats(a[:, :n] - b[:, :n])
+        return out

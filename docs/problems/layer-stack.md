@@ -1,6 +1,6 @@
 # Layer stacks
 
-`kind: "layer_stack"`, model `lightsmith.problems.LayerStackProblem`. A planar multilayer between a
+Model `lightsmith.problems.LayerStackProblem`. A planar multilayer between a
 semi-infinite superstrate and a semi-infinite substrate. Computes reflection, transmission and absorption
 against wavelength, angle and polarisation.
 

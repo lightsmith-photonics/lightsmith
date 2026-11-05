@@ -6,6 +6,33 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
 
 ## [Unreleased]
 
+### Fixed
+
+- **3D devices with ports facing y** (FDE ports, EME, BPM): the cross-section's local x axis was global z,
+  so `"te"` selected the vertical-E mode and BPM's `bend_radius_nm` bent the guide out of the chip plane.
+  Local x is now the in-plane transverse axis for ports facing x or y, as it already was in 2D. Results for
+  ports facing x, and for all 2D devices, are unchanged.
+- **`compare`**: device, circuit, mode and band results now report differences (they came back empty);
+  without a method list the reference is the method `auto` would pick, not the alphabetically first
+  backend; relative cross-section differences are floored at 0.1 % of the reference extinction, so a
+  lossless particle's near-zero absorption no longer gives huge relative errors. Results that cannot be
+  compared are listed under `not_compared`.
+- **FDTD periodic and layer-stack transmission** into an absorbing substrate is referred to the interface,
+  as in TMM and RCWA. Before, T was taken a few cells inside the substrate (Si at 420 nm read 0.744 instead
+  of 0.815) and metal substrates reported T = 0.
+- **BEM** checks particle overlap on the volume-corrected meshes the solve uses, so particles about 0.1 nm
+  apart no longer produce interpenetrating meshes, and warns when a gap is smaller than the mesh size.
+- **`auto`** skips a backend whose estimate exceeds its own size limit (BEM `max_unknowns`, DDA
+  `max_dipoles`, T-matrix `max_modes`, ...) and falls through to the next method, instead of picking it and
+  failing at solve time.
+- **`Tabulated`** materials sort their data by wavelength (energy-ordered files are descending, which
+  interpolation silently got wrong) and refuse duplicate wavelengths or mismatched column lengths.
+
+### Changed
+
+- Documentation describes problems through the Python models first; saving and loading them as JSON
+  files for the CLI and MCP server is covered in the quick start.
+
 ## [0.2.0] - 2026-11-02
 
 ### Added

@@ -49,6 +49,9 @@ It runs on the CPU or a CUDA GPU.
   that wavelength, and every result is at the requested angle. The pulse is kept clear of the frequency
   at which the zeroth order turns grazing, where fields ring for a long time. An oblique spectrum
   therefore costs one run per wavelength; `estimate` reports the count (`runs`, `oblique_runs`).
+- **Transmission.** T is the flux into the substrate at its interface with the stack, as in TMM and RCWA.
+  The monitor sits a few cells inside the substrate, so in an absorbing substrate (Si in the visible, or
+  a metal) each order's absorption over that distance, exp(−2 Im(k_z) d), is divided out.
 
 The design choices are explained in the docstring of `lightsmith.backends._fdtd.periodic`.
 
@@ -110,6 +113,7 @@ Differences are maximum absolute differences in R, T and A.
 | `test_fdtd_layer_stack_gpu_matches_cpu_and_metal_film` (gpu): 40 nm Ag film | TMM; CPU | < 0.01; GPU vs CPU 2e-5 |
 | `test_fdtd_oblique_layer_stack_matches_tmm_cpu`: 300 nm n = 2 slab, 0°, 30°, 60°, s and p | TMM | < 0.008 (measured 0.0046, 0.0039, 0.0018) |
 | `test_fdtd_oblique_drude_film_gpu_matches_cpu_and_tmm` (gpu): 30 nm Drude film, 30° and 60° | TMM; CPU | < 0.003 (measured 0.0008, 0.0006); GPU vs CPU 5e-5 |
+| `test_absorbing_substrate_transmission_is_taken_at_the_interface` (gpu): 80 nm SiO2 on Si and on Au, 420–700 nm | TMM | R, T < 0.02 (measured T 0.013 Si, 0.008 Au) |
 | `test_fdtd_oblique_grating_matches_rcwa` (gpu): lamellar grating at 30°, 60° (slow) and conical 30°/30° | RCWA | total < 0.008 (measured ≤ 0.0043); per order 0.012 (measured ≤ 0.0071) |
 | `test_fdtd_oblique_2d_lattice_conical_matches_rcwa` (slow, gpu): disks, P = 400 nm, θ = 40°, φ = 20° | RCWA, 11 harmonics | total < 0.005 (measured 0.0015); per order 0.01 (measured ≤ 0.0039) |
 | `test_fdtd_1d_grating_matches_rcwa` (gpu): lamellar grating | [RCWA](rcwa.md), 30 harmonics | total < 0.015; per order 0.01 |
