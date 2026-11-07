@@ -15,7 +15,7 @@ Quick start::
     cmp = ls.compare(sim, ["mie", "dda"])
 """
 
-from .api import choose_method, compare, estimate, solve
+from .api import choose_method, compare, discretization, estimate, solve
 from .backends import all_backends, get_backend
 from .device import doctor, resolve_device
 from .materials import (ConstantIndex, ConstantPermittivity, Drude, DrudeLorentz, LibraryMaterial, LorentzPole,
@@ -38,7 +38,7 @@ __all__ = [
     "ConstantIndex", "ConstantPermittivity", "Cylinder", "Drude", "DrudeLorentz", "FarFieldData", "FarFieldRequest",
     "LayeredSphere", "LibraryMaterial", "LorentzPole", "NearFieldData", "NearFieldRequest", "Outputs", "Particle",
     "PlaneWave", "Result", "Shell", "Simulation", "Sphere", "Spheroid", "Substrate", "Tabulated", "WavelengthRange",
-    "all_backends", "choose_method", "compare", "doctor", "estimate", "fetch_refractiveindex", "fit_drude_lorentz",
+    "all_backends", "choose_method", "compare", "discretization", "doctor", "estimate", "fetch_refractiveindex", "fit_drude_lorentz",
     "fit_quality", "get_backend",
     "json_schema", "list_materials", "load_material", "relative_difference", "resolve_device", "solve",
 ]

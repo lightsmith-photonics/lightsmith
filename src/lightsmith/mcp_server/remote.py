@@ -64,6 +64,9 @@ class CloudClient(_Http):
     def estimate(self, problem: dict, method: str, device: str) -> dict[str, Any]:
         return self.request("POST", "/v1/estimate", {"simulation": problem, "method": method, "device": device})
 
+    def discretization(self, problem: dict, method: str) -> dict[str, Any]:
+        return self.request("POST", "/v1/discretization", {"simulation": problem, "method": method})
+
     def submit(self, operation: str, problem: dict, *, method: str = "auto", methods: list[str] | None = None,
                device: str = "auto", reference: str | None = None, label: str | None = None) -> dict[str, Any]:
         body = {"simulation": problem, "kind": operation, "method": method, "device": device, "label": label}

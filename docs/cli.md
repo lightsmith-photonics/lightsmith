@@ -20,6 +20,7 @@ lightsmith compare  SPEC [--methods mie,dda] [--device auto] [-o comparison.json
 | `backends` | One entry per backend: `name`, `method`, `problem_kinds`, `license`, `gpu`, `differentiable`, `available`, `unavailable_reason`, `citation` |
 | `schema` | The JSON Schema of every problem kind |
 | `estimate` | Backend, device, problem size and memory, without solving |
+| `discretization` | What the backend will discretise: grid, mesh, dipole lattice, harmonics, cells ([Discretisation](discretization.md)) |
 | `solve` | The result model as JSON |
 | `compare` | `reference`, `results` (one per method) and `relative_difference` |
 

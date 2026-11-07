@@ -5,6 +5,7 @@ stderr as JSON with a non-zero exit code, so agents and scripts can parse both.
     lightsmith backends
     lightsmith schema
     lightsmith estimate spec.json [--method dda] [--device gpu]
+    lightsmith discretization spec.json [--method dda]
     lightsmith solve spec.json [--method auto] [--device auto] [-o result.json]
     lightsmith compare spec.json [--methods mie,dda]
 """
@@ -43,6 +44,10 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("doctor", help="report CPU/GPU frameworks and devices")
     sub.add_parser("backends", help="list solver backends and their availability")
     sub.add_parser("schema", help="print the JSON Schema of every problem kind")
+    lay = sub.add_parser("discretization", help="what a backend will discretise (grid, mesh, dipoles, harmonics, cells); "
+                         "never solves")
+    lay.add_argument("spec", help="simulation JSON file, or - for stdin")
+    lay.add_argument("--method", default="auto", help="auto | <method> (see `backends`) | <backend name>")
     for name in ("estimate", "solve", "compare"):
         s = sub.add_parser(name)
         s.add_argument("spec", help="simulation JSON file, or - for stdin")
@@ -62,6 +67,8 @@ def main(argv: list[str] | None = None) -> int:
             _out([b.info() for b in all_backends()])
         elif a.cmd == "schema":
             _out(problem_json_schema())
+        elif a.cmd == "discretization":
+            _out(api.discretization(_load(a.spec), a.method))
         elif a.cmd == "estimate":
             _out(api.estimate(_load(a.spec), a.method, a.device))
         elif a.cmd == "solve":

@@ -63,16 +63,25 @@ def test_tool_surface_schemas_and_annotations(cfg):
     tools = run(go, cfg)
     assert {"list_problem_kinds", "get_schema", "list_backends", "check_environment", "validate_problem", "estimate",
             "solve", "start_solve", "compare", "get_job", "list_jobs", "cancel_job", "get_result",
-            "search_materials", "get_material", "fit_drude_lorentz"} <= set(tools)
+            "search_materials", "get_material", "fit_drude_lorentz", "get_discretization"} <= set(tools)
     prob = tools["solve"].input_schema["properties"]["problem"]
     assert prob["properties"]["kind"]["enum"] == kinds() and set(PROBLEM_KINDS) <= set(kinds())
     assert tools["solve"].input_schema["properties"]["device"]["pattern"]
     assert set(tools["solve"].output_schema["properties"]) >= {"status", "job_id", "summary", "job"}
-    for name in ("get_schema", "list_backends", "estimate", "validate_problem", "get_job"):
+    for name in ("get_schema", "list_backends", "estimate", "validate_problem", "get_job", "get_discretization"):
         assert tools[name].annotations.read_only_hint is True, name
     assert tools["solve"].annotations.read_only_hint is False
     assert tools["cancel_job"].annotations.destructive_hint is True
     assert all(t.description and len(t.description) > 40 for t in tools.values())
+
+
+def test_get_discretization_shows_what_a_backend_discretises(cfg):
+    async def go(c):
+        return data(await c.call_tool("get_discretization", {"problem": EXAMPLES["layer_stack"], "method": "rcwa"}))
+
+    out = run(go, cfg)
+    assert out["backend"] == "lightsmith-rcwa" and out["layout_kind"] == "harmonics"
+    assert out["summary"]["harmonics"] == 1 and out["error"] is None
 
 
 def test_every_kind_has_schema_and_valid_example(cfg):

@@ -8,6 +8,15 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
 
 ### Added
 
+- **`lightsmith.discretization(problem, method)`**, `lightsmith discretization` and the MCP tool `get_discretization`: what a backend
+  will discretise, before any solve, with a common envelope (`layout_kind`, a labelled `summary`, a `payload`, the
+  estimate, warnings, and the library's refusal in `error`). FDTD: the Yee grid, TFSF and flux boxes, CPML,
+  refinement regions and mirror planes; unit cells of periodic structures and layer stacks; device grids and
+  ports. FDFD device grids and ports, inverse-design regions, the DDA dipole lattice, the BEM surface mesh, Mie
+  and T-matrix multipole orders, RCWA harmonics, FDE grids, EME and BPM cells, PWE k-paths and plane waves. Each
+  calls the backend's own planning code and never solves. `Backend.discretization` lets plugins answer too.
+  See `docs/discretization.md`.
+
 - **FDTD graded grids for device problems**: `mesh_override` boxes and `grid: "auto"` (each structure refined
   to `cells_per_wavelength` in its own material) now work for `kind: "device"`, in 2D and 3D. Ports sit in
   uniform cells along their normals; across their windows the cells may be graded, and the port modes come
@@ -105,6 +114,11 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
 
 ### Fixed
 
+- Inverse design: `estimate` now applies the optimisation-level solver options (`OptimizationProblem.options`),
+  merged over the device's key by key as the optimiser merges them (`inverse.backend.device_problem`); it used
+  the device's options alone.
+- FDTD options: the `pml_cells` description gives the device default (12), and the `mesh_override` description
+  no longer names another product.
 - FDTD: the time step is reduced where a dispersive (Drude–Lorentz) material would make the update unstable
   on a coarse grid, checked from the update's eigenvalues over the grid's spatial frequencies. The
   Johnson–Christy gold fit diverged at dx ≥ 20 nm, and lossy constants at dx near half a wavelength.

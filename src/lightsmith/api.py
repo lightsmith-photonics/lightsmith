@@ -114,6 +114,14 @@ def estimate(problem: BaseModel | dict | str, method: str = "auto", device: str 
     return {"backend": b.name, "method": b.method, **dev.describe(), **b.estimate(problem, dev)}
 
 
+def discretization(problem: BaseModel | dict | str, method: str = "auto") -> dict[str, Any]:
+    """What a backend will discretise before the run (grid, mesh, dipole lattice, harmonics, cells, plane waves),
+    with its estimate: see :mod:`lightsmith.discretize`. Never solves."""
+    from .discretize import discretization as _discretization
+
+    return _discretization(problem, method)
+
+
 def compare(problem: BaseModel | dict | str, methods: list[str] | None = None, device: str = "auto",
             reference: str | None = None) -> dict[str, Any]:
     """Solve with several methods and report differences against a reference.

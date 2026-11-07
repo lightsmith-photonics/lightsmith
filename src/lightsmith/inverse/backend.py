@@ -12,6 +12,16 @@ from ..device import Device
 from .spec import OptimizationProblem
 
 
+def device_problem(problem: OptimizationProblem):
+    """The device problem the optimiser solves: the optimisation-level solver options override the device's,
+    key by key per method (as the optimiser merges them)."""
+    dev = problem.device
+    if not problem.options:
+        return dev
+    merged = {m: {**dev.options.get(m, {}), **problem.options.get(m, {})} for m in {*dev.options, *problem.options}}
+    return dev.model_copy(update={"options": merged})
+
+
 @register
 class InverseDesign(Backend):
     name = "lightsmith-inverse"
@@ -49,7 +59,7 @@ class InverseDesign(Backend):
     @classmethod
     def estimate(cls, problem, device):
         b = get_backend(problem.backend, kind="device")
-        est = b.estimate(problem.device, device)
+        est = b.estimate(device_problem(problem), device)
         n_src = len({(t.in_port, t.in_mode) if hasattr(t, "in_port") else (t.source_port, t.source_mode)
                      for t in problem.objective})
         out = {**est, "differentiable_backend": b.name, "max_iter": problem.optimizer.max_iter,

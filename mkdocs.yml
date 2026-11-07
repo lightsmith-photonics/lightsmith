@@ -125,6 +125,7 @@ nav:
   - Interfaces:
       - Command line: cli.md
       - MCP server: mcp.md
+      - Discretisation: discretization.md
   - Benchmarks:
       - benchmarks/index.md
       - Agent benchmark: benchmarks/agents.md

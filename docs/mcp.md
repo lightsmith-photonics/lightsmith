@@ -91,6 +91,7 @@ send `Authorization: Bearer <token>`.
 | `check_environment` | CPU/GPU devices, server mode (local/remote), budget, job slots. Never shows the API key. | read-only |
 | `validate_problem(problem)` | Schema errors with field paths, the normalised problem, and which backends can run it and why not. | read-only |
 | `estimate(problem, method, device)` | Size, memory, estimated run time and the budget verdict. Never solves. | read-only |
+| `get_discretization(problem, method)` | What the backend will discretise (grid, mesh, dipoles, harmonics, cells, plane waves); see [Discretisation](discretization.md). Never solves. | read-only |
 | `solve(problem, method, device, wait_s, plot)` | Budget-checked solve; returns a summary, or a job id if it takes longer than `wait_s`. | |
 | `start_solve(problem, ...)` | Same check; returns a job id at once. | |
 | `compare(problem, methods, reference, ...)` | Several methods, relative differences against a reference. | |

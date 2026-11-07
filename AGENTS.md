@@ -15,10 +15,11 @@ Component-to-circuit flow (`lightsmith.pdk`): `get_component(cell, **params)` bu
 Interfaces, all JSON in / JSON out:
 
 - Python: `import lightsmith as ls`
-- CLI: `lightsmith {doctor,backends,schema,estimate,solve,compare}` — errors are JSON on stderr, exit code 1.
+- CLI: `lightsmith {doctor,backends,schema,estimate,discretization,solve,compare}` — errors are JSON on stderr, exit code 1.
+  `discretization` (`ls.discretization`) shows what a backend will discretise (grid, mesh, dipoles, harmonics, cells) without solving.
 - MCP: `lightsmith-mcp` (stdio; `--http` for streamable HTTP). Tools:
   - discovery: `list_problem_kinds`, `get_schema(kind)`, `list_backends`, `check_environment`, `validate_problem`;
-  - solving: `estimate`, `solve`, `start_solve`, `compare`;
+  - solving: `estimate`, `get_discretization`, `solve`, `start_solve`, `compare`;
   - jobs: `get_job`, `list_jobs`, `cancel_job`, `get_result`;
   - materials: `search_materials`, `get_material`, `fit_drude_lorentz`.
 

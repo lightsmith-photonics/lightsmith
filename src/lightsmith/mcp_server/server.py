@@ -363,6 +363,18 @@ def build_server(config: ServerConfig | None = None) -> MCPServer:
         return {"kind": kind, "estimate": est, "budget_check": chk,
                 "runs_on": "remote: " + cfg.cloud_url if cloud else "this machine"}
 
+    @mcp.tool(title="Discretisation", annotations=READ_ONLY)
+    async def get_discretization(problem: Problem, method: Method = "auto") -> dict[str, Any]:
+        """What a backend will discretise before the run, as the library plans it: the FDTD Yee grid and boxes,
+        device grids and ports, the DDA dipole lattice, the BEM surface mesh, Mie/T-matrix multipole orders, RCWA
+        harmonics, FDE grids, EME/BPM cells, PWE k-path and plane waves. A labelled `summary`, a `payload` per
+        `layout_kind`, and the estimate. Never solves."""
+        model, kind, spec = parse(problem)
+        with _friendly():
+            if cloud is not None:
+                return await anyio.to_thread.run_sync(cloud.discretization, spec, method)
+            return await anyio.to_thread.run_sync(api.discretization, model, method)
+
     @mcp.tool(title="Solve", annotations=RUNS)
     async def solve(problem: Problem, method: Method = "auto", device: Device = "auto", wait_s: WaitS = None,
                     plot: Annotated[bool, Field(description="Attach a PNG plot of the result.")] = False,

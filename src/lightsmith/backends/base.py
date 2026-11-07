@@ -42,6 +42,15 @@ class Backend(ABC):
         return {}
 
     @classmethod
+    def discretization(cls, sim: Simulation, device: Device) -> dict[str, Any] | None:
+        """What this backend will discretise for `sim` (grid, mesh, dipoles, harmonics, cells, ...), as
+        ``{layout_kind, summary, payload, warnings, error}``; None when there is nothing to show. Never solves.
+        The built-in backends' answers live in :mod:`lightsmith.discretize`; plugins may override this."""
+        from ..discretize import plan_for
+
+        return plan_for(cls, sim)
+
+    @classmethod
     @abstractmethod
     def solve(cls, sim: Simulation, device: Device) -> Result:
         ...

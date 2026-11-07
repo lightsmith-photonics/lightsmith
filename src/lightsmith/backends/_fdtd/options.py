@@ -35,8 +35,8 @@ class FDTDOptions(BaseModel):
     cells_per_radius: float | None = Field(
         None, ge=2, description="Minimum cells across the smallest particle half-extent. Default 10, "
         "or 20 when a material has Re(eps) < 0 in the band (plasmonic; ~2.5% peak-height error at 20).")
-    pml_cells: int | None = Field(None, ge=4, description="CPML thickness in cells. Default: 10, or 16 with a "
-                                  "substrate (steep waves in the substrate need the thicker layer).")
+    pml_cells: int | None = Field(None, ge=4, description="CPML thickness in cells. Default: 10, 16 with a "
+                                  "substrate (steep waves in the substrate need the thicker layer), 12 for devices.")
     pml_kappa: float = Field(1.0, ge=1, description="CPML kappa_max (>1 damps evanescent fields faster).")
     padding_nm: float | None = Field(
         None, ge=0, description="Gap between the particles' bounding box (periodic: the stack) and the TFSF "
@@ -79,7 +79,7 @@ class FDTDOptions(BaseModel):
         "spacing its material and size need (cells_per_wavelength in the particle, cells_per_radius), with a "
         "bounded growth ratio (grading_ratio) in between. Far fewer cells for small, high-index or metal particles.")
     mesh_override: list[MeshOverride] = Field(
-        default_factory=list, description="Scattering and devices: refinement boxes (as Lumerical's mesh override regions); the "
+        default_factory=list, description="Scattering and devices: refinement boxes (mesh override regions); the "
         "grid takes each box's spacing inside it and grades to the base spacing (spacing_nm, or the automatic "
         "spacing) around it. Combine with grid='auto' or use alone.")
     background_cells_per_wavelength: float = Field(
