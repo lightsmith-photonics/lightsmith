@@ -8,6 +8,13 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
 
 ### Added
 
+- **FDTD graded grids for device problems**: `mesh_override` boxes and `grid: "auto"` (each structure refined
+  to `cells_per_wavelength` in its own material) now work for `kind: "device"`, in 2D and 3D. Ports sit in
+  uniform cells along their normals; across their windows the cells may be graded, and the port modes come
+  from the FDE problem on the same non-uniform cross-section (the FDE grid gained per-cell widths), so they stay
+  exact for the grid: a straight guide still transmits |S21| = 1 with the grid's phase (1e-10 rad). A
+  500 → 900 nm 2D step graded from 25 to 10 nm is within 2e-5 of a uniform 10 nm run with 63 % of the cells,
+  and a 3D wire step graded from 40 to 15 nm within 8e-6 of a uniform 15 nm run with 45 % of the cells.
 - **FDTD graded grids** (scattering): `grid: "auto"` refines each particle's bounding box to the spacing its
   material and size need, and `mesh_override: [{center_nm, size_nm, spacing_nm}]` adds refinement boxes. The
   cells grade back to the base spacing at most `grading_ratio` (1.25) per cell. The grid is a tensor product

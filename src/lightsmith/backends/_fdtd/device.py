@@ -14,6 +14,16 @@ level, 3e-5). Under an explicit ``conformal`` the off-diagonal terms are dropped
 each port's source and monitor planes; elsewhere they change the guide's discrete beta slightly (2.5e-4 in neff
 for a 500 x 220 nm silicon wire at dx = 25 nm, from its corners), and the slab's edges reflect ~2e-4. A port
 crossing vertex-tensor cells (a dispersive interface under ``conformal``) makes the whole run use ``subpixel``.
+
+Graded grids (``grid: "auto"``, ``mesh_override``): per axis a tensor-product grid (``grid.py``). ``auto`` takes
+the base spacing from the background medium (``cells_per_wavelength`` there, or ``background_cells_per_wavelength``
+when given: the scattering default of 60 guards against waves crossing the grading, while a guided wave runs
+along its own refined core) and refines each structure's
+bounding box to ``cells_per_wavelength`` in its own material; override boxes refine where asked. A refinement
+that reaches a face of the domain continues through the buffer and the CPML (structures run on through them, and
+the CPML stays uniform). Each port sits in a zone of uniform cells along its normal (its source, monitor and slab),
+because the discrete mode relation B = 2 sin(beta h / 2) / h holds in a uniform section; across the window the
+cells may be graded, and the port modes come from the FDE problem on the same non-uniform cross-section.
 """
 
 from __future__ import annotations
@@ -32,6 +42,7 @@ from .engine import DFTMonitor, Engine, OffDiagonal, PMLSpec, TensorMesh
 from .media import Medium, needs_fit, fit_module, to_medium
 from .options import FDTDOptions
 from .ports import ModeSource, ModeTable, PortFrame, node_eta
+from .grid import Grid as GradedGrid, Region, spacing_fn
 from .setup import FS, run_until_decayed, voxelise
 
 SLAB = 3  # cells beyond the source and monitor planes kept free of off-diagonal terms
@@ -73,12 +84,13 @@ def supports(problem) -> tuple[bool, str]:
 
 @dataclass
 class _Grid:
-    dx: float
+    dx: float  # the cell size (uniform), or the base spacing (graded)
     shape: tuple[int, int, int]
     origin: np.ndarray
     interior: tuple[tuple[int, int], ...]  # first and last node index of the domain per axis
     n_pml: int
     two_d: bool
+    graded: GradedGrid | None = None  # node coordinates of a graded grid
 
     @property
     def cells(self) -> int:
@@ -87,6 +99,40 @@ class _Grid:
     @property
     def periodic(self) -> tuple[bool, bool, bool]:
         return (False, False, self.two_d)
+
+    def coord(self, a: int, i) -> float:
+        """World coordinate of node index i along a."""
+        if self.graded is None:
+            return float(self.origin[a] + i * self.dx)
+        return float(self.graded.nodes[a][i])
+
+    def index(self, a: int, x) -> float:
+        """Fractional node index of world coordinate x along a."""
+        if self.graded is None:
+            return (float(x) - self.origin[a]) / self.dx
+        return float(self.graded.index_of(a, x))
+
+    def prim(self, a: int, lo: int, hi: int) -> np.ndarray:
+        """Primary widths of cells lo .. hi - 1 along a."""
+        if self.graded is None:
+            return np.full(hi - lo, self.dx)
+        return self.graded.prim(a)[lo:hi]
+
+    def engine_spacing(self):
+        """The Engine's dx: the cell size, or per axis the (uniform) spacing of each axis of a graded grid."""
+        if self.graded is None:
+            return self.dx
+        return tuple(float(self.graded.prim(a)[0]) for a in range(3))
+
+    def engine_widths(self):
+        """The Engine's per-axis widths: None on uniform (and periodic) axes."""
+        if self.graded is None:
+            return None
+        return tuple(None if (self.periodic[a] or self.graded.uniform_axis(a)) else self.graded.prim(a)
+                     for a in range(3))
+
+    def min_spacing(self, a: int) -> float:
+        return self.dx if self.graded is None else self.graded.min_spacing(a)
 
 
 def _n_max(problem, wl) -> float:
@@ -99,8 +145,132 @@ def _n_max(problem, wl) -> float:
     return n
 
 
+def graded(opts: FDTDOptions) -> bool:
+    return opts.grid == "auto" or bool(opts.mesh_override)
+
+
+def _n_of(material, wl) -> float:
+    try:
+        return max(1.0, float(np.abs(np.sqrt(np.asarray(material.eps(wl), dtype=complex))).max()))
+    except Exception:  # noqa: BLE001 (range errors surface later, with context)
+        return 1.0
+
+
+def _regions(problem, opts: FDTDOptions, wl, base: float) -> list[Region]:
+    """Refinement boxes: each structure's bounding box (grid 'auto') and the override boxes. A box that reaches
+    a face of the domain runs on to infinity there (through the buffer and the CPML)."""
+    c = np.asarray(problem.domain_center_nm, dtype=float)
+    size = np.asarray(problem.domain_size_nm, dtype=float)
+    lo_d, hi_d = c - size / 2, c + size / 2
+    boxes = []
+    if opts.grid == "auto":
+        for st in problem.structures:
+            h = float(wl.min()) / (_n_of(st.material, wl) * opts.cells_per_wavelength)
+            if h < base:
+                lo, hi = _bbox(st.geometry)
+                boxes.append((lo, hi, np.full(3, h)))
+    for o in opts.mesh_override:
+        oc, sz = np.asarray(o.center_nm, dtype=float), np.asarray(o.size_nm, dtype=float)
+        boxes.append((oc - sz / 2, oc + sz / 2, np.broadcast_to(np.asarray(o.spacing_nm, dtype=float), (3,))))
+    out = []
+    for lo, hi, sp in boxes:
+        lo, hi = np.array(lo, dtype=float), np.array(hi, dtype=float)
+        tol = 1e-6 * base
+        lo[lo <= lo_d + tol] = -np.inf
+        hi[hi >= hi_d - tol] = np.inf
+        out.append(Region.make(lo, hi, sp))
+    return out
+
+
+def _min_h(base: float, regions, a: int, ratio: float, lo: float, hi: float) -> float:
+    """Exact minimum of the spacing function over [lo, hi] along a (it is piecewise linear)."""
+    v = base
+    for r in regions:
+        if r.spacing[a] < base:
+            dist = max(r.lo[a] - hi, lo - r.hi[a], 0.0)
+            v = min(v, r.spacing[a] + (ratio - 1) * dist)
+    return float(v)
+
+
+def _march(h, x0: float, direction: int, until: float | None = None, count: int | None = None) -> list[float]:
+    """Cell widths from x0 outward: until past `until`, or `count` cells. Each cell takes the minimum of h over
+    itself (fixed-point passes), so it never overruns a finer region."""
+    widths, x = [], float(x0)
+    t = np.linspace(0.0, 1.0, 17)
+    while (direction * (x - until) < 0) if count is None else (len(widths) < count):
+        w = float(h(np.array([x]))[0])
+        for _ in range(8):
+            w_new = float(np.min(h(x + direction * t * w)))
+            if w_new >= w * (1 - 1e-12):
+                break
+            w = w_new
+        widths.append(w)
+        x += direction * w
+        if len(widths) > 1_000_000:
+            raise ValueError("graded grid: too many cells (check mesh_override spacings)")
+    return widths
+
+
+def _port_zones(problem, regions, a: int, base: float, ratio: float) -> list[Region]:
+    """A zone of uniform cells along axis a around each port normal to a: its source, monitor and slab."""
+    out = []
+    for p in problem.ports:
+        if p.normal_axis != a:
+            continue
+        x = p.center_nm[a]
+        hz = _min_h(base, regions, a, ratio, x, x)
+        for _ in range(3):  # the zone's width depends on its spacing
+            half = (SLAB + 6) * hz
+            hz = _min_h(base, regions, a, ratio, x - half, x + half)
+        if hz < base:
+            sp = np.full(3, base)
+            sp[a] = hz
+            lo, hi = np.full(3, -np.inf), np.full(3, np.inf)
+            lo[a], hi[a] = x - half, x + half
+            out.append(Region.make(lo, hi, sp))
+    return out
+
+
+def _graded_grid(problem, opts: FDTDOptions, wl) -> _Grid:
+    n_pml = opts.pml_cells or 12
+    two_d = problem.dimension == 2
+    if opts.spacing_nm:
+        base = float(opts.spacing_nm)
+    elif opts.grid == "auto":  # guided waves run along their refined cores, so the background need not be finer
+        cpw = (opts.background_cells_per_wavelength if "background_cells_per_wavelength" in opts.model_fields_set
+               else opts.cells_per_wavelength)
+        base = float(wl.min()) / (_n_of(problem.background, wl) * cpw)
+    else:
+        base = float(wl.min()) / (_n_max(problem, wl) * opts.cells_per_wavelength)
+    regions = _regions(problem, opts, wl, base)
+    ratio = opts.grading_ratio
+    nodes, interior = [], []
+    for a in range(3):
+        c, size = problem.domain_center_nm[a], problem.domain_size_nm[a]
+        if a == 2 and two_d:
+            nodes.append(np.array([c - base, c, c + base]))
+            interior.append((1, 1))
+            continue
+        regs = regions + _port_zones(problem, regions, a, base, ratio)
+        h, _ = spacing_fn(base, regs, a, ratio)
+        up = _march(h, c, 1, until=c + size / 2)
+        dn = _march(h, c, -1, until=c - size / 2)
+        up += _march(h, c + sum(up), 1, count=BUFFER)  # ports may sit on the domain's faces
+        dn += _march(h, c - sum(dn), -1, count=BUFFER)
+        w_lo, w_hi = dn[-1], up[-1]
+        widths = [w_lo] * (n_pml + 1) + dn[::-1] + up + [w_hi] * (n_pml + 2)  # CPML and PEC backstop: uniform
+        x0 = c - sum(dn) - (n_pml + 1) * w_lo
+        nodes.append(x0 + np.concatenate([[0.0], np.cumsum(widths)]))
+        i0 = n_pml + 1
+        interior.append((i0, i0 + len(dn) + len(up)))
+    g = GradedGrid(tuple(nodes))
+    return _Grid(float(base), g.shape, g.origin, tuple(interior), n_pml, two_d, graded=g)
+
+
 def make_grid(problem, opts: FDTDOptions) -> _Grid:
     wl = wavelength_array(problem.wavelengths)
+    if graded(opts):
+        return _graded_grid(problem, opts, wl)
     dx = opts.spacing_nm or float(wl.min()) / (_n_max(problem, wl) * opts.cells_per_wavelength)
     n_pml = opts.pml_cells or 12
     two_d = problem.dimension == 2
@@ -122,7 +292,6 @@ def make_grid(problem, opts: FDTDOptions) -> _Grid:
 
 def port_frames(problem, grid: _Grid) -> list[PortFrame]:
     out = []
-    dx, o = grid.dx, grid.origin
     for p in problem.ports:
         a = p.normal_axis
         if grid.two_d and a == 1:
@@ -130,29 +299,39 @@ def port_frames(problem, grid: _Grid) -> list[PortFrame]:
         else:
             t1, t2, sgn = (a + 1) % 3, (a + 2) % 3, 1
         d = 1 if p.direction == "+" else -1
-        k_p = int(round((p.center_nm[a] - o[a]) / dx))
+        k_p = int(round(grid.index(a, p.center_nm[a])))
         k_m = k_p + 2 * d
         lo_a, hi_a = grid.interior[a]
         if min(k_p, k_m) - SLAB - 1 < lo_a or max(k_p, k_m) + SLAB + 1 > hi_a:
             raise ValueError(f"port {p.name!r}: its plane must lie at least {SLAB + 3} cells inside the domain "
                              f"along {'xyz'[a]} (the source, monitor and their slab sit there)")
+        k0, k1 = min(k_p, k_m) - SLAB - 1, max(k_p, k_m) + SLAB + 1
+        wn = grid.prim(a, k0, k1)
+        if np.ptp(wn) > 1e-9 * wn.mean():
+            raise ValueError(f"port {p.name!r}: the cells along {'xyz'[a]} around the port are not uniform "
+                             f"({wn.min():.3g}-{wn.max():.3g} nm); move it away from the mesh override's edge")
+        ds = float(wn.mean())
         lo, n = [], []
         for t in (t1, t2):
             if grid.two_d and t == 2:
                 lo.append(1)
                 n.append(1)
                 continue
-            i_lo = int(round((p.center_nm[t] - p.size_nm[t] / 2 - o[t]) / dx))
-            i_hi = int(round((p.center_nm[t] + p.size_nm[t] / 2 - o[t]) / dx))
+            i_lo = int(round(grid.index(t, p.center_nm[t] - p.size_nm[t] / 2)))
+            i_hi = int(round(grid.index(t, p.center_nm[t] + p.size_nm[t] / 2)))
             i_lo, i_hi = max(i_lo, grid.interior[t][0]), min(i_hi, grid.interior[t][1])
             if i_hi - i_lo < 4:
                 raise ValueError(f"port {p.name!r}: the window spans {i_hi - i_lo} cells inside the domain along "
                                  f"{'xyz'[t]}; make it wider or the grid finer")
             lo.append(i_lo)
             n.append(i_hi - i_lo)
+        widths = (None, None)
+        if grid.graded is not None:
+            widths = tuple(None if nn == 1 else tuple(grid.prim(t, l_, l_ + nn).tolist())
+                           for t, l_, nn in ((t1, lo[0], n[0]), (t2, lo[1], n[1])))
         out.append(PortFrame(name=p.name, a=a, t1=t1, t2=t2, sgn=sgn, d=d, k_p=k_p, k_m=k_m, lo=tuple(lo),
-                             n=tuple(n), s_ref=sgn * p.center_nm[a], s_m=sgn * (o[a] + k_m * dx),
-                             num_modes=p.num_modes, shape=grid.shape))
+                             n=tuple(n), s_ref=sgn * p.center_nm[a], s_m=sgn * grid.coord(a, k_m),
+                             num_modes=p.num_modes, shape=grid.shape, widths=widths, ds=ds))
     return out
 
 
@@ -246,7 +425,11 @@ def plan(problem, opts: FDTDOptions, single: bool) -> dict:
     media, _ = _media(problem, wl, warnings)
     eps_min = min([1.0] + [m.eps_inf for m in media])
     dims = 2 if grid.two_d else 3
-    dt = opts.courant * grid.dx * math.sqrt(eps_min) / math.sqrt(dims)
+    if grid.graded is None:
+        dt = opts.courant * grid.dx * math.sqrt(eps_min) / math.sqrt(dims)
+    else:  # the smallest cell per axis sets it (the invariant axis of a 2D run has no differences)
+        h = [grid.min_spacing(a) for a in range(dims)]
+        dt = opts.courant * math.sqrt(eps_min) / math.sqrt(sum(1 / v**2 for v in h))
     w1, w2, wc, sigma, wa, wb = _band(wl)
     stride = opts.dft_stride or max(1, int(2 * np.pi / ((wb + w2) * dt)))
     max_steps = int(math.ceil((opts.run_time_fs or opts.max_time_fs) * FS / dt / stride)) * stride
@@ -303,7 +486,7 @@ def solve(problem, opts: FDTDOptions, device: Device) -> SParameterResult:
     omega = 2 * np.pi / wl
     _, slots = _media(problem, wl, [])
     w1, w2, wc, sigma, wa, wb = p["band"]
-    dx = grid.dx
+    dx = grid.engine_spacing()
 
     t0 = time.perf_counter()
     slot_fn = _slot_fn(problem, slots, problem.domain_center_nm[2] if grid.two_d else None)
@@ -313,7 +496,7 @@ def solve(problem, opts: FDTDOptions, device: Device) -> SParameterResult:
 
     def vox(m):
         return voxelise(slot_fn, media, grid.shape, grid.origin, dx, roi_lo, roi_hi, mode=m,
-                        samples=opts.subpixel_samples, periodic=grid.periodic)
+                        samples=opts.subpixel_samples, periodic=grid.periodic, grid=grid.graded)
 
     inv_eps, groups, vstats, offdiag = vox(mode)
     tm = next((g for g in groups if isinstance(g, TensorMesh)), None)
@@ -331,7 +514,7 @@ def solve(problem, opts: FDTDOptions, device: Device) -> SParameterResult:
         pol = {"te": "x", "tm": "y"}[opts.polarization or "te"]
     tables = []
     for f in frames:
-        tables.append(ModeTable(f, dx, dt, wa, wb, _eps_fn(f, inv_eps, groups, dt), polarization=pol))
+        tables.append(ModeTable(f, f.ds, dt, wa, wb, _eps_fn(f, inv_eps, groups, dt), polarization=pol))
     t_modes = time.perf_counter() - t0
 
     n_bg = float(np.sqrt(max(media[0].eps_inf, 1.0)))
@@ -353,7 +536,7 @@ def solve(problem, opts: FDTDOptions, device: Device) -> SParameterResult:
                     for g in frames]
             eng = Engine(device, shape=grid.shape, dx=dx, dt=dt, single=single, inv_eps=inv_eps, groups=groups,
                          pml=pml, sources=[src], monitors=mons, dft_stride=stride, periodic=grid.periodic,
-                         offdiag=offdiag)
+                         offdiag=offdiag, widths=grid.engine_widths())
             t_loop = time.perf_counter()
             steps, level, graphs = run_until_decayed(
                 eng, opts, max_steps=p["max_steps"], min_steps=int((src.t_off + transit) / dt),
@@ -397,11 +580,12 @@ def solve(problem, opts: FDTDOptions, device: Device) -> SParameterResult:
             warnings.append(f"port {f.name!r}: {e:.1%} of the mode's field is on the window "
                             "edge; widen the port")
     provenance = {
-        **device.describe(), "grid": list(grid.shape), "cells": grid.cells, "spacing_nm": dx,
+        **device.describe(), "grid": list(grid.shape), "cells": grid.cells, "spacing_nm": grid.dx,
+        **({"graded_grid": {**grid.graded.describe(), "base_spacing_nm": grid.dx}} if grid.graded is not None else {}),
         "dt_fs": dt / FS, "dft_stride": stride, "precision": "single" if single else "double",
         "dimension": problem.dimension, **vstats, "mesh_refinement": mode, "offdiagonal_dropped_at_ports": n_dropped,
         "source_band_nm": [2 * np.pi / wb, 2 * np.pi / wa],
-        "ports": {f.name: {"plane_nm": float(grid.origin[f.a] + f.k_p * dx), "window_cells": list(f.n),
+        "ports": {f.name: {"plane_nm": grid.coord(f.a, f.k_p), "window_cells": list(f.n), "normal_spacing_nm": f.ds,
                            "neff": (np.real(tab.at(omega)[2]) / omega[:, None]).tolist(),  # discrete beta / k0
                            "table_nodes": len(tab.nodes), "interp_error": tab.interp_error,
                            "edge_fraction": e}

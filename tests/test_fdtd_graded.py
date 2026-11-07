@@ -286,7 +286,7 @@ def test_graded_grid_refusals():
         particles=[ls.Particle(shape=ls.Sphere(radius_nm=30), material=ls.ConstantIndex(n_real=1.5))],
         dipole=Dipole(position_nm=(0, 0, 40)), wavelengths=[500.0],
         options={"fdtd": {"grid": "auto"}})
-    with pytest.raises(ValueError, match="scattering problems only"):
+    with pytest.raises(ValueError, match="scattering and device problems only"):
         ls.estimate(emission, method="fdtd", device="cpu")
     with pytest.raises(Exception, match="grading_ratio"):
         ls.estimate(sphere_sim(ls.ConstantIndex(n_real=1.5), 30, [500.0], grading_ratio=2.0), method="fdtd",

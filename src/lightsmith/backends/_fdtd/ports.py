@@ -60,6 +60,9 @@ class PortFrame:
     s_m: float  # local s of the monitor plane
     num_modes: int
     shape: tuple[int, int, int]
+    # graded grids: the window's primary widths along t1 and t2 (n[0] and n[1] cells), None where uniform
+    widths: tuple = (None, None)
+    ds: float = 0.0  # cell width along the normal around the port (uniform there)
 
     @property
     def delta(self) -> int:
@@ -87,9 +90,10 @@ class PortFrame:
         return np.concatenate([self.nodes(self.t1, self.half(k)), self.nodes(self.t2, self.half(k))])
 
     def grid(self, spacing: float) -> Grid:
+        """The FDE window; `spacing` is the uniform transverse spacing (the widths override it per axis)."""
         if self.n[1] == 1:
-            return Grid(0.0, 0.0, spacing, 1.0, self.n[0], 1)
-        return Grid(0.0, 0.0, spacing, spacing, self.n[0], self.n[1])
+            return Grid(0.0, 0.0, spacing, 1.0, self.n[0], 1, widths=(self.widths[0], None))
+        return Grid(0.0, 0.0, spacing, spacing, self.n[0], self.n[1], widths=tuple(self.widths))
 
 
 def node_eta(inv_eps: np.ndarray, groups: list, flat: np.ndarray, omega: np.ndarray, dt: float) -> np.ndarray:

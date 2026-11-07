@@ -36,6 +36,10 @@ class Grid:
     bc_min: tuple[Wall, Wall] = ("pec", "pec")
     pml: tuple[tuple[int, int], tuple[int, int]] = ((0, 0), (0, 0))  # cells at (min, max) per axis
     symmetry: tuple[bool, bool] = (False, False)  # min wall is a mirror plane (domain is half the window)
+    # non-uniform axes: the n primary widths (node i to node i + 1, the last one ending on the max wall), or None
+    # for uniform spacing dx / dy. Forward differences divide by the primary widths, backward ones by the dual
+    # widths (p_{i-1} + p_i) / 2 (p_0 at the min wall, whose mirror image is the cell itself).
+    widths: tuple = (None, None)
 
     @property
     def shape(self) -> tuple[int, int]:
@@ -52,10 +56,32 @@ class Grid:
     def _axis(self, axis: int):
         return (self.x0, self.dx, self.nx) if axis == 0 else (self.y0, self.dy, self.ny)
 
+    def prim_widths(self, axis: int) -> np.ndarray:
+        """Primary widths p_i (n,): the distances from primal node i to i + 1 (the last to the max wall)."""
+        o, d, n = self._axis(axis)
+        w = self.widths[axis]
+        if w is None:
+            return np.full(n, float(d))
+        w = np.asarray(w, dtype=float)
+        if len(w) != n:
+            raise ValueError(f"grid axis {axis}: {len(w)} widths for {n} cells")
+        return w
+
+    def dual_widths(self, axis: int) -> np.ndarray:
+        """Dual widths (n,) of the primal nodes: (p_{i-1} + p_i) / 2, and p_0 at the min wall."""
+        p = self.prim_widths(axis)
+        if self.widths[axis] is None:
+            return p
+        return np.concatenate([p[:1], 0.5 * (p[:-1] + p[1:])])
+
     def nodes(self, axis: int, dual: bool) -> np.ndarray:
         o, d, n = self._axis(axis)
         if n == 1 and axis == 1:
             return np.array([o])
+        if self.widths[axis] is not None:
+            p = self.prim_widths(axis)
+            x = o + np.concatenate([[0.0], np.cumsum(p[:-1])])
+            return x + 0.5 * p if dual else x
         return o + (np.arange(n) + (0.5 if dual else 0.0)) * d
 
     def weights(self, axis: int, dual: bool) -> np.ndarray:
@@ -63,7 +89,7 @@ class Grid:
         o, d, n = self._axis(axis)
         if n == 1 and axis == 1:
             return np.ones(1)
-        w = np.full(n, d)
+        w = (self.prim_widths(axis) if dual else self.dual_widths(axis)).copy()
         if not dual:
             w[0] *= 0.0 if self.bc_min[axis] == "pec" else 0.5
         if self.symmetry[axis]:
@@ -89,6 +115,8 @@ class Grid:
         for cells, side in zip(self.pml[axis], ("lo", "hi")):
             if not cells:
                 continue
+            if self.widths[axis] is not None:
+                raise ValueError("a PML needs a uniform axis")
             length = cells * d
             sigma_max = 4 * math.log(1 / reflection) / (2 * k0 * n_ref * length)
             depth = (o + length - u) if side == "lo" else (u - (o + n * d - length))

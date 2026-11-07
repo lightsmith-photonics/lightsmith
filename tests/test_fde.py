@@ -190,3 +190,38 @@ def test_port_modes_match_mode_problem():
     m = solve_modes([Structure2D(profile=Rectangle(size_nm=(500, 220)), material=SI)], SIO2, 1550,
                     center_nm=(0, 0), size_nm=(2500, 1600), grid_spacing_nm=25)
     assert m[0].neff.real == pytest.approx(ref.neff_real, abs=1e-9)
+
+
+def test_non_uniform_axes():
+    """Explicit uniform widths reproduce the uniform grid to the last bit; a grid graded from 20 to 5 nm across
+    a silicon strip (as the FDTD's graded port windows) agrees with a uniform 5 nm grid to 1e-3 in neff."""
+    from lightsmith.backends._fde.grid import Grid
+    from lightsmith.backends._fde.modes import solve_eigenmodes
+
+    def eps(g):
+        def at(dx, dy):
+            X, Y = np.meshgrid(g.nodes(0, dx), g.nodes(1, dy), indexing="ij")
+            return np.where((np.abs(X - 1000) < 250) & (np.abs(Y - 500) < 110), 3.48**2, 1.444**2)
+        return np.stack([at(True, False), at(False, True), at(False, False)])
+
+    def axis(length, lo, hi, fine, coarse):
+        w, x = [], 0.0
+        while x < length - 1e-9:
+            w.append(fine if lo - 1e-9 <= x < hi - 1e-9 else coarse)
+            x += w[-1]
+        return tuple(w)
+
+    g = Grid(0, 0, 20, 20, 100, 50)
+    gw = Grid(0, 0, 20, 20, 100, 50, widths=((20.0,) * 100, (20.0,) * 50))
+    a, b = solve_eigenmodes(g, eps(g), 1550, 2), solve_eigenmodes(gw, eps(gw), 1550, 2)
+    assert [m.neff for m in a] == [m.neff for m in b]
+    np.testing.assert_array_equal(g.weights(0, False), gw.weights(0, False))
+    g, gw = Grid(0, 0, 20, 10, 100, 100), Grid(0, 0, 20, 10, 100, 100, widths=((20.0,) * 100, None))
+    assert [m.neff for m in solve_eigenmodes(g, eps(g), 1550, 1)] == [m.neff for m in solve_eigenmodes(gw, eps(gw), 1550, 1)]
+    fine = Grid(0, 0, 5, 5, 400, 200)
+    wx, wy = axis(2000, 700, 1300, 5, 20), axis(1000, 360, 640, 5, 20)
+    gg = Grid(0, 0, 20, 20, len(wx), len(wy), widths=(wx, wy))
+    assert gg.nodes(0, False)[-1] + wx[-1] == pytest.approx(2000)
+    n_fine = solve_eigenmodes(fine, eps(fine), 1550, 1)[0].neff.real
+    n_graded = solve_eigenmodes(gg, eps(gg), 1550, 1)[0].neff.real
+    assert abs(n_graded - n_fine) < 1e-3  # measured 9e-4 (the cell edges fall differently on the strip)

@@ -242,6 +242,17 @@ graded grids do.
   `subpixel`. Under an explicit `conformal`, the off-diagonal terms are dropped in a slab of a few cells around
   each port. Elsewhere they change a silicon wire's discrete neff by about 2.5e-4 through its corners, and the
   slab's edges reflect about 2e-4.
+- **Graded grids.** `mesh_override` boxes and `grid: "auto"` work as for scattering, with three differences:
+  - `auto` refines each structure's bounding box to `cells_per_wavelength` in its own material, on a base of
+    `cells_per_wavelength` in the background. A guided wave runs along its own refined core, and the grading
+    runs across it, so the background does not need the 60 cells per wavelength that scattering uses (set
+    `background_cells_per_wavelength` to get them).
+  - A refinement box that reaches a face of the domain continues through the buffer and the CPML, as the
+    structures do, so the CPML stays uniform.
+  - Each port sits in a zone of uniform cells along its normal, covering its source, monitor and slab, because
+    B = 2 sin(β h/2)/h holds only in a uniform section. Across the window the cells may be graded: the port
+    modes come from the FDE problem on the same non-uniform cross-section (forward differences divide by the
+    primary widths, backward ones by the dual widths), so they stay exact for the grid.
 
 ### Periodic structures and layer stacks
 
@@ -292,10 +303,10 @@ The design choices are explained in the docstring of `lightsmith.backends._fdtd.
 | `subpixel_samples` | `8` | Supersamples per axis for interface cells (2–24) |
 | `dft_stride` | `None` | Time steps between DFT samples. Default: aliasing-safe, from the source bandwidth. |
 | `symmetry` | `"auto"` | Scattering: use the PEC/PMC mirror planes the particles and plane wave allow (2× or 4× smaller runs, the same results); `"off"` runs the whole grid |
-| `grid` | `"uniform"` | Scattering: `"auto"` grades the grid, refining each particle (see Graded grids) |
-| `mesh_override` | `[]` | Scattering: refinement boxes `{center_nm, size_nm, spacing_nm}` (one spacing or one per axis), graded to the base spacing around them |
+| `grid` | `"uniform"` | Scattering and devices: `"auto"` grades the grid, refining each particle or structure (see Graded grids and Device problems) |
+| `mesh_override` | `[]` | Scattering and devices: refinement boxes `{center_nm, size_nm, spacing_nm}` (one spacing or one per axis), graded to the base spacing around them |
 | `grading_ratio` | `1.25` | Largest cell-width growth from one cell to the next (1.05–1.5) |
-| `background_cells_per_wavelength` | `60` | `grid: "auto"`: base cells per shortest wavelength in the background |
+| `background_cells_per_wavelength` | `60` | `grid: "auto"`: base cells per shortest wavelength in the background. Devices use `cells_per_wavelength` unless this is set. |
 | `cuda_graphs` | `True` | Replay time steps as CUDA graphs |
 | `polarization` | `None` | 2D device problems: the port modes' polarisation. `te` means E in the xy plane (the default, as for FDFD and EME); `tm` means E along z. |
 | `max_cells` | `300000000` | Refuse grids larger than this |
@@ -373,6 +384,10 @@ Measured in the test module docstring (RTX 5070, float32; CPU float64 agrees to 
 | `test_straight_wire_3d_is_exact_on_the_grid` (gpu): 500 × 220 nm silicon wire, TE0 and TM0, float32 | \|S21\| = 1, the grid's phase | TE0 1e-4 (measured 1e-6), phase 1e-4 rad; reflection and conversion 2e-4 (measured 4e-5) |
 | `test_width_step_3d_is_reciprocal_passive_and_converged` (gpu): 500 → 700 nm wire step, dx = 25 nm | dx = 15 nm; reciprocity | \|S21\| = 0.99753 within 5e-4 (0.99739 at dx = 15 nm); S − Sᵀ < 2e-4 |
 | `test_pdk_mmi_1x2_in_3d` (slow, gpu): the PDK's 1×2 MMI on 220 nm SOI, 11 M cells, dx = 25 nm, float32 | [EME](eme.md) (20 modes); symmetry; reciprocity | \|S21\| = \|S31\| = 0.7008 against 0.7012; S − Sᵀ < 5e-4 (measured 1.3e-4) |
+| `test_graded_device_grid_layout` | Construction | ports in uniform cells along their normals; CPML uniform; growth ≤ `grading_ratio`; `auto` spacings; no graded options: the uniform grid |
+| `test_graded_straight_waveguide_2d_is_exact_on_the_grid_cpu`: 500 nm guide, 25 nm graded to 10 nm across it, TE | \|S21\| = 1, the grid's phase | 1e-4 (measured 3e-5); phase 1e-4 rad (measured 1e-10) |
+| `test_graded_width_step_2d_matches_uniform_fine_grid` (gpu): 500 → 900 nm step, 25 nm graded to 10 nm around the guides, TE and TM | uniform 10 nm run | \|S\| 1e-4 (measured 1.8e-5 TE, 8e-6 TM) with 63 % of the cells; uniform 25 nm: 2e-3 |
+| `test_graded_wire_step_3d_matches_uniform_fine_grid` (slow, gpu): 500 → 700 nm wire step, 40 nm graded to 15 nm in a box around the wires | uniform 15 nm run (7.3 M cells) | \|S\| 3e-5 (measured 8e-6) with 3.3 M cells; uniform 25 nm: 1.1e-3; `grid: "auto"` (1.6 M cells): 9e-4 |
 
 At 20 nm the 2D TE step is already within 2e-3 of the converged values, and closer to them than FDFD at the
 same spacing. For the 3D step, EME converges slowly towards the FDTD value: in a 2 µm PEC box it gives 0.9930,
@@ -540,8 +555,9 @@ evanescent field varies across the sphere, which the dipole model misses, hence 
 - Ports on node planes normal to x, y or z (x or y in 2D). The waveguide must be straight for a few cells on
   both sides of each port plane. The window must hold the mode, since its edges are PEC walls for the mode
   solve: a warning is raised when more than 1 % of the field lies on the window's edge.
-- One run per port mode. There are no mirror symmetries, graded grids (`grid: "auto"`, `mesh_override`) or
-  adjoint gradients for devices yet.
+- One run per port mode. There are no mirror symmetries or adjoint gradients for devices yet.
+- Graded grids: a guided wave that crosses a change of cell size along its own path reflects about (k h)²/16 of it
+  (as for scattering). Refine along whole guides (boxes that reach the domain's faces), not in short sections of them.
 - A port that crosses a dispersive interface under `conformal` (the vertex tensor) makes the whole run use
   `subpixel`.
 - Warns about waves entering through non-source ports above 1e-2 of the source (a CPML that is too thin),

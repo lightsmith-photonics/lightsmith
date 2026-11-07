@@ -74,12 +74,12 @@ class FDTDOptions(BaseModel):
         None, description="2D device problems: the port modes' polarisation, te = E in the xy plane (default, as "
         "FDFD and EME), tm = E along z. The two do not couple in a z-invariant device.")
     grid: Literal["uniform", "auto"] = Field(
-        "uniform", description="Scattering: 'auto' grades the grid (non-uniform per axis): the base spacing from the "
+        "uniform", description="Scattering and devices: 'auto' grades the grid (non-uniform per axis): the base spacing from the "
         "host medium and cells_per_wavelength, refined inside each particle's bounding box (plus a margin) to the "
         "spacing its material and size need (cells_per_wavelength in the particle, cells_per_radius), with a "
         "bounded growth ratio (grading_ratio) in between. Far fewer cells for small, high-index or metal particles.")
     mesh_override: list[MeshOverride] = Field(
-        default_factory=list, description="Scattering: refinement boxes (as Lumerical's mesh override regions); the "
+        default_factory=list, description="Scattering and devices: refinement boxes (as Lumerical's mesh override regions); the "
         "grid takes each box's spacing inside it and grades to the base spacing (spacing_nm, or the automatic "
         "spacing) around it. Combine with grid='auto' or use alone.")
     background_cells_per_wavelength: float = Field(

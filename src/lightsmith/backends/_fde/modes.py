@@ -40,8 +40,9 @@ def _scipy():
     return sp, spla
 
 
-def _diff_1d(n: int, d: float, wall: str, s_primal: np.ndarray, s_dual: np.ndarray, k0: float):
-    """Forward (primal -> dual) and backward (dual -> primal) differences, scaled by 1/(k0 d s)."""
+def _diff_1d(n: int, d, wall: str, s_primal: np.ndarray, s_dual: np.ndarray, k0: float, d_dual=None):
+    """Forward (primal -> dual) and backward (dual -> primal) differences, scaled by 1/(k0 d s). d: the spacing,
+    or the primary widths (n,) of a non-uniform axis, with d_dual the dual widths (n,) of its primal nodes."""
     sp, _ = _scipy()
     if n == 1:
         z = sp.csr_matrix((1, 1), dtype=complex)
@@ -53,7 +54,7 @@ def _diff_1d(n: int, d: float, wall: str, s_primal: np.ndarray, s_dual: np.ndarr
     else:
         b[0, 0] = 2.0  # PMC: tangential H is odd about the min wall
     f = sp.diags(1.0 / (k0 * d * s_dual)) @ f.tocsr()
-    b = sp.diags(1.0 / (k0 * d * s_primal)) @ b.tocsr()
+    b = sp.diags(1.0 / (k0 * (d if d_dual is None else d_dual) * s_primal)) @ b.tocsr()
     return f.tocsr(), b.tocsr()
 
 
@@ -76,8 +77,10 @@ def build_operators(grid: Grid, eps: np.ndarray, mu: np.ndarray | None, waveleng
     k0 = 2 * math.pi / wavelength_nm
     st = [(grid.stretch(a, False, k0, n_pml, pml_reflection), grid.stretch(a, True, k0, n_pml, pml_reflection))
           for a in range(2)]
-    fx, bx = _diff_1d(grid.nx, grid.dx, grid.bc_min[0], st[0][0], st[0][1], k0)
-    fy, by = _diff_1d(grid.ny, grid.dy, grid.bc_min[1], st[1][0], st[1][1], k0)
+    d = [((grid.dx, grid.dy)[a], None) if grid.widths[a] is None else (grid.prim_widths(a), grid.dual_widths(a))
+         for a in range(2)]
+    fx, bx = _diff_1d(grid.nx, d[0][0], grid.bc_min[0], st[0][0], st[0][1], k0, d[0][1])
+    fy, by = _diff_1d(grid.ny, d[1][0], grid.bc_min[1], st[1][0], st[1][1], k0, d[1][1])
     ix, iy = sp.identity(grid.nx, format="csr"), sp.identity(grid.ny, format="csr")
     dxf, dxb = sp.kron(fx, iy, format="csr"), sp.kron(bx, iy, format="csr")
     dyf, dyb = sp.kron(ix, fy, format="csr"), sp.kron(ix, by, format="csr")

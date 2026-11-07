@@ -170,3 +170,89 @@ def test_pdk_mmi_1x2_in_3d():
     assert np.abs(S - np.swapaxes(S, 1, 2)).max() < 5e-4
     assert np.all((np.abs(S) ** 2).sum(axis=1) < 1 + 1e-3)
     assert 0.12 < np.abs(S[1, 1, 1]) < 0.19
+
+
+# --- graded grids ------------------------------------------------------------------------------------------------
+
+STEP = [rect(-5000, 0, 10000, 500), rect(5000, 0, 10000, 900)]
+CORE = {"center_nm": (0, 0, 0), "size_nm": (1e5, 1200, 1e5), "spacing_nm": 10.0}  # across both guides, all along x
+
+
+def test_graded_device_grid_layout():
+    """Ports sit in uniform cells along their normals (here next to an override box that ends between them), the
+    CPML is uniform, cells grow by at most grading_ratio, and 'auto' refines silicon to cells_per_wavelength in
+    silicon on a base of cells_per_wavelength in silica. Without graded options the grid is the uniform one."""
+    from lightsmith.backends._fdtd import device as devices
+    from lightsmith.backends._fdtd.options import FDTDOptions
+
+    p = device_2d(STEP, "te", 25.0)
+    box = {"center_nm": (0, 0, 0), "size_nm": (600, 1200, 1e5), "spacing_nm": 8.0}
+    opts = FDTDOptions.model_validate({**p.options["fdtd"], "mesh_override": [box]})
+    g = devices.make_grid(p, opts)
+    assert g.graded is not None and g.graded.max_ratio() <= opts.grading_ratio * (1 + 1e-9)
+    assert g.min_spacing(0) == pytest.approx(8.0) and g.min_spacing(1) == pytest.approx(8.0)
+    for f in devices.port_frames(p, g):  # raises if a port's cells are not uniform
+        assert f.ds == pytest.approx(25.0) and f.widths[0] is not None
+    for a in (0, 1):
+        w = g.graded.prim(a)
+        assert np.ptp(w[:g.n_pml + 1]) == 0 and np.ptp(w[-(g.n_pml + 2):]) == 0
+        lo, hi = g.interior[a]
+        assert g.coord(a, lo) < p.domain_center_nm[a] - p.domain_size_nm[a] / 2
+        assert g.coord(a, hi) > p.domain_center_nm[a] + p.domain_size_nm[a] / 2
+    auto = devices.make_grid(p, FDTDOptions.model_validate({"grid": "auto"}))
+    assert auto.dx == pytest.approx(1500 / (1.44 * 20))
+    assert auto.min_spacing(1) == pytest.approx(1500 / (3.48 * 20))
+    assert devices.make_grid(p, FDTDOptions.model_validate(p.options["fdtd"])).graded is None
+    est = fdtd.estimate(p.model_copy(update={"options": {"fdtd": {**p.options["fdtd"], "mesh_override": [box]}}}),
+                        ls.resolve_device("cpu"))
+    assert est["graded_grid"]["spacing_min_nm"][0] == pytest.approx(8.0)
+
+
+def test_graded_straight_waveguide_2d_is_exact_on_the_grid_cpu():
+    """On a grid graded from 25 to 10 nm across the guide (y) the port modes are still exact for the grid: |S21| = 1
+    with the grid's phase (measured 1e-10 rad) and reflection at the CPML's level (measured 3e-5)."""
+    p = device_2d([rect(0, 0, 20000, 500)], "te", 25.0)
+    across = {**CORE, "spacing_nm": (25.0, 10.0, 25.0)}  # graded across the guide only
+    p = p.model_copy(update={"options": {"fdtd": {**p.options["fdtd"], "mesh_override": [across]}}})
+    r = ls.solve(p, "fdtd", "cpu")
+    S = r.s()
+    assert not r.warnings and r.provenance["graded_grid"]["spacing_min_nm"][1] == pytest.approx(10.0)
+    np.testing.assert_allclose(np.abs(S[:, 1, 0]), 1, atol=1e-4)
+    assert np.abs(S[:, 0, 0]).max() < 1e-4
+    neff = np.asarray(r.provenance["ports"]["o1"]["neff"])[:, 0]
+    k0 = 2 * np.pi / np.asarray(r.wavelengths_nm)
+    assert np.abs(np.angle(S[:, 1, 0] * np.exp(-1j * neff * k0 * 2400.0))).max() < 1e-4
+
+
+@pytest.mark.gpu
+@needs_cuda
+@pytest.mark.parametrize("pol", ["te", "tm"])
+def test_graded_width_step_2d_matches_uniform_fine_grid(pol):
+    """The 500 -> 900 nm step with 25 nm cells graded to 10 nm across the guides: |S| within 1e-4 of a uniform
+    10 nm run (measured 1.8e-5 TE, 8e-6 TM) with 63 % of its cells; uniform 25 nm cells err by 2e-3."""
+    fine = device_2d(STEP, pol, 10.0)
+    p = device_2d(STEP, pol, 25.0)
+    p = p.model_copy(update={"options": {"fdtd": {**p.options["fdtd"], "mesh_override": [CORE]}}})
+    a, b = ls.solve(p, "fdtd", "gpu"), ls.solve(fine, "fdtd", "gpu")
+    assert a.provenance["cells"] < 0.7 * b.provenance["cells"]
+    np.testing.assert_allclose(np.abs(a.s()), np.abs(b.s()), atol=1e-4)
+
+
+@pytest.mark.slow
+@pytest.mark.gpu
+@needs_cuda
+def test_graded_wire_step_3d_matches_uniform_fine_grid():
+    """500 -> 700 nm wire step, 40 nm cells graded to 15 nm in a box around the wires (all along x): |S| of the
+    uniform 15 nm run (7.3 M cells, measured once: |S21| 0.99666, 0.99737, 0.99768 and |S11| 0.0168, 0.0181,
+    0.0193 at 1500, 1550, 1600 nm) within 3e-5 (measured 8e-6) from 3.3 M cells; uniform 25 nm errs by 1e-3."""
+    box = {"center_nm": (0, 0, 0), "size_nm": (1e5, 900, 400), "spacing_nm": 15.0}
+    st = [Structure(geometry=Box(center_nm=(-1500, 0, 0), size_nm=(3000, 500, 220)), material=SI3),
+          Structure(geometry=Box(center_nm=(1500, 0, 0), size_nm=(3000, 700, 220)), material=SI3)]
+    p = wire_3d(st, dx=40.0)
+    p = p.model_copy(update={"options": {"fdtd": {"spacing_nm": 40.0, "mesh_override": [box]}}})
+    r = ls.solve(p, "fdtd", "gpu")
+    S = np.abs(r.s())
+    assert r.provenance["cells"] < 0.5 * 7293993 and not r.warnings
+    np.testing.assert_allclose(S[:, 1, 0], [0.99666, 0.99737, 0.99768], atol=3e-5)
+    np.testing.assert_allclose(S[:, 0, 1], S[:, 1, 0], atol=1e-5)
+    np.testing.assert_allclose(S[:, 0, 0], [0.0168, 0.0181, 0.0193], atol=2e-4)

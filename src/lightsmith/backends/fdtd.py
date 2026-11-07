@@ -86,9 +86,9 @@ class NativeFDTD(Backend):
     @classmethod
     def _options(cls, sim) -> FDTDOptions:
         opts = FDTDOptions.model_validate(options_for(sim, cls.name, cls.method))
-        if not isinstance(sim, Simulation) and scattering.graded(opts):
+        if not isinstance(sim, (Simulation, DeviceProblem)) and scattering.graded(opts):
             raise ValueError("FDTD: graded grids (grid='auto', mesh_override) are available for scattering "
-                             "problems only; use grid='uniform' without mesh_override")
+                             "and device problems only; use grid='uniform' without mesh_override")
         return opts
 
     @classmethod
@@ -109,6 +109,7 @@ class NativeFDTD(Backend):
             p = devices.plan(sim, opts, single)
             g = p["grid"]
             return {"grid": list(g.shape), "cells": g.cells, "spacing_nm": g.dx, "dt_fs": p["dt"] / scattering.FS,
+                    **({"graded_grid": {**g.graded.describe(), "base_spacing_nm": g.dx}} if g.graded is not None else {}),
                     "steps_max": p["max_steps"], "runs": p["runs"], "dft_stride": p["stride"],
                     "precision": "single" if single else "double", "memory_bytes": p["memory_bytes"],
                     "fits": g.cells <= opts.max_cells, "warnings": p["warnings"],
