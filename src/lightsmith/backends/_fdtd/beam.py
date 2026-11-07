@@ -20,7 +20,7 @@ import itertools
 import numpy as np
 
 from .engine import DFTMonitor
-from .layered import ObliqueLayeredPlaneWave, _View, read_tables
+from .layered import ObliqueLayeredPlaneWave, _View, apply_fused, bind_slabs, read_tables
 from .setup import flux
 
 A_MIN = 1e-4  # angular spectrum cut-off
@@ -124,19 +124,13 @@ class BeamSource:
         self._T, self._Tinc = eng.asarray(self.tables), eng.asarray(self.inc_table)
         del self.tables, self.inc_table
         self._cmax = eng.index(self.cmax)
-        self._slabs = [(kind, c, region, eng.index(base), eng.index(i0), eng.asarray(u0), eng.asarray(arr), shape_)
-                       for kind, c, region, base, i0, u0, arr, shape_ in self.slabs]
+        self._fused = bind_slabs(eng, self.slabs)
         self._inc = tuple(f(a) for f, a in zip((eng.index, eng.index, eng.asarray), self.inc))
         self.view.E_flat = eng.zeros((self.n * 3,))
         self.view.H_flat = self.view.E_flat
 
     def _apply(self, eng, kind: str):
-        target = eng.E if kind == "E" else eng.H
-        xp = eng.xp
-        for k, c, region, base, i0, u0, arr, shape_ in self._slabs:
-            if k == kind:
-                vals = xp.sum(read_tables(xp, self._T, eng.n, self.m, self._cmax, base, i0, u0), axis=0)
-                target[c][region] += arr * xp.reshape(vals, shape_)
+        apply_fused(eng, self._T, self.m, self._cmax, self._fused, kind, combine=lambda v: eng.xp.sum(v, axis=0))
 
     def correct_H(self, eng):
         self._apply(eng, "H")

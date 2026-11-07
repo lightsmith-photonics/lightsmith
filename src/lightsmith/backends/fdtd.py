@@ -85,7 +85,11 @@ class NativeFDTD(Backend):
 
     @classmethod
     def _options(cls, sim) -> FDTDOptions:
-        return FDTDOptions.model_validate(options_for(sim, cls.name, cls.method))
+        opts = FDTDOptions.model_validate(options_for(sim, cls.name, cls.method))
+        if not isinstance(sim, Simulation) and scattering.graded(opts):
+            raise ValueError("FDTD: graded grids (grid='auto', mesh_override) are available for scattering "
+                             "problems only; use grid='uniform' without mesh_override")
+        return opts
 
     @classmethod
     def estimate(cls, sim, device: Device):
@@ -128,7 +132,8 @@ class NativeFDTD(Backend):
         return {"grid": list(lay.shape), "cells": lay.cells, "spacing_nm": p["dx"], "dt_fs": p["dt"] / scattering.FS,
                 "steps_estimate": p["est_steps"], "steps_max": p["max_steps"], "dft_stride": p["stride"],
                 "precision": "single" if single else "double", "memory_bytes": p["memory_bytes"],
-                "fits": lay.cells <= opts.max_cells, "warnings": p["warnings"], "symmetry": p["symmetry"]}
+                "fits": lay.cells <= opts.max_cells, "warnings": p["warnings"], "symmetry": p["symmetry"],
+                **({"graded_grid": {**lay.grid.describe(), "base_spacing_nm": p["dx"]}} if lay.grid is not None else {})}
 
     @classmethod
     def solve(cls, sim, device: Device) -> Result | SpectrumResult | EmissionResult | SParameterResult:

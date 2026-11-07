@@ -31,13 +31,18 @@ AXIS_INDEX = {"x": 0, "y": 1, "z": 2}
 def plane_axes(axis: int, invariant_axis: int | None = None) -> tuple[int, int, float]:
     """Global axes (u, v) of the local cross-section (x, y) for a plane normal to `axis`.
 
-    (u, v, axis) is right-handed. For 2D devices the local y must be the invariant
-    global axis; when that breaks handedness the local y axis is flipped (sign -1).
+    (u, v, axis) is right-handed, with the local y axis flipped (sign -1) where needed.
+    For planes normal to x or y the local x axis is the in-plane (horizontal) transverse
+    axis and the local y axis is vertical (±z), in 2D and 3D alike. So 'te' (E along
+    local x) means in-plane E, and a bend about the local y axis is a bend in the chip
+    plane, whichever of x or y the device runs along. For 2D devices the local y must
+    be the invariant global axis.
     """
-    u, v = {2: (0, 1), 0: (1, 2), 1: (2, 0)}[axis]
-    if invariant_axis is not None and u == invariant_axis:
-        return v, u, -1.0
-    return u, v, 1.0
+    u, v, s = {2: (0, 1, 1.0), 0: (1, 2, 1.0), 1: (0, 2, -1.0)}[axis]
+    if invariant_axis is not None and invariant_axis not in (v, axis):
+        raise ValueError(f"no cross-section of a plane normal to {'xyz'[axis]} has local y along "
+                         f"{'xyz'[invariant_axis]}")
+    return u, v, s
 
 
 @dataclass

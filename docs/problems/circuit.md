@@ -1,6 +1,6 @@
 # Circuits
 
-`kind: "circuit"`, model `lightsmith.problems.CircuitProblem`. A netlist of components, each described by
+Model `lightsmith.problems.CircuitProblem`. A netlist of components, each described by
 an S-parameter model. Solving it gives the S-matrix of the whole circuit.
 
 ## Fields

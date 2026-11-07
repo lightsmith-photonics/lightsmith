@@ -1,0 +1,146 @@
+problem_id,family,reference_kind,reference_label,reference_self_change
+sphere-diel-x0.5-m1.2-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x0.5-m1.2-k0.05-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x0.5-m1.5-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x0.5-m1.5-k0.05-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x0.5-m2-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x0.5-m2-k0.05-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x0.5-m3.5-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x0.5-m3.5-k0.05-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x1-m1.2-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x1-m1.2-k0.05-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x1-m1.5-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x1-m1.5-k0.05-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x1-m2-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x1-m2-k0.05-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x1-m3.5-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x1-m3.5-k0.05-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x2-m1.2-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x2-m1.2-k0.05-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x2-m1.5-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x2-m1.5-k0.05-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x2-m2-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x2-m2-k0.05-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x2-m3.5-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x2-m3.5-k0.05-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x5-m1.2-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x5-m1.2-k0.05-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x5-m1.5-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x5-m1.5-k0.05-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x5-m2-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x5-m2-k0.05-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x5-m3.5-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x5-m3.5-k0.05-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x10-m1.2-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x10-m1.2-k0.05-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x10-m1.5-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x10-m1.5-k0.05-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x10-m2-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x10-m2-k0.05-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x10-m3.5-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x10-m3.5-k0.05-vacuum,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x0.5-m1.2-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x0.5-m1.2-k0.05-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x0.5-m1.5-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x0.5-m1.5-k0.05-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x0.5-m2-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x0.5-m2-k0.05-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x0.5-m3.5-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x0.5-m3.5-k0.05-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x1-m1.2-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x1-m1.2-k0.05-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x1-m1.5-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x1-m1.5-k0.05-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x1-m2-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x1-m2-k0.05-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x1-m3.5-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x1-m3.5-k0.05-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x2-m1.2-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x2-m1.2-k0.05-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x2-m1.5-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x2-m1.5-k0.05-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x2-m2-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x2-m2-k0.05-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x2-m3.5-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x2-m3.5-k0.05-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x5-m1.2-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x5-m1.2-k0.05-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x5-m1.5-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x5-m1.5-k0.05-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x5-m2-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x5-m2-k0.05-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x5-m3.5-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x5-m3.5-k0.05-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x10-m1.2-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x10-m1.2-k0.05-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x10-m1.5-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x10-m1.5-k0.05-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x10-m2-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x10-m2-k0.05-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x10-m3.5-water,dielectric_sphere,mie,Mie (miepython),
+sphere-diel-x10-m3.5-k0.05-water,dielectric_sphere,mie,Mie (miepython),
+sphere-au-jc-r10-vacuum,metal_sphere,mie,Mie (miepython),
+sphere-au-jc-r20-vacuum,metal_sphere,mie,Mie (miepython),
+sphere-au-jc-r40-vacuum,metal_sphere,mie,Mie (miepython),
+sphere-au-jc-r60-vacuum,metal_sphere,mie,Mie (miepython),
+sphere-au-jc-r80-vacuum,metal_sphere,mie,Mie (miepython),
+sphere-au-jc-r100-vacuum,metal_sphere,mie,Mie (miepython),
+sphere-au-jc-r10-water,metal_sphere,mie,Mie (miepython),
+sphere-au-jc-r20-water,metal_sphere,mie,Mie (miepython),
+sphere-au-jc-r40-water,metal_sphere,mie,Mie (miepython),
+sphere-au-jc-r60-water,metal_sphere,mie,Mie (miepython),
+sphere-au-jc-r80-water,metal_sphere,mie,Mie (miepython),
+sphere-au-jc-r100-water,metal_sphere,mie,Mie (miepython),
+sphere-ag-jc-r10-vacuum,metal_sphere,mie,Mie (miepython),
+sphere-ag-jc-r20-vacuum,metal_sphere,mie,Mie (miepython),
+sphere-ag-jc-r40-vacuum,metal_sphere,mie,Mie (miepython),
+sphere-ag-jc-r60-vacuum,metal_sphere,mie,Mie (miepython),
+sphere-ag-jc-r80-vacuum,metal_sphere,mie,Mie (miepython),
+sphere-ag-jc-r100-vacuum,metal_sphere,mie,Mie (miepython),
+sphere-ag-jc-r10-water,metal_sphere,mie,Mie (miepython),
+sphere-ag-jc-r20-water,metal_sphere,mie,Mie (miepython),
+sphere-ag-jc-r40-water,metal_sphere,mie,Mie (miepython),
+sphere-ag-jc-r60-water,metal_sphere,mie,Mie (miepython),
+sphere-ag-jc-r80-water,metal_sphere,mie,Mie (miepython),
+sphere-ag-jc-r100-water,metal_sphere,mie,Mie (miepython),
+sphere-drude-r40-water,metal_sphere,mie,Mie (miepython),
+coreshell-sio2-au-c20-s5-water,core_shell,mie,Mie (lightsmith-mie),
+coreshell-au-sio2-c20-s5-water,core_shell,mie,Mie (lightsmith-mie),
+coreshell-sio2-au-c30-s8-water,core_shell,mie,Mie (lightsmith-mie),
+coreshell-au-sio2-c30-s8-water,core_shell,mie,Mie (lightsmith-mie),
+coreshell-sio2-au-c40-s10-water,core_shell,mie,Mie (lightsmith-mie),
+coreshell-au-sio2-c40-s10-water,core_shell,mie,Mie (lightsmith-mie),
+coreshell-sio2-au-c50-s15-water,core_shell,mie,Mie (lightsmith-mie),
+coreshell-au-sio2-c50-s15-water,core_shell,mie,Mie (lightsmith-mie),
+spheroid-au-ar1-req20-water,spheroid,highest_resolution,"finest BEM @ elements_per_size=14, gpu",1.645998255e-05
+spheroid-au-ar1.5-req20-water,spheroid,highest_resolution,"finest BEM @ elements_per_size=14, gpu",0.004928718456
+spheroid-au-ar2-req20-water,spheroid,highest_resolution,"finest BEM @ elements_per_size=14, gpu",0.01330768604
+spheroid-au-ar3-req20-water,spheroid,highest_resolution,"finest BEM @ elements_per_size=14, gpu",0.01539706006
+spheroid-au-ar4-req20-water,spheroid,highest_resolution,"finest BEM @ elements_per_size=14, gpu",0.02502273213
+spheroid-au-ar5-req20-water,spheroid,highest_resolution,"finest BEM @ elements_per_size=14, gpu",0.02820792214
+rod-au-ar2-r10-water,rod,highest_resolution,"finest BEM @ elements_per_size=14, gpu",0.01273005971
+rod-au-ar3-r10-water,rod,highest_resolution,"finest BEM @ elements_per_size=14, gpu",0.009359076065
+rod-au-ar4-r10-water,rod,highest_resolution,"finest BEM @ elements_per_size=14, gpu",0.008244082064
+rod-au-ar5-r10-water,rod,highest_resolution,"finest BEM @ elements_per_size=12, gpu",0.007739418602
+dimer-au-r20-gap1-water,dimer,highest_resolution,"highest-resolution treams (default) @ multipole_order=16, cpu",0.08553690761
+dimer-au-r20-gap2-water,dimer,highest_resolution,"highest-resolution treams (default) @ multipole_order=16, cpu",0.004351024111
+dimer-au-r20-gap5-water,dimer,highest_resolution,"highest-resolution treams (default) @ multipole_order=16, cpu",1.775258664e-05
+dimer-au-r20-gap10-water,dimer,highest_resolution,"highest-resolution treams (default) @ multipole_order=16, cpu",4.767708796e-08
+dimer-au-r20-gap20-water,dimer,highest_resolution,"highest-resolution treams (default) @ multipole_order=16, cpu",2.625261738e-11
+dimer-au-r20-gap40-water,dimer,highest_resolution,"highest-resolution treams (default) @ multipole_order=16, cpu",2.113281678e-15
+spheroid-ag-ar1-req20-water,spheroid,highest_resolution,"finest BEM @ elements_per_size=14, gpu",2.124090357e-05
+spheroid-ag-ar1.5-req20-water,spheroid,highest_resolution,"finest BEM @ elements_per_size=14, gpu",0.01193286405
+spheroid-ag-ar2-req20-water,spheroid,highest_resolution,"finest BEM @ elements_per_size=14, gpu",0.0146311595
+spheroid-ag-ar3-req20-water,spheroid,highest_resolution,"finest BEM @ elements_per_size=14, gpu",0.01598547424
+spheroid-ag-ar4-req20-water,spheroid,highest_resolution,"finest BEM @ elements_per_size=14, gpu",0.03472724502
+spheroid-ag-ar5-req20-water,spheroid,highest_resolution,"finest BEM @ elements_per_size=14, gpu",0.04343786032
+rod-ag-ar2-r10-water,rod,highest_resolution,"finest BEM @ elements_per_size=14, gpu",0.02128803282
+rod-ag-ar3-r10-water,rod,highest_resolution,"finest BEM @ elements_per_size=14, gpu",0.09678636588
+rod-ag-ar4-r10-water,rod,highest_resolution,"finest BEM @ elements_per_size=14, gpu",0.01465596165
+rod-ag-ar5-r10-water,rod,highest_resolution,"finest BEM @ elements_per_size=12, gpu",0.01311972668
+dimer-ag-r20-gap1-water,dimer,highest_resolution,"highest-resolution treams (default) @ multipole_order=16, cpu",0.4490374803
+dimer-ag-r20-gap2-water,dimer,highest_resolution,"highest-resolution treams (default) @ multipole_order=16, cpu",0.02127457671
+dimer-ag-r20-gap5-water,dimer,highest_resolution,"highest-resolution treams (default) @ multipole_order=16, cpu",0.0002002068182
+dimer-ag-r20-gap10-water,dimer,highest_resolution,"highest-resolution treams (default) @ multipole_order=16, cpu",2.513359109e-07
+dimer-ag-r20-gap20-water,dimer,highest_resolution,"highest-resolution treams (default) @ multipole_order=16, cpu",1.066815686e-10
+dimer-ag-r20-gap40-water,dimer,highest_resolution,"highest-resolution treams (default) @ multipole_order=16, cpu",4.367913209e-15

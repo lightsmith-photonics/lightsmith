@@ -52,8 +52,29 @@ class InverseDesign(Backend):
         est = b.estimate(problem.device, device)
         n_src = len({(t.in_port, t.in_mode) if hasattr(t, "in_port") else (t.source_port, t.source_mode)
                      for t in problem.objective})
-        return {**est, "differentiable_backend": b.name, "max_iter": problem.optimizer.max_iter,
-                "sources_per_iteration": n_src}
+        out = {**est, "differentiable_backend": b.name, "max_iter": problem.optimizer.max_iter,
+               "sources_per_iteration": n_src}
+        if est.get("dimension") == 3:
+            # Per iteration and wavelength: one forward solve (all sources batched) and one adjoint solve.
+            n_wl = est["wavelengths"]
+            b_c = 8 if est.get("precision") == "single" else 16
+            saved = n_wl * n_src * est["unknowns"] * b_c  # forward fields kept for the backward pass
+            per_vec = est["unknowns"] * b_c
+            working = per_vec * (9 * n_src + 6)
+            out.update({
+                "solves_per_iteration": 2 * n_wl,
+                "memory_bytes": int(saved + working + 4 * per_vec),
+                "memory_bytes_autograd_fields": int(saved),
+            })
+            t_solve = est.get("seconds_per_solve_estimate")
+            if t_solve:
+                cold = 2 * n_wl * t_solve
+                # Warm starts typically need 3-5x fewer iterations after the first few iterations.
+                out["seconds_per_iteration_estimate"] = {"cold": cold, "warm": cold / 4}
+                out["runtime_s_estimate"] = cold * min(3, problem.optimizer.max_iter) + cold / 4 * max(
+                    problem.optimizer.max_iter - 3, 0)
+            out.pop("seconds_per_solve_estimate", None)
+        return out
 
     @classmethod
     def solve(cls, problem, device: Device):

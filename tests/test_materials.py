@@ -203,3 +203,15 @@ def test_fetch_refractiveindex_network(tmp_path):
     assert org.range_nm[0] < 400 < org.range_nm[1]
     with pytest.raises(LookupError, match="no entry"):
         M.fetch_refractiveindex("main", "Au", "NoSuchPage", cache_dir=tmp_path, ref=commit)
+
+
+def test_tabulated_accepts_descending_wavelengths():
+    """Energy-ordered files list wavelengths descending; np.interp silently returns nonsense for those."""
+    up = ls.Tabulated(wavelength_nm=[400, 500, 600], n_real=[1.4, 1.5, 1.6], n_imag=[0.0, 0.1, 0.2])
+    down = ls.Tabulated(wavelength_nm=[600, 500, 400], n_real=[1.6, 1.5, 1.4], n_imag=[0.2, 0.1, 0.0])
+    assert down.wavelength_nm == [400.0, 500.0, 600.0]
+    np.testing.assert_allclose(down.eps([450, 550]), up.eps([450, 550]), rtol=1e-15)
+    with pytest.raises(ValueError, match="duplicate"):
+        ls.Tabulated(wavelength_nm=[400, 400, 500], n_real=[1, 1, 1], n_imag=[0, 0, 0])
+    with pytest.raises(ValueError, match="same length"):
+        ls.Tabulated(wavelength_nm=[400, 500], n_real=[1, 1, 1], n_imag=[0, 0, 0])

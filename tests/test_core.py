@@ -63,6 +63,59 @@ def test_dda_matches_mie_for_dielectric_sphere():
         assert c["relative_difference"]["dda"][q]["max"] < 0.01
 
 
+def test_compare_floors_near_zero_absorption():
+    """A lossless sphere's C_abs is ~1e-19 of C_ext; dividing by it turned round-off into huge 'errors'."""
+    sim = sphere_sim(ls.ConstantIndex(n_real=1.5))
+    c = ls.compare(sim, ["lightsmith-mie", "miepython"], device="cpu")
+    assert c["reference"] == "lightsmith-mie"
+    assert c["relative_difference"]["miepython"]["c_abs_nm2"]["max"] < 1e-9
+
+
+def test_compare_reference_follows_the_auto_order(monkeypatch):
+    """Without Mie and without a method list, the reference is what `auto` would pick (TMM for a layer
+    stack), not the alphabetically first backend (FDTD)."""
+    import lightsmith.api as api
+    from lightsmith.problems import Layer, LayerStackProblem
+
+    p = LayerStackProblem(superstrate=ls.ConstantIndex(n_real=1.0), substrate=ls.ConstantIndex(n_real=1.52),
+                          layers=[Layer(thickness_nm=100, material=ls.ConstantIndex(n_real=1.38))],
+                          wavelengths=[500.0, 600.0])
+    c = ls.compare(p, ["tmm", "rcwa"], device="cpu")
+    assert c["reference"] == "tmm" and max(d["max"] for d in c["relative_difference"]["rcwa"].values()) < 1e-6
+    real_solve, ran = api.solve, []
+    monkeypatch.setattr(api, "solve", lambda prob, m, dev: ran.append(m) or real_solve(prob, "tmm", "cpu"))
+    c = ls.compare(p)  # every applicable backend, solves stubbed (no FDTD run)
+    assert ran[0] == c["reference"] == "lightsmith-tmm" and "lightsmith-fdtd" in ran
+
+
+def test_compare_reports_sparameter_differences():
+    """Device results used to come back with an empty relative_difference."""
+    from lightsmith.problems import Box, DeviceProblem, Port, Structure
+
+    core, clad = ls.ConstantIndex(n_real=2.85), ls.ConstantIndex(n_real=1.44)
+    ports = [Port(name="o1", center_nm=(-1500, 0, 0), size_nm=(0, 4000, 1), direction="+"),
+             Port(name="o2", center_nm=(1500, 0, 0), size_nm=(0, 4000, 1), direction="-")]
+    p = DeviceProblem(dimension=2, structures=[Structure(geometry=Box(size_nm=(5000, 500, 1)), material=core)],
+                      background=clad, domain_size_nm=(3000, 4000, 0), wavelengths=[1550], ports=ports,
+                      options={"eme": {"num_modes": 10}})
+    c = ls.compare(p, ["eme", "bpm"], device="cpu")
+    d = c["relative_difference"]["bpm"]
+    assert set(d) == {"power", "amplitude"} and d["power"]["max"] < 1e-3
+    assert "not_compared" not in c
+
+
+def test_auto_skips_a_backend_over_its_size_limit():
+    """BEM accepts the spheroid but it exceeds max_unknowns: auto must fall through to DDA, not fail in solve."""
+    sim = ls.Simulation(particles=[ls.Particle(shape=ls.Spheroid(semi_axis_xy_nm=40, semi_axis_z_nm=120),
+                                               material=ls.LibraryMaterial(name="Au"))],
+                        wavelengths=[700.0], options={"bem": {"max_unknowns": 500}})
+    b, skipped = ls.choose_method(sim)
+    assert b.method == "dda"
+    assert any(s.startswith("lightsmith-bem: too large") for s in skipped)
+    with pytest.raises(ValueError, match="max_unknowns"):
+        ls.solve(sim, "bem", device="cpu")
+
+
 def test_dda_lossless_has_no_absorption():
     res = ls.solve(sphere_sim(ls.ConstantIndex(n_real=1.6)), method="dda", device="cpu")
     assert np.max(np.abs(res.c_abs_nm2)) < 1e-6 * np.max(res.c_ext_nm2)

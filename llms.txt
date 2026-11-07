@@ -1,6 +1,6 @@
 # lightsmith
 
-> The open photonics suite: one typed JSON problem spec solved by Mie, T-matrix, BEM, DDA, FDTD, TMM, RCWA, FDE, EME, BPM, FDFD, PWE and circuit solvers on CPU or GPU, with differentiable inverse design and JSON-first Python, CLI and MCP interfaces.
+> The open photonics suite: one typed problem description solved by Mie, T-matrix, BEM, DDA, FDTD, TMM, RCWA, FDE, EME, BPM, FDFD, PWE and circuit solvers on CPU or GPU, with differentiable inverse design and Python, CLI and MCP interfaces.
 
 Units: nm, vacuum wavelengths. Time convention exp(-i omega t) (Im eps > 0 = loss). Problem kinds: scattering, layer_stack, periodic, mode, device, bands, circuit, optimization.
 
@@ -10,6 +10,7 @@ Units: nm, vacuum wavelengths. Time convention exp(-i omega t) (Im eps > 0 = los
 - [AGENTS.md](AGENTS.md): conventions and workflow for agents (estimate -> solve -> check warnings)
 - [Example spec](examples/drude_sphere.json): a complete scattering problem in JSON
 - [MCP server](docs/mcp.md): tools, resources, prompts, jobs, budget, remote mode, client configuration
+- [3D inverse design](examples/inverse_design_3d_mode_converter.json): an `optimization` problem on a 3D SOI device (extruded design region), run by examples/inverse_design_3d_mode_converter.py
 - [Library landscape](docs/landscape.md): survey of existing solvers and backend choices
 
 ## API

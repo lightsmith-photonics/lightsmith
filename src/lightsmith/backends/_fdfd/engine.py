@@ -26,14 +26,24 @@ class FDFDOptions(BaseModel):
     dl_nm: float | None = Field(None, gt=0, description="Grid cell size. Default: shortest wavelength / "
                                 "(cells_per_wavelength * highest refractive index).")
     cells_per_wavelength: float = Field(20.0, gt=4, description="Cells per wavelength in the densest material.")
-    pml_cells: int | tuple[int, int] = Field(16, description="PML thickness in cells, added outside the domain; "
-                                             "a pair gives (x, y). 0 = PEC/PMC wall on that axis.")
+    pml_cells: int | tuple[int, int] | tuple[int, int, int] = Field(
+        16, description="PML thickness in cells, added outside the domain; a pair gives (x, y) (z = y in 3D), "
+        "a triple (x, y, z). 0 = PEC/PMC wall on that axis.")
     pml_reflection: float = Field(1e-8, gt=0, lt=1, description="Target normal-incidence PML reflection.")
-    solver: Literal["auto", "scipy", "block"] = Field(
-        "auto", description="auto = SciPy SuperLU on CPU, torch block-tridiagonal LU on GPU.")
+    solver: Literal["auto", "scipy", "block", "bicgstab", "direct"] = Field(
+        "auto", description="2D: auto = SciPy SuperLU on CPU, torch block-tridiagonal LU on GPU. 3D: auto = "
+        "SuperLU ('direct') for small grids on CPU, else matrix-free BiCGStab ('bicgstab', CPU or GPU).")
     precision: Literal["double", "single"] = Field("double", description="Factorisation precision (block solver).")
     subsamples: int = Field(4, ge=1, le=16, description="Supersampling per axis for subpixel permittivity.")
     max_cells: int = Field(4_000_000, ge=1, description="Refuse grids larger than this.")
+    # 3D (iterative solver) only:
+    tol: float = Field(1e-6, gt=0, lt=1, description="3D: relative residual at which BiCGStab stops.")
+    max_iterations: int = Field(20_000, ge=1, description="3D: BiCGStab iteration limit per solve.")
+    warm_start: bool = Field(True, description="3D: start each differentiable solve from the previous solution "
+                             "(forward and adjoint), which speeds up optimisation severalfold.")
+    grad_div: bool = Field(False, description="3D: add the grad-div regulariser of Shin & Fan (2013). It does "
+                           "not change the solution; in our tests it did not speed up BiCGStab, so it is off.")
+    jacobi: bool = Field(False, description="3D: Jacobi-precondition BiCGStab (slower in our tests).")
 
 
 def _max_index(problem: DeviceProblem, wl: np.ndarray) -> float:
@@ -55,7 +65,7 @@ class FDFD2D:
         self.wavelengths = wavelength_array(problem.wavelengths)
         dl = opts.dl_nm or float(self.wavelengths.min() / (opts.cells_per_wavelength
                                                            * _max_index(problem, self.wavelengths)))
-        npml = opts.pml_cells if isinstance(opts.pml_cells, tuple) else (opts.pml_cells, opts.pml_cells)
+        npml = tuple(opts.pml_cells)[:2] if isinstance(opts.pml_cells, tuple) else (opts.pml_cells, opts.pml_cells)
         self.grid: Grid2D = make_grid(problem, dl, npml)
         if self.grid.size > opts.max_cells:
             raise ValueError(f"grid {self.grid.shape} has {self.grid.size} cells > max_cells={opts.max_cells}; "

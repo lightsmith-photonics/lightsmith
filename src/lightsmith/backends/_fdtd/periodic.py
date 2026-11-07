@@ -50,7 +50,7 @@ from ...results import DiffractionOrder, SpectrumResult
 from .engine import DFTMonitor, Engine, PMLSpec, flat_index
 from .media import Medium, to_medium
 from .options import FDTDOptions
-from .setup import FS, mesh_mode, run_until_decayed, voxelise
+from .setup import FS, limit_dt, mesh_mode, run_until_decayed, voxelise
 from .tfsf import BlochPlaneSource, TFSFPlaneWave
 
 BIG = 10**9
@@ -314,6 +314,13 @@ def _time_step(cell: _Cell, opts, kpar=(0.0, 0.0)) -> float:
     return opts.courant / math.sqrt(inv2)
 
 
+def _dt(c, kpar=(0.0, 0.0)) -> float:
+    """Time step of one run: the Courant limit scaled by sqrt(min eps_inf), lowered further where a
+    dispersive medium's ADE update would be unstable (setup.limit_dt)."""
+    dt0 = _time_step(c.cell, c.opts, kpar)
+    return limit_dt(dt0 * c.dt_scale, c.opts.courant, c.media, 4 * (c.opts.courant / dt0) ** 2)
+
+
 def _oblique_half_width(problem, omega: float, kpar: float) -> float:
     """Pulse half-bandwidth for a fixed-k_par run aimed at omega: a quarter of the distance to the
     nearest frequency where the zeroth order is grazing in the superstrate or substrate (the pulse
@@ -386,7 +393,7 @@ def _run_normal(c: _Ctx, pol: str, p: dict, omega: np.ndarray):
     """One broadband real run at normal incidence: per-order (r, t) of shape (n_wl, nx, ny)."""
     cell, opts = c.cell, c.opts
     phi = 0.0 if isinstance(c.problem, LayerStackProblem) else math.radians(c.problem.incidence.phi_deg)
-    dt = _time_step(cell, opts) * c.dt_scale
+    dt = _dt(c)
     stride = p["stride"]
     max_steps = int(math.ceil((opts.run_time_fs or opts.max_time_fs) * FS / dt / stride)) * stride
     lam_max = 2 * np.pi / omega.min()
@@ -421,7 +428,7 @@ def _run_oblique(c: _Ctx, pol: str, kpar: tuple[float, float], wavelength: float
     cell, opts = c.cell, c.opts
     omega = 2 * np.pi / wavelength
     k = math.hypot(*kpar)
-    dt = _time_step(cell, opts, kpar) * c.dt_scale
+    dt = _dt(c, kpar)
     half = _oblique_half_width(c.problem, omega, k)
     stride = opts.dft_stride or max(1, int(2 * np.pi / (2 * omega + 4 * half) / dt))
     max_steps = int(math.ceil((opts.run_time_fs or opts.max_time_fs) * FS / dt / stride)) * stride
@@ -513,7 +520,9 @@ def solve(problem, opts: FDTDOptions, device: Device) -> SpectrumResult:
 
     # orders propagating in the superstrate or substrate at some wavelength and angle
     k0 = omega
-    eps_sub_band = np.real(np.asarray(problem.substrate.eps(wl), dtype=complex))
+    eps_sub_c = np.asarray(problem.substrate.eps(wl), dtype=complex)
+    eps_sub_band = np.real(eps_sub_c)
+    sub_lossy = np.abs(np.imag(eps_sub_c)) > 1e-12
     n2 = np.maximum(eps_sup, eps_sub_band)
     gx, gy = 2 * np.pi / cell.periods[0], 2 * np.pi / cell.periods[1]
     one_d = isinstance(problem, LayerStackProblem) or problem.lattice_a2_nm is None
@@ -530,13 +539,21 @@ def solve(problem, opts: FDTDOptions, device: Device) -> SpectrumResult:
                 continue
             if any(np.any(kpar2(m, n, ia) < n2 * k0**2) for ia in range(len(angles))):
                 orders.append(((int(m), int(n)), ii, jj))
-    # evanescent orders carry no power; what flux the DFT finds in them is PML/near-field noise
+    # Evanescent orders in a lossless medium carry no power; what flux the DFT finds in them is
+    # PML/near-field noise. In an absorbing substrate every order carries power into it.
+    # T is reported at the stack/substrate interface, as TMM and RCWA do, but the monitor sits
+    # `depth` below it: undo each order's absorption over that distance, exp(-2 Im(kz) depth).
+    depth = (cell.k_t - cell.k_top) * cell.spacing[2] - cell.thickness
     for (pol, ia) in r_ord:
         r_ord[pol, ia] = r_ord[pol, ia].copy()
         t_ord[pol, ia] = t_ord[pol, ia].copy()
         for (m, n), ii, jj in orders:
-            r_ord[pol, ia][kpar2(m, n, ia) >= eps_sup * k0**2, ii, jj] = 0.0
-            t_ord[pol, ia][kpar2(m, n, ia) >= eps_sub_band * k0**2, ii, jj] = 0.0
+            q2 = kpar2(m, n, ia)
+            r_ord[pol, ia][q2 >= eps_sup * k0**2, ii, jj] = 0.0
+            t_ord[pol, ia][(q2 >= eps_sub_band * k0**2) & ~sub_lossy, ii, jj] = 0.0
+            kz = np.sqrt(eps_sub_c * k0**2 - q2 + 0j)
+            kz = np.where(np.imag(kz) < 0, -kz, kz)
+            t_ord[pol, ia][:, ii, jj] *= np.where(sub_lossy, np.exp(2 * np.imag(kz) * depth), 1.0)
 
     def total(d, pol, ia):
         return sum(d[pol, ia][:, ii, jj] for _, ii, jj in orders) if orders else np.zeros(len(wl))
@@ -560,13 +577,14 @@ def solve(problem, opts: FDTDOptions, device: Device) -> SpectrumResult:
             warnings.append(f"energy balance off by {a_max:.1e} for a lossless structure; refine the grid "
                             "or lower decay_by")
     oblique = any(abs(a) > 1e-12 for a in angles)
-    notes = "R and T are fluxes on planes above the source and below the stack"
+    notes = ("R and T are fluxes on planes above the source and below the stack; in an absorbing substrate T "
+             "is referred back to the interface (as in TMM and RCWA)")
     if oblique:
         notes += ("; oblique angles: one fixed-k_par (Bloch-periodic, complex-field) run per (angle, wavelength, "
                   "polarisation), k_par = n_sup k0 sin(angle) matched to that wavelength, so every value is at "
                   "the stated angle and vacuum wavelength")
     prov = {**device.describe(), "grid": list(cell.shape), "real_cells": list(cell.n_cells) + [cell.shape[2]],
-            "cells": cell.cells, "spacing_nm": list(cell.spacing), "dt_fs": _time_step(cell, opts) * ctx.dt_scale / FS,
+            "cells": cell.cells, "spacing_nm": list(cell.spacing), "dt_fs": _dt(ctx) / FS,
             "dft_stride": p["stride"], "precision": "single" if single else "double",
             "subpixel": mesh_mode(opts) != "staircase", "mesh_refinement": mesh_mode(opts),
             "pml_cells": cell.pml, "runs": prov_runs, "steps": sum(r["steps"] for r in prov_runs),

@@ -1,0 +1,244 @@
+{
+ "base": "results\\20261104-full-paper",
+ "ladder": "remeasure\\results\\bem_reference.jsonl",
+ "problems": {
+  "spheroid-au-ar1-req20-water": {
+   "old_reference": "highest-resolution lightsmith-dda (center) @ dipoles_per_diameter=64, gpu",
+   "new_reference": "finest BEM @ elements_per_size=14, gpu",
+   "self_change": 1.645998255398885e-05,
+   "reference_uncertainty": 9.875989532393311e-05,
+   "ladder": [
+    8.0,
+    10.0,
+    12.0,
+    14.0
+   ]
+  },
+  "spheroid-au-ar1.5-req20-water": {
+   "old_reference": "highest-resolution lightsmith-dda (center) @ dipoles_per_diameter=32, gpu",
+   "new_reference": "finest BEM @ elements_per_size=14, gpu",
+   "self_change": 0.004928718455730336,
+   "reference_uncertainty": 0.02957231073438201,
+   "ladder": [
+    8.0,
+    10.0,
+    12.0,
+    14.0
+   ]
+  },
+  "spheroid-au-ar2-req20-water": {
+   "old_reference": "highest-resolution lightsmith-dda (center) @ dipoles_per_diameter=32, gpu",
+   "new_reference": "finest BEM @ elements_per_size=14, gpu",
+   "self_change": 0.01330768603539928,
+   "reference_uncertainty": 0.07984611621239568,
+   "ladder": [
+    8.0,
+    10.0,
+    12.0,
+    14.0
+   ]
+  },
+  "spheroid-au-ar3-req20-water": {
+   "old_reference": "highest-resolution lightsmith-dda (center) @ dipoles_per_diameter=32, gpu",
+   "new_reference": "finest BEM @ elements_per_size=14, gpu",
+   "self_change": 0.015397060064293797,
+   "reference_uncertainty": 0.09238236038576278,
+   "ladder": [
+    8.0,
+    10.0,
+    12.0,
+    14.0
+   ]
+  },
+  "spheroid-au-ar4-req20-water": {
+   "old_reference": "highest-resolution lightsmith-dda (center) @ dipoles_per_diameter=32, gpu",
+   "new_reference": "finest BEM @ elements_per_size=14, gpu",
+   "self_change": 0.02502273213152693,
+   "reference_uncertainty": 0.15013639278916158,
+   "ladder": [
+    8.0,
+    10.0,
+    12.0,
+    14.0
+   ]
+  },
+  "spheroid-au-ar5-req20-water": {
+   "old_reference": "highest-resolution lightsmith-dda (center) @ dipoles_per_diameter=32, cpu",
+   "new_reference": "finest BEM @ elements_per_size=14, gpu",
+   "self_change": 0.028207922140677827,
+   "reference_uncertainty": 0.16924753284406696,
+   "ladder": [
+    8.0,
+    10.0,
+    12.0,
+    14.0
+   ]
+  },
+  "rod-au-ar2-r10-water": {
+   "old_reference": "highest-resolution lightsmith-dda (center) @ dipoles_per_diameter=24, gpu",
+   "new_reference": "finest BEM @ elements_per_size=14, gpu",
+   "self_change": 0.012730059712278328,
+   "reference_uncertainty": 0.07638035827366997,
+   "ladder": [
+    8.0,
+    10.0,
+    12.0,
+    14.0
+   ]
+  },
+  "rod-au-ar3-r10-water": {
+   "old_reference": "highest-resolution lightsmith-dda (center) @ dipoles_per_diameter=40, gpu",
+   "new_reference": "finest BEM @ elements_per_size=14, gpu",
+   "self_change": 0.00935907606524849,
+   "reference_uncertainty": 0.05615445639149094,
+   "ladder": [
+    8.0,
+    10.0,
+    12.0,
+    14.0
+   ]
+  },
+  "rod-au-ar4-r10-water": {
+   "old_reference": "highest-resolution lightsmith-dda (center) @ dipoles_per_diameter=40, gpu",
+   "new_reference": "finest BEM @ elements_per_size=14, gpu",
+   "self_change": 0.008244082064322028,
+   "reference_uncertainty": 0.04946449238593217,
+   "ladder": [
+    8.0,
+    10.0,
+    12.0,
+    14.0
+   ]
+  },
+  "rod-au-ar5-r10-water": {
+   "old_reference": "highest-resolution lightsmith-dda (center) @ dipoles_per_diameter=40, gpu",
+   "new_reference": "finest BEM @ elements_per_size=12, gpu",
+   "self_change": 0.0077394186020072015,
+   "reference_uncertainty": 0.03869709301003598,
+   "ladder": [
+    8.0,
+    10.0,
+    12.0
+   ]
+  },
+  "spheroid-ag-ar1-req20-water": {
+   "old_reference": "highest-resolution lightsmith-dda (center) @ dipoles_per_diameter=12, cpu",
+   "new_reference": "finest BEM @ elements_per_size=14, gpu",
+   "self_change": 2.124090356849769e-05,
+   "reference_uncertainty": 0.00012744542141098611,
+   "ladder": [
+    8.0,
+    10.0,
+    12.0,
+    14.0
+   ]
+  },
+  "spheroid-ag-ar1.5-req20-water": {
+   "old_reference": "highest-resolution lightsmith-dda (center) @ dipoles_per_diameter=16, gpu",
+   "new_reference": "finest BEM @ elements_per_size=14, gpu",
+   "self_change": 0.01193286404995274,
+   "reference_uncertainty": 0.07159718429971644,
+   "ladder": [
+    8.0,
+    10.0,
+    12.0,
+    14.0
+   ]
+  },
+  "spheroid-ag-ar2-req20-water": {
+   "old_reference": "highest-resolution lightsmith-dda (center) @ dipoles_per_diameter=16, cpu",
+   "new_reference": "finest BEM @ elements_per_size=14, gpu",
+   "self_change": 0.014631159503580926,
+   "reference_uncertainty": 0.08778695702148555,
+   "ladder": [
+    8.0,
+    10.0,
+    12.0,
+    14.0
+   ]
+  },
+  "spheroid-ag-ar3-req20-water": {
+   "old_reference": "highest-resolution lightsmith-dda (center) @ dipoles_per_diameter=24, cpu",
+   "new_reference": "finest BEM @ elements_per_size=14, gpu",
+   "self_change": 0.015985474235384625,
+   "reference_uncertainty": 0.09591284541230774,
+   "ladder": [
+    8.0,
+    10.0,
+    12.0,
+    14.0
+   ]
+  },
+  "spheroid-ag-ar4-req20-water": {
+   "old_reference": "highest-resolution lightsmith-dda (center) @ dipoles_per_diameter=32, gpu",
+   "new_reference": "finest BEM @ elements_per_size=14, gpu",
+   "self_change": 0.0347272450226098,
+   "reference_uncertainty": 0.20836347013565878,
+   "ladder": [
+    8.0,
+    10.0,
+    12.0,
+    14.0
+   ]
+  },
+  "spheroid-ag-ar5-req20-water": {
+   "old_reference": "highest-resolution lightsmith-dda (center) @ dipoles_per_diameter=32, cpu",
+   "new_reference": "finest BEM @ elements_per_size=14, gpu",
+   "self_change": 0.04343786032291806,
+   "reference_uncertainty": 0.2606271619375084,
+   "ladder": [
+    8.0,
+    10.0,
+    12.0,
+    14.0
+   ]
+  },
+  "rod-ag-ar2-r10-water": {
+   "old_reference": "highest-resolution lightsmith-dda (center) @ dipoles_per_diameter=24, gpu",
+   "new_reference": "finest BEM @ elements_per_size=14, gpu",
+   "self_change": 0.021288032815306623,
+   "reference_uncertainty": 0.12772819689183973,
+   "ladder": [
+    8.0,
+    10.0,
+    12.0,
+    14.0
+   ]
+  },
+  "rod-ag-ar3-r10-water": {
+   "old_reference": "highest-resolution lightsmith-dda (center) @ dipoles_per_diameter=40, gpu",
+   "new_reference": "finest BEM @ elements_per_size=14, gpu",
+   "self_change": 0.0967863658840447,
+   "reference_uncertainty": 0.5807181953042682,
+   "ladder": [
+    8.0,
+    10.0,
+    12.0,
+    14.0
+   ]
+  },
+  "rod-ag-ar4-r10-water": {
+   "old_reference": "highest-resolution lightsmith-dda (center) @ dipoles_per_diameter=40, gpu",
+   "new_reference": "finest BEM @ elements_per_size=14, gpu",
+   "self_change": 0.014655961648740463,
+   "reference_uncertainty": 0.08793576989244278,
+   "ladder": [
+    8.0,
+    10.0,
+    12.0,
+    14.0
+   ]
+  },
+  "rod-ag-ar5-r10-water": {
+   "old_reference": "highest-resolution lightsmith-dda (center) @ dipoles_per_diameter=40, gpu",
+   "new_reference": "finest BEM @ elements_per_size=12, gpu",
+   "self_change": 0.013119726680950015,
+   "reference_uncertainty": 0.06559863340475003,
+   "ladder": [
+    8.0,
+    10.0,
+    12.0
+   ]
+  }
+ }
+}

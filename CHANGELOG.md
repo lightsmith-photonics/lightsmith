@@ -8,6 +8,21 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
 
 ### Added
 
+- **FDTD graded grids** (scattering): `grid: "auto"` refines each particle's bounding box to the spacing its
+  material and size need, and `mesh_override: [{center_nm, size_nm, spacing_nm}]` adds refinement boxes. The
+  cells grade back to the base spacing at most `grading_ratio` (1.25) per cell. The grid is a tensor product
+  with independent per-axis widths. The Yee update uses primary and dual width arrays, so it conserves the
+  same discrete energy as the uniform one, on the CPU and on CUDA with CUDA graphs. The CPML, TFSF tables
+  (exact discrete background of the graded 1D problem, still leak-free), layered substrates, conformal
+  smoothing (metals' vertex tensor included), flux and far-field surfaces, near fields, particle absorption
+  and mirror planes all follow the widths. An n = 3.5, r = 20 nm sphere is within 0.11 % of a uniform 2 nm run, whose own error against Mie is
+  0.7 %, with 153 k cells instead of 242 k. A Drude sphere of r = 10 nm at 0.5 nm cells needs 488 k cells
+  instead of 1.74 M (2.1× faster in double precision). Its spectrum differs from the uniform run by at most
+  7e-4 of the peak, against a 13 % discretisation error. Particles on glass or on an absorbing substrate
+  agree within 0.34 %, and far fields within 0.1 % of the uniform run's. The coarsest cells must stay fine:
+  any change of cell size h reflects about (k h)²/16 of a wave, so `grid: "auto"` uses 60 cells per
+  background wavelength (`background_cells_per_wavelength`). A uniform grid gives today's run bit for bit.
+  Scattering only, with plane waves along an axis (or graded only along the axes the wave does not vary along).
 - **FDTD device problems** (`kind: "device"`, 3D and 2D): S-parameters between waveguide ports. Each port
   mode is an exact eigenmode of the FDTD grid itself: the FDE cross-section problem solved with the
   leapfrog frequency, the discrete propagation constant and each node's discrete material response, then
@@ -75,6 +90,77 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
   (45 s → 10 s for a 2.5 M-cell 3D MMI).
 - FDTD scattering: the default TFSF padding and PML gap are now at least 3 % of the longest wavelength
   in the medium, so refining the grid no longer moves the monitors closer to the particle.
+- FDTD: the table-fed plane-wave source updates all face slabs of a kind in one gather and scatter, and
+  stops waiting once the pulse has passed (the wrapped edge of the table's inverse FFT had set it to the
+  whole table), so small scattering runs are 2.3–2.8× faster with the same results.
+- Documentation describes problems through the Python models first; saving and loading them as JSON
+  files for the CLI and MCP server is covered in the quick start.
+
+### Fixed
+
+- FDTD: the time step is reduced where a dispersive (Drude–Lorentz) material would make the update unstable
+  on a coarse grid, checked from the update's eigenvalues over the grid's spatial frequencies. The
+  Johnson–Christy gold fit diverged at dx ≥ 20 nm, and lossy constants at dx near half a wavelength.
+- **3D devices with ports facing y** (FDE ports, EME, BPM): the cross-section's local x axis was global z,
+  so `"te"` selected the vertical-E mode and BPM's `bend_radius_nm` bent the guide out of the chip plane.
+  Local x is now the in-plane transverse axis for ports facing x or y, as it already was in 2D. Results for
+  ports facing x, and for all 2D devices, are unchanged.
+- **`compare`**: device, circuit, mode and band results now report differences (they came back empty);
+  without a method list the reference is the method `auto` would pick, not the alphabetically first
+  backend; relative cross-section differences are floored at 0.1 % of the reference extinction, so a
+  lossless particle's near-zero absorption no longer gives huge relative errors. Results that cannot be
+  compared are listed under `not_compared`.
+- **FDTD periodic and layer-stack transmission** into an absorbing substrate is referred to the interface,
+  as in TMM and RCWA. Before, T was taken a few cells inside the substrate (Si at 420 nm read 0.744 instead
+  of 0.815) and metal substrates reported T = 0.
+- **BEM** checks particle overlap on the volume-corrected meshes the solve uses, so particles about 0.1 nm
+  apart no longer produce interpenetrating meshes, and warns when a gap is smaller than the mesh size.
+- **`auto`** skips a backend whose estimate exceeds its own size limit (BEM `max_unknowns`, DDA
+  `max_dipoles`, T-matrix `max_modes`, ...) and falls through to the next method, instead of picking it and
+  failing at solve time.
+- **`Tabulated`** materials sort their data by wavelength (energy-ordered files are descending, which
+  interpolation silently got wrong) and refuse duplicate wavelengths or mismatched column lengths.
+
+
+## [0.2.0] - 2026-11-02
+
+### Added
+
+- **BEM** (`lightsmith-bem`): PMCHWT surface integral equations on RWG meshes for spheres, spheroids,
+  cylinders, layered spheres and disjoint clusters, with near and far fields, on CPU or GPU. `auto` tries
+  it after T-matrix for scattering.
+- **BPM** (`lightsmith-bpm`): wide-angle Padé beam propagation for devices, 2D and 3D (semi- and
+  full-vectorial), with bends, on CPU or GPU.
+- **FDTD oblique and conical incidence** on layer stacks and periodic structures, up to 85° from the
+  normal, with Bloch-periodic boundaries at fixed in-plane wavevector. Scattering accepts any incidence
+  direction.
+- **PDK flow** (`lightsmith.pdk`): technologies as JSON (`generic_soi` from open data), parametric cells
+  with GDS output, simulation at the port reference planes, fitted and cached compact models, and
+  `pdk:<cell>` instances in circuit netlists.
+- **MCP server rewrite** on MCP SDK 2.x: jobs, budgets, resources, prompts, materials tools, and remote
+  mode. The `mcp` extra is now `mcp>=2.3,<3`.
+- **3D inverse design** on a full-vector 3D FDFD solver (`lightsmith-fdfd` with `dimension=3` devices):
+  exact discrete port modes, TF/SF mode sources, batched BiCGStab on CPU or GPU, and adjoint gradients
+  with warm starts across iterations.
+- **Agent benchmark** (`benchmarks/agents/`): 43 graded tasks for agents using the MCP server.
+
+### Changed
+
+- The documentation moved to <https://docs.lightsmith.dev/>. The old GitHub Pages address redirects there.
+
+### Fixed
+
+- Multilayer Mie: avoid cancellation near zeros of ψₙ, which gave errors up to 12% for coated spheres
+  whose interface sits on such a zero.
+- RCWA: grazing diffraction orders (kz = 0) inside uniform layers no longer make the layer S-matrix
+  singular.
+- FDTD: runs whose fields grow without bound now raise, also on CPU in float64, where they used to stay
+  finite and return cross sections off by many orders of magnitude.
+- Topology optimisation: `OptimizationProblem.options` now merges into the device's options key by key
+  within each method, instead of replacing the method's whole dictionary (which dropped `dl_nm`,
+  `pml_cells` and the like).
+- `device="auto"` falls back to CPU when CUDA is available but no device is visible
+  (`CUDA_VISIBLE_DEVICES=""`), instead of failing with "Invalid device id".
 
 ## [0.1.0] - 2026-11-01
 
@@ -116,5 +202,6 @@ First public release.
 - The `mcp` extra is pinned to `mcp>=1.2,<2`: the server uses the mcp 1.x `FastMCP` API, which mcp 2.x
   renamed.
 
-[Unreleased]: https://github.com/lightsmith-photonics/lightsmith/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/lightsmith-photonics/lightsmith/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/lightsmith-photonics/lightsmith/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/lightsmith-photonics/lightsmith/releases/tag/v0.1.0

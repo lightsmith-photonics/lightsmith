@@ -1,19 +1,19 @@
 {
   "script": "benchmarks/remeasure/fdtd.py",
   "environment": {
-    "timestamp_utc": "2026-11-01T17:20:10+00:00",
+    "timestamp_utc": "2026-11-05T03:24:30+00:00",
     "host": "LunasTower",
     "python": "3.12.2",
     "lightsmith_version": "0.1.0",
-    "git_commit": "53452c49a97ea3f1bbbe360d90b9385b1f6121c2",
-    "git_branch": "paper-bench",
+    "git_commit": "c356fe4351938c9f6e180b59f5b0c7ef39a872d6",
+    "git_branch": "fdtd-rerun",
     "torch": "2.11.0+cu128",
     "cuda_available": true,
     "gpu_name": "NVIDIA GeForce RTX 5070",
     "cuda_runtime": "12.8",
     "precision": "GPU runs: single (float32, FDTD precision='auto' on GPU); CPU runs: double (float64)",
     "wall_time_note": "PROVISIONAL: a long benchmark was running on the same GPU in the background during these measurements, so all wall/runtime values are upper bounds and not suitable for the paper without a re-run on an idle GPU.",
-    "finished_utc": "2026-11-01T17:22:58+00:00"
+    "finished_utc": "2026-11-05T03:25:07+00:00"
   },
   "rows": [
     {
@@ -36,27 +36,27 @@
       "quantity": "max relative difference |GPU/CPU - 1| over wavelengths of C_ext and C_abs (the asserted quantities); C_sca reported for information",
       "reference": "CPU double-precision FDTD",
       "measured": {
-        "max_rel_diff_c_ext_and_c_abs": 9.286952473708254e-08,
+        "max_rel_diff_c_ext_and_c_abs": 4.569165668044661e-08,
         "max_rel_diff": {
-          "c_ext_nm2": 7.580340399826468e-08,
-          "c_abs_nm2": 9.286952473708254e-08,
-          "c_sca_nm2": 1.1249219336040284e-06
+          "c_ext_nm2": 4.569165668044661e-08,
+          "c_abs_nm2": 2.8974848964580247e-08,
+          "c_sca_nm2": 2.385353655487421e-06
         },
         "per_wavelength": {
           "c_ext_nm2": [
-            7.580340399826468e-08,
-            5.475393449749788e-08,
-            2.0888809126873298e-08
+            3.5180051316530125e-08,
+            4.569165668044661e-08,
+            1.1356160123376924e-08
           ],
           "c_abs_nm2": [
-            9.286952473708254e-08,
-            4.4531798248925725e-08,
-            2.8301053056623005e-08
+            1.600462673501113e-08,
+            2.8974848964580247e-08,
+            2.659109443747809e-08
           ],
           "c_sca_nm2": [
-            1.1249219336040284e-06,
-            1.0924108094778617e-06,
-            9.679182553234966e-07
+            2.2294253032573152e-06,
+            2.3353849414320393e-06,
+            2.385353655487421e-06
           ]
         },
         "gpu_provenance": {
@@ -65,13 +65,13 @@
           "precision": "single",
           "spacing_nm": 4.0,
           "grid": [
-            55,
-            55,
+            29,
+            29,
             55
           ],
-          "steps": 765,
+          "steps": 693,
           "dt_fs": 0.007318166165876588,
-          "runtime_s": 5.5728750999842305,
+          "runtime_s": 1.9850751999765635,
           "decay_level": 1.0,
           "cuda_graphs": true
         },
@@ -81,22 +81,22 @@
           "precision": "double",
           "spacing_nm": 4.0,
           "grid": [
-            55,
-            55,
+            29,
+            29,
             55
           ],
-          "steps": 765,
+          "steps": 693,
           "dt_fs": 0.007318166165876588,
-          "runtime_s": 37.88809410002432,
+          "runtime_s": 1.4970892999554053,
           "decay_level": 1.0,
           "cuda_graphs": false
         },
         "wall_s": {
-          "cpu": 37.94,
-          "gpu": 5.57
+          "cpu": 1.51,
+          "gpu": 1.99
         }
       },
-      "measured_summary": "9.3e-08",
+      "measured_summary": "4.6e-08",
       "previously_reported": "~1e-7",
       "reproduced": true,
       "reproduced_criterion": "same order of magnitude as ~1e-7 (i.e. < 1e-6)"
@@ -123,136 +123,136 @@
       "measured": [
         {
           "spacing_nm": 6.0,
-          "max_rel_err_c_ext_pct": 1.126,
+          "max_rel_err_c_ext_pct": 0.078,
           "rel_err_c_ext_pct_per_wavelength": [
-            1.126,
-            1.085,
-            1.044,
-            1.006,
-            0.983,
-            0.967,
-            0.942,
-            0.906,
-            0.88
+            0.078,
+            0.059,
+            0.044,
+            0.032,
+            0.023,
+            0.016,
+            0.009,
+            0.002,
+            0.009
           ],
-          "wall_s": 6.65,
+          "wall_s": 1.56,
           "provenance": {
             "framework": "torch",
             "device": "cuda:0",
             "precision": "single",
             "spacing_nm": 6.0,
             "grid": [
-              65,
-              65,
+              34,
+              34,
               65
             ],
-            "steps": 1232,
+            "steps": 2442,
             "dt_fs": 0.01097724924881488,
-            "runtime_s": 6.645723100024043,
-            "decay_level": 2.501329435762211e-07,
+            "runtime_s": 1.5570668999571353,
+            "decay_level": 1.862148179787779e-13,
             "cuda_graphs": true
           }
         },
         {
           "spacing_nm": 4.0,
-          "max_rel_err_c_ext_pct": 0.793,
+          "max_rel_err_c_ext_pct": 0.05,
           "rel_err_c_ext_pct_per_wavelength": [
-            0.793,
-            0.766,
-            0.736,
-            0.713,
-            0.703,
-            0.698,
-            0.684,
-            0.662,
-            0.645
+            0.005,
+            0.003,
+            0.008,
+            0.012,
+            0.016,
+            0.021,
+            0.031,
+            0.043,
+            0.05
           ],
-          "wall_s": 9.54,
+          "wall_s": 2.42,
           "provenance": {
             "framework": "torch",
             "device": "cuda:0",
             "precision": "single",
             "spacing_nm": 4.0,
             "grid": [
-              75,
-              75,
-              75
+              43,
+              43,
+              83
             ],
-            "steps": 1782,
+            "steps": 3640,
             "dt_fs": 0.007318166165876588,
-            "runtime_s": 9.538669000001391,
-            "decay_level": 6.0851770397447664e-06,
+            "runtime_s": 2.4226925999391824,
+            "decay_level": 7.989567587418019e-13,
             "cuda_graphs": true
           }
         },
         {
           "spacing_nm": 3.0,
-          "max_rel_err_c_ext_pct": 0.616,
+          "max_rel_err_c_ext_pct": 0.063,
           "rel_err_c_ext_pct_per_wavelength": [
-            0.616,
-            0.595,
-            0.576,
-            0.57,
-            0.572,
-            0.567,
-            0.542,
-            0.496,
-            0.44
+            0.02,
+            0.024,
+            0.025,
+            0.026,
+            0.031,
+            0.04,
+            0.05,
+            0.063,
+            0.063
           ],
-          "wall_s": 13.41,
+          "wall_s": 3.36,
           "provenance": {
             "framework": "torch",
             "device": "cuda:0",
             "precision": "single",
             "spacing_nm": 3.0,
             "grid": [
-              85,
-              85,
-              85
+              52,
+              52,
+              101
             ],
-            "steps": 2376,
+            "steps": 4884,
             "dt_fs": 0.00548862462440744,
-            "runtime_s": 13.407751299993834,
-            "decay_level": 3.789405884213833e-06,
+            "runtime_s": 3.3558315000263974,
+            "decay_level": 1.176389178486888e-12,
             "cuda_graphs": true
           }
         },
         {
           "spacing_nm": 2.0,
-          "max_rel_err_c_ext_pct": 0.401,
+          "max_rel_err_c_ext_pct": 0.046,
           "rel_err_c_ext_pct_per_wavelength": [
-            0.401,
-            0.398,
-            0.398,
-            0.397,
-            0.373,
-            0.315,
-            0.239,
-            0.173,
-            0.146
+            0.008,
+            0.008,
+            0.006,
+            0.009,
+            0.018,
+            0.031,
+            0.044,
+            0.046,
+            0.031
           ],
-          "wall_s": 20.59,
+          "wall_s": 6.11,
           "provenance": {
             "framework": "torch",
             "device": "cuda:0",
             "precision": "single",
             "spacing_nm": 2.0,
             "grid": [
-              105,
-              105,
-              105
+              70,
+              70,
+              137
             ],
-            "steps": 3564,
+            "steps": 7280,
             "dt_fs": 0.003659083082938294,
-            "runtime_s": 20.57591390001471,
-            "decay_level": 2.323961336790395e-06,
+            "runtime_s": 6.111575199989602,
+            "decay_level": 1.5666515356471937e-12,
             "cuda_graphs": true
           }
         }
       ],
-      "measured_summary": "1.13/0.79/0.62/0.40%",
+      "measured_summary": "0.08/0.05/0.06/0.05%",
       "previously_reported": "1.1/0.8/0.6/0.4% (and 0.40% measured, 0.6% bound at 2 nm)",
-      "reproduced": true,
+      "reproduced": false,
       "reproduced_criterion": "each value equal to the reported one after rounding to 0.1 percentage points"
     },
     {
@@ -276,15 +276,15 @@
       "reference": "native Mie (ls.solve(sim, 'lightsmith-mie', 'cpu'))",
       "measured": {
         "oblique_test_config": {
-          "max_rel_err_c_ext_pct": 1.24,
+          "max_rel_err_c_ext_pct": 0.083,
           "rel_err_c_ext_pct_per_wavelength": [
-            0.81,
-            1.023,
-            1.24
+            0.027,
+            0.057,
+            0.083
           ],
-          "abs_over_max_ext": 9.408953576968044e-05,
-          "near_field_rms_rel_err_pct": 4.005,
-          "wall_s": 20.77,
+          "abs_over_max_ext": 2.2133397468745742e-06,
+          "near_field_rms_rel_err_pct": 3.847,
+          "wall_s": 2.7,
           "provenance": {
             "framework": "torch",
             "device": "cuda:0",
@@ -292,45 +292,45 @@
             "spacing_nm": 5.0,
             "grid": [
               67,
-              67,
+              35,
               67
             ],
-            "steps": 2176,
+            "steps": 3080,
             "dt_fs": 0.009147707707345736,
-            "runtime_s": 20.771021399996243,
-            "decay_level": 1.812154317989509e-08,
+            "runtime_s": 2.6956567000597715,
+            "decay_level": 7.455869111477813e-13,
             "cuda_graphs": true
           }
         },
         "normal_incidence_supplementary": {
-          "max_rel_err_c_ext_pct": 0.891,
+          "max_rel_err_c_ext_pct": 0.08,
           "rel_err_c_ext_pct_per_wavelength": [
-            0.891,
-            0.832,
-            0.797
+            0.027,
+            0.059,
+            0.08
           ],
-          "abs_over_max_ext": 4.989790478009336e-05,
-          "near_field_rms_rel_err_pct": 4.603,
-          "wall_s": 8.37,
+          "abs_over_max_ext": 5.394917915923939e-06,
+          "near_field_rms_rel_err_pct": 4.46,
+          "wall_s": 2.07,
           "provenance": {
             "framework": "torch",
             "device": "cuda:0",
             "precision": "single",
             "spacing_nm": 5.0,
             "grid": [
-              67,
-              67,
+              35,
+              35,
               67
             ],
-            "steps": 2176,
+            "steps": 3080,
             "dt_fs": 0.009147707707345736,
-            "runtime_s": 8.366936499980511,
-            "decay_level": 5.558883308871426e-09,
+            "runtime_s": 2.067172500072047,
+            "decay_level": 6.374794127171459e-13,
             "cuda_graphs": true
           }
         }
       },
-      "measured_summary": "1.24% (test config: layered + oblique); 0.89% (same sphere, normal incidence)",
+      "measured_summary": "0.08% (test config: layered + oblique); 0.08% (same sphere, normal incidence)",
       "previously_reported": "0.6% (layered), ~1% (oblique); near field 2.9% RMS",
       "reproduced": false,
       "reproduced_criterion": "oblique rounds to ~1% and normal-incidence value equals 0.6% at 0.1 pp"
@@ -352,43 +352,43 @@
         "peak_fdtd_nm": 550.0,
         "peak_mie_nm": 550.0,
         "peak_offset_nm": 0.0,
-        "peak_height_err_pct": -3.88,
-        "wall_s_including_fit": 24.17,
-        "fdtd_runtime_s_provenance": 24.134629599982873,
+        "peak_height_err_pct": -0.726,
+        "wall_s_including_fit": 11.15,
+        "fdtd_runtime_s_provenance": 11.144770300015807,
         "spacing_nm": 2.0,
         "fit_warnings": [
           "Au: fitted with 1 Lorentz pole(s) + Drude, RMS relative error 1.64% over 480-620 nm"
         ],
         "c_ext_fdtd_nm2": [
-          14249.049182712337,
-          14587.668739481289,
-          15076.526732765724,
-          15748.172083266682,
-          16624.44755272796,
-          17709.38872874885,
-          18996.984807665183,
-          20480.809996091433,
-          22151.422734884465,
-          23978.739280971735,
-          25889.110054501434,
-          27752.410767280835,
-          29390.248864598496,
-          30606.347979928803,
-          31229.576981980717,
-          31154.984643727155,
-          30368.93692290502,
-          28951.077602502377,
-          27054.146272047314,
-          24868.917074573408,
-          22585.69533977752,
-          20362.404082161,
-          18305.830726740096,
-          16468.118549691433,
-          14855.70065084609,
-          13445.40193328233,
-          12202.027479640972,
-          11092.413722498797,
-          10093.48639924775
+          14314.533491736274,
+          14676.358005799066,
+          15181.888114815942,
+          15874.802172336977,
+          16785.745781007572,
+          17916.479681670215,
+          19252.81583860899,
+          20786.424698317955,
+          22518.729199312394,
+          24437.456817485796,
+          26479.083270284253,
+          28502.900700635553,
+          30296.830834476918,
+          31618.11057857195,
+          32254.191150210743,
+          32079.922212033198,
+          31089.86215489928,
+          29396.42611432919,
+          27196.705180040997,
+          24722.736300174234,
+          22191.80175383875,
+          19770.448617197108,
+          17559.375438882802,
+          15597.817032085677,
+          13880.737317820585,
+          12380.499193425447,
+          11065.190142166683,
+          9909.44887478628,
+          8897.225389600379
         ],
         "c_ext_mie_nm2": [
           14722.384838201646,
@@ -427,21 +427,21 @@
           "precision": "single",
           "spacing_nm": 2.0,
           "grid": [
-            85,
-            85,
-            85
+            50,
+            50,
+            97
           ],
-          "steps": 11160,
+          "steps": 13122,
           "dt_fs": 0.003659083082938294,
-          "runtime_s": 24.134629599982873,
-          "decay_level": 4.256074692815255e-06,
+          "runtime_s": 11.144770300015807,
+          "decay_level": 7.717573750267256e-06,
           "cuda_graphs": true
         },
         "wall_time_status": "provisional (GPU shared with a background benchmark)"
       },
-      "measured_summary": "peak offset +0 nm (FDTD 550 vs Mie 550 nm), height -3.9%, 24 s (provisional)",
+      "measured_summary": "peak offset +0 nm (FDTD 550 vs Mie 550 nm), height -0.7%, 11 s (provisional)",
       "previously_reported": "peak at the Mie position (550 nm), height -3.9%, 16 s on an RTX 5070",
-      "reproduced": true,
+      "reproduced": false,
       "reproduced_criterion": "peak offset 0 nm and height error -3.9% at 0.1 pp; wall time not judged (provisional)"
     }
   ]

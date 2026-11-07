@@ -16,8 +16,8 @@ from .engine import DFTMonitor, Engine, PMLSpec, TimeMonitor, flat_index
 from ...materials import ConstantIndex, ConstantPermittivity
 from .media import HBARC_EV_NM, Medium, fit_module, needs_fit, to_medium
 from .options import FDTDOptions
-from .setup import (FS, far_field, flux, flux_points, mesh_mode, particle_bbox, particle_slot_fn,
-                    run_until_decayed, scattering_layout, surface_samples, time_step, voxelise)
+from .setup import (FS, far_field, flux, flux_points, graded_layout, mesh_mode, node_volumes, particle_bbox,
+                    particle_slot_fn, run_until_decayed, scattering_layout, surface_samples, time_step, voxelise)
 from .absorption import ParticleAbsorption
 from .layered import OMEGA_H, ObliqueLayeredPlaneWave
 from .layered_far import LayeredFarField, hemisphere, outgoing_waves
@@ -122,15 +122,8 @@ def spacing(sim, opts: FDTDOptions, feature_nm: float | None = None) -> float:
     if opts.spacing_nm:
         return float(opts.spacing_nm)
     wl = sim.wavelength_array()
-    n_max, metal = sim.medium_index, False
-    for p in sim.particles:
-        for m in p.region_materials():
-            try:
-                eps = m.eps(wl)
-            except Exception:  # noqa: BLE001 (range errors surface later, with context)
-                continue
-            n_max = max(n_max, float(np.abs(np.sqrt(eps.astype(complex))).max()))
-            metal |= bool(np.any(eps.real < 0))
+    n_max, metal = _n_max([m for p in sim.particles for m in p.region_materials()], wl)
+    n_max = max(n_max, sim.medium_index)
     cpr = opts.cells_per_radius or (20.0 if metal else 10.0)
     dx = wl.min() / (n_max * opts.cells_per_wavelength)
     if sim.particles:
@@ -169,15 +162,97 @@ def _tabled(sim) -> bool:
     return abs(k[0]) > 1e-9 or abs(k[1]) > 1e-9 or _absorbing(sim) or sim.outputs.far_field is not None
 
 
+def graded(opts: FDTDOptions) -> bool:
+    """Whether the options ask for a graded grid (grid.py)."""
+    return opts.grid == "auto" or bool(opts.mesh_override)
+
+
+def _n_max(materials, wl) -> tuple[float, bool]:
+    """Largest |n| over the band and whether any material is a metal (Re eps < 0) there."""
+    n_max, metal = 0.0, False
+    for m in materials:
+        try:
+            eps = m.eps(wl)
+        except Exception:  # noqa: BLE001 (range errors surface later, with context)
+            continue
+        n_max = max(n_max, float(np.abs(np.sqrt(eps.astype(complex))).max()))
+        metal |= bool(np.any(eps.real < 0))
+    return n_max, metal
+
+
+def grid_regions(sim, opts: FDTDOptions) -> tuple[float, list]:
+    """Base spacing and refinement regions (grid.Region) of a graded grid.
+
+    Base: spacing_nm, else (grid "auto") background_cells_per_wavelength in the background alone (host, and a
+    transparent substrate), else the uniform rule (spacing()). grid "auto" refines each particle's bounding box,
+    plus a margin for its near field (half its smallest half-extent, at least two cells), to the uniform rule for
+    that particle alone (cells_per_wavelength in its material, its smallest half-extent / cells_per_radius); when
+    no particle needs cells finer than that base, the grid is today's uniform one. mesh_override boxes add their
+    own spacings."""
+    from .grid import Region
+
+    wl = sim.wavelength_array()
+    if opts.spacing_nm:
+        base = float(opts.spacing_nm)
+    elif opts.grid == "auto":
+        n_bg = sim.medium_index
+        if sim.substrate is not None:
+            eps = np.asarray(sim.substrate.material.eps(wl), dtype=complex)
+            if np.all(eps.real > 0):
+                n_bg = max(n_bg, float(np.abs(np.sqrt(eps)).max()))
+        base = float(wl.min() / (n_bg * opts.background_cells_per_wavelength))
+    else:
+        base = spacing(sim, opts)
+    regions = []
+    if opts.grid == "auto":
+        for p in sim.particles:
+            n_p, metal = _n_max(p.region_materials(), wl)
+            cpr = opts.cells_per_radius or (20.0 if metal else 10.0)
+            half = np.asarray(p.shape.bounding_half_extent(), dtype=float)
+            h = min(base, wl.min() / (max(n_p, sim.medium_index) * opts.cells_per_wavelength), float(half.min()) / cpr)
+            pos = np.asarray(p.position_nm, dtype=float)
+            margin = max(2 * h, 0.5 * float(half.min()))  # the near field: within 0.1% of the uniform run (r / 4: 0.2%)
+            regions.append(Region.make(pos - half - margin, pos + half + margin, h))
+        if not opts.spacing_nm and not any(np.any(r.spacing < base) for r in regions):
+            # nothing to refine: grading buys nothing, and the uniform rule's spacing is the coarser one
+            base, regions = spacing(sim, opts), []
+    for o in opts.mesh_override:
+        c, s = np.asarray(o.center_nm, dtype=float), np.asarray(o.size_nm, dtype=float)
+        regions.append(Region.make(c - s / 2, c + s / 2, o.spacing_nm))
+    return base, regions
+
+
+def graded_unsupported(sim) -> str:
+    """Why this scattering problem cannot run on a graded grid (empty if it can)."""
+    if sim.illumination.kind != "plane_wave":
+        return "a graded grid supports plane-wave illumination only (not Gaussian beams yet)"
+    return ""
+
+
 def plan(sim, opts: FDTDOptions, single: bool, warnings: list[str] | None = None, media=None):
     """Everything about the run that is cheap to compute (used by estimate and solve)."""
     warnings = [] if warnings is None else warnings
-    dx = spacing(sim, opts)
     mirror, sym = symmetry.find(sim, opts)
-    lay = symmetry.halve(scattering_layout(sim, opts, dx, _bbox(sim)), mirror)
+    if graded(opts):
+        why = graded_unsupported(sim)
+        if why:
+            raise ValueError(f"FDTD: {why}; use grid='uniform' without mesh_override")
+        dx, regions = grid_regions(sim, opts)
+        lay = symmetry.halve(graded_layout(sim, opts, dx, regions, _bbox(sim), mirror, opts.grading_ratio), mirror)
+        if lay.grid is not None:
+            k, _ = sim.illumination.unit_vectors()
+            axis = 2 if sim.substrate is not None else int(np.argmax(np.abs(k)))  # the tables' 1D axis
+            bad = [a for a in range(3) if a != axis and abs(k[a]) > 1e-9 and lay.grid.widths()[a] is not None]
+            if bad:
+                raise ValueError("FDTD: oblique incidence needs the grid uniform along the axes the wave varies "
+                                 f"along ({', '.join('xyz'[a] for a in bad)} are graded); use axis-aligned incidence "
+                                 "or grid='uniform'")
+    else:
+        dx = spacing(sim, opts)
+        lay = symmetry.halve(scattering_layout(sim, opts, dx, _bbox(sim)), mirror)
     if media is None:
         media, _ = _media(sim, warnings)
-    dt = time_step(dx, opts.courant, media)
+    dt = time_step(dx, opts.courant, media, lay.grid)
     omega_c, omega_half, omega_max = _band(sim)
     # sampling every `stride` steps aliases source content above omega_c + 4 omega_half (amplitude
     # < e^-16) onto the highest requested frequency, never below it. An oblique wave from tables is
@@ -188,7 +263,7 @@ def plan(sim, opts: FDTDOptions, single: bool, warnings: list[str] | None = None
     max_steps = int(math.ceil(max_t / dt / stride)) * stride
     # rough run-length guess: pulse + transit + slowest material damping
     tau = 2 / omega_half
-    t_pulse = 7 * tau + (lay.shape[0] * dx) * sim.medium_index
+    t_pulse = 7 * tau + (lay.shape[0] * dx if lay.grid is None else float(np.ptp(lay.grid.nodes[0]))) * sim.medium_index
     gammas = [p.gamma for m in media for p in m.poles if p.sigma > 0]
     t_ring = math.log(1 / opts.decay_by) / max(min(gammas), 1e-6) if gammas else 4 * t_pulse / 7
     est_steps = max_steps if opts.run_time_fs else min(max_steps, int((t_pulse + t_ring) / dt))
@@ -198,7 +273,7 @@ def plan(sim, opts: FDTDOptions, single: bool, warnings: list[str] | None = None
     n_f = len(sim.wavelength_array())
     mem = bytes_ * (12 * n_cells + 4 * n_flux * n_f) + _table_bytes(sim, lay, dt, omega_c, omega_half, media, bytes_)
     if _absorbing(sim):  # DFTs of E and D on the particles' nodes, and of the surface for the far field
-        n_nodes = 3 * sum(p.shape.volume() for p in sim.particles) / dx**3 * 1.3
+        n_nodes = 3 * sum(p.shape.volume() for p in sim.particles) / lay.min_spacing**3 * 1.3
         mem += bytes_ * 4 * n_f * (n_nodes + n_flux)
     return {"dx": dx, "layout": lay, "dt": dt, "stride": stride, "max_steps": max_steps, "est_steps": est_steps,
             "omega_c": omega_c, "omega_half": omega_half, "media": media, "memory_bytes": int(mem),
@@ -241,13 +316,15 @@ def solve(sim, opts: FDTDOptions, device: Device):
 
     t0 = time.perf_counter()
     base, background = None, ()
+    grid = lay.grid  # None: uniform
     if layered:
-        base = layered_background(lay.shape, lay.origin, dx, sim.substrate.interface_z_nm, media[0], media[-1])
+        base = layered_background(lay.shape, lay.origin, dx, sim.substrate.interface_z_nm, media[0], media[-1],
+                                  z_nodes=None if grid is None else grid.nodes[2])
         background = (0, len(media) - 1)
     inv_eps, groups, vstats, offdiag = voxelise(_slot_fn(sim, slot_of, len(media)), media, lay.shape, lay.origin, dx,
                                                 lay.roi[0], lay.roi[1], mode=mesh_mode(opts),
                                                 samples=opts.subpixel_samples, base=base, background=background,
-                                                mirror=lay.mirror)
+                                                mirror=lay.mirror, grid=grid)
     del base
     t_vox = time.perf_counter() - t0
     lam_max = float(sim.wavelength_array().max())
@@ -266,7 +343,7 @@ def solve(sim, opts: FDTDOptions, device: Device):
     tabled = beam is None and _tabled(sim)  # a plane wave from tables
     if tabled:
         sub = dict(z_int=sim.substrate.interface_z_nm, sub=media[-1]) if layered else {}
-        src = ObliqueLayeredPlaneWave(khat=khat, ehat=ehat, **src_args, **sub, mirror=lay.mirror)
+        src = ObliqueLayeredPlaneWave(khat=khat, ehat=ehat, **src_args, **sub, mirror=lay.mirror, grid=grid)
     elif beam is not None:
         src, beam_info = _beam_source(sim, beam, lay, src_args, warnings)
         beam_mon = src.monitor(np.concatenate([omega, om_ff]))
@@ -277,11 +354,12 @@ def solve(sim, opts: FDTDOptions, device: Device):
                                down=down, ehat=ehat, inv_eps=inv_eps, z_int=sim.substrate.interface_z_nm,
                                host=media[0], sub=media[-1], pml=pml, k_launch=k_launch,
                                k_ref=k_launch - 2 if down else k_launch + 2, omega_c=p["omega_c"],
-                               omega_half=p["omega_half"], max_steps=src_args["max_steps"], mirror=lay.mirror)
+                               omega_half=p["omega_half"], max_steps=src_args["max_steps"], mirror=lay.mirror,
+                               grid=grid)
     # with mirror planes: boxes open on the planes, fluxes and absorption times n_sym, far fields unfolded
     n_sym, open_lo = symmetry.factor(lay.mirror), symmetry.open_faces(lay)
-    sca = flux_points(*symmetry.cut_box(lay.sca, lay), lay.shape, dx, open_lo)
-    tot = flux_points(*symmetry.cut_box(lay.tot, lay), lay.shape, dx, open_lo)
+    sca = flux_points(*symmetry.cut_box(lay.sca, lay), lay.shape, dx, open_lo, grid=grid)
+    tot = flux_points(*symmetry.cut_box(lay.tot, lay), lay.shape, dx, open_lo, grid=grid)
     mon_sca = DFTMonitor(omega, sca[0], sca[1], sca[2], energy=True)
     mon_tot = DFTMonitor(omega, tot[0], tot[1], tot[2], energy=2)
     if tabled:
@@ -310,7 +388,7 @@ def solve(sim, opts: FDTDOptions, device: Device):
         monitors += [near["mon"], near["inc"], near["bg"]]
     far = None
     if sim.outputs.far_field is not None:
-        surf = surface_samples(*symmetry.cut_box(lay.sca, lay), lay.shape, dx, open_lo)
+        surf = surface_samples(*symmetry.cut_box(lay.sca, lay), lay.shape, dx, open_lo, grid=grid)
         far = {"surf": surf, "omega": om_ff, "mon": DFTMonitor(om_ff, surf.e_idx, surf.h1, surf.h2)}
         monitors.append(far["mon"])
         if tabled:
@@ -319,14 +397,16 @@ def solve(sim, opts: FDTDOptions, device: Device):
         if layered:
             far["lff"] = symmetry.UnfoldedFarField(LayeredFarField(
                 surf, origin=lay.origin, dx=dx, dt=dt, z_int=sim.substrate.interface_z_nm, host=media[0],
-                sub=media[-1]), lay.mirror)
+                sub=media[-1], grid=grid), lay.mirror)
     # over an absorbing substrate: the particles' own absorption, and the far field for C_sca and C_ext
     pabs = None
     if absorbing:
         pabs = ParticleAbsorption(groups, media[1:-1], omega, dt)
         for _, me, _, w in pabs.parts:  # nodes on a symmetric plane are shared with their image
             w *= symmetry.plane_weights(me.e_idx, lay.shape, lay.mirror)[None, :]
-        surf_cs = surface_samples(*symmetry.cut_box(lay.sca, lay), lay.shape, dx, open_lo)
+            if grid is not None:  # each node's own volume, in units of dx^3
+                w *= node_volumes(me.e_idx, lay.shape, grid, lay.mirror)[None, :] / dx**3
+        surf_cs = surface_samples(*symmetry.cut_box(lay.sca, lay), lay.shape, dx, open_lo, grid=grid)
         mon_cs = DFTMonitor(omega, surf_cs.e_idx, surf_cs.h1, surf_cs.h2)
         monitors += [*pabs.monitors, mon_cs]
     probes = ()
@@ -335,7 +415,7 @@ def solve(sim, opts: FDTDOptions, device: Device):
 
     eng = Engine(device, shape=lay.shape, dx=dx, dt=dt, single=single, inv_eps=inv_eps, groups=groups, pml=pml,
                  sources=[src], monitors=monitors, dft_stride=stride, offdiag=offdiag, time_monitors=probes,
-                 mirror=lay.mirror)
+                 mirror=lay.mirror, widths=lay.widths())
     del inv_eps
     if pabs is not None:
         pabs.bind(eng)
@@ -351,7 +431,8 @@ def solve(sim, opts: FDTDOptions, device: Device):
         # differs by O((k dx)^2) and with direction, 1e-3 axial and 4e-4 diagonal at k dx = 0.1, where with
         # n |E|^2 / 2 a sphere's C_ext is the same for every direction to 4e-5.)
         e_ref = mon_inc.results()[0]
-        intensity = 0.5 * src.n_inc * np.sum(np.abs(e_ref) ** 2, axis=1)
+        e0sq = np.sum(np.abs(e_ref) ** 2, axis=1)
+        intensity = 0.5 * src.n_inc * e0sq
         # the background's own flux through the total-field box, from the same flux formula (the averaged-H
         # flux is not exactly conserved by the grid, ~1e-6 of the box flux)
         unit = src.incident_reference(omega)
@@ -370,7 +451,11 @@ def solve(sim, opts: FDTDOptions, device: Device):
     else:
         intensity = np.abs(src.s_z(*mon_inc.results()))
         # net outward flux of the background through the total-field box (absorption in a lossy substrate)
-        area = float(np.prod((lay.tot[1] - lay.tot[0])[:2])) * dx**2  # the whole box's (lo is mirrored)
+        if grid is None:
+            area = float(np.prod((lay.tot[1] - lay.tot[0])[:2])) * dx**2  # the whole box's (lo is mirrored)
+        else:
+            area = float(np.prod([2 * (lay.coord(a, lay.tot[1][a]) - lay.coord(a, 1)) if lay.mirror[a] else
+                                  lay.coord(a, lay.tot[1][a]) - lay.coord(a, lay.tot[0][a]) for a in (0, 1)]))
         bg_out = area * (src.s_z(*mon_bg[1].results()) - src.s_z(*mon_bg[0].results()))
     es, hs = mon_sca.results()
     et, ht = mon_tot.results()
@@ -383,9 +468,8 @@ def solve(sim, opts: FDTDOptions, device: Device):
         c_abs = n_sym * pabs.power(dx**3) / intensity
         lff = symmetry.UnfoldedFarField(LayeredFarField(
             surf_cs, origin=lay.origin, dx=dx, dt=dt, z_int=sim.substrate.interface_z_nm, host=media[0],
-            sub=media[-1]), lay.mirror)
-        c_sca, c_ext = _layered_cross_sections(sim, lay, lff, src, omega, *mon_cs.results(), amp,
-                                               np.sum(np.abs(e_ref) ** 2, axis=1))
+            sub=media[-1], grid=grid), lay.mirror)
+        c_sca, c_ext = _layered_cross_sections(sim, lay, lff, src, omega, *mon_cs.results(), amp, e0sq)
     near_data = _near_results(sim, lay, near, warnings) if near is not None else None
     far_data = _far_results(sim, lay, far, inc_e2_ff) if far is not None else None
     res_data = None
@@ -397,7 +481,10 @@ def solve(sim, opts: FDTDOptions, device: Device):
             "steps": steps, "simulated_time_fs": steps * dt / FS, "dft_stride": stride,
             "precision": "single" if single else "double", "cuda_graphs": graphs,
             "subpixel": mesh_mode(opts) != "staircase",
-            "pml_cells": lay.pml, "tfsf_box_nm": float((lay.tfsf[1] - lay.tfsf[0])[0] * dx),
+            "pml_cells": lay.pml, "tfsf_box_nm": float((lay.tfsf[1] - lay.tfsf[0])[0] * dx) if grid is None else
+            float(lay.coord(0, lay.tfsf[1][0]) - (2 * lay.r0[0] - lay.coord(0, lay.tfsf[1][0]) if lay.mirror[0]
+                                                  else lay.coord(0, lay.tfsf[0][0]))),
+            **({"graded_grid": {**grid.describe(), "base_spacing_nm": dx}} if grid is not None else {}),
             "decay_level": level, "materials": [m.describe() for m in media], **vstats, "symmetry": p["symmetry"],
             **({"gaussian_beam": beam_info} if beam_info else {}),
             **({"tfsf_table_stride": src.m} if tabled or beam is not None else {}),
@@ -426,7 +513,7 @@ def _resonance_probes(sim, lay, max_particles: int = 4) -> np.ndarray:
     for p in sim.particles[:max_particles]:
         c = np.asarray(p.position_nm, dtype=float)
         h = p.shape.bounding_half_extent()
-        pts += [c] + [c + d * (h + 2 * lay.dx) for d in _DIRS]
+        pts += [c] + [c + d * (h + 2 * lay.min_spacing) for d in _DIRS]
     idx = []
     for pt in pts:
         for comp in range(3):
@@ -515,7 +602,7 @@ def _far_results(sim, lay, far, inc_e2) -> list[FarFieldData]:
     nhat = (np.cos(th)[..., None] * khat + np.sin(th)[..., None]
             * (np.cos(ph)[..., None] * ehat + np.sin(ph)[..., None] * hhat))
     surf = far["surf"]
-    r = lay.origin + surf.pos * lay.dx - lay.r0
+    r = lay.world(surf.pos) - lay.r0
     e_all, h_all = far["mon"].results()
     nb = sim.medium_index
     out = []
@@ -545,7 +632,6 @@ def _near_monitor(sim, lay):
     req = sim.outputs.near_field
     a1, a2 = _PLANES[req.plane]
     nrm = 3 - a1 - a2
-    lo_w = lay.origin
     rng = []
     for a in range(3):
         if a == nrm:
@@ -553,10 +639,10 @@ def _near_monitor(sim, lay):
         else:
             lo_v, hi_v = -req.half_width_nm - lay.dx, req.half_width_nm + lay.dx
         lo_v, hi_v = symmetry.fold_interval(lo_v, hi_v, a, lay)
-        i0 = max(1, int(math.floor((lo_v - lo_w[a]) / lay.dx)) - 1)
+        i0 = max(1, int(math.floor(lay.index_of(a, lo_v))) - 1)
         if lay.mirror[a] and i0 <= 2:  # from the ghost plane, filled from the images (symmetry.fill_ghosts)
             i0 = 0
-        i1 = min(lay.shape[a] - 2, int(math.ceil((hi_v - lo_w[a]) / lay.dx)) + 1)
+        i1 = min(lay.shape[a] - 2, int(math.ceil(lay.index_of(a, hi_v))) + 1)
         if i1 <= i0:
             raise ValueError("near_field plane lies outside the FDTD grid; reduce half_width_nm or offset_nm")
         rng.append(np.arange(i0, i1 + 1))
@@ -603,7 +689,7 @@ def _near_results(sim, lay, near, warnings=None):
         # incident wave alone (reference column) referred to z = 0, and the background (column) per z node
         e_ref, h_ref = near["inc"].results()
         n_inc = np.sqrt((layered.host if layered.down else layered.sub).eps(om).astype(complex)).real
-        z_ref = lay.origin[2] + layered.k_ref * lay.dx
+        z_ref = lay.coord(2, layered.k_ref)
         inc0 = (e_ref[:, 0] * ehat[0] + e_ref[:, 1] * ehat[1]) * np.exp(-1j * n_inc * om * khat[2] * z_ref)
         bg = near["bg"].results()[0].reshape(len(om), 2, -1)
         # the column holds the background between its PML and the source sheet
@@ -615,7 +701,7 @@ def _near_results(sim, lay, near, warnings=None):
         for c in range(3):
             off = np.zeros(3)
             off[c] = 0.5
-            axes = [lay.origin[a] + (rng[a] + off[a]) * lay.dx for a in range(3)]
+            axes = [lay.coord(a, rng[a] + off[a]) for a in range(3)]
             P = np.stack(np.meshgrid(*axes, indexing="ij"), axis=-1)
             U = np.meshgrid(*[rng[a] + off[a] for a in range(3)], indexing="ij")
             inside = np.all([(U[a] >= lo[a]) & (U[a] <= hi[a]) for a in range(3)], axis=0)

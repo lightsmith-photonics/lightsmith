@@ -82,7 +82,7 @@ def main(argv=None):
 
     # finest-resolution errors of the volume methods, by family, device and variant
     fin = {}
-    for method in ("dda", "fdtd", "quasistatic"):
+    for method in ("dda", "fdtd", "quasistatic", "bem"):
         for family in sorted(set(fam.values())):
             for dev in ("gpu", "cpu"):
                 for variant in ("center", "weighted", "extrapolate", "default"):
@@ -135,17 +135,21 @@ def main(argv=None):
                                 and r["is_reference"]), None)
 
     # CPU vs GPU: matched runs (same problem, backend, variant, resolution)
-    key = lambda r: (r["problem_id"], r["backend"], r["variant"], r["resolution"])  # noqa: E731
+    def _res(x):
+        x = _f(x)
+        return None if math.isnan(x) else x  # BEM runs at its default mesh have no resolution
+
+    key = lambda r: (r["problem_id"], r["backend"], r["variant"], _res(r["resolution"]))  # noqa: E731
     by = defaultdict(dict)
     for r in rows:
-        if r["status"] == "ok" and r["method"] in ("dda", "fdtd", "mie"):
+        if r["status"] == "ok" and r["method"] in ("dda", "fdtd", "mie", "bem"):
             by[key(r)][r["device"]] = r
     spec = {}
     with open(d / "runs.jsonl", encoding="utf-8") as f:
         for line in f:
             j = json.loads(line)
-            if j.get("status") == "ok" and j.get("method") in ("dda", "fdtd", "mie"):
-                spec[(j["problem_id"], j["backend"], j["variant"], _f(j["resolution"]), j["device"])] = j
+            if j.get("status") == "ok" and j.get("method") in ("dda", "fdtd", "mie", "bem"):
+                spec[(j["problem_id"], j["backend"], j["variant"], _res(j["resolution"]), j["device"])] = j
     agree, speed = defaultdict(list), defaultdict(list)
     for k, dv in by.items():
         if "cpu" in dv and "gpu" in dv:
@@ -181,6 +185,89 @@ def main(argv=None):
         if np.isfinite(r["wall_s"]):
             wt[f"{r['method']}/{r['device']}"] += r["wall_s"]
     out["wall_s_by_method_device"] = dict(wt)
+
+    # per family and method: lowest headline error over all runs of the method, median over problems,
+    # and the number of problems where some run reaches each target
+    fam_tab = {}
+    for family in sorted(set(fam.values())):
+        for method in ("dda", "fdtd", "quasistatic", "tmatrix", "bem"):
+            best = defaultdict(lambda: math.inf)
+            for r in rows:
+                if r["family"] == family and r["method"] == method and r["status"] == "ok" \
+                        and r["variant"] != "ladder" and not r["is_reference"] and np.isfinite(r["err_headline"]):
+                    best[r["problem_id"]] = min(best[r["problem_id"]], r["err_headline"])
+            if best:
+                v = np.array(list(best.values()))
+                fam_tab[f"{family}/{method}"] = {"problems": len(v), "median_best": float(np.median(v)),
+                                                 **{f"below_{t:g}": int((v < t).sum()) for t in (0.1, 0.05, 0.01)}}
+    out["family_table"] = fam_tab
+
+    # plasmonic particles: extinction error at the reference extinction peak versus the absorption
+    # excess in the red tail, for the finest GPU run of DDA (centre) and FDTD
+    spec_rows = defaultdict(list)
+    with open(d / "spectra.csv", newline="", encoding="utf-8") as f:
+        for s in csv.DictReader(f):
+            if s["is_reference"] != "True" and s["c_ext_nm2"] not in ("", "nan") and s["ref_c_ext_nm2"]:
+                spec_rows[(s["problem_id"], s["backend"], s["variant"], s["device"], _f(s["resolution"]))].append(s)
+    fin_spec = {}
+    for (p, b, v, dev, res), ss in spec_rows.items():
+        if dev != "gpu" or v not in ("center", "default") or b not in ("lightsmith-dda", "lightsmith-fdtd") \
+                or fam.get(p) not in ("metal_sphere", "core_shell", "dimer", "spheroid", "rod"):
+            continue
+        fine = res if b == "lightsmith-dda" else -res
+        if (p, b) not in fin_spec or fine > fin_spec[(p, b)][0]:
+            fin_spec[(p, b)] = (fine, ss)
+    pt = defaultdict(lambda: defaultdict(list))
+    for (p, b), (fine, ss) in fin_spec.items():
+        ref = np.array([_f(s["ref_c_ext_nm2"]) for s in ss])
+        ext = np.array([_f(s["c_ext_nm2"]) for s in ss])
+        ab, rab = (np.array([_f(s[k]) for s in ss]) for k in ("c_abs_nm2", "ref_c_abs_nm2"))
+        i = int(np.nanargmax(ref))
+        k = f"{fam[p]}/{b.replace('lightsmith-', '')}"
+        pt[k]["peak_ext_err"].append(abs(ext[i] - ref[i]) / ref[i])
+        pt[k]["peak_at_ref_peak"].append(float(int(np.nanargmax(ext)) == i))
+        pt[k]["abs_over_ref_max"].append(float(np.nanmax(ab / rab)))
+        pt[k]["finest_resolution"].append(abs(fine))
+    out["plasmonic_peak_vs_tail"] = {k: {m: stats(x) for m, x in v.items()} for k, v in sorted(pt.items())}
+
+    # CPU/GPU pairs that differ by more than 1e-3, split by whether either run warned that it did not
+    # converge (BiCGStab cap or breakdown, FDTD fields not decayed)
+    unconv = Counter()
+    for k, dv in by.items():
+        a, b = spec.get((k[0], k[1], k[2], k[3], "cpu")), spec.get((k[0], k[1], k[2], k[3], "gpu"))
+        if not (a and b) or a["method"] == "mie":
+            continue
+        x, y = np.array(a["c_ext_nm2"], float), np.array(b["c_ext_nm2"], float)
+        diff = float(np.max(np.abs(x - y) / np.abs(x))) if np.all(np.isfinite(x * y)) else math.inf
+        w = " ".join(str(s) for j in (a, b) for s in (j.get("warnings") or []) if not isinstance(j.get("warnings"), str))
+        w += " ".join(j["warnings"] for j in (a, b) if isinstance(j.get("warnings"), str))
+        flagged = any(s in w for s in ("did not converge", "broke down", "decayed only"))
+        unconv[f"{a['method']}/{'pairs'}"] += 1
+        if diff > 1e-3:
+            unconv[f"{a['method']}/above_1e-3/{'unconverged' if flagged else 'converged'}"] += 1
+    out["cpu_gpu_disagreement"] = dict(unconv)
+
+    # spheroids and rods rescored against a BEM mesh ladder (benchmarks/rereference.py): the reference's
+    # self-change and estimated error, and per method the lowest headline error and how many problems
+    # have it above the reference's estimated error (an error the benchmark resolves)
+    rr = d / "rereference.json"
+    if rr.exists():
+        probs = json.loads(rr.read_text(encoding="utf-8"))["problems"]
+        bref = {"self_change": stats([v["self_change"] for v in probs.values()]),
+                "uncertainty": stats([v["reference_uncertainty"] for v in probs.values()])}
+        for family in ("spheroid", "rod"):
+            for method in ("dda", "fdtd", "quasistatic", "bem"):
+                best = {}
+                for r in rows:
+                    if r["family"] == family and r["method"] == method and r["status"] == "ok" and \
+                            r["variant"] != "ladder" and not r["is_reference"] and np.isfinite(r["err_headline"]):
+                        best[r["problem_id"]] = min(best.get(r["problem_id"], math.inf), r["err_headline"])
+                if best:
+                    bref[f"{family}/{method}"] = {
+                        "problems": len(best), "median_best": float(np.median(list(best.values()))),
+                        "above_uncertainty": sum(e > probs[p]["reference_uncertainty"] for p, e in best.items()),
+                        "within_uncertainty": sum(e <= probs[p]["reference_uncertainty"] for p, e in best.items())}
+        out["bem_reference"] = bref
 
     (d / "paper_numbers.json").write_text(json.dumps(out, indent=1, default=str), encoding="utf-8")
     print(json.dumps(out, indent=1, default=str))

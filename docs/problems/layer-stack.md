@@ -1,6 +1,6 @@
 # Layer stacks
 
-`kind: "layer_stack"`, model `lightsmith.problems.LayerStackProblem`. A planar multilayer between a
+Model `lightsmith.problems.LayerStackProblem`. A planar multilayer between a
 semi-infinite superstrate and a semi-infinite substrate. Computes reflection, transmission and absorption
 against wavelength, angle and polarisation.
 
@@ -33,7 +33,8 @@ grids.
 
 - TMM is exact and fast, handles incoherent layers, and is differentiable.
 - RCWA treats an unpatterned stack as a single-harmonic problem.
-- FDTD handles normal incidence only.
+- FDTD handles angles up to 85° from the normal. Oblique angles cost one run per angle, wavelength and
+  polarisation.
 
 ## Example
 

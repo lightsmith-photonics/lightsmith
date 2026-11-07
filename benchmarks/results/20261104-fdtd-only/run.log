@@ -1,0 +1,796 @@
+[run] suite=full-paper problems=145 (0 already done) devices=['cpu', 'gpu'] backends=['lightsmith-fdtd'] -> benchmarks\results\20261104-fdtd-only
+[warmup] lightsmith-fdtd/gpu 10.6s
+  sphere-diel-x0.5-m1.2-vacuum lightsmith-fdtd/default/cpu@19.099: ok 3.26s 
+  sphere-diel-x0.5-m1.2-vacuum lightsmith-fdtd/default/cpu@9.549: ok 6.54s 
+  sphere-diel-x0.5-m1.2-vacuum lightsmith-fdtd/default/gpu@19.099: ok 0.73s 
+  sphere-diel-x0.5-m1.2-vacuum lightsmith-fdtd/default/gpu@9.549: ok 1.47s 
+  sphere-diel-x0.5-m1.2-vacuum lightsmith-fdtd/default/gpu@4.775: ok 2.82s 
+  sphere-diel-x0.5-m1.2-vacuum lightsmith-fdtd/default/gpu@2.387: ok 6.13s 
+[run] (1/145) sphere-diel-x0.5-m1.2-vacuum: 6 runs in 21.0s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.387, gpu
+  sphere-diel-x0.5-m1.2-k0.05-vacuum lightsmith-fdtd/default/cpu@19.099: ok 3.01s 
+  sphere-diel-x0.5-m1.2-k0.05-vacuum lightsmith-fdtd/default/cpu@9.549: ok 6.56s 
+  sphere-diel-x0.5-m1.2-k0.05-vacuum lightsmith-fdtd/default/cpu@4.775: ok 18.32s 
+  sphere-diel-x0.5-m1.2-k0.05-vacuum lightsmith-fdtd/default/gpu@19.099: ok 0.91s 
+  sphere-diel-x0.5-m1.2-k0.05-vacuum lightsmith-fdtd/default/gpu@9.549: ok 1.75s 
+  sphere-diel-x0.5-m1.2-k0.05-vacuum lightsmith-fdtd/default/gpu@4.775: ok 3.58s 
+  sphere-diel-x0.5-m1.2-k0.05-vacuum lightsmith-fdtd/default/gpu@2.387: ok 7.62s 
+[run] (2/145) sphere-diel-x0.5-m1.2-k0.05-vacuum: 7 runs in 41.8s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.387, gpu
+  sphere-diel-x0.5-m1.5-vacuum lightsmith-fdtd/default/cpu@19.099: ok 2.71s 
+  sphere-diel-x0.5-m1.5-vacuum lightsmith-fdtd/default/cpu@9.549: ok 6.45s 
+  sphere-diel-x0.5-m1.5-vacuum lightsmith-fdtd/default/gpu@19.099: ok 0.70s 
+  sphere-diel-x0.5-m1.5-vacuum lightsmith-fdtd/default/gpu@9.549: ok 1.36s 
+  sphere-diel-x0.5-m1.5-vacuum lightsmith-fdtd/default/gpu@4.775: ok 2.77s 
+  sphere-diel-x0.5-m1.5-vacuum lightsmith-fdtd/default/gpu@2.387: ok 6.03s 
+[run] (3/145) sphere-diel-x0.5-m1.5-vacuum: 6 runs in 20.0s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.387, gpu
+  sphere-diel-x0.5-m1.5-k0.05-vacuum lightsmith-fdtd/default/cpu@19.099: ok 3.05s 
+  sphere-diel-x0.5-m1.5-k0.05-vacuum lightsmith-fdtd/default/cpu@9.549: ok 6.92s 
+  sphere-diel-x0.5-m1.5-k0.05-vacuum lightsmith-fdtd/default/cpu@4.775: ok 18.41s 
+  sphere-diel-x0.5-m1.5-k0.05-vacuum lightsmith-fdtd/default/gpu@19.099: ok 0.98s 
+  sphere-diel-x0.5-m1.5-k0.05-vacuum lightsmith-fdtd/default/gpu@9.549: ok 1.76s 
+  sphere-diel-x0.5-m1.5-k0.05-vacuum lightsmith-fdtd/default/gpu@4.775: ok 3.56s 
+  sphere-diel-x0.5-m1.5-k0.05-vacuum lightsmith-fdtd/default/gpu@2.387: ok 7.76s 
+[run] (4/145) sphere-diel-x0.5-m1.5-k0.05-vacuum: 7 runs in 42.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.387, gpu
+  sphere-diel-x0.5-m2-vacuum lightsmith-fdtd/default/cpu@19.099: ok 3.09s 
+  sphere-diel-x0.5-m2-vacuum lightsmith-fdtd/default/cpu@9.549: ok 6.11s 
+  sphere-diel-x0.5-m2-vacuum lightsmith-fdtd/default/gpu@19.099: ok 0.71s 
+  sphere-diel-x0.5-m2-vacuum lightsmith-fdtd/default/gpu@9.549: ok 1.53s 
+  sphere-diel-x0.5-m2-vacuum lightsmith-fdtd/default/gpu@4.775: ok 2.77s 
+  sphere-diel-x0.5-m2-vacuum lightsmith-fdtd/default/gpu@2.387: ok 6.00s 
+[run] (5/145) sphere-diel-x0.5-m2-vacuum: 6 runs in 20.2s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.387, gpu
+  sphere-diel-x0.5-m2-k0.05-vacuum lightsmith-fdtd/default/cpu@19.099: ok 2.86s 
+  sphere-diel-x0.5-m2-k0.05-vacuum lightsmith-fdtd/default/cpu@9.549: ok 6.63s 
+  sphere-diel-x0.5-m2-k0.05-vacuum lightsmith-fdtd/default/cpu@4.775: ok 18.48s 
+  sphere-diel-x0.5-m2-k0.05-vacuum lightsmith-fdtd/default/gpu@19.099: ok 0.91s 
+  sphere-diel-x0.5-m2-k0.05-vacuum lightsmith-fdtd/default/gpu@9.549: ok 1.80s 
+  sphere-diel-x0.5-m2-k0.05-vacuum lightsmith-fdtd/default/gpu@4.775: ok 3.60s 
+  sphere-diel-x0.5-m2-k0.05-vacuum lightsmith-fdtd/default/gpu@2.387: ok 7.60s 
+[run] (6/145) sphere-diel-x0.5-m2-k0.05-vacuum: 7 runs in 41.9s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.387, gpu
+  sphere-diel-x0.5-m3.5-vacuum lightsmith-fdtd/default/cpu@19.099: ok 2.62s 
+  sphere-diel-x0.5-m3.5-vacuum lightsmith-fdtd/default/cpu@9.549: ok 6.36s 
+  sphere-diel-x0.5-m3.5-vacuum lightsmith-fdtd/default/gpu@19.099: ok 0.71s 
+  sphere-diel-x0.5-m3.5-vacuum lightsmith-fdtd/default/gpu@9.549: ok 1.38s 
+  sphere-diel-x0.5-m3.5-vacuum lightsmith-fdtd/default/gpu@4.775: ok 2.77s 
+  sphere-diel-x0.5-m3.5-vacuum lightsmith-fdtd/default/gpu@2.387: ok 6.01s 
+[run] (7/145) sphere-diel-x0.5-m3.5-vacuum: 6 runs in 19.9s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.387, gpu
+  sphere-diel-x0.5-m3.5-k0.05-vacuum lightsmith-fdtd/default/cpu@19.099: ok 3.17s 
+  sphere-diel-x0.5-m3.5-k0.05-vacuum lightsmith-fdtd/default/cpu@9.549: ok 7.08s 
+  sphere-diel-x0.5-m3.5-k0.05-vacuum lightsmith-fdtd/default/cpu@4.775: ok 18.27s 
+  sphere-diel-x0.5-m3.5-k0.05-vacuum lightsmith-fdtd/default/gpu@19.099: ok 0.89s 
+  sphere-diel-x0.5-m3.5-k0.05-vacuum lightsmith-fdtd/default/gpu@9.549: ok 1.82s 
+  sphere-diel-x0.5-m3.5-k0.05-vacuum lightsmith-fdtd/default/gpu@4.775: ok 3.56s 
+  sphere-diel-x0.5-m3.5-k0.05-vacuum lightsmith-fdtd/default/gpu@2.387: ok 7.73s 
+[run] (8/145) sphere-diel-x0.5-m3.5-k0.05-vacuum: 7 runs in 42.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.387, gpu
+  sphere-diel-x1-m1.2-vacuum lightsmith-fdtd/default/cpu@38.197: ok 1.53s 
+  sphere-diel-x1-m1.2-vacuum lightsmith-fdtd/default/cpu@19.099: ok 2.86s 
+  sphere-diel-x1-m1.2-vacuum lightsmith-fdtd/default/cpu@9.549: ok 8.70s 
+  sphere-diel-x1-m1.2-vacuum lightsmith-fdtd/default/gpu@38.197: ok 0.39s 
+  sphere-diel-x1-m1.2-vacuum lightsmith-fdtd/default/gpu@19.099: ok 0.72s 
+  sphere-diel-x1-m1.2-vacuum lightsmith-fdtd/default/gpu@9.549: ok 1.58s 
+  sphere-diel-x1-m1.2-vacuum lightsmith-fdtd/default/gpu@4.775: ok 3.15s 
+[run] (9/145) sphere-diel-x1-m1.2-vacuum: 7 runs in 18.9s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=4.775, gpu
+  sphere-diel-x1-m1.2-k0.05-vacuum lightsmith-fdtd/default/cpu@38.197: ok 1.61s 
+  sphere-diel-x1-m1.2-k0.05-vacuum lightsmith-fdtd/default/cpu@19.099: ok 3.35s 
+  sphere-diel-x1-m1.2-k0.05-vacuum lightsmith-fdtd/default/cpu@9.549: ok 9.38s 
+  sphere-diel-x1-m1.2-k0.05-vacuum lightsmith-fdtd/default/gpu@38.197: ok 0.50s 
+  sphere-diel-x1-m1.2-k0.05-vacuum lightsmith-fdtd/default/gpu@19.099: ok 0.93s 
+  sphere-diel-x1-m1.2-k0.05-vacuum lightsmith-fdtd/default/gpu@9.549: ok 1.94s 
+  sphere-diel-x1-m1.2-k0.05-vacuum lightsmith-fdtd/default/gpu@4.775: ok 3.94s 
+[run] (10/145) sphere-diel-x1-m1.2-k0.05-vacuum: 7 runs in 21.7s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=4.775, gpu
+  sphere-diel-x1-m1.5-vacuum lightsmith-fdtd/default/cpu@38.197: ok 1.44s 
+  sphere-diel-x1-m1.5-vacuum lightsmith-fdtd/default/cpu@19.099: ok 2.99s 
+  sphere-diel-x1-m1.5-vacuum lightsmith-fdtd/default/cpu@9.549: ok 8.71s 
+  sphere-diel-x1-m1.5-vacuum lightsmith-fdtd/default/gpu@38.197: ok 0.39s 
+  sphere-diel-x1-m1.5-vacuum lightsmith-fdtd/default/gpu@19.099: ok 0.73s 
+  sphere-diel-x1-m1.5-vacuum lightsmith-fdtd/default/gpu@9.549: ok 1.46s 
+  sphere-diel-x1-m1.5-vacuum lightsmith-fdtd/default/gpu@4.775: ok 3.29s 
+[run] (11/145) sphere-diel-x1-m1.5-vacuum: 7 runs in 19.0s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=4.775, gpu
+  sphere-diel-x1-m1.5-k0.05-vacuum lightsmith-fdtd/default/cpu@38.197: ok 1.66s 
+  sphere-diel-x1-m1.5-k0.05-vacuum lightsmith-fdtd/default/cpu@19.099: ok 3.18s 
+  sphere-diel-x1-m1.5-k0.05-vacuum lightsmith-fdtd/default/cpu@9.549: ok 9.32s 
+  sphere-diel-x1-m1.5-k0.05-vacuum lightsmith-fdtd/default/gpu@38.197: ok 0.48s 
+  sphere-diel-x1-m1.5-k0.05-vacuum lightsmith-fdtd/default/gpu@19.099: ok 0.92s 
+  sphere-diel-x1-m1.5-k0.05-vacuum lightsmith-fdtd/default/gpu@9.549: ok 1.90s 
+  sphere-diel-x1-m1.5-k0.05-vacuum lightsmith-fdtd/default/gpu@4.775: ok 3.96s 
+[run] (12/145) sphere-diel-x1-m1.5-k0.05-vacuum: 7 runs in 21.4s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=4.775, gpu
+  sphere-diel-x1-m2-vacuum lightsmith-fdtd/default/cpu@38.197: ok 1.36s 
+  sphere-diel-x1-m2-vacuum lightsmith-fdtd/default/cpu@19.099: ok 2.92s 
+  sphere-diel-x1-m2-vacuum lightsmith-fdtd/default/cpu@9.549: ok 8.98s 
+  sphere-diel-x1-m2-vacuum lightsmith-fdtd/default/gpu@38.197: ok 0.39s 
+  sphere-diel-x1-m2-vacuum lightsmith-fdtd/default/gpu@19.099: ok 0.73s 
+  sphere-diel-x1-m2-vacuum lightsmith-fdtd/default/gpu@9.549: ok 1.48s 
+  sphere-diel-x1-m2-vacuum lightsmith-fdtd/default/gpu@4.775: ok 3.19s 
+[run] (13/145) sphere-diel-x1-m2-vacuum: 7 runs in 19.1s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=4.775, gpu
+  sphere-diel-x1-m2-k0.05-vacuum lightsmith-fdtd/default/cpu@38.197: ok 1.82s 
+  sphere-diel-x1-m2-k0.05-vacuum lightsmith-fdtd/default/cpu@19.099: ok 3.19s 
+  sphere-diel-x1-m2-k0.05-vacuum lightsmith-fdtd/default/cpu@9.549: ok 9.23s 
+  sphere-diel-x1-m2-k0.05-vacuum lightsmith-fdtd/default/gpu@38.197: ok 0.49s 
+  sphere-diel-x1-m2-k0.05-vacuum lightsmith-fdtd/default/gpu@19.099: ok 0.92s 
+  sphere-diel-x1-m2-k0.05-vacuum lightsmith-fdtd/default/gpu@9.549: ok 2.01s 
+  sphere-diel-x1-m2-k0.05-vacuum lightsmith-fdtd/default/gpu@4.775: ok 3.91s 
+[run] (14/145) sphere-diel-x1-m2-k0.05-vacuum: 7 runs in 21.6s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=4.775, gpu
+  sphere-diel-x1-m3.5-vacuum lightsmith-fdtd/default/cpu@23.81: ok 7.34s 
+  sphere-diel-x1-m3.5-vacuum lightsmith-fdtd/default/cpu@14.286: ok 12.70s 
+  sphere-diel-x1-m3.5-vacuum lightsmith-fdtd/default/cpu@9.524: ok 23.48s 
+  sphere-diel-x1-m3.5-vacuum lightsmith-fdtd/default/gpu@23.81: ok 1.41s 
+  sphere-diel-x1-m3.5-vacuum lightsmith-fdtd/default/gpu@14.286: ok 2.03s 
+  sphere-diel-x1-m3.5-vacuum lightsmith-fdtd/default/gpu@9.524: ok 2.99s 
+  sphere-diel-x1-m3.5-vacuum lightsmith-fdtd/default/gpu@4.775: ok 6.39s 
+[run] (15/145) sphere-diel-x1-m3.5-vacuum: 7 runs in 56.3s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=4.775, gpu
+  sphere-diel-x1-m3.5-k0.05-vacuum lightsmith-fdtd/default/cpu@23.81: ok 3.90s 
+  sphere-diel-x1-m3.5-k0.05-vacuum lightsmith-fdtd/default/cpu@14.286: ok 7.31s 
+  sphere-diel-x1-m3.5-k0.05-vacuum lightsmith-fdtd/default/cpu@9.524: ok 13.64s 
+  sphere-diel-x1-m3.5-k0.05-vacuum lightsmith-fdtd/default/gpu@23.81: ok 1.00s 
+  sphere-diel-x1-m3.5-k0.05-vacuum lightsmith-fdtd/default/gpu@14.286: ok 1.63s 
+  sphere-diel-x1-m3.5-k0.05-vacuum lightsmith-fdtd/default/gpu@9.524: ok 2.58s 
+  sphere-diel-x1-m3.5-k0.05-vacuum lightsmith-fdtd/default/gpu@4.775: ok 5.33s 
+[run] (16/145) sphere-diel-x1-m3.5-k0.05-vacuum: 7 runs in 35.4s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=4.775, gpu
+  sphere-diel-x2-m1.2-vacuum lightsmith-fdtd/default/cpu@69.444: ok 0.88s 
+  sphere-diel-x2-m1.2-vacuum lightsmith-fdtd/default/cpu@38.197: ok 1.69s 
+  sphere-diel-x2-m1.2-vacuum lightsmith-fdtd/default/cpu@19.099: ok 4.36s 
+  sphere-diel-x2-m1.2-vacuum lightsmith-fdtd/default/gpu@69.444: ok 0.24s 
+  sphere-diel-x2-m1.2-vacuum lightsmith-fdtd/default/gpu@38.197: ok 0.41s 
+  sphere-diel-x2-m1.2-vacuum lightsmith-fdtd/default/gpu@19.099: ok 0.82s 
+  sphere-diel-x2-m1.2-vacuum lightsmith-fdtd/default/gpu@9.549: ok 1.77s 
+[run] (17/145) sphere-diel-x2-m1.2-vacuum: 7 runs in 10.2s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=9.549, gpu
+  sphere-diel-x2-m1.2-k0.05-vacuum lightsmith-fdtd/default/cpu@69.444: ok 0.98s 
+  sphere-diel-x2-m1.2-k0.05-vacuum lightsmith-fdtd/default/cpu@38.197: ok 1.85s 
+  sphere-diel-x2-m1.2-k0.05-vacuum lightsmith-fdtd/default/cpu@19.099: ok 4.72s 
+  sphere-diel-x2-m1.2-k0.05-vacuum lightsmith-fdtd/default/cpu@9.549: ok 22.87s 
+  sphere-diel-x2-m1.2-k0.05-vacuum lightsmith-fdtd/default/gpu@69.444: ok 0.37s 
+  sphere-diel-x2-m1.2-k0.05-vacuum lightsmith-fdtd/default/gpu@38.197: ok 0.53s 
+  sphere-diel-x2-m1.2-k0.05-vacuum lightsmith-fdtd/default/gpu@19.099: ok 1.00s 
+  sphere-diel-x2-m1.2-k0.05-vacuum lightsmith-fdtd/default/gpu@9.549: ok 2.19s 
+[run] (18/145) sphere-diel-x2-m1.2-k0.05-vacuum: 8 runs in 34.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=9.549, cpu
+  sphere-diel-x2-m1.5-vacuum lightsmith-fdtd/default/cpu@55.556: ok 1.09s 
+  sphere-diel-x2-m1.5-vacuum lightsmith-fdtd/default/cpu@33.333: ok 2.10s 
+  sphere-diel-x2-m1.5-vacuum lightsmith-fdtd/default/cpu@19.099: ok 4.18s 
+  sphere-diel-x2-m1.5-vacuum lightsmith-fdtd/default/gpu@55.556: ok 0.31s 
+  sphere-diel-x2-m1.5-vacuum lightsmith-fdtd/default/gpu@33.333: ok 0.52s 
+  sphere-diel-x2-m1.5-vacuum lightsmith-fdtd/default/gpu@19.099: ok 0.86s 
+  sphere-diel-x2-m1.5-vacuum lightsmith-fdtd/default/gpu@9.549: ok 1.77s 
+[run] (19/145) sphere-diel-x2-m1.5-vacuum: 7 runs in 10.8s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=9.549, gpu
+  sphere-diel-x2-m1.5-k0.05-vacuum lightsmith-fdtd/default/cpu@55.556: ok 1.45s 
+  sphere-diel-x2-m1.5-k0.05-vacuum lightsmith-fdtd/default/cpu@33.333: ok 2.11s 
+  sphere-diel-x2-m1.5-k0.05-vacuum lightsmith-fdtd/default/cpu@19.099: ok 4.56s 
+  sphere-diel-x2-m1.5-k0.05-vacuum lightsmith-fdtd/default/cpu@9.549: ok 23.19s 
+  sphere-diel-x2-m1.5-k0.05-vacuum lightsmith-fdtd/default/gpu@55.556: ok 0.38s 
+  sphere-diel-x2-m1.5-k0.05-vacuum lightsmith-fdtd/default/gpu@33.333: ok 0.60s 
+  sphere-diel-x2-m1.5-k0.05-vacuum lightsmith-fdtd/default/gpu@19.099: ok 1.03s 
+  sphere-diel-x2-m1.5-k0.05-vacuum lightsmith-fdtd/default/gpu@9.549: ok 2.19s 
+[run] (20/145) sphere-diel-x2-m1.5-k0.05-vacuum: 8 runs in 35.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=9.549, cpu
+  sphere-diel-x2-m2-vacuum lightsmith-fdtd/default/cpu@41.667: ok 2.01s 
+  sphere-diel-x2-m2-vacuum lightsmith-fdtd/default/cpu@25.0: ok 3.60s 
+  sphere-diel-x2-m2-vacuum lightsmith-fdtd/default/cpu@16.667: ok 6.83s 
+  sphere-diel-x2-m2-vacuum lightsmith-fdtd/default/gpu@41.667: ok 0.45s 
+  sphere-diel-x2-m2-vacuum lightsmith-fdtd/default/gpu@25.0: ok 0.71s 
+  sphere-diel-x2-m2-vacuum lightsmith-fdtd/default/gpu@16.667: ok 1.11s 
+  sphere-diel-x2-m2-vacuum lightsmith-fdtd/default/gpu@9.549: ok 2.06s 
+[run] (21/145) sphere-diel-x2-m2-vacuum: 7 runs in 16.8s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=9.549, gpu
+  sphere-diel-x2-m2-k0.05-vacuum lightsmith-fdtd/default/cpu@41.667: ok 1.90s 
+  sphere-diel-x2-m2-k0.05-vacuum lightsmith-fdtd/default/cpu@25.0: ok 3.78s 
+  sphere-diel-x2-m2-k0.05-vacuum lightsmith-fdtd/default/cpu@16.667: ok 6.15s 
+  sphere-diel-x2-m2-k0.05-vacuum lightsmith-fdtd/default/cpu@9.549: ok 25.60s 
+  sphere-diel-x2-m2-k0.05-vacuum lightsmith-fdtd/default/gpu@41.667: ok 0.55s 
+  sphere-diel-x2-m2-k0.05-vacuum lightsmith-fdtd/default/gpu@25.0: ok 0.83s 
+  sphere-diel-x2-m2-k0.05-vacuum lightsmith-fdtd/default/gpu@16.667: ok 1.35s 
+  sphere-diel-x2-m2-k0.05-vacuum lightsmith-fdtd/default/gpu@9.549: ok 2.32s 
+[run] (22/145) sphere-diel-x2-m2-k0.05-vacuum: 8 runs in 42.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=9.549, cpu
+  sphere-diel-x2-m3.5-vacuum lightsmith-fdtd/default/cpu@23.81: ok 92.78s 
+  sphere-diel-x2-m3.5-vacuum lightsmith-fdtd/default/gpu@23.81: ok 11.37s 
+  sphere-diel-x2-m3.5-vacuum lightsmith-fdtd/default/gpu@14.286: ok 23.81s 
+  sphere-diel-x2-m3.5-vacuum lightsmith-fdtd/default/gpu@9.524: ok 48.37s 
+[run] (23/145) sphere-diel-x2-m3.5-vacuum: 4 runs in 176.3s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=9.524, gpu
+  sphere-diel-x2-m3.5-k0.05-vacuum lightsmith-fdtd/default/cpu@23.81: ok 7.20s 
+  sphere-diel-x2-m3.5-k0.05-vacuum lightsmith-fdtd/default/cpu@14.286: ok 17.66s 
+  sphere-diel-x2-m3.5-k0.05-vacuum lightsmith-fdtd/default/cpu@9.524: ok 56.24s 
+  sphere-diel-x2-m3.5-k0.05-vacuum lightsmith-fdtd/default/gpu@23.81: ok 1.43s 
+  sphere-diel-x2-m3.5-k0.05-vacuum lightsmith-fdtd/default/gpu@14.286: ok 2.44s 
+  sphere-diel-x2-m3.5-k0.05-vacuum lightsmith-fdtd/default/gpu@9.524: ok 3.98s 
+  sphere-diel-x2-m3.5-k0.05-vacuum lightsmith-fdtd/default/gpu@7.143: ok 5.80s 
+[run] (24/145) sphere-diel-x2-m3.5-k0.05-vacuum: 7 runs in 94.8s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=7.143, gpu
+  sphere-diel-x5-m1.2-vacuum lightsmith-fdtd/default/cpu@69.444: ok 1.21s 
+  sphere-diel-x5-m1.2-vacuum lightsmith-fdtd/default/cpu@41.667: ok 2.56s 
+  sphere-diel-x5-m1.2-vacuum lightsmith-fdtd/default/cpu@27.778: ok 6.21s 
+  sphere-diel-x5-m1.2-vacuum lightsmith-fdtd/default/cpu@20.833: ok 15.50s 
+  sphere-diel-x5-m1.2-vacuum lightsmith-fdtd/default/gpu@69.444: ok 0.30s 
+  sphere-diel-x5-m1.2-vacuum lightsmith-fdtd/default/gpu@41.667: ok 0.50s 
+  sphere-diel-x5-m1.2-vacuum lightsmith-fdtd/default/gpu@27.778: ok 0.80s 
+  sphere-diel-x5-m1.2-vacuum lightsmith-fdtd/default/gpu@20.833: ok 1.21s 
+[run] (25/145) sphere-diel-x5-m1.2-vacuum: 8 runs in 28.3s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=20.833, cpu
+  sphere-diel-x5-m1.2-k0.05-vacuum lightsmith-fdtd/default/cpu@69.444: ok 1.33s 
+  sphere-diel-x5-m1.2-k0.05-vacuum lightsmith-fdtd/default/cpu@41.667: ok 2.68s 
+  sphere-diel-x5-m1.2-k0.05-vacuum lightsmith-fdtd/default/cpu@27.778: ok 5.78s 
+  sphere-diel-x5-m1.2-k0.05-vacuum lightsmith-fdtd/default/cpu@20.833: ok 13.72s 
+  sphere-diel-x5-m1.2-k0.05-vacuum lightsmith-fdtd/default/gpu@69.444: ok 0.37s 
+  sphere-diel-x5-m1.2-k0.05-vacuum lightsmith-fdtd/default/gpu@41.667: ok 0.61s 
+  sphere-diel-x5-m1.2-k0.05-vacuum lightsmith-fdtd/default/gpu@27.778: ok 0.96s 
+  sphere-diel-x5-m1.2-k0.05-vacuum lightsmith-fdtd/default/gpu@20.833: ok 1.33s 
+[run] (26/145) sphere-diel-x5-m1.2-k0.05-vacuum: 8 runs in 26.8s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=20.833, cpu
+  sphere-diel-x5-m1.5-vacuum lightsmith-fdtd/default/cpu@55.556: ok 2.36s 
+  sphere-diel-x5-m1.5-vacuum lightsmith-fdtd/default/cpu@33.333: ok 5.56s 
+  sphere-diel-x5-m1.5-vacuum lightsmith-fdtd/default/cpu@22.222: ok 17.20s 
+  sphere-diel-x5-m1.5-vacuum lightsmith-fdtd/default/gpu@55.556: ok 0.47s 
+  sphere-diel-x5-m1.5-vacuum lightsmith-fdtd/default/gpu@33.333: ok 0.81s 
+  sphere-diel-x5-m1.5-vacuum lightsmith-fdtd/default/gpu@22.222: ok 1.31s 
+  sphere-diel-x5-m1.5-vacuum lightsmith-fdtd/default/gpu@16.667: ok 1.96s 
+[run] (27/145) sphere-diel-x5-m1.5-vacuum: 7 runs in 29.7s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=16.667, gpu
+  sphere-diel-x5-m1.5-k0.05-vacuum lightsmith-fdtd/default/cpu@55.556: ok 2.00s 
+  sphere-diel-x5-m1.5-k0.05-vacuum lightsmith-fdtd/default/cpu@33.333: ok 4.08s 
+  sphere-diel-x5-m1.5-k0.05-vacuum lightsmith-fdtd/default/cpu@22.222: ok 13.19s 
+  sphere-diel-x5-m1.5-k0.05-vacuum lightsmith-fdtd/default/cpu@16.667: ok 26.97s 
+  sphere-diel-x5-m1.5-k0.05-vacuum lightsmith-fdtd/default/gpu@55.556: ok 0.52s 
+  sphere-diel-x5-m1.5-k0.05-vacuum lightsmith-fdtd/default/gpu@33.333: ok 0.83s 
+  sphere-diel-x5-m1.5-k0.05-vacuum lightsmith-fdtd/default/gpu@22.222: ok 1.32s 
+  sphere-diel-x5-m1.5-k0.05-vacuum lightsmith-fdtd/default/gpu@16.667: ok 2.01s 
+[run] (28/145) sphere-diel-x5-m1.5-k0.05-vacuum: 8 runs in 50.9s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=16.667, cpu
+  sphere-diel-x5-m2-vacuum lightsmith-fdtd/default/cpu@41.667: ok 24.72s 
+  sphere-diel-x5-m2-vacuum lightsmith-fdtd/default/cpu@25.0: ok 96.58s 
+  sphere-diel-x5-m2-vacuum lightsmith-fdtd/default/gpu@41.667: ok 2.67s 
+  sphere-diel-x5-m2-vacuum lightsmith-fdtd/default/gpu@25.0: ok 4.40s 
+  sphere-diel-x5-m2-vacuum lightsmith-fdtd/default/gpu@16.667: ok 7.82s 
+  sphere-diel-x5-m2-vacuum lightsmith-fdtd/default/gpu@12.5: ok 12.41s 
+[run] (29/145) sphere-diel-x5-m2-vacuum: 6 runs in 148.6s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=12.5, gpu
+  sphere-diel-x5-m2-k0.05-vacuum lightsmith-fdtd/default/cpu@41.667: ok 4.32s 
+  sphere-diel-x5-m2-k0.05-vacuum lightsmith-fdtd/default/cpu@25.0: ok 15.68s 
+  sphere-diel-x5-m2-k0.05-vacuum lightsmith-fdtd/default/cpu@16.667: ok 41.54s 
+  sphere-diel-x5-m2-k0.05-vacuum lightsmith-fdtd/default/gpu@41.667: ok 0.80s 
+  sphere-diel-x5-m2-k0.05-vacuum lightsmith-fdtd/default/gpu@25.0: ok 1.40s 
+  sphere-diel-x5-m2-k0.05-vacuum lightsmith-fdtd/default/gpu@16.667: ok 2.57s 
+  sphere-diel-x5-m2-k0.05-vacuum lightsmith-fdtd/default/gpu@12.5: ok 4.10s 
+[run] (30/145) sphere-diel-x5-m2-k0.05-vacuum: 7 runs in 70.4s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=12.5, gpu
+  sphere-diel-x5-m3.5-vacuum lightsmith-fdtd/default/cpu@23.81: ok 299.86s 
+  sphere-diel-x5-m3.5-vacuum lightsmith-fdtd/default/gpu@23.81: ok 11.92s 
+  sphere-diel-x5-m3.5-vacuum lightsmith-fdtd/default/gpu@14.286: ok 31.73s 
+[run] (31/145) sphere-diel-x5-m3.5-vacuum: 3 runs in 343.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=14.286, gpu
+  sphere-diel-x5-m3.5-k0.05-vacuum lightsmith-fdtd/default/cpu@23.81: ok 25.53s 
+  sphere-diel-x5-m3.5-k0.05-vacuum lightsmith-fdtd/default/gpu@23.81: ok 1.86s 
+  sphere-diel-x5-m3.5-k0.05-vacuum lightsmith-fdtd/default/gpu@14.286: ok 3.78s 
+  sphere-diel-x5-m3.5-k0.05-vacuum lightsmith-fdtd/default/gpu@9.524: ok 7.92s 
+  sphere-diel-x5-m3.5-k0.05-vacuum lightsmith-fdtd/default/gpu@7.143: ok 15.29s 
+[run] (32/145) sphere-diel-x5-m3.5-k0.05-vacuum: 5 runs in 54.4s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=7.143, gpu
+  sphere-diel-x10-m1.2-vacuum lightsmith-fdtd/default/cpu@69.444: ok 2.54s 
+  sphere-diel-x10-m1.2-vacuum lightsmith-fdtd/default/cpu@41.667: ok 9.71s 
+  sphere-diel-x10-m1.2-vacuum lightsmith-fdtd/default/gpu@69.444: ok 0.47s 
+  sphere-diel-x10-m1.2-vacuum lightsmith-fdtd/default/gpu@41.667: ok 0.91s 
+  sphere-diel-x10-m1.2-vacuum lightsmith-fdtd/default/gpu@27.778: ok 1.96s 
+  sphere-diel-x10-m1.2-vacuum lightsmith-fdtd/default/gpu@20.833: ok 3.51s 
+[run] (33/145) sphere-diel-x10-m1.2-vacuum: 6 runs in 19.1s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=20.833, gpu
+  sphere-diel-x10-m1.2-k0.05-vacuum lightsmith-fdtd/default/cpu@69.444: ok 1.91s 
+  sphere-diel-x10-m1.2-k0.05-vacuum lightsmith-fdtd/default/cpu@41.667: ok 7.48s 
+  sphere-diel-x10-m1.2-k0.05-vacuum lightsmith-fdtd/default/cpu@27.778: ok 22.23s 
+  sphere-diel-x10-m1.2-k0.05-vacuum lightsmith-fdtd/default/gpu@69.444: ok 0.50s 
+  sphere-diel-x10-m1.2-k0.05-vacuum lightsmith-fdtd/default/gpu@41.667: ok 0.95s 
+  sphere-diel-x10-m1.2-k0.05-vacuum lightsmith-fdtd/default/gpu@27.778: ok 1.89s 
+  sphere-diel-x10-m1.2-k0.05-vacuum lightsmith-fdtd/default/gpu@20.833: ok 3.56s 
+[run] (34/145) sphere-diel-x10-m1.2-k0.05-vacuum: 7 runs in 38.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=20.833, gpu
+  sphere-diel-x10-m1.5-vacuum lightsmith-fdtd/default/cpu@55.556: ok 15.49s 
+  sphere-diel-x10-m1.5-vacuum lightsmith-fdtd/default/cpu@33.333: ok 64.46s 
+  sphere-diel-x10-m1.5-vacuum lightsmith-fdtd/default/gpu@55.556: ok 1.37s 
+  sphere-diel-x10-m1.5-vacuum lightsmith-fdtd/default/gpu@33.333: ok 2.49s 
+  sphere-diel-x10-m1.5-vacuum lightsmith-fdtd/default/gpu@22.222: ok 5.17s 
+  sphere-diel-x10-m1.5-vacuum lightsmith-fdtd/default/gpu@16.667: ok 9.58s 
+[run] (35/145) sphere-diel-x10-m1.5-vacuum: 6 runs in 98.6s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=16.667, gpu
+  sphere-diel-x10-m1.5-k0.05-vacuum lightsmith-fdtd/default/cpu@55.556: ok 4.26s 
+  sphere-diel-x10-m1.5-k0.05-vacuum lightsmith-fdtd/default/cpu@33.333: ok 18.66s 
+  sphere-diel-x10-m1.5-k0.05-vacuum lightsmith-fdtd/default/gpu@55.556: ok 0.77s 
+  sphere-diel-x10-m1.5-k0.05-vacuum lightsmith-fdtd/default/gpu@33.333: ok 1.56s 
+  sphere-diel-x10-m1.5-k0.05-vacuum lightsmith-fdtd/default/gpu@22.222: ok 3.29s 
+  sphere-diel-x10-m1.5-k0.05-vacuum lightsmith-fdtd/default/gpu@16.667: ok 6.39s 
+[run] (36/145) sphere-diel-x10-m1.5-k0.05-vacuum: 6 runs in 35.0s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=16.667, gpu
+  sphere-diel-x10-m2-vacuum lightsmith-fdtd/default/cpu@41.667: ok 191.91s 
+  sphere-diel-x10-m2-vacuum lightsmith-fdtd/default/gpu@41.667: ok 6.95s 
+  sphere-diel-x10-m2-vacuum lightsmith-fdtd/default/gpu@25.0: ok 10.87s 
+  sphere-diel-x10-m2-vacuum lightsmith-fdtd/default/gpu@16.667: ok 32.75s 
+  sphere-diel-x10-m2-vacuum lightsmith-fdtd/default/gpu@12.5: ok 76.71s 
+[run] (37/145) sphere-diel-x10-m2-vacuum: 5 runs in 319.2s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=12.5, gpu
+  sphere-diel-x10-m2-k0.05-vacuum lightsmith-fdtd/default/cpu@41.667: ok 10.93s 
+  sphere-diel-x10-m2-k0.05-vacuum lightsmith-fdtd/default/gpu@41.667: ok 1.18s 
+  sphere-diel-x10-m2-k0.05-vacuum lightsmith-fdtd/default/gpu@25.0: ok 2.71s 
+  sphere-diel-x10-m2-k0.05-vacuum lightsmith-fdtd/default/gpu@16.667: ok 6.79s 
+  sphere-diel-x10-m2-k0.05-vacuum lightsmith-fdtd/default/gpu@12.5: ok 13.04s 
+[run] (38/145) sphere-diel-x10-m2-k0.05-vacuum: 5 runs in 34.7s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=12.5, gpu
+  sphere-diel-x10-m3.5-vacuum lightsmith-fdtd/default/gpu@23.81: ok 20.62s 
+[run] (39/145) sphere-diel-x10-m3.5-vacuum: 1 runs in 20.6s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=23.81, gpu
+  sphere-diel-x10-m3.5-k0.05-vacuum lightsmith-fdtd/default/gpu@23.81: ok 3.16s 
+  sphere-diel-x10-m3.5-k0.05-vacuum lightsmith-fdtd/default/gpu@14.286: ok 9.60s 
+  sphere-diel-x10-m3.5-k0.05-vacuum lightsmith-fdtd/default/gpu@9.524: ok 29.04s 
+  sphere-diel-x10-m3.5-k0.05-vacuum lightsmith-fdtd/default/gpu@7.143: ok 71.27s 
+[run] (40/145) sphere-diel-x10-m3.5-k0.05-vacuum: 4 runs in 113.1s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=7.143, gpu
+  sphere-diel-x0.5-m1.2-water lightsmith-fdtd/default/cpu@14.36: ok 3.62s 
+  sphere-diel-x0.5-m1.2-water lightsmith-fdtd/default/cpu@7.18: ok 7.88s 
+  sphere-diel-x0.5-m1.2-water lightsmith-fdtd/default/gpu@14.36: ok 0.95s 
+  sphere-diel-x0.5-m1.2-water lightsmith-fdtd/default/gpu@7.18: ok 1.87s 
+  sphere-diel-x0.5-m1.2-water lightsmith-fdtd/default/gpu@3.59: ok 3.96s 
+  sphere-diel-x0.5-m1.2-water lightsmith-fdtd/default/gpu@1.795: ok 8.52s 
+[run] (41/145) sphere-diel-x0.5-m1.2-water: 6 runs in 26.8s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=1.795, gpu
+  sphere-diel-x0.5-m1.2-k0.05-water lightsmith-fdtd/default/cpu@14.36: ok 4.97s 
+  sphere-diel-x0.5-m1.2-k0.05-water lightsmith-fdtd/default/cpu@7.18: ok 10.77s 
+  sphere-diel-x0.5-m1.2-k0.05-water lightsmith-fdtd/default/gpu@14.36: ok 1.35s 
+  sphere-diel-x0.5-m1.2-k0.05-water lightsmith-fdtd/default/gpu@7.18: ok 2.50s 
+  sphere-diel-x0.5-m1.2-k0.05-water lightsmith-fdtd/default/gpu@3.59: ok 6.33s 
+  sphere-diel-x0.5-m1.2-k0.05-water lightsmith-fdtd/default/gpu@1.795: ok 11.14s 
+[run] (42/145) sphere-diel-x0.5-m1.2-k0.05-water: 6 runs in 37.1s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=1.795, gpu
+  sphere-diel-x0.5-m1.5-water lightsmith-fdtd/default/cpu@14.36: ok 4.19s 
+  sphere-diel-x0.5-m1.5-water lightsmith-fdtd/default/cpu@7.18: ok 7.61s 
+  sphere-diel-x0.5-m1.5-water lightsmith-fdtd/default/gpu@14.36: ok 0.97s 
+  sphere-diel-x0.5-m1.5-water lightsmith-fdtd/default/gpu@7.18: ok 1.73s 
+  sphere-diel-x0.5-m1.5-water lightsmith-fdtd/default/gpu@3.59: ok 3.54s 
+  sphere-diel-x0.5-m1.5-water lightsmith-fdtd/default/gpu@1.795: ok 7.74s 
+[run] (43/145) sphere-diel-x0.5-m1.5-water: 6 runs in 25.8s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=1.795, gpu
+  sphere-diel-x0.5-m1.5-k0.05-water lightsmith-fdtd/default/cpu@14.36: ok 4.09s 
+  sphere-diel-x0.5-m1.5-k0.05-water lightsmith-fdtd/default/cpu@7.18: ok 8.59s 
+  sphere-diel-x0.5-m1.5-k0.05-water lightsmith-fdtd/default/gpu@14.36: ok 1.15s 
+  sphere-diel-x0.5-m1.5-k0.05-water lightsmith-fdtd/default/gpu@7.18: ok 2.25s 
+  sphere-diel-x0.5-m1.5-k0.05-water lightsmith-fdtd/default/gpu@3.59: ok 4.63s 
+  sphere-diel-x0.5-m1.5-k0.05-water lightsmith-fdtd/default/gpu@1.795: ok 9.72s 
+[run] (44/145) sphere-diel-x0.5-m1.5-k0.05-water: 6 runs in 30.4s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=1.795, gpu
+  sphere-diel-x0.5-m2-water lightsmith-fdtd/default/cpu@14.36: ok 3.51s 
+  sphere-diel-x0.5-m2-water lightsmith-fdtd/default/cpu@7.18: ok 7.62s 
+  sphere-diel-x0.5-m2-water lightsmith-fdtd/default/gpu@14.36: ok 0.93s 
+  sphere-diel-x0.5-m2-water lightsmith-fdtd/default/gpu@7.18: ok 1.77s 
+  sphere-diel-x0.5-m2-water lightsmith-fdtd/default/gpu@3.59: ok 3.53s 
+  sphere-diel-x0.5-m2-water lightsmith-fdtd/default/gpu@1.795: ok 7.68s 
+[run] (45/145) sphere-diel-x0.5-m2-water: 6 runs in 25.0s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=1.795, gpu
+  sphere-diel-x0.5-m2-k0.05-water lightsmith-fdtd/default/cpu@14.36: ok 4.08s 
+  sphere-diel-x0.5-m2-k0.05-water lightsmith-fdtd/default/cpu@7.18: ok 8.60s 
+  sphere-diel-x0.5-m2-k0.05-water lightsmith-fdtd/default/gpu@14.36: ok 1.14s 
+  sphere-diel-x0.5-m2-k0.05-water lightsmith-fdtd/default/gpu@7.18: ok 2.25s 
+  sphere-diel-x0.5-m2-k0.05-water lightsmith-fdtd/default/gpu@3.59: ok 4.78s 
+  sphere-diel-x0.5-m2-k0.05-water lightsmith-fdtd/default/gpu@1.795: ok 9.78s 
+[run] (46/145) sphere-diel-x0.5-m2-k0.05-water: 6 runs in 30.6s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=1.795, gpu
+  sphere-diel-x0.5-m3.5-water lightsmith-fdtd/default/cpu@14.36: ok 3.84s 
+  sphere-diel-x0.5-m3.5-water lightsmith-fdtd/default/cpu@7.18: ok 7.56s 
+  sphere-diel-x0.5-m3.5-water lightsmith-fdtd/default/gpu@14.36: ok 0.91s 
+  sphere-diel-x0.5-m3.5-water lightsmith-fdtd/default/gpu@7.18: ok 1.73s 
+  sphere-diel-x0.5-m3.5-water lightsmith-fdtd/default/gpu@3.59: ok 3.69s 
+  sphere-diel-x0.5-m3.5-water lightsmith-fdtd/default/gpu@1.795: ok 7.73s 
+[run] (47/145) sphere-diel-x0.5-m3.5-water: 6 runs in 25.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=1.795, gpu
+  sphere-diel-x0.5-m3.5-k0.05-water lightsmith-fdtd/default/cpu@14.36: ok 3.95s 
+  sphere-diel-x0.5-m3.5-k0.05-water lightsmith-fdtd/default/cpu@7.18: ok 8.75s 
+  sphere-diel-x0.5-m3.5-k0.05-water lightsmith-fdtd/default/gpu@14.36: ok 1.30s 
+  sphere-diel-x0.5-m3.5-k0.05-water lightsmith-fdtd/default/gpu@7.18: ok 2.22s 
+  sphere-diel-x0.5-m3.5-k0.05-water lightsmith-fdtd/default/gpu@3.59: ok 4.62s 
+  sphere-diel-x0.5-m3.5-k0.05-water lightsmith-fdtd/default/gpu@1.795: ok 9.85s 
+[run] (48/145) sphere-diel-x0.5-m3.5-k0.05-water: 6 runs in 30.7s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=1.795, gpu
+  sphere-diel-x1-m1.2-water lightsmith-fdtd/default/cpu@28.72: ok 1.87s 
+  sphere-diel-x1-m1.2-water lightsmith-fdtd/default/cpu@14.36: ok 3.84s 
+  sphere-diel-x1-m1.2-water lightsmith-fdtd/default/cpu@7.18: ok 11.51s 
+  sphere-diel-x1-m1.2-water lightsmith-fdtd/default/gpu@28.72: ok 0.49s 
+  sphere-diel-x1-m1.2-water lightsmith-fdtd/default/gpu@14.36: ok 0.93s 
+  sphere-diel-x1-m1.2-water lightsmith-fdtd/default/gpu@7.18: ok 1.83s 
+  sphere-diel-x1-m1.2-water lightsmith-fdtd/default/gpu@3.59: ok 3.95s 
+[run] (49/145) sphere-diel-x1-m1.2-water: 7 runs in 24.4s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=3.59, gpu
+  sphere-diel-x1-m1.2-k0.05-water lightsmith-fdtd/default/cpu@28.72: ok 2.09s 
+  sphere-diel-x1-m1.2-k0.05-water lightsmith-fdtd/default/cpu@14.36: ok 4.38s 
+  sphere-diel-x1-m1.2-k0.05-water lightsmith-fdtd/default/cpu@7.18: ok 11.51s 
+  sphere-diel-x1-m1.2-k0.05-water lightsmith-fdtd/default/gpu@28.72: ok 0.62s 
+  sphere-diel-x1-m1.2-k0.05-water lightsmith-fdtd/default/gpu@14.36: ok 1.18s 
+  sphere-diel-x1-m1.2-k0.05-water lightsmith-fdtd/default/gpu@7.18: ok 2.37s 
+  sphere-diel-x1-m1.2-k0.05-water lightsmith-fdtd/default/gpu@3.59: ok 5.05s 
+[run] (50/145) sphere-diel-x1-m1.2-k0.05-water: 7 runs in 27.2s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=3.59, gpu
+  sphere-diel-x1-m1.5-water lightsmith-fdtd/default/cpu@28.72: ok 2.05s 
+  sphere-diel-x1-m1.5-water lightsmith-fdtd/default/cpu@14.36: ok 4.00s 
+  sphere-diel-x1-m1.5-water lightsmith-fdtd/default/cpu@7.18: ok 11.53s 
+  sphere-diel-x1-m1.5-water lightsmith-fdtd/default/gpu@28.72: ok 0.50s 
+  sphere-diel-x1-m1.5-water lightsmith-fdtd/default/gpu@14.36: ok 0.91s 
+  sphere-diel-x1-m1.5-water lightsmith-fdtd/default/gpu@7.18: ok 1.83s 
+  sphere-diel-x1-m1.5-water lightsmith-fdtd/default/gpu@3.59: ok 3.96s 
+[run] (51/145) sphere-diel-x1-m1.5-water: 7 runs in 24.8s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=3.59, gpu
+  sphere-diel-x1-m1.5-k0.05-water lightsmith-fdtd/default/cpu@28.72: ok 2.01s 
+  sphere-diel-x1-m1.5-k0.05-water lightsmith-fdtd/default/cpu@14.36: ok 4.43s 
+  sphere-diel-x1-m1.5-k0.05-water lightsmith-fdtd/default/cpu@7.18: ok 11.53s 
+  sphere-diel-x1-m1.5-k0.05-water lightsmith-fdtd/default/gpu@28.72: ok 0.65s 
+  sphere-diel-x1-m1.5-k0.05-water lightsmith-fdtd/default/gpu@14.36: ok 1.17s 
+  sphere-diel-x1-m1.5-k0.05-water lightsmith-fdtd/default/gpu@7.18: ok 2.61s 
+  sphere-diel-x1-m1.5-k0.05-water lightsmith-fdtd/default/gpu@3.59: ok 4.97s 
+[run] (52/145) sphere-diel-x1-m1.5-k0.05-water: 7 runs in 27.4s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=3.59, gpu
+  sphere-diel-x1-m2-water lightsmith-fdtd/default/cpu@28.72: ok 1.92s 
+  sphere-diel-x1-m2-water lightsmith-fdtd/default/cpu@14.36: ok 4.16s 
+  sphere-diel-x1-m2-water lightsmith-fdtd/default/cpu@7.18: ok 10.99s 
+  sphere-diel-x1-m2-water lightsmith-fdtd/default/gpu@28.72: ok 0.51s 
+  sphere-diel-x1-m2-water lightsmith-fdtd/default/gpu@14.36: ok 0.93s 
+  sphere-diel-x1-m2-water lightsmith-fdtd/default/gpu@7.18: ok 1.88s 
+  sphere-diel-x1-m2-water lightsmith-fdtd/default/gpu@3.59: ok 4.13s 
+[run] (53/145) sphere-diel-x1-m2-water: 7 runs in 24.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=3.59, gpu
+  sphere-diel-x1-m2-k0.05-water lightsmith-fdtd/default/cpu@28.72: ok 2.21s 
+  sphere-diel-x1-m2-k0.05-water lightsmith-fdtd/default/cpu@14.36: ok 4.71s 
+  sphere-diel-x1-m2-k0.05-water lightsmith-fdtd/default/cpu@7.18: ok 11.78s 
+  sphere-diel-x1-m2-k0.05-water lightsmith-fdtd/default/gpu@28.72: ok 0.64s 
+  sphere-diel-x1-m2-k0.05-water lightsmith-fdtd/default/gpu@14.36: ok 1.20s 
+  sphere-diel-x1-m2-k0.05-water lightsmith-fdtd/default/gpu@7.18: ok 2.62s 
+  sphere-diel-x1-m2-k0.05-water lightsmith-fdtd/default/gpu@3.59: ok 5.24s 
+[run] (54/145) sphere-diel-x1-m2-k0.05-water: 7 runs in 28.4s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=3.59, gpu
+  sphere-diel-x1-m3.5-water lightsmith-fdtd/default/cpu@17.902: ok 10.04s 
+  sphere-diel-x1-m3.5-water lightsmith-fdtd/default/cpu@10.741: ok 16.82s 
+  sphere-diel-x1-m3.5-water lightsmith-fdtd/default/cpu@7.161: ok 30.49s 
+  sphere-diel-x1-m3.5-water lightsmith-fdtd/default/gpu@17.902: ok 1.78s 
+  sphere-diel-x1-m3.5-water lightsmith-fdtd/default/gpu@10.741: ok 2.68s 
+  sphere-diel-x1-m3.5-water lightsmith-fdtd/default/gpu@7.161: ok 3.93s 
+  sphere-diel-x1-m3.5-water lightsmith-fdtd/default/gpu@3.59: ok 8.50s 
+[run] (55/145) sphere-diel-x1-m3.5-water: 7 runs in 74.2s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=3.59, gpu
+  sphere-diel-x1-m3.5-k0.05-water lightsmith-fdtd/default/cpu@17.902: ok 7.19s 
+  sphere-diel-x1-m3.5-k0.05-water lightsmith-fdtd/default/cpu@10.741: ok 13.35s 
+  sphere-diel-x1-m3.5-k0.05-water lightsmith-fdtd/default/cpu@7.161: ok 25.52s 
+  sphere-diel-x1-m3.5-k0.05-water lightsmith-fdtd/default/gpu@17.902: ok 1.37s 
+  sphere-diel-x1-m3.5-k0.05-water lightsmith-fdtd/default/gpu@10.741: ok 2.39s 
+  sphere-diel-x1-m3.5-k0.05-water lightsmith-fdtd/default/gpu@7.161: ok 3.56s 
+  sphere-diel-x1-m3.5-k0.05-water lightsmith-fdtd/default/gpu@3.59: ok 7.79s 
+[run] (56/145) sphere-diel-x1-m3.5-k0.05-water: 7 runs in 61.2s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=3.59, gpu
+  sphere-diel-x2-m1.2-water lightsmith-fdtd/default/cpu@52.214: ok 1.12s 
+  sphere-diel-x2-m1.2-water lightsmith-fdtd/default/cpu@28.72: ok 2.07s 
+  sphere-diel-x2-m1.2-water lightsmith-fdtd/default/cpu@14.36: ok 5.38s 
+  sphere-diel-x2-m1.2-water lightsmith-fdtd/default/gpu@52.214: ok 0.34s 
+  sphere-diel-x2-m1.2-water lightsmith-fdtd/default/gpu@28.72: ok 0.52s 
+  sphere-diel-x2-m1.2-water lightsmith-fdtd/default/gpu@14.36: ok 1.02s 
+  sphere-diel-x2-m1.2-water lightsmith-fdtd/default/gpu@7.18: ok 2.16s 
+[run] (57/145) sphere-diel-x2-m1.2-water: 7 runs in 12.6s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=7.18, gpu
+  sphere-diel-x2-m1.2-k0.05-water lightsmith-fdtd/default/cpu@52.214: ok 1.36s 
+  sphere-diel-x2-m1.2-k0.05-water lightsmith-fdtd/default/cpu@28.72: ok 2.44s 
+  sphere-diel-x2-m1.2-k0.05-water lightsmith-fdtd/default/cpu@14.36: ok 5.66s 
+  sphere-diel-x2-m1.2-k0.05-water lightsmith-fdtd/default/gpu@52.214: ok 0.41s 
+  sphere-diel-x2-m1.2-k0.05-water lightsmith-fdtd/default/gpu@28.72: ok 0.65s 
+  sphere-diel-x2-m1.2-k0.05-water lightsmith-fdtd/default/gpu@14.36: ok 1.29s 
+  sphere-diel-x2-m1.2-k0.05-water lightsmith-fdtd/default/gpu@7.18: ok 2.66s 
+[run] (58/145) sphere-diel-x2-m1.2-k0.05-water: 7 runs in 14.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=7.18, gpu
+  sphere-diel-x2-m1.5-water lightsmith-fdtd/default/cpu@41.771: ok 1.49s 
+  sphere-diel-x2-m1.5-water lightsmith-fdtd/default/cpu@25.063: ok 2.53s 
+  sphere-diel-x2-m1.5-water lightsmith-fdtd/default/cpu@14.36: ok 5.44s 
+  sphere-diel-x2-m1.5-water lightsmith-fdtd/default/gpu@41.771: ok 0.38s 
+  sphere-diel-x2-m1.5-water lightsmith-fdtd/default/gpu@25.063: ok 0.59s 
+  sphere-diel-x2-m1.5-water lightsmith-fdtd/default/gpu@14.36: ok 1.01s 
+  sphere-diel-x2-m1.5-water lightsmith-fdtd/default/gpu@7.18: ok 2.19s 
+[run] (59/145) sphere-diel-x2-m1.5-water: 7 runs in 13.6s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=7.18, gpu
+  sphere-diel-x2-m1.5-k0.05-water lightsmith-fdtd/default/cpu@41.771: ok 1.65s 
+  sphere-diel-x2-m1.5-k0.05-water lightsmith-fdtd/default/cpu@25.063: ok 3.17s 
+  sphere-diel-x2-m1.5-k0.05-water lightsmith-fdtd/default/cpu@14.36: ok 5.69s 
+  sphere-diel-x2-m1.5-k0.05-water lightsmith-fdtd/default/gpu@41.771: ok 0.47s 
+  sphere-diel-x2-m1.5-k0.05-water lightsmith-fdtd/default/gpu@25.063: ok 0.74s 
+  sphere-diel-x2-m1.5-k0.05-water lightsmith-fdtd/default/gpu@14.36: ok 1.28s 
+  sphere-diel-x2-m1.5-k0.05-water lightsmith-fdtd/default/gpu@7.18: ok 2.67s 
+[run] (60/145) sphere-diel-x2-m1.5-k0.05-water: 7 runs in 15.7s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=7.18, gpu
+  sphere-diel-x2-m2-water lightsmith-fdtd/default/cpu@31.328: ok 2.39s 
+  sphere-diel-x2-m2-water lightsmith-fdtd/default/cpu@18.797: ok 4.63s 
+  sphere-diel-x2-m2-water lightsmith-fdtd/default/cpu@12.531: ok 8.69s 
+  sphere-diel-x2-m2-water lightsmith-fdtd/default/gpu@31.328: ok 0.56s 
+  sphere-diel-x2-m2-water lightsmith-fdtd/default/gpu@18.797: ok 0.89s 
+  sphere-diel-x2-m2-water lightsmith-fdtd/default/gpu@12.531: ok 1.41s 
+  sphere-diel-x2-m2-water lightsmith-fdtd/default/gpu@7.18: ok 2.52s 
+[run] (61/145) sphere-diel-x2-m2-water: 7 runs in 21.1s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=7.18, gpu
+  sphere-diel-x2-m2-k0.05-water lightsmith-fdtd/default/cpu@31.328: ok 2.63s 
+  sphere-diel-x2-m2-k0.05-water lightsmith-fdtd/default/cpu@18.797: ok 4.52s 
+  sphere-diel-x2-m2-k0.05-water lightsmith-fdtd/default/cpu@12.531: ok 7.82s 
+  sphere-diel-x2-m2-k0.05-water lightsmith-fdtd/default/gpu@31.328: ok 0.68s 
+  sphere-diel-x2-m2-k0.05-water lightsmith-fdtd/default/gpu@18.797: ok 1.07s 
+  sphere-diel-x2-m2-k0.05-water lightsmith-fdtd/default/gpu@12.531: ok 1.55s 
+  sphere-diel-x2-m2-k0.05-water lightsmith-fdtd/default/gpu@7.18: ok 2.88s 
+[run] (62/145) sphere-diel-x2-m2-k0.05-water: 7 runs in 21.2s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=7.18, gpu
+  sphere-diel-x2-m3.5-water lightsmith-fdtd/default/cpu@17.902: ok 118.14s 
+  sphere-diel-x2-m3.5-water lightsmith-fdtd/default/gpu@17.902: ok 13.98s 
+  sphere-diel-x2-m3.5-water lightsmith-fdtd/default/gpu@10.741: ok 29.52s 
+  sphere-diel-x2-m3.5-water lightsmith-fdtd/default/gpu@7.161: ok 63.42s 
+[run] (63/145) sphere-diel-x2-m3.5-water: 4 runs in 225.1s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=7.161, gpu
+  sphere-diel-x2-m3.5-k0.05-water lightsmith-fdtd/default/cpu@17.902: ok 10.96s 
+  sphere-diel-x2-m3.5-k0.05-water lightsmith-fdtd/default/cpu@10.741: ok 26.66s 
+  sphere-diel-x2-m3.5-k0.05-water lightsmith-fdtd/default/gpu@17.902: ok 2.00s 
+  sphere-diel-x2-m3.5-k0.05-water lightsmith-fdtd/default/gpu@10.741: ok 3.54s 
+  sphere-diel-x2-m3.5-k0.05-water lightsmith-fdtd/default/gpu@7.161: ok 5.71s 
+  sphere-diel-x2-m3.5-k0.05-water lightsmith-fdtd/default/gpu@5.371: ok 8.26s 
+[run] (64/145) sphere-diel-x2-m3.5-k0.05-water: 6 runs in 57.1s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=5.371, gpu
+  sphere-diel-x5-m1.2-water lightsmith-fdtd/default/cpu@52.214: ok 1.48s 
+  sphere-diel-x5-m1.2-water lightsmith-fdtd/default/cpu@31.328: ok 3.10s 
+  sphere-diel-x5-m1.2-water lightsmith-fdtd/default/cpu@20.886: ok 8.72s 
+  sphere-diel-x5-m1.2-water lightsmith-fdtd/default/gpu@52.214: ok 0.35s 
+  sphere-diel-x5-m1.2-water lightsmith-fdtd/default/gpu@31.328: ok 0.57s 
+  sphere-diel-x5-m1.2-water lightsmith-fdtd/default/gpu@20.886: ok 0.95s 
+  sphere-diel-x5-m1.2-water lightsmith-fdtd/default/gpu@15.664: ok 1.37s 
+[run] (65/145) sphere-diel-x5-m1.2-water: 7 runs in 16.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=15.664, gpu
+  sphere-diel-x5-m1.2-k0.05-water lightsmith-fdtd/default/cpu@52.214: ok 1.67s 
+  sphere-diel-x5-m1.2-k0.05-water lightsmith-fdtd/default/cpu@31.328: ok 3.17s 
+  sphere-diel-x5-m1.2-k0.05-water lightsmith-fdtd/default/cpu@20.886: ok 8.09s 
+  sphere-diel-x5-m1.2-k0.05-water lightsmith-fdtd/default/cpu@15.664: ok 19.06s 
+  sphere-diel-x5-m1.2-k0.05-water lightsmith-fdtd/default/gpu@52.214: ok 0.46s 
+  sphere-diel-x5-m1.2-k0.05-water lightsmith-fdtd/default/gpu@31.328: ok 0.71s 
+  sphere-diel-x5-m1.2-k0.05-water lightsmith-fdtd/default/gpu@20.886: ok 1.12s 
+  sphere-diel-x5-m1.2-k0.05-water lightsmith-fdtd/default/gpu@15.664: ok 1.59s 
+[run] (66/145) sphere-diel-x5-m1.2-k0.05-water: 8 runs in 35.9s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=15.664, cpu
+  sphere-diel-x5-m1.5-water lightsmith-fdtd/default/cpu@41.771: ok 3.10s 
+  sphere-diel-x5-m1.5-water lightsmith-fdtd/default/cpu@25.063: ok 7.09s 
+  sphere-diel-x5-m1.5-water lightsmith-fdtd/default/cpu@16.708: ok 24.51s 
+  sphere-diel-x5-m1.5-water lightsmith-fdtd/default/gpu@41.771: ok 0.56s 
+  sphere-diel-x5-m1.5-water lightsmith-fdtd/default/gpu@25.063: ok 0.90s 
+  sphere-diel-x5-m1.5-water lightsmith-fdtd/default/gpu@16.708: ok 1.53s 
+  sphere-diel-x5-m1.5-water lightsmith-fdtd/default/gpu@12.531: ok 2.22s 
+[run] (67/145) sphere-diel-x5-m1.5-water: 7 runs in 39.9s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=12.531, gpu
+  sphere-diel-x5-m1.5-k0.05-water lightsmith-fdtd/default/cpu@41.771: ok 2.46s 
+  sphere-diel-x5-m1.5-k0.05-water lightsmith-fdtd/default/cpu@25.063: ok 5.42s 
+  sphere-diel-x5-m1.5-k0.05-water lightsmith-fdtd/default/cpu@16.708: ok 18.18s 
+  sphere-diel-x5-m1.5-k0.05-water lightsmith-fdtd/default/gpu@41.771: ok 0.70s 
+  sphere-diel-x5-m1.5-k0.05-water lightsmith-fdtd/default/gpu@25.063: ok 1.01s 
+  sphere-diel-x5-m1.5-k0.05-water lightsmith-fdtd/default/gpu@16.708: ok 1.62s 
+  sphere-diel-x5-m1.5-k0.05-water lightsmith-fdtd/default/gpu@12.531: ok 2.39s 
+[run] (68/145) sphere-diel-x5-m1.5-k0.05-water: 7 runs in 31.8s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=12.531, gpu
+  sphere-diel-x5-m2-water lightsmith-fdtd/default/cpu@31.328: ok 28.89s 
+  sphere-diel-x5-m2-water lightsmith-fdtd/default/cpu@18.797: ok 141.59s 
+  sphere-diel-x5-m2-water lightsmith-fdtd/default/gpu@31.328: ok 3.21s 
+  sphere-diel-x5-m2-water lightsmith-fdtd/default/gpu@18.797: ok 5.49s 
+  sphere-diel-x5-m2-water lightsmith-fdtd/default/gpu@12.531: ok 9.33s 
+  sphere-diel-x5-m2-water lightsmith-fdtd/default/gpu@9.398: ok 14.90s 
+[run] (69/145) sphere-diel-x5-m2-water: 6 runs in 203.4s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=9.398, gpu
+  sphere-diel-x5-m2-k0.05-water lightsmith-fdtd/default/cpu@31.328: ok 5.84s 
+  sphere-diel-x5-m2-k0.05-water lightsmith-fdtd/default/cpu@18.797: ok 25.88s 
+  sphere-diel-x5-m2-k0.05-water lightsmith-fdtd/default/gpu@31.328: ok 1.10s 
+  sphere-diel-x5-m2-k0.05-water lightsmith-fdtd/default/gpu@18.797: ok 1.86s 
+  sphere-diel-x5-m2-k0.05-water lightsmith-fdtd/default/gpu@12.531: ok 3.23s 
+  sphere-diel-x5-m2-k0.05-water lightsmith-fdtd/default/gpu@9.398: ok 4.94s 
+[run] (70/145) sphere-diel-x5-m2-k0.05-water: 6 runs in 42.9s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=9.398, gpu
+  sphere-diel-x5-m3.5-water lightsmith-fdtd/default/cpu@17.902: ok 445.78s 
+  sphere-diel-x5-m3.5-water lightsmith-fdtd/default/gpu@17.902: ok 15.44s 
+  sphere-diel-x5-m3.5-water lightsmith-fdtd/default/gpu@10.741: ok 39.04s 
+[run] (71/145) sphere-diel-x5-m3.5-water: 3 runs in 500.3s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=10.741, gpu
+  sphere-diel-x5-m3.5-k0.05-water lightsmith-fdtd/default/cpu@17.902: ok 33.81s 
+  sphere-diel-x5-m3.5-k0.05-water lightsmith-fdtd/default/gpu@17.902: ok 2.40s 
+  sphere-diel-x5-m3.5-k0.05-water lightsmith-fdtd/default/gpu@10.741: ok 4.71s 
+  sphere-diel-x5-m3.5-k0.05-water lightsmith-fdtd/default/gpu@7.161: ok 10.13s 
+  sphere-diel-x5-m3.5-k0.05-water lightsmith-fdtd/default/gpu@5.371: ok 19.38s 
+[run] (72/145) sphere-diel-x5-m3.5-k0.05-water: 5 runs in 70.4s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=5.371, gpu
+  sphere-diel-x10-m1.2-water lightsmith-fdtd/default/cpu@52.214: ok 3.36s 
+  sphere-diel-x10-m1.2-water lightsmith-fdtd/default/cpu@31.328: ok 12.62s 
+  sphere-diel-x10-m1.2-water lightsmith-fdtd/default/gpu@52.214: ok 0.54s 
+  sphere-diel-x10-m1.2-water lightsmith-fdtd/default/gpu@31.328: ok 1.04s 
+  sphere-diel-x10-m1.2-water lightsmith-fdtd/default/gpu@20.886: ok 2.08s 
+  sphere-diel-x10-m1.2-water lightsmith-fdtd/default/gpu@15.664: ok 3.69s 
+[run] (73/145) sphere-diel-x10-m1.2-water: 6 runs in 23.3s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=15.664, gpu
+  sphere-diel-x10-m1.2-k0.05-water lightsmith-fdtd/default/cpu@52.214: ok 2.68s 
+  sphere-diel-x10-m1.2-k0.05-water lightsmith-fdtd/default/cpu@31.328: ok 9.94s 
+  sphere-diel-x10-m1.2-k0.05-water lightsmith-fdtd/default/gpu@52.214: ok 0.65s 
+  sphere-diel-x10-m1.2-k0.05-water lightsmith-fdtd/default/gpu@31.328: ok 1.16s 
+  sphere-diel-x10-m1.2-k0.05-water lightsmith-fdtd/default/gpu@20.886: ok 2.16s 
+  sphere-diel-x10-m1.2-k0.05-water lightsmith-fdtd/default/gpu@15.664: ok 3.94s 
+[run] (74/145) sphere-diel-x10-m1.2-k0.05-water: 6 runs in 20.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=15.664, gpu
+  sphere-diel-x10-m1.5-water lightsmith-fdtd/default/cpu@41.771: ok 21.28s 
+  sphere-diel-x10-m1.5-water lightsmith-fdtd/default/gpu@41.771: ok 1.64s 
+  sphere-diel-x10-m1.5-water lightsmith-fdtd/default/gpu@25.063: ok 3.10s 
+  sphere-diel-x10-m1.5-water lightsmith-fdtd/default/gpu@16.708: ok 6.13s 
+  sphere-diel-x10-m1.5-water lightsmith-fdtd/default/gpu@12.531: ok 11.15s 
+[run] (75/145) sphere-diel-x10-m1.5-water: 5 runs in 43.3s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=12.531, gpu
+  sphere-diel-x10-m1.5-k0.05-water lightsmith-fdtd/default/cpu@41.771: ok 6.50s 
+  sphere-diel-x10-m1.5-k0.05-water lightsmith-fdtd/default/cpu@25.063: ok 27.35s 
+  sphere-diel-x10-m1.5-k0.05-water lightsmith-fdtd/default/gpu@41.771: ok 0.97s 
+  sphere-diel-x10-m1.5-k0.05-water lightsmith-fdtd/default/gpu@25.063: ok 2.14s 
+  sphere-diel-x10-m1.5-k0.05-water lightsmith-fdtd/default/gpu@16.708: ok 3.87s 
+  sphere-diel-x10-m1.5-k0.05-water lightsmith-fdtd/default/gpu@12.531: ok 7.51s 
+[run] (76/145) sphere-diel-x10-m1.5-k0.05-water: 6 runs in 48.3s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=12.531, gpu
+  sphere-diel-x10-m2-water lightsmith-fdtd/default/cpu@31.328: ok 250.70s 
+  sphere-diel-x10-m2-water lightsmith-fdtd/default/gpu@31.328: ok 8.72s 
+  sphere-diel-x10-m2-water lightsmith-fdtd/default/gpu@18.797: ok 13.89s 
+  sphere-diel-x10-m2-water lightsmith-fdtd/default/gpu@12.531: ok 38.61s 
+[run] (77/145) sphere-diel-x10-m2-water: 4 runs in 311.9s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=12.531, gpu
+  sphere-diel-x10-m2-k0.05-water lightsmith-fdtd/default/cpu@31.328: ok 17.85s 
+  sphere-diel-x10-m2-k0.05-water lightsmith-fdtd/default/gpu@31.328: ok 1.42s 
+  sphere-diel-x10-m2-k0.05-water lightsmith-fdtd/default/gpu@18.797: ok 3.37s 
+  sphere-diel-x10-m2-k0.05-water lightsmith-fdtd/default/gpu@12.531: ok 7.74s 
+  sphere-diel-x10-m2-k0.05-water lightsmith-fdtd/default/gpu@9.398: ok 15.79s 
+[run] (78/145) sphere-diel-x10-m2-k0.05-water: 5 runs in 46.2s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=9.398, gpu
+  sphere-diel-x10-m3.5-water lightsmith-fdtd/default/gpu@17.902: ok 27.62s 
+[run] (79/145) sphere-diel-x10-m3.5-water: 1 runs in 27.6s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=17.902, gpu
+  sphere-diel-x10-m3.5-k0.05-water lightsmith-fdtd/default/gpu@17.902: ok 3.81s 
+  sphere-diel-x10-m3.5-k0.05-water lightsmith-fdtd/default/gpu@10.741: ok 10.82s 
+  sphere-diel-x10-m3.5-k0.05-water lightsmith-fdtd/default/gpu@7.161: ok 33.39s 
+  sphere-diel-x10-m3.5-k0.05-water lightsmith-fdtd/default/gpu@5.371: ok 84.10s 
+[run] (80/145) sphere-diel-x10-m3.5-k0.05-water: 4 runs in 132.1s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=5.371, gpu
+  sphere-au-jc-r10-vacuum lightsmith-fdtd/default/gpu@4.0: ok 7.38s 
+  sphere-au-jc-r10-vacuum lightsmith-fdtd/default/gpu@2.0: ok 10.40s 
+[run] (81/145) sphere-au-jc-r10-vacuum: 2 runs in 17.8s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  sphere-au-jc-r20-vacuum lightsmith-fdtd/default/gpu@8.0: ok 3.04s 
+  sphere-au-jc-r20-vacuum lightsmith-fdtd/default/gpu@4.0: ok 5.17s 
+  sphere-au-jc-r20-vacuum lightsmith-fdtd/default/gpu@2.0: ok 10.11s 
+[run] (82/145) sphere-au-jc-r20-vacuum: 3 runs in 18.3s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  sphere-au-jc-r40-vacuum lightsmith-fdtd/default/gpu@16.0: ok 1.59s 
+  sphere-au-jc-r40-vacuum lightsmith-fdtd/default/gpu@8.0: ok 2.93s 
+  sphere-au-jc-r40-vacuum lightsmith-fdtd/default/gpu@4.0: ok 5.38s 
+  sphere-au-jc-r40-vacuum lightsmith-fdtd/default/gpu@2.0: ok 10.56s 
+[run] (83/145) sphere-au-jc-r40-vacuum: 4 runs in 20.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  sphere-au-jc-r60-vacuum lightsmith-fdtd/default/gpu@24.0: ok 1.24s 
+  sphere-au-jc-r60-vacuum lightsmith-fdtd/default/gpu@12.0: ok 1.86s 
+  sphere-au-jc-r60-vacuum lightsmith-fdtd/default/gpu@6.0: ok 3.43s 
+  sphere-au-jc-r60-vacuum lightsmith-fdtd/default/gpu@3.0: ok 6.85s 
+[run] (84/145) sphere-au-jc-r60-vacuum: 4 runs in 13.4s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=3.0, gpu
+  sphere-au-jc-r80-vacuum lightsmith-fdtd/default/gpu@32.0: ok 1.32s 
+  sphere-au-jc-r80-vacuum lightsmith-fdtd/default/gpu@16.0: ok 1.62s 
+  sphere-au-jc-r80-vacuum lightsmith-fdtd/default/gpu@8.0: ok 2.61s 
+  sphere-au-jc-r80-vacuum lightsmith-fdtd/default/gpu@4.0: ok 4.82s 
+[run] (85/145) sphere-au-jc-r80-vacuum: 4 runs in 10.4s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=4.0, gpu
+  sphere-au-jc-r100-vacuum lightsmith-fdtd/default/gpu@40.0: ok 1.35s 
+  sphere-au-jc-r100-vacuum lightsmith-fdtd/default/gpu@20.0: ok 1.62s 
+  sphere-au-jc-r100-vacuum lightsmith-fdtd/default/gpu@10.0: ok 2.37s 
+  sphere-au-jc-r100-vacuum lightsmith-fdtd/default/gpu@5.0: ok 3.97s 
+[run] (86/145) sphere-au-jc-r100-vacuum: 4 runs in 9.3s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=5.0, gpu
+  sphere-au-jc-r10-water lightsmith-fdtd/default/gpu@4.0: ok 6.10s 
+  sphere-au-jc-r10-water lightsmith-fdtd/default/gpu@2.0: ok 10.87s 
+[run] (87/145) sphere-au-jc-r10-water: 2 runs in 17.0s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  sphere-au-jc-r20-water lightsmith-fdtd/default/gpu@8.0: ok 2.71s 
+  sphere-au-jc-r20-water lightsmith-fdtd/default/gpu@4.0: ok 5.50s 
+  sphere-au-jc-r20-water lightsmith-fdtd/default/gpu@2.0: ok 10.98s 
+[run] (88/145) sphere-au-jc-r20-water: 3 runs in 19.2s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  sphere-au-jc-r40-water lightsmith-fdtd/default/gpu@16.0: ok 1.64s 
+  sphere-au-jc-r40-water lightsmith-fdtd/default/gpu@8.0: ok 2.69s 
+  sphere-au-jc-r40-water lightsmith-fdtd/default/gpu@4.0: ok 5.44s 
+  sphere-au-jc-r40-water lightsmith-fdtd/default/gpu@2.0: ok 10.99s 
+[run] (89/145) sphere-au-jc-r40-water: 4 runs in 20.8s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  sphere-au-jc-r60-water lightsmith-fdtd/default/gpu@24.0: ok 1.25s 
+  sphere-au-jc-r60-water lightsmith-fdtd/default/gpu@12.0: ok 1.68s 
+  sphere-au-jc-r60-water lightsmith-fdtd/default/gpu@6.0: ok 3.21s 
+  sphere-au-jc-r60-water lightsmith-fdtd/default/gpu@3.0: ok 6.48s 
+[run] (90/145) sphere-au-jc-r60-water: 4 runs in 12.6s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=3.0, gpu
+  sphere-au-jc-r80-water lightsmith-fdtd/default/gpu@32.0: ok 1.40s 
+  sphere-au-jc-r80-water lightsmith-fdtd/default/gpu@16.0: ok 1.68s 
+  sphere-au-jc-r80-water lightsmith-fdtd/default/gpu@8.0: ok 2.75s 
+  sphere-au-jc-r80-water lightsmith-fdtd/default/gpu@4.0: ok 5.40s 
+[run] (91/145) sphere-au-jc-r80-water: 4 runs in 11.2s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=4.0, gpu
+  sphere-au-jc-r100-water lightsmith-fdtd/default/gpu@40.0: ok 1.15s 
+  sphere-au-jc-r100-water lightsmith-fdtd/default/gpu@20.0: ok 1.57s 
+  sphere-au-jc-r100-water lightsmith-fdtd/default/gpu@10.0: ok 2.29s 
+  sphere-au-jc-r100-water lightsmith-fdtd/default/gpu@5.0: ok 4.52s 
+[run] (92/145) sphere-au-jc-r100-water: 4 runs in 9.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=5.0, gpu
+  sphere-ag-jc-r10-vacuum lightsmith-fdtd/default/gpu@4.0: ok 14.21s 
+  sphere-ag-jc-r10-vacuum lightsmith-fdtd/default/gpu@2.0: ok 21.38s 
+[run] (93/145) sphere-ag-jc-r10-vacuum: 2 runs in 35.6s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  sphere-ag-jc-r20-vacuum lightsmith-fdtd/default/gpu@8.0: ok 5.68s 
+  sphere-ag-jc-r20-vacuum lightsmith-fdtd/default/gpu@4.0: ok 8.89s 
+  sphere-ag-jc-r20-vacuum lightsmith-fdtd/default/gpu@2.0: ok 16.97s 
+[run] (94/145) sphere-ag-jc-r20-vacuum: 3 runs in 31.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  sphere-ag-jc-r40-vacuum lightsmith-fdtd/default/gpu@16.0: ok 2.69s 
+  sphere-ag-jc-r40-vacuum lightsmith-fdtd/default/gpu@8.0: ok 3.13s 
+  sphere-ag-jc-r40-vacuum lightsmith-fdtd/default/gpu@4.0: ok 5.91s 
+  sphere-ag-jc-r40-vacuum lightsmith-fdtd/default/gpu@2.0: ok 11.77s 
+[run] (95/145) sphere-ag-jc-r40-vacuum: 4 runs in 23.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  sphere-ag-jc-r60-vacuum lightsmith-fdtd/default/gpu@24.0: ok 2.41s 
+  sphere-ag-jc-r60-vacuum lightsmith-fdtd/default/gpu@12.0: ok 2.12s 
+  sphere-ag-jc-r60-vacuum lightsmith-fdtd/default/gpu@6.0: ok 3.89s 
+  sphere-ag-jc-r60-vacuum lightsmith-fdtd/default/gpu@3.0: ok 7.44s 
+[run] (96/145) sphere-ag-jc-r60-vacuum: 4 runs in 15.9s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=3.0, gpu
+  sphere-ag-jc-r80-vacuum lightsmith-fdtd/default/gpu@32.0: ok 1.96s 
+  sphere-ag-jc-r80-vacuum lightsmith-fdtd/default/gpu@16.0: ok 2.81s 
+  sphere-ag-jc-r80-vacuum lightsmith-fdtd/default/gpu@8.0: ok 3.59s 
+  sphere-ag-jc-r80-vacuum lightsmith-fdtd/default/gpu@4.0: ok 6.02s 
+[run] (97/145) sphere-ag-jc-r80-vacuum: 4 runs in 14.4s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=4.0, gpu
+  sphere-ag-jc-r100-vacuum lightsmith-fdtd/default/gpu@40.0: ok 1.56s 
+  sphere-ag-jc-r100-vacuum lightsmith-fdtd/default/gpu@20.0: ok 2.49s 
+  sphere-ag-jc-r100-vacuum lightsmith-fdtd/default/gpu@10.0: ok 2.49s 
+  sphere-ag-jc-r100-vacuum lightsmith-fdtd/default/gpu@5.0: ok 4.31s 
+[run] (98/145) sphere-ag-jc-r100-vacuum: 4 runs in 10.9s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=5.0, gpu
+  sphere-ag-jc-r10-water lightsmith-fdtd/default/gpu@4.0: ok 9.22s 
+  sphere-ag-jc-r10-water lightsmith-fdtd/default/gpu@2.0: ok 25.52s 
+[run] (99/145) sphere-ag-jc-r10-water: 2 runs in 34.7s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  sphere-ag-jc-r20-water lightsmith-fdtd/default/gpu@8.0: ok 4.33s 
+  sphere-ag-jc-r20-water lightsmith-fdtd/default/gpu@4.0: ok 8.50s 
+  sphere-ag-jc-r20-water lightsmith-fdtd/default/gpu@2.0: ok 20.84s 
+[run] (100/145) sphere-ag-jc-r20-water: 3 runs in 33.7s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  sphere-ag-jc-r40-water lightsmith-fdtd/default/gpu@16.0: ok 2.08s 
+  sphere-ag-jc-r40-water lightsmith-fdtd/default/gpu@8.0: ok 3.75s 
+  sphere-ag-jc-r40-water lightsmith-fdtd/default/gpu@4.0: ok 6.05s 
+  sphere-ag-jc-r40-water lightsmith-fdtd/default/gpu@2.0: ok 12.80s 
+[run] (101/145) sphere-ag-jc-r40-water: 4 runs in 24.7s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  sphere-ag-jc-r60-water lightsmith-fdtd/default/gpu@24.0: ok 1.64s 
+  sphere-ag-jc-r60-water lightsmith-fdtd/default/gpu@12.0: ok 2.35s 
+  sphere-ag-jc-r60-water lightsmith-fdtd/default/gpu@6.0: ok 3.93s 
+  sphere-ag-jc-r60-water lightsmith-fdtd/default/gpu@3.0: ok 7.91s 
+[run] (102/145) sphere-ag-jc-r60-water: 4 runs in 15.8s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=3.0, gpu
+  sphere-ag-jc-r80-water lightsmith-fdtd/default/gpu@32.0: ok 1.46s 
+  sphere-ag-jc-r80-water lightsmith-fdtd/default/gpu@16.0: ok 2.21s 
+  sphere-ag-jc-r80-water lightsmith-fdtd/default/gpu@8.0: ok 3.94s 
+  sphere-ag-jc-r80-water lightsmith-fdtd/default/gpu@4.0: ok 5.84s 
+[run] (103/145) sphere-ag-jc-r80-water: 4 runs in 13.4s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=4.0, gpu
+  sphere-ag-jc-r100-water lightsmith-fdtd/default/gpu@40.0: ok 1.15s 
+  sphere-ag-jc-r100-water lightsmith-fdtd/default/gpu@20.0: ok 2.12s 
+  sphere-ag-jc-r100-water lightsmith-fdtd/default/gpu@10.0: ok 2.67s 
+  sphere-ag-jc-r100-water lightsmith-fdtd/default/gpu@5.0: ok 4.54s 
+[run] (104/145) sphere-ag-jc-r100-water: 4 runs in 10.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=5.0, gpu
+  sphere-drude-r40-water lightsmith-fdtd/default/cpu@16.0: ok 6.86s 
+  sphere-drude-r40-water lightsmith-fdtd/default/gpu@16.0: ok 1.90s 
+  sphere-drude-r40-water lightsmith-fdtd/default/gpu@8.0: ok 2.69s 
+  sphere-drude-r40-water lightsmith-fdtd/default/gpu@4.0: ok 5.43s 
+  sphere-drude-r40-water lightsmith-fdtd/default/gpu@2.0: ok 11.37s 
+[run] (105/145) sphere-drude-r40-water: 5 runs in 28.3s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+[run] (106/145) coreshell-sio2-au-c20-s5-water: 0 runs in 0.0s; reference = no successful run
+[run] (107/145) coreshell-au-sio2-c20-s5-water: 0 runs in 0.0s; reference = no successful run
+  coreshell-sio2-au-c30-s8-water lightsmith-fdtd/default/gpu@1.6: ok 21.79s 
+[run] (108/145) coreshell-sio2-au-c30-s8-water: 1 runs in 21.8s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=1.6, gpu
+  coreshell-au-sio2-c30-s8-water lightsmith-fdtd/default/gpu@1.6: ok 15.66s 
+[run] (109/145) coreshell-au-sio2-c30-s8-water: 1 runs in 15.7s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=1.6, gpu
+  coreshell-sio2-au-c40-s10-water lightsmith-fdtd/default/gpu@2.0: ok 15.39s 
+[run] (110/145) coreshell-sio2-au-c40-s10-water: 1 runs in 15.4s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  coreshell-au-sio2-c40-s10-water lightsmith-fdtd/default/gpu@2.0: ok 12.33s 
+[run] (111/145) coreshell-au-sio2-c40-s10-water: 1 runs in 12.3s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  coreshell-sio2-au-c50-s15-water lightsmith-fdtd/default/gpu@3.0: ok 9.15s 
+[run] (112/145) coreshell-sio2-au-c50-s15-water: 1 runs in 9.2s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=3.0, gpu
+  coreshell-au-sio2-c50-s15-water lightsmith-fdtd/default/gpu@3.0: ok 7.50s 
+[run] (113/145) coreshell-au-sio2-c50-s15-water: 1 runs in 7.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=3.0, gpu
+  spheroid-au-ar1-req20-water lightsmith-fdtd/default/gpu@8.0: ok 2.81s 
+  spheroid-au-ar1-req20-water lightsmith-fdtd/default/gpu@4.0: ok 5.83s 
+  spheroid-au-ar1-req20-water lightsmith-fdtd/default/gpu@2.0: ok 11.63s 
+[run] (114/145) spheroid-au-ar1-req20-water: 3 runs in 20.3s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  spheroid-au-ar1.5-req20-water lightsmith-fdtd/default/gpu@6.989: ok 4.06s 
+  spheroid-au-ar1.5-req20-water lightsmith-fdtd/default/gpu@3.494: ok 7.81s 
+  spheroid-au-ar1.5-req20-water lightsmith-fdtd/default/gpu@1.747: ok 16.12s 
+[run] (115/145) spheroid-au-ar1.5-req20-water: 3 runs in 28.0s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=1.747, gpu
+  spheroid-au-ar2-req20-water lightsmith-fdtd/default/gpu@6.35: ok 5.16s 
+  spheroid-au-ar2-req20-water lightsmith-fdtd/default/gpu@3.175: ok 10.67s 
+  spheroid-au-ar2-req20-water lightsmith-fdtd/default/gpu@1.587: ok 21.91s 
+[run] (116/145) spheroid-au-ar2-req20-water: 3 runs in 37.7s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=1.587, gpu
+  spheroid-au-ar3-req20-water lightsmith-fdtd/default/gpu@5.547: ok 7.84s 
+  spheroid-au-ar3-req20-water lightsmith-fdtd/default/gpu@2.773: ok 16.62s 
+[run] (117/145) spheroid-au-ar3-req20-water: 2 runs in 24.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.773, gpu
+  spheroid-au-ar4-req20-water lightsmith-fdtd/default/gpu@5.04: ok 11.09s 
+  spheroid-au-ar4-req20-water lightsmith-fdtd/default/gpu@2.52: ok 20.14s 
+[run] (118/145) spheroid-au-ar4-req20-water: 2 runs in 31.2s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.52, gpu
+  spheroid-au-ar5-req20-water lightsmith-fdtd/default/gpu@4.678: ok 10.10s 
+  spheroid-au-ar5-req20-water lightsmith-fdtd/default/gpu@2.339: ok 19.74s 
+[run] (119/145) spheroid-au-ar5-req20-water: 2 runs in 29.8s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.339, gpu
+  rod-au-ar2-r10-water lightsmith-fdtd/default/gpu@4.0: ok 11.62s 
+  rod-au-ar2-r10-water lightsmith-fdtd/default/gpu@2.0: ok 24.22s 
+[run] (120/145) rod-au-ar2-r10-water: 2 runs in 35.8s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  rod-au-ar3-r10-water lightsmith-fdtd/default/gpu@4.0: ok 14.49s 
+  rod-au-ar3-r10-water lightsmith-fdtd/default/gpu@2.0: ok 28.57s 
+[run] (121/145) rod-au-ar3-r10-water: 2 runs in 43.1s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  rod-au-ar4-r10-water lightsmith-fdtd/default/gpu@4.0: ok 14.10s 
+  rod-au-ar4-r10-water lightsmith-fdtd/default/gpu@2.0: ok 27.68s 
+[run] (122/145) rod-au-ar4-r10-water: 2 runs in 41.8s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  rod-au-ar5-r10-water lightsmith-fdtd/default/gpu@4.0: ok 13.23s 
+  rod-au-ar5-r10-water lightsmith-fdtd/default/gpu@2.0: ok 24.57s 
+[run] (123/145) rod-au-ar5-r10-water: 2 runs in 37.8s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+[run] (124/145) dimer-au-r20-gap1-water: 0 runs in 0.0s; reference = no successful run
+[run] (125/145) dimer-au-r20-gap2-water: 0 runs in 0.0s; reference = no successful run
+[run] (126/145) dimer-au-r20-gap5-water: 0 runs in 0.0s; reference = no successful run
+  dimer-au-r20-gap10-water lightsmith-fdtd/default/gpu@2.0: ok 10.45s 
+[run] (127/145) dimer-au-r20-gap10-water: 1 runs in 10.4s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  dimer-au-r20-gap20-water lightsmith-fdtd/default/gpu@4.0: ok 5.02s 
+  dimer-au-r20-gap20-water lightsmith-fdtd/default/gpu@2.0: ok 9.90s 
+[run] (128/145) dimer-au-r20-gap20-water: 2 runs in 14.9s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  dimer-au-r20-gap40-water lightsmith-fdtd/default/gpu@8.0: ok 2.40s 
+  dimer-au-r20-gap40-water lightsmith-fdtd/default/gpu@4.0: ok 4.78s 
+  dimer-au-r20-gap40-water lightsmith-fdtd/default/gpu@2.0: ok 9.73s 
+[run] (129/145) dimer-au-r20-gap40-water: 3 runs in 16.9s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  spheroid-ag-ar1-req20-water lightsmith-fdtd/default/gpu@8.0: ok 4.91s 
+  spheroid-ag-ar1-req20-water lightsmith-fdtd/default/gpu@4.0: ok 8.94s 
+  spheroid-ag-ar1-req20-water lightsmith-fdtd/default/gpu@2.0: ok 21.29s 
+[run] (130/145) spheroid-ag-ar1-req20-water: 3 runs in 35.1s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  spheroid-ag-ar1.5-req20-water lightsmith-fdtd/default/gpu@6.989: ok 5.28s 
+  spheroid-ag-ar1.5-req20-water lightsmith-fdtd/default/gpu@3.494: ok 12.45s 
+  spheroid-ag-ar1.5-req20-water lightsmith-fdtd/default/gpu@1.747: ok 24.21s 
+[run] (131/145) spheroid-ag-ar1.5-req20-water: 3 runs in 41.9s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=1.747, gpu
+  spheroid-ag-ar2-req20-water lightsmith-fdtd/default/gpu@6.35: ok 9.20s 
+  spheroid-ag-ar2-req20-water lightsmith-fdtd/default/gpu@3.175: ok 10.85s 
+  spheroid-ag-ar2-req20-water lightsmith-fdtd/default/gpu@1.587: ok 24.49s 
+[run] (132/145) spheroid-ag-ar2-req20-water: 3 runs in 44.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=1.587, gpu
+  spheroid-ag-ar3-req20-water lightsmith-fdtd/default/gpu@5.547: ok 7.13s 
+  spheroid-ag-ar3-req20-water lightsmith-fdtd/default/gpu@2.773: ok 18.42s 
+[run] (133/145) spheroid-ag-ar3-req20-water: 2 runs in 25.6s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.773, gpu
+  spheroid-ag-ar4-req20-water lightsmith-fdtd/default/gpu@5.04: ok 11.07s 
+  spheroid-ag-ar4-req20-water lightsmith-fdtd/default/gpu@2.52: ok 29.85s 
+[run] (134/145) spheroid-ag-ar4-req20-water: 2 runs in 40.9s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.52, gpu
+  spheroid-ag-ar5-req20-water lightsmith-fdtd/default/gpu@4.678: ok 16.72s 
+[run] (135/145) spheroid-ag-ar5-req20-water: 1 runs in 16.7s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=4.678, gpu
+  rod-ag-ar2-r10-water lightsmith-fdtd/default/gpu@4.0: ok 11.88s 
+  rod-ag-ar2-r10-water lightsmith-fdtd/default/gpu@2.0: ok 25.59s 
+[run] (136/145) rod-ag-ar2-r10-water: 2 runs in 37.5s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  rod-ag-ar3-r10-water lightsmith-fdtd/default/gpu@4.0: ok 15.88s 
+[run] (137/145) rod-ag-ar3-r10-water: 1 runs in 15.9s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=4.0, gpu
+  rod-ag-ar4-r10-water lightsmith-fdtd/default/gpu@4.0: ok 17.59s 
+[run] (138/145) rod-ag-ar4-r10-water: 1 runs in 17.6s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=4.0, gpu
+  rod-ag-ar5-r10-water lightsmith-fdtd/default/gpu@4.0: ok 23.30s 
+[run] (139/145) rod-ag-ar5-r10-water: 1 runs in 23.3s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=4.0, gpu
+[run] (140/145) dimer-ag-r20-gap1-water: 0 runs in 0.0s; reference = no successful run
+[run] (141/145) dimer-ag-r20-gap2-water: 0 runs in 0.0s; reference = no successful run
+[run] (142/145) dimer-ag-r20-gap5-water: 0 runs in 0.0s; reference = no successful run
+  dimer-ag-r20-gap10-water lightsmith-fdtd/default/gpu@2.0: ok 13.75s 
+[run] (143/145) dimer-ag-r20-gap10-water: 1 runs in 13.7s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  dimer-ag-r20-gap20-water lightsmith-fdtd/default/gpu@4.0: ok 8.16s 
+  dimer-ag-r20-gap20-water lightsmith-fdtd/default/gpu@2.0: ok 12.48s 
+[run] (144/145) dimer-ag-r20-gap20-water: 2 runs in 20.6s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+  dimer-ag-r20-gap40-water lightsmith-fdtd/default/gpu@8.0: ok 4.34s 
+  dimer-ag-r20-gap40-water lightsmith-fdtd/default/gpu@4.0: ok 7.22s 
+  dimer-ag-r20-gap40-water lightsmith-fdtd/default/gpu@2.0: ok 16.77s 
+[run] (145/145) dimer-ag-r20-gap40-water: 3 runs in 28.3s; reference = highest-resolution lightsmith-fdtd (default) @ mesh_nm=2.0, gpu
+[run] done: {"runs": 647, "ok": 647, "error": 0, "skipped": 513, "suite_wall_s": 6227.071866499959}
+[analyze] wrote convergence.csv (494), cheapest.csv (1096), summary.md in benchmarks\results\20261104-fdtd-only

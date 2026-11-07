@@ -1,30 +1,46 @@
-# Lightsmith MCP server
+# MCP server
 
 `lightsmith-mcp` exposes the library to AI agents through the [Model Context Protocol](https://modelcontextprotocol.io).
 It is built on the official `mcp` Python SDK (2.x) and speaks protocol 2026-07-28, falling back to the older
 handshake for clients that need it. Transports: stdio (default) and streamable HTTP.
 
 Everything is JSON. Units are nm and vacuum wavelengths; the time convention is `exp(-iωt)` (see
-[AGENTS.md](../AGENTS.md)).
+[Conventions](conventions.md) and the repository's [AGENTS.md](https://github.com/lightsmith-photonics/lightsmith/blob/main/AGENTS.md)).
+
+It offers the same operations as the Python API and the [CLI](cli.md), with results as the same JSON models,
+including `provenance` and `warnings`.
+
+## Recommended agent workflow
+
+1. Read the schema (`get_schema(kind)`) before building a problem.
+2. Use nm and vacuum wavelengths, with `Im(ε) > 0` for loss (see [Conventions](conventions.md)).
+3. Estimate before solving grid-based problems.
+4. Solve, then check `warnings` before reporting numbers.
+5. Cross-check important results with a second method (`compare`).
+
+The repository's [AGENTS.md](https://github.com/lightsmith-photonics/lightsmith/blob/main/AGENTS.md) and [llms.txt](https://github.com/lightsmith-photonics/lightsmith/blob/main/llms.txt) give the same
+guidance in compact form. The [agent benchmark](benchmarks/agents.md) measures how well an agent follows
+it through this server.
 
 ## Install and run
 
 ```bash
-uv sync --extra gpu --extra mcp          # from a clone
-uv run lightsmith-mcp                    # stdio: what MCP clients launch
-uv run lightsmith-mcp --http --port 8765 # streamable HTTP at http://127.0.0.1:8765/mcp
+uvx --from "lightsmith[mcp]" lightsmith-mcp                     # stdio, from PyPI: what MCP clients launch
+uvx --from "lightsmith[mcp]" lightsmith-mcp --http --port 8765  # streamable HTTP at http://127.0.0.1:8765/mcp
 ```
 
-`python -m lightsmith.mcp_server` is the same command. Once the package is on PyPI,
-`uvx --from "lightsmith[mcp]" lightsmith-mcp` runs it without a clone.
+Add the `gpu` extra (`"lightsmith[mcp,gpu]"`) for GPU solvers. From a clone, run `uv sync --extra gpu --extra mcp`
+and then `uv run lightsmith-mcp`. `python -m lightsmith.mcp_server` is the same command.
 
 ## Client configuration
 
-**Claude Code**, from a clone:
+**Claude Code**:
 
 ```bash
-claude mcp add lightsmith -- uv run --directory /path/to/lightsmith lightsmith-mcp
+claude mcp add lightsmith -- uvx --from "lightsmith[mcp]" lightsmith-mcp
 ```
+
+From a clone, use `-- uv run --directory /path/to/lightsmith lightsmith-mcp` instead.
 
 Add `-e LIGHTSMITH_MCP_MAX_MEMORY_GB=16` (or any other variable below) before `--` to configure it. To share the
 server with a project, put it in `.mcp.json` at the project root:
@@ -33,8 +49,8 @@ server with a project, put it in `.mcp.json` at the project root:
 {
   "mcpServers": {
     "lightsmith": {
-      "command": "uv",
-      "args": ["run", "--directory", "/path/to/lightsmith", "lightsmith-mcp"],
+      "command": "uvx",
+      "args": ["--from", "lightsmith[mcp]", "lightsmith-mcp"],
       "env": {"LIGHTSMITH_MCP_MAX_RUNTIME_S": "900"}
     }
   }
@@ -42,15 +58,16 @@ server with a project, put it in `.mcp.json` at the project root:
 ```
 
 **Claude Desktop**: the same `mcpServers` block goes into `claude_desktop_config.json` (Settings → Developer →
-Edit Config). Use absolute paths; on Windows write them as `C:/Users/you/lightsmith` or with escaped backslashes.
+Edit Config). For a clone, use `"command": "uv"` with `["run", "--directory", "/path/to/lightsmith", "lightsmith-mcp"]`
+and absolute paths; on Windows write them as `C:/Users/you/lightsmith` or with escaped backslashes.
 
 **VS Code** (`.vscode/mcp.json`), **Cursor** (`.cursor/mcp.json`) and most other clients take the same command:
 
 ```json
 {
   "servers": {
-    "lightsmith": {"type": "stdio", "command": "uv",
-                   "args": ["run", "--directory", "/path/to/lightsmith", "lightsmith-mcp"]}
+    "lightsmith": {"type": "stdio", "command": "uvx",
+                   "args": ["--from", "lightsmith[mcp]", "lightsmith-mcp"]}
   }
 }
 ```
@@ -62,7 +79,7 @@ for example `claude mcp add --transport http lightsmith http://127.0.0.1:8765/mc
 127.0.0.1 by default. It refuses any other address unless `LIGHTSMITH_MCP_HTTP_TOKEN` is set; clients must then
 send `Authorization: Bearer <token>`.
 
-**From Python**: see [`examples/mcp_client.py`](../examples/mcp_client.py).
+**From Python**: see [`examples/mcp_client.py`](https://github.com/lightsmith-photonics/lightsmith/blob/main/examples/mcp_client.py).
 
 ## Tools
 
@@ -192,7 +209,7 @@ applies.
 
 ## MCP registry
 
-[`server.json`](../server.json) describes the server for the MCP registry. Before publishing:
+[`server.json`](https://github.com/lightsmith-photonics/lightsmith/blob/main/server.json) describes the server for the MCP registry. Before publishing:
 
 1. Release the package on PyPI.
 2. Keep the `mcp-name` comment in the README; the registry uses it to verify ownership.

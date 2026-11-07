@@ -1,7 +1,7 @@
 # FDFD
 
 Backend `lightsmith-fdfd` (method `fdfd`, modules `lightsmith.backends.fdfd` and `lightsmith.backends._fdfd`).
-A 2D finite-difference frequency-domain solver for [devices](../problems/device.md). It gives adjoint
+A finite-difference frequency-domain solver for [devices](../problems/device.md), in 2D and 3D. It gives adjoint
 gradients with respect to every permittivity pixel, which makes it the engine for
 [inverse design](inverse.md). It runs on the CPU or a CUDA GPU.
 
@@ -55,7 +55,14 @@ All tests are in `tests/test_fdfd.py`.
 
 ## Limits
 
-- 2D only (`dimension=2`); 3D FDFD is not implemented yet. Ports cannot be normal to z.
+- This page describes the 2D solver. `dimension=3` devices are solved full-vector with an iterative
+  solver. Its method, options (`tol`, `max_iterations`, `warm_start`, solver `"bicgstab"` or `"direct"`)
+  and validation are in [3D inverse design](inverse-3d.md#solver). `polarization` does not apply in 3D.
+- Ports cannot be normal to z.
+- ε at each E-field node is the arithmetic mean of the neighbouring supersampled cells. For E normal to
+  a sidewall the harmonic mean would be exact, so the interface error is first order in `dl_nm`. This is
+  the main source of the ~1e-2 neff error at the default grid. Refine `dl_nm` or raise `subsamples` when
+  absolute phase matters.
 - Raises an error when:
   - the grid exceeds `max_cells`;
   - a port window is too narrow or too close to the PML;

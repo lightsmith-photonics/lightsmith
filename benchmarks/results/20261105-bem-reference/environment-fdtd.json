@@ -1,0 +1,69 @@
+{
+ "timestamp": "2026-11-04T20:35:17",
+ "command": [
+  "benchmarks/run.py",
+  "--suite",
+  "full-paper",
+  "--methods",
+  "fdtd",
+  "--devices",
+  "cpu,gpu",
+  "--max-run-s",
+  "90",
+  "--out",
+  "benchmarks/results/20261104-fdtd-only"
+ ],
+ "args": {
+  "suite": "full-paper",
+  "devices": "cpu,gpu",
+  "methods": "fdtd",
+  "problems": "",
+  "max_mem_gb": 6.0,
+  "budget": "",
+  "extra_options": "{}",
+  "out": "benchmarks\\results\\20261104-fdtd-only",
+  "dry_run": false,
+  "no_analyze": false,
+  "max_run_s": 90.0,
+  "resume": false
+ },
+ "python": "3.12.2 (tags/v3.12.2:6abddd9, Feb  6 2024, 21:26:36) [MSC v.1937 64 bit (AMD64)]",
+ "platform": "Windows-11-10.0.26300-SP0",
+ "cpu": "AMD Ryzen 5 5600X 6-Core Processor",
+ "lightsmith_version": "0.1.0",
+ "doctor": {
+  "numpy": "2.4.6",
+  "torch": "2.11.0+cu128",
+  "cupy": null,
+  "cuda_gpus": [
+   "NVIDIA GeForce RTX 5070"
+  ],
+  "torch_cuda_build": "12.8",
+  "auto_device": {
+   "framework": "torch",
+   "device": "cuda:0",
+   "gpu_name": "NVIDIA GeForce RTX 5070"
+  }
+ },
+ "backends": [
+  {
+   "name": "lightsmith-fdtd",
+   "method": "fdtd",
+   "problem_kinds": [
+    "scattering",
+    "periodic",
+    "layer_stack",
+    "emission"
+   ],
+   "license": "MIT",
+   "gpu": true,
+   "differentiable": false,
+   "available": true,
+   "unavailable_reason": null,
+   "citation": "Taflove & Hagness, Computational Electrodynamics (2005); Roden & Gedney, MOTL 27, 334 (2000); Oskooi et al., CPC 181, 687 (2010)"
+  }
+ ],
+ "git_commit": "c356fe4351938c9f6e180b59f5b0c7ef39a872d6",
+ "git_dirty": true,
+ "numpy": "2.4.6"
+}

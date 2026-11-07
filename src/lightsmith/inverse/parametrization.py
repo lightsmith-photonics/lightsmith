@@ -5,6 +5,11 @@ Pipeline per design region (Hammond et al., Opt. Express 29, 23916 (2021)):
     rho (raw, in [0, 1])  --symmetry-->  --conic filter-->  rho_t
     rho_t  --tanh projection(beta, eta)-->  rho_p  --> eps = eps_lo + rho_p (eps_hi - eps_lo)
 
+In 3D a region is either *extruded* (one 2D density in x, y, repeated through the
+region's z-span: the planar etch of a silicon photonics process; partial cells at
+the top and bottom are mixed by their volume fraction, like the rest of the grid)
+or *volumetric* (a full 3D density, filtered with a 3D cone).
+
 Minimum feature sizes are imposed with the geometric constraints of Zhou et al.,
 Struct. Multidisc. Optim. 52, 1179 (2015), in the form of Hammond et al.:
 
@@ -22,28 +27,29 @@ from dataclasses import dataclass, field
 import numpy as np
 
 
-def conic_kernel(radius_cells: float):
+def conic_kernel(radius_cells: float, ndim: int = 2):
     import torch
 
     r = max(radius_cells, 1e-9)
     n = max(math.ceil(r) - 1, 0)  # weights vanish at distance >= r
     ax = torch.arange(-n, n + 1, dtype=torch.float64)
-    X, Y = torch.meshgrid(ax, ax, indexing="ij")
-    w = torch.clamp(1 - torch.sqrt(X**2 + Y**2) / r, min=0)
+    G = torch.meshgrid(*([ax] * ndim), indexing="ij")
+    w = torch.clamp(1 - torch.sqrt(sum(g**2 for g in G)) / r, min=0)
     return w / w.sum()
 
 
 def conic_filter(rho, radius_cells: float):
-    """Normalised conic (hat) filter; renormalised near the region edge (no padding bias)."""
+    """Normalised conic (hat) filter in 2D or 3D; renormalised near the region edge (no padding bias)."""
     import torch
     import torch.nn.functional as F
 
     if radius_cells <= 1:
         return rho
-    k = conic_kernel(radius_cells).to(rho.device, rho.dtype)
+    k = conic_kernel(radius_cells, rho.ndim).to(rho.device, rho.dtype)
     pad = k.shape[0] // 2
-    num = F.conv2d(rho[None, None], k[None, None], padding=pad)[0, 0]
-    den = F.conv2d(torch.ones_like(rho)[None, None], k[None, None], padding=pad)[0, 0]
+    conv = F.conv2d if rho.ndim == 2 else F.conv3d
+    num = conv(rho[None, None], k[None, None], padding=pad)[0, 0]
+    den = conv(torch.ones_like(rho)[None, None], k[None, None], padding=pad)[0, 0]
     return num / den
 
 
@@ -76,12 +82,14 @@ def lengthscale_constraints(rho_t, rho_p, dl_nm: float, filter_radius_nm: float,
     import torch
 
     eta_e, eta_d = eta_from_lengthscale(min_feature_nm, filter_radius_nm)
-    gx = torch.zeros_like(rho_t)
-    gy = torch.zeros_like(rho_t)
-    gx[1:-1] = (rho_t[2:] - rho_t[:-2]) / (2 * dl_nm)
-    gy[:, 1:-1] = (rho_t[:, 2:] - rho_t[:, :-2]) / (2 * dl_nm)
+    g2 = torch.zeros_like(rho_t)
+    for a in range(rho_t.ndim):  # central differences along every axis (2D or 3D)
+        g = torch.zeros_like(rho_t)
+        pre = (slice(None),) * a
+        g[pre + (slice(1, -1),)] = (rho_t[pre + (slice(2, None),)] - rho_t[pre + (slice(None, -2),)]) / (2 * dl_nm)
+        g2 = g2 + g**2
     c = 64 * filter_radius_nm**2
-    ind = torch.exp(-c * (gx**2 + gy**2))
+    ind = torch.exp(-c * g2)
     g_s = torch.mean(rho_p * ind * torch.clamp(rho_t - eta_e, max=0) ** 2)
     g_v = torch.mean((1 - rho_p) * ind * torch.clamp(eta_d - rho_t, max=0) ** 2)
     return g_s, g_v
@@ -100,12 +108,17 @@ def binarization(rho_p) -> float:
 
 @dataclass
 class RegionMap:
-    """Where a design region sits on the solver grid (rectangular block of nodes)."""
+    """Where a design region sits on the solver grid (rectangular block of nodes).
+
+    2D grids: ``iz`` is None and the density is (nx, ny). 3D grids: ``mode`` is
+    'extruded' (density (nx, ny); ``wz`` (nz,) is the fraction of each z node's cell
+    inside the region's z-span) or 'volumetric' (density (nx, ny, nz)).
+    """
 
     name: str
     ix: slice
     iy: slice
-    shape: tuple[int, int]
+    shape: tuple[int, ...]
     x_nm: np.ndarray  # node coordinates inside the region
     y_nm: np.ndarray
     dl_nm: float
@@ -115,16 +128,19 @@ class RegionMap:
     eta: float = 0.5
     min_feature_nm: float | None = None
     symmetry: tuple[str, ...] = field(default_factory=tuple)
+    iz: slice | None = None
+    z_nm: np.ndarray | None = None
+    wz: np.ndarray | None = None
+    mode: str = "2d"  # "2d" | "extruded" | "volumetric"
 
     @property
     def size(self) -> int:
-        return self.shape[0] * self.shape[1]
+        return int(np.prod(self.shape))
 
     def symmetrize(self, rho):
-        if "x" in self.symmetry:  # mirror about the region's vertical centre line (x -> -x)
-            rho = (rho + rho.flip(0)) / 2
-        if "y" in self.symmetry:
-            rho = (rho + rho.flip(1)) / 2
+        for k, ax in enumerate("xyz"):  # mirror about the region centre (x -> -x, ...)
+            if ax in self.symmetry and k < rho.ndim:
+                rho = (rho + rho.flip(k)) / 2
         return rho
 
     def filtered(self, rho):
@@ -134,27 +150,55 @@ class RegionMap:
         return tanh_projection(self.filtered(rho), beta, self.eta)
 
 
-def region_map(name: str, center_nm, size_nm, grid, eps_lo, eps_hi, **kw) -> RegionMap:
-    """Map a box (center, size; z ignored in 2D) to the block of grid nodes inside it."""
+def region_map(name: str, center_nm, size_nm, grid, eps_lo, eps_hi, parametrization: str = "extruded",
+               **kw) -> RegionMap:
+    """Map a box (center, size; z ignored in 2D) to the block of grid nodes inside it.
+
+    On a 3D grid (one with ``.z``) `parametrization` is 'extruded' or 'volumetric'.
+    """
+    axes = (grid.x, grid.y, grid.z) if hasattr(grid, "z") else (grid.x, grid.y)
+    volumetric = len(axes) == 3 and parametrization == "volumetric"
     sl = []
-    for a, coords in enumerate((grid.x, grid.y)):
+    for a, coords in enumerate(axes[:3 if volumetric else 2]):
         inside = np.nonzero(np.abs(coords - center_nm[a]) <= size_nm[a] / 2 + 1e-9)[0]
         if len(inside) < 2:
-            raise ValueError(f"design region {name!r} spans fewer than 2 grid cells along {'xy'[a]}")
+            raise ValueError(f"design region {name!r} spans fewer than 2 grid cells along {'xyz'[a]}")
         sl.append(slice(int(inside[0]), int(inside[-1]) + 1))
-    shape = (sl[0].stop - sl[0].start, sl[1].stop - sl[1].start)
+    shape = tuple(s.stop - s.start for s in sl)
+    extra: dict = {}
+    if volumetric:
+        extra = {"iz": sl[2], "z_nm": grid.z[sl[2]], "wz": np.ones(shape[2]), "mode": "volumetric"}
+    elif len(axes) == 3:
+        if size_nm[2] <= 0:
+            raise ValueError(f"design region {name!r}: an extruded 3D region needs size_nm[2] > 0 (its thickness)")
+        z0, z1 = center_nm[2] - size_nm[2] / 2, center_nm[2] + size_nm[2] / 2
+        dl = float(grid.dl)
+        w = np.clip(np.minimum(grid.z + dl / 2, z1) - np.maximum(grid.z - dl / 2, z0), 0, None) / dl
+        nz = np.nonzero(w > 1e-9)[0]
+        if len(nz) == 0:
+            raise ValueError(f"design region {name!r} does not overlap the grid along z")
+        izs = slice(int(nz[0]), int(nz[-1]) + 1)
+        extra = {"iz": izs, "z_nm": grid.z[izs], "wz": w[izs], "mode": "extruded"}
     return RegionMap(name=name, ix=sl[0], iy=sl[1], shape=shape, x_nm=grid.x[sl[0]], y_nm=grid.y[sl[1]],
                      dl_nm=float(grid.dl), eps_lo=np.atleast_1d(np.asarray(eps_lo, complex)),
-                     eps_hi=np.atleast_1d(np.asarray(eps_hi, complex)), **kw)
+                     eps_hi=np.atleast_1d(np.asarray(eps_hi, complex)), **extra, **kw)
 
 
 def compose_eps(base_eps, regions: list[RegionMap], rhos_p: list):
-    """Insert projected densities into the base permittivity (n_wl, Nx, Ny); differentiable."""
+    """Insert projected densities into the base permittivity (n_wl, Nx, Ny[, Nz]); differentiable."""
     import torch
 
     eps = base_eps.clone()
+    nd = base_eps.ndim - 1
     for reg, rp in zip(regions, rhos_p):
-        lo = torch.as_tensor(reg.eps_lo, device=eps.device)[:, None, None]
-        hi = torch.as_tensor(reg.eps_hi, device=eps.device)[:, None, None]
-        eps[:, reg.ix, reg.iy] = lo + rp[None].to(eps.dtype) * (hi - lo)
+        lo = torch.as_tensor(reg.eps_lo, device=eps.device).reshape((-1,) + (1,) * nd)
+        hi = torch.as_tensor(reg.eps_hi, device=eps.device).reshape((-1,) + (1,) * nd)
+        if reg.iz is None:
+            eps[:, reg.ix, reg.iy] = lo + rp[None].to(eps.dtype) * (hi - lo)
+        elif reg.mode == "volumetric":
+            eps[:, reg.ix, reg.iy, reg.iz] = lo + rp[None].to(eps.dtype) * (hi - lo)
+        else:  # extruded: one (x, y) density on every z node, mixed by the node's z fill fraction
+            wz = torch.as_tensor(reg.wz, device=eps.device).to(eps.dtype)
+            val = lo + rp[None, :, :, None].to(eps.dtype) * (hi - lo)
+            eps[:, reg.ix, reg.iy, reg.iz] = (1 - wz) * base_eps[:, reg.ix, reg.iy, reg.iz] + wz * val
     return eps

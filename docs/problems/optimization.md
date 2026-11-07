@@ -1,6 +1,6 @@
 # Inverse design
 
-`kind: "optimization"`, model `lightsmith.inverse.OptimizationProblem`. Density-based topology
+Model `lightsmith.inverse.OptimizationProblem`. Density-based topology
 optimisation of one or more design regions inside a [device](device.md), driven by adjoint gradients.
 
 ## Fields

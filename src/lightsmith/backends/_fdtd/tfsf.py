@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from .engine import Engine, e_region, flat_index, h_region
+from .engine import Engine, dual_widths, e_region, flat_index, h_region
 
 PML1D = 48
 
@@ -47,9 +47,10 @@ def _matched_eps_1d(khat, omega, dt, dx, eps_b) -> float:
     return float((np.sin(k * dx / 2) / dx) ** 2 / (np.sin(omega * dt / 2) / dt) ** 2)
 
 
-def tfsf_slabs(shape, lo, hi, dt: float, spacing, periodic=(False, False, False), mirror=(0, 0, 0)):
+def tfsf_slabs(shape, lo, hi, dt: float, spacing, periodic=(False, False, False), mirror=(0, 0, 0), widths=None):
     """TFSF corrections for a box [lo, hi] (node-index units; faces outside the grid give none). Only stepped
-    components get them (``mirror``: see engine.e_region).
+    components get them (``mirror``: see engine.e_region). widths: a graded grid's primary widths per axis (None
+    where uniform; Engine ``widths``): a slab's coefficient then takes its own cell's (dual or primary) width.
 
     Yields (kind, c, region, g, coef, q): the components ``kind``_c in the slab ``region`` (one cell thick)
     were updated from a neighbour on the other side of the box face; they get += coef * F_g(q), with F the
@@ -94,7 +95,12 @@ def tfsf_slabs(shape, lo, hi, dt: float, spacing, periodic=(False, False, False)
                             else:
                                 axes.append(np.array([u[i] + du]))
                         q = np.stack(np.meshgrid(*axes, indexing="ij"), axis=-1)
-                        coef = s * sign_q * delta[i] * (dt / spacing[d])
+                        w = None if widths is None else widths[d]
+                        if w is None:
+                            h = spacing[d]
+                        else:  # E_c at node idx along d (dual width), H_c at half-integer idx (primary width)
+                            h = (dual_widths(w, mirror[d]) if kind == "E" else w)[int(idx_d[i])]
+                        coef = s * sign_q * delta[i] * (dt / h)
                         out.append((kind, c, tuple(region), g, coef, q))
     return out
 

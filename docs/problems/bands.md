@@ -1,6 +1,6 @@
 # Photonic bands
 
-`kind: "bands"`, model `lightsmith.problems.BandProblem`. The band structure of a 2D or 3D photonic
+Model `lightsmith.problems.BandProblem`. The band structure of a 2D or 3D photonic
 crystal along a path in k-space.
 
 ## Fields

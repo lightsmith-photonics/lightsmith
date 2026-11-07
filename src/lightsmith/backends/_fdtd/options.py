@@ -4,7 +4,25 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+
+class MeshOverride(BaseModel):
+    """A refinement box of a graded grid (world nm)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    center_nm: tuple[float, float, float] = Field(..., description="Box centre.")
+    size_nm: tuple[float, float, float] = Field(..., description="Box size per axis (> 0).")
+    spacing_nm: float | tuple[float, float, float] = Field(
+        ..., description="Cell size inside the box, one value or one per axis (> 0).")
+
+    @model_validator(mode="after")
+    def _positive(self):
+        sp = self.spacing_nm if isinstance(self.spacing_nm, tuple) else (self.spacing_nm,)
+        if min(self.size_nm) <= 0 or min(sp) <= 0:
+            raise ValueError("mesh_override: size_nm and spacing_nm must be positive")
+        return self
 
 
 class FDTDOptions(BaseModel):
@@ -55,5 +73,20 @@ class FDTDOptions(BaseModel):
     polarization: Literal["te", "tm"] | None = Field(
         None, description="2D device problems: the port modes' polarisation, te = E in the xy plane (default, as "
         "FDFD and EME), tm = E along z. The two do not couple in a z-invariant device.")
+    grid: Literal["uniform", "auto"] = Field(
+        "uniform", description="Scattering: 'auto' grades the grid (non-uniform per axis): the base spacing from the "
+        "host medium and cells_per_wavelength, refined inside each particle's bounding box (plus a margin) to the "
+        "spacing its material and size need (cells_per_wavelength in the particle, cells_per_radius), with a "
+        "bounded growth ratio (grading_ratio) in between. Far fewer cells for small, high-index or metal particles.")
+    mesh_override: list[MeshOverride] = Field(
+        default_factory=list, description="Scattering: refinement boxes (as Lumerical's mesh override regions); the "
+        "grid takes each box's spacing inside it and grades to the base spacing (spacing_nm, or the automatic "
+        "spacing) around it. Combine with grid='auto' or use alone.")
+    background_cells_per_wavelength: float = Field(
+        60.0, ge=10, description="grid='auto': base cells per shortest wavelength in the background. A change of "
+        "cell size h reflects ~(k h)^2 / 16 of a wave however gently it is graded (the grid's impedance depends on "
+        "h), so the coarse cells must stay fine: 60 keeps that below 0.07%.")
+    grading_ratio: float = Field(
+        1.25, ge=1.05, le=1.5, description="Largest growth of the cell width from one cell to the next on a graded grid.")
     cuda_graphs: bool = Field(True, description="Replay time steps as CUDA graphs on PyTorch CUDA (much faster).")
     max_cells: int = Field(300_000_000, ge=1, description="Refuse grids larger than this.")

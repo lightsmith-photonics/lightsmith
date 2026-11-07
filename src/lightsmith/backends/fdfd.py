@@ -1,9 +1,15 @@
-"""Native finite-difference frequency-domain (FDFD) solver for 2D photonic devices.
+"""Native finite-difference frequency-domain (FDFD) solver for 2D and 3D photonic devices.
 
 Solves the scalar 2D Helmholtz equation on a Yee grid with stretched-coordinate
 PML (TE: Hz with E in the xy plane; TM: Ez), launches unidirectional port modes
 (computed on the same discretisation), and extracts the full, power-normalised
 S-matrix by modal decomposition, including multimode ports.
+
+``dimension=3`` devices are solved full-vector on a 3D Yee grid (``_fdfd3d``):
+matrix-free curl-curl operator with SC-PML, exact discrete vector port modes,
+batched BiCGStab on CPU or GPU (SuperLU for small grids), and the same adjoint
+gradients. See :mod:`lightsmith.backends._fdfd3d` for why an iterative
+frequency-domain solver rather than a time-domain adjoint.
 
 Linear solves are direct: SciPy SuperLU on the CPU, or a block-tridiagonal LU
 written in torch on CUDA GPUs (torch lacks cuDSS on this build, so no sparse
@@ -29,6 +35,7 @@ from ..device import Device
 from ..problems import DeviceProblem, options_for, wavelength_array
 from ..results import SParameterResult
 from ._fdfd.engine import FDFD2D, FDFDOptions
+from ._fdfd3d.engine import FDFD3D
 from .base import Backend, register
 
 
@@ -68,11 +75,10 @@ class FDFD(Backend):
     def supports(cls, problem):
         if not isinstance(problem, DeviceProblem):
             return False, "FDFD solves device problems"
-        if problem.dimension != 2:
-            return False, "3D FDFD is not implemented yet; use dimension=2 (structures in the xy plane)"
-        for p in problem.ports:
-            if p.size_nm[2] == 0:
-                return False, f"port {p.name!r} is normal to z; 2D ports must be normal to x or y"
+        if problem.dimension == 2:
+            for p in problem.ports:
+                if p.size_nm[2] == 0:
+                    return False, f"port {p.name!r} is normal to z; 2D ports must be normal to x or y"
         try:
             cls._options(problem)
         except Exception as e:
@@ -84,18 +90,21 @@ class FDFD(Backend):
         return FDFDOptions.model_validate(options_for(problem, cls.name, cls.method))
 
     @classmethod
-    def engine(cls, problem: DeviceProblem) -> FDFD2D:
-        """The underlying :class:`FDFD2D` (grid, permittivity, modes, field solves)."""
+    def engine(cls, problem: DeviceProblem) -> FDFD2D | FDFD3D:
+        """The underlying :class:`FDFD2D` or :class:`FDFD3D` (grid, permittivity, modes, field solves)."""
+        if problem.dimension == 3:
+            return FDFD3D(problem, cls._options(problem))
         return FDFD2D(problem, cls._options(problem))
 
     @classmethod
     def estimate(cls, problem, device):
-        return cls.engine(problem).estimate()
+        eng = cls.engine(problem)
+        return eng.estimate(device) if isinstance(eng, FDFD3D) else eng.estimate()
 
     @classmethod
     def solve(cls, problem: DeviceProblem, device: Device) -> SParameterResult:
         eng = cls.engine(problem)
-        S, info = eng.solve(device if device.is_gpu else None)
+        S, info = eng.solve(device if (device.is_gpu or isinstance(eng, FDFD3D)) else None)
         warnings = list(eng.warnings)
         if not any(complex(m.n(wavelength_array(problem.wavelengths))[0]).imag > 0
                    for m in [eng.problem.background] + [s.material for s in eng.problem.structures]):
@@ -103,9 +112,15 @@ class FDFD(Backend):
             if excess > 1e-2:
                 warnings.append(f"output power exceeds input by {excess:.2%} in a lossless device; "
                                 "refine the grid (dl_nm) or thicken the PML")
-        provenance = {**device.describe(), **eng.estimate(), "solver": info.get("factor"),
+        est = eng.estimate(device) if isinstance(eng, FDFD3D) else eng.estimate()
+        provenance = {**device.describe(), **est, "solver": info.get("factor"),
                       "runtime_s": info.get("runtime_s"),
                       "port_planes_nm": {pg.name: float(eng.grid.axis(pg.axis)[pg.i0]) for pg in eng.ports}}
+        if isinstance(eng, FDFD3D):
+            provenance.update({"iterations": info.get("iterations"), "max_residual": info.get("max_residual")})
+            for k in ("iterations_estimate", "seconds_per_iteration_estimate", "seconds_per_solve_estimate", "note",
+                      "memory_bytes_iterative", "memory_bytes_direct"):
+                provenance.pop(k, None)
         provenance.pop("fits", None)
         return SParameterResult(method=cls.method, backend=cls.name,
                                 wavelengths_nm=eng.wavelengths.tolist(), ports=eng.labels,
@@ -121,22 +136,23 @@ class FDFD(Backend):
 
     @classmethod
     def design_grid(cls, problem: DeviceProblem):
-        """The grid on which `eps_grid_override` is given: node coordinates ``.x``, ``.y`` in nm."""
+        """The grid on which `eps_grid_override` is given: node coordinates ``.x``, ``.y`` (and ``.z`` in 3D), nm."""
         return cls.engine(problem).grid
 
     @classmethod
     def base_permittivity(cls, problem: DeviceProblem) -> np.ndarray:
-        """Rasterised permittivity of `problem`, shape (n_wl, Nx, Ny), complex."""
+        """Rasterised permittivity of `problem`, shape (n_wl, Nx, Ny) or (n_wl, Nx, Ny, Nz), complex."""
         eng = cls.engine(problem)
         return np.stack([eng.base_eps(float(lam)) for lam in eng.wavelengths])
 
     @classmethod
     def differentiable_solve(cls, problem: DeviceProblem, eps_grid_override=None, device: Device | str = "cpu",
                              sources: list[str] | None = None, with_fields: bool = True,
-                             engine: FDFD2D | None = None) -> DifferentiableSolution:
+                             engine: FDFD2D | FDFD3D | None = None) -> DifferentiableSolution:
         """Torch-differentiable S-parameters (and fields) for a permittivity grid.
 
-        eps_grid_override: torch tensor (Nx, Ny) or (n_wl, Nx, Ny) on :meth:`design_grid`;
+        eps_grid_override: torch tensor (Nx, Ny) or (n_wl, Nx, Ny) on :meth:`design_grid`
+        ((Nx, Ny, Nz) / (n_wl, Nx, Ny, Nz) in 3D, where fields come back as (n_wl, n_src, 3, Nx, Ny, Nz));
         None = the problem's own structures. sources: port labels to excite (default all).
         Gradients w.r.t. the override are exact and cost one adjoint solve per wavelength.
         """

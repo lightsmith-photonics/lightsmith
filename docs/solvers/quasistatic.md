@@ -1,7 +1,7 @@
 # Quasistatic
 
 Backend `lightsmith-quasistatic` (method `quasistatic`, module `lightsmith.backends.quasistatic`). It
-uses the dipole (Rayleigh–Gans) approximation for particles much smaller than the wavelength. `auto`
+uses the electrostatic dipole (Rayleigh) approximation, with Gans depolarisation factors for spheroids, for particles much smaller than the wavelength. `auto`
 never picks it; request it with `method="quasistatic"`.
 
 ## Method

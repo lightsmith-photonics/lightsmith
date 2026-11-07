@@ -2,7 +2,7 @@
 
 **The open photonics suite — GPU-native, differentiable, and built for AI agents.**
 
-Describe a photonics problem once, as typed JSON, and solve it with the method that fits: from nanoparticles and thin films to metasurfaces, waveguides, photonic crystals, devices and circuits. Every result comes back in the same units and conventions, with provenance, so methods can be cross-checked directly. Many solvers run on GPU and can be differentiated, which is what powers inverse design.
+Describe a photonics problem once and solve it with whichever method fits: from nanoparticles and thin films to metasurfaces, waveguides, photonic crystals, devices and circuits. Every result comes back in the same units and conventions, with provenance, so methods can be cross-checked directly. Many solvers run on GPU and can be differentiated, which is what powers inverse design.
 
 Documentation: <https://docs.lightsmith.dev/>
 
@@ -42,7 +42,7 @@ res = ls.solve(sim)                             # auto -> exact Mie for a sphere
 cmp = ls.compare(sim, ["mie", "dda", "fdtd"])   # cross-check methods
 ```
 
-The same from the shell, JSON in and out:
+The same from the shell, with the problem saved to a file:
 
 ```bash
 uv run lightsmith solve examples/drude_sphere.json --method dda --device gpu
@@ -56,10 +56,12 @@ uv run lightsmith solve examples/drude_sphere.json --method dda --device gpu
 | `layer_stack` — thin films | TMM, RCWA, FDTD | ✅ | TMM, RCWA |
 | `periodic` — gratings, metasurfaces | RCWA, FDTD (rectangular lattices) | ✅ | RCWA |
 | `mode` — waveguide cross-sections | FDE (full vector, bends) | — | — |
-| `device` — S-parameters between ports | EME, BPM (one-way, wide-angle; 2D and 3D semi/full-vector), FDFD (2D) | BPM, FDFD | FDFD |
+| `device` — S-parameters between ports | EME, BPM (one-way, wide-angle; 2D and 3D semi/full-vector), FDFD (2D, 3D) | BPM, FDFD | FDFD |
 | `bands` — photonic crystals | PWE (2D TE/TM, 3D) | ✅ | dense path |
 | `circuit` — netlists of compact models | S-matrix circuit solver | ✅ | ✅ |
-| `optimization` — inverse design | topology optimisation on FDFD | ✅ | — |
+| `optimization` — inverse design | topology optimisation on FDFD (2D, 3D) | ✅ | — |
+
+Inverse design runs in 2D or 3D. In 3D the FDFD solver is full-vector (Yee grid, PML, exact port modes, BiCGStab on the GPU with warm-started adjoint solves), and design regions are either *extruded* through the device layer (one vertical etch, exported to GDS) or *volumetric*, with filter-and-projection minimum feature sizes. See [examples/inverse_design_3d_mode_converter.py](examples/inverse_design_3d_mode_converter.py) (SOI TE0→TE1 converter, validated with EME on the exported polygons) and [docs/solvers/inverse-3d.md](docs/solvers/inverse-3d.md).
 
 BEM meshes only the particle surfaces (spheres, spheroids, cylinders, layered spheres, clusters; no substrate), so curved metal particles converge smoothly: a gold sphere of 40 nm radius is within 0.05 % of Mie on and off resonance at a few hundred triangles, where DDA and FDTD staircase (`benchmarks/bem_convergence.py`).
 
@@ -69,7 +71,7 @@ FDTD handles oblique and conical incidence on layer stacks and periodic structur
 
 ## From components to circuits (`lightsmith.pdk`)
 
-An open design kit: a technology as data (`generic_soi()`: 220 nm Si on 2 µm oxide, open material data only; define others as JSON), parametric cells (straight, circular/Euler bends, taper, MMI 1×2/2×2, directional coupler, ring/racetrack, Y-branch, crossing, grating coupler, MZI) with gdsfactory-style ports and GDS output, and a flow that simulates each component through `solve` (EME, FDFD or whatever `AUTO_ORDER` picks), fits a compact model, caches it by parameter hash and uses it in netlists as `pdk:<cell>`:
+An open design kit: a technology as data (`generic_soi()`: 220 nm Si on 2 µm oxide, open material data only; define your own in Python or load one from a file), parametric cells (straight, circular/Euler bends, taper, MMI 1×2/2×2, directional coupler, ring/racetrack, Y-branch, crossing, grating coupler, MZI) with gdsfactory-style ports and GDS output, and a flow that simulates each component through `solve` (EME, FDFD or whatever `AUTO_ORDER` picks), fits a compact model, caches it by parameter hash and uses it in netlists as `pdk:<cell>`:
 
 ```python
 from lightsmith.pdk import get_component

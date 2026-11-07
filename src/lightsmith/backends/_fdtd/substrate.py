@@ -23,9 +23,10 @@ from .tfsf import tfsf_slabs
 
 
 def layered_background(shape, origin, spacing, z_int: float, host: Medium, sub: Medium,
-                       periodic=(False, False, False)):
+                       periodic=(False, False, False), z_nodes=None):
     """(inv_eps, groups) of host above z_int and substrate below, on a grid of `shape` (the host must be
-    non-dispersive; inv_eps is 1 at D-form nodes)."""
+    non-dispersive; inv_eps is 1 at D-form nodes). z_nodes: the node heights of a graded grid (each node's
+    pixel is then its own cell along z)."""
     shape = tuple(shape)
     dz = float(np.broadcast_to(np.asarray(spacing, dtype=float), (3,))[2])
     inv_eps = np.full((3,) + shape, 1.0 / host.eps_inf)
@@ -33,8 +34,17 @@ def layered_background(shape, origin, spacing, z_int: float, host: Medium, sub: 
     for c in range(3):
         R = e_region(c, shape, periodic)
         ks = np.arange(R[2].start, R[2].stop)
-        z = origin[2] + (ks + (0.5 if c == 2 else 0.0)) * dz
-        f = np.clip((z_int - (z - dz / 2)) / dz, 0.0, 1.0)
+        if z_nodes is None:
+            z = origin[2] + (ks + (0.5 if c == 2 else 0.0)) * dz
+            f = np.clip((z_int - (z - dz / 2)) / dz, 0.0, 1.0)
+        else:
+            zn = np.asarray(z_nodes, dtype=float)
+            p = np.diff(zn)
+            if c == 2:  # E_z: the primary cell [z_k, z_k+1]
+                zl, zh = zn[ks], zn[ks + 1]
+            else:  # E_x, E_y: the dual cell
+                zl, zh = zn[ks] - 0.5 * p[np.maximum(ks - 1, 0)], zn[ks] + 0.5 * p[np.minimum(ks, len(p) - 1)]
+            f = np.clip((z_int - zl) / (zh - zl), 0.0, 1.0)
         if sub.dispersive:
             for sel, out in ((f >= 1.0, pure), ((f > 0) & (f < 1), mixed)):
                 if not sel.any():
@@ -77,7 +87,9 @@ class LayeredPlaneWave:
 
     def __init__(self, *, shape, origin, spacing, dt, lo, hi, down: bool, ehat, inv_eps, z_int: float,
                  host: Medium, sub: Medium, pml: PMLSpec, k_launch: int, k_ref: int, omega_c, omega_half,
-                 max_steps: int, mirror=(0, 0, 0)):
+                 max_steps: int, mirror=(0, 0, 0), grid=None):
+        """grid: a graded grid (grid.Grid); the columns then carry its z widths (x and y do not matter at normal
+        incidence)."""
         self.shape, self.dt = tuple(shape), float(dt)
         self.spacing = np.broadcast_to(np.asarray(spacing, dtype=float), (3,)).copy()
         self.origin = np.asarray(origin, dtype=float)
@@ -85,9 +97,11 @@ class LayeredPlaneWave:
         self.col_shape = (3, 3, nz)
         per = (True, True, False)
         self.z_int, self.host, self.sub, self.down = float(z_int), host, sub, bool(down)
-        self.col_mat = layered_background(self.col_shape, self.origin, self.spacing, z_int, host, sub, per)
+        zn = None if grid is None else grid.nodes[2]
+        self.z_widths = None if grid is None else grid.widths()[2]
+        self.col_mat = layered_background(self.col_shape, self.origin, self.spacing, z_int, host, sub, per, zn)
         far = 1e30 if not down else -1e30  # incidence medium everywhere
-        self.ref_mat = layered_background(self.col_shape, self.origin, self.spacing, far, host, sub, per)
+        self.ref_mat = layered_background(self.col_shape, self.origin, self.spacing, far, host, sub, per, zn)
         self.pml = PMLSpec(cells=((0, 0), (0, 0), pml.cells[2]), m=pml.m, kappa_max=pml.kappa_max,
                            alpha_max=pml.alpha_max, eps_ref=pml.eps_ref, eps_ref_high=pml.eps_ref_high)
         self.k_launch, self.k_ref = int(k_launch), int(k_ref)
@@ -95,7 +109,8 @@ class LayeredPlaneWave:
         self.ehat = np.asarray(ehat, dtype=float)
         # corrections: component kind_c in `region` += coef * F_g(q), F from the column at q's z index
         self.slabs = []
-        for kind, c, region, g, coef, q in tfsf_slabs(self.shape, lo, hi, dt, self.spacing, mirror=mirror):
+        for kind, c, region, g, coef, q in tfsf_slabs(self.shape, lo, hi, dt, self.spacing, mirror=mirror,
+                                                      widths=None if grid is None else grid.widths()):
             if g == 2:  # E_z and H_z of the background vanish at normal incidence
                 continue
             zq = np.floor(q[..., 2] + 1e-9).astype(np.int64)
@@ -136,7 +151,8 @@ class LayeredPlaneWave:
             inv, groups = mat
             return Engine(eng.device, shape=self.col_shape, dx=self.spacing, dt=self.dt, single=eng.single,
                           inv_eps=inv, groups=groups, pml=self.pml, sources=[], monitors=[], dft_stride=1,
-                          periodic=(True, True, False))
+                          periodic=(True, True, False),
+                          widths=None if self.z_widths is None else (None, None, self.z_widths))
 
         self.col, self.ref = column(self.col_mat), column(self.ref_mat)
         del self.col_mat, self.ref_mat

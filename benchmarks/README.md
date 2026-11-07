@@ -105,7 +105,9 @@ Useful options of `run.py`:
   5 nm); DDA `max_iter` 3000; CPU runs only up to 1000 dipoles and 3e8 FDTD cell-steps (they serve
   the CPU/GPU comparison); GPU 2e6 dipoles and 5e11 cell-steps; `--max-run-s 90`. Run it with
   `bash benchmarks/run_full_paper.sh [out_dir]`, which restarts `run.py --resume` after a crash.
-  Kept run: `results/20261101-full-paper/`.
+  Kept run: `results/20261101-full-paper/` (9.7 h, 2575 runs; `paper_numbers.json` holds every number
+  quoted in the report, from `python benchmarks/paper_numbers.py <dir>`; PNG figures are not committed,
+  regenerate them with `plots.py`).
 * **full** — 145 problems: dielectric spheres (x = 0.5–10, m = 1.2–3.5, lossless and lossy, vacuum
   and water), Au/Ag spheres (r = 10–100 nm, vacuum and water, 41 wavelengths), a dense Drude
   staircase study, 8 core–shell particles, Au/Ag spheroids (aspect ratio 1–5), rods (2–5) and
