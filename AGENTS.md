@@ -4,7 +4,7 @@ Guidance for AI agents (and humans) using or developing lightsmith.
 
 ## Using the library
 
-1. Build a problem of one of the kinds in `lightsmith/problems.py` (scattering, layer_stack, periodic, mode, device, bands, circuit, optimization); `lightsmith schema` prints the JSON Schema of all of them. Units are **nm**; wavelengths are **vacuum** wavelengths.
+1. Build a problem of one of the kinds in `lightsmith/problems.py` (scattering, emission, layer_stack, periodic, mode, device, bands, circuit, optimization); `lightsmith schema` prints the JSON Schema of all of them. Units are **nm**; wavelengths are **vacuum** wavelengths.
 2. Call `estimate` before `solve` for grid-based solvers (DDA, FDTD, FDFD, RCWA, PWE): it reports problem size, precision and memory without solving.
 3. `solve(problem, method="auto")` picks the preferred applicable method for the problem kind (see `AUTO_ORDER` in `api.py`). Errors explain why a backend was skipped and what to change.
 4. `compare(problem, methods=[...])` cross-checks methods; Mie is the reference for single spheres, otherwise the first method listed (or, with no list, the one `auto` would pick).

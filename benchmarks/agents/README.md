@@ -23,11 +23,12 @@ The grader also inspects the tool calls themselves: which problem was actually s
 
 ## Task set
 
-43 tasks cover every problem kind:
+44 tasks cover every problem kind:
 
 | Kind | Tasks |
 |---|---:|
 | scattering | 12 |
+| emission | 1 |
 | layer_stack | 8 |
 | mode | 7 |
 | circuit | 5 |
@@ -36,11 +37,12 @@ The grader also inspects the tool calls themselves: which problem was actually s
 | device | 2 |
 | optimization | 1 |
 
-By category: 23 standard, 15 trap, 3 pushback and 2 warning tasks.
+By category: 23 standard, 16 trap, 3 pushback and 2 warning tasks.
 
 - **Standard**: a well-posed question. Examples: the plasmon peak of a gold sphere in water, an AR coating, a Bragg mirror, grating efficiencies, Si/SiN waveguide modes, a 2D MMI, the TM gap of a photonic crystal, an MZI or ring FSR, and a small topology optimisation.
 - **Trap**: the question is answerable, but the obvious setup is wrong. The traps are:
   - diameter vs radius ("80 nm gold nanoparticles")
+  - an emitter's distance given from the particle's surface, not its centre
   - wavelength given *in the medium*
   - photon energy (eV), wavenumber (cm⁻¹), frequency (THz) or µm units
   - n = 2.0 − 0.3j in the e^{+jωt} convention, where loss must become Im n = +0.3
@@ -194,9 +196,9 @@ Output, including thinking, is about 5–15k tokens at $20/MTok, so $0.10–0.30
 | Run | Estimated cost |
 |---|---|
 | One task | about $0.25–0.50 |
-| All 43 tasks, effort `high` | about **$10–25** |
-| All 43 tasks, effort `medium` | roughly half |
-| All 43 tasks, `claude-sonnet-5-5` | roughly half |
+| All 44 tasks, effort `high` | about **$10–25** |
+| All 44 tasks, effort `medium` | roughly half |
+| All 44 tasks, `claude-sonnet-5-5` | roughly half |
 
 `--max-cost-per-task` caps runaway tasks at $5 each by default.
 
@@ -217,7 +219,7 @@ Two environment variables change that:
 The tests check:
 - The task files match `taskdefs.py`.
 - The graders work on hand-made transcripts. These cover old and new argument names, job-wrapped results, numbers given as strings, pushback and mentions.
-- The oracle passes all 43 tasks over stdio MCP, with no failed tool call.
+- The oracle passes all 44 tasks over stdio MCP, with no failed tool call.
 - The Claude adapter's loop works against a scripted stand-in for the API, with no key and no cost. This covers tools, thinking blocks passed back, cache and effort settings, and cost accounting.
 - Deliberately wrong behaviour fails:
   - numbers off by 25%

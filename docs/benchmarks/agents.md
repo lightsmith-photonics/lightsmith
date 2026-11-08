@@ -13,11 +13,12 @@ agent pushed back on requests that cannot be answered as asked.
 
 ## Tasks
 
-43 tasks cover every problem kind:
+44 tasks cover every problem kind:
 
 | Kind | Tasks |
 |---|---:|
 | scattering | 12 |
+| emission | 1 |
 | layer_stack | 8 |
 | mode | 7 |
 | circuit | 5 |
@@ -31,8 +32,8 @@ They fall into four categories:
 - **Standard** (23): a well-posed question, such as the plasmon peak of a gold sphere in water, an
   antireflection coating, a Bragg mirror, grating efficiencies, waveguide modes, a 2D MMI, the TM gap of a
   photonic crystal, the FSR of an MZI or a ring, or a small topology optimisation.
-- **Trap** (15): answerable, but the obvious setup is wrong. Examples: a diameter given where the schema
-  wants a radius; a wavelength given in the medium; energies, wavenumbers, frequencies or µm instead of
+- **Trap** (16): answerable, but the obvious setup is wrong. Examples: a diameter given where the schema
+  wants a radius; an emitter's distance given from a particle's surface; a wavelength given in the medium; energies, wavenumbers, frequencies or µm instead of
   nm; a complex index in the e^{+jωt} convention; light incident from the substrate; a 1 mm slide that must
   be an incoherent layer; group index versus effective index; normalised frequency a/λ; a material
   dataset that does not cover the wavelength; cm versus nm in a link budget.
@@ -114,7 +115,7 @@ uv run --no-sync pytest benchmarks/agents/tests
 ```
 
 The tests check that the task files match `taskdefs.py`, that the graders work on hand-made transcripts,
-that the oracle passes all 43 tasks over stdio MCP with no failed tool call, and that the Claude adapter's
+that the oracle passes all 44 tasks over stdio MCP with no failed tool call, and that the Claude adapter's
 loop works against a scripted stand-in for the API (no key, no cost). They also check that deliberately
 wrong behaviour fails: numbers off by 25 %, skipped estimates, dropped concerns, no answer, the right
 numbers without a simulation, every naive problem, and answers to the unphysical requests.

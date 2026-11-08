@@ -141,6 +141,8 @@ def extract(spec: dict[str, Any], res: dict[str, Any]) -> float:
             vals = res[q.replace("q_", "c_") + "_nm2"] if q.startswith("q_") else res[q]
             v = _at_wavelength(res["wavelengths_nm"], vals, spec["wavelength_nm"])
             return v / (math.pi * res["equivalent_radius_nm"] ** 2) if q.startswith("q_") else v
+        if k == "emission":  # purcell | radiative | efficiency at one wavelength
+            return _at_wavelength(res["wavelengths_nm"], res[spec["field"]], spec["wavelength_nm"])
         if k == "peak_wavelength":
             return _peak(res["wavelengths_nm"], res[spec.get("quantity", "c_ext_nm2")], spec.get("mode", "max"))
         if k == "spectrum":
@@ -233,6 +235,6 @@ def result_kind(res: Any) -> str | None:
     return None
 
 
-RESULT_KIND = {"scattering": "cross_sections", "layer_stack": "spectrum", "periodic": "spectrum",
+RESULT_KIND = {"scattering": "cross_sections", "emission": "emission", "layer_stack": "spectrum", "periodic": "spectrum",
                "mode": "modes", "device": "sparameters", "bands": "bands", "circuit": "sparameters",
                "optimization": "optimization"}

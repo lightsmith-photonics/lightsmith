@@ -41,8 +41,9 @@ FILES = {t["id"]: t for t in harness.load_tasks()}
 def test_task_files_match_definitions():
     assert [t["id"] for t in TASKS] == list(FILES), "run generate.py after editing taskdefs.py"
     assert 30 <= len(TASKS) <= 50
-    kinds = {t["kind"] for t in TASKS}
-    assert kinds == {"scattering", "layer_stack", "periodic", "mode", "device", "bands", "circuit", "optimization"}
+    from lightsmith.problems import PROBLEM_KINDS
+
+    assert {t["kind"] for t in TASKS} == set(PROBLEM_KINDS)  # every problem kind has a task
     assert {t["category"] for t in TASKS} == {"standard", "trap", "pushback", "warning"}
     for t in TASKS:
         f = FILES[t["id"]]

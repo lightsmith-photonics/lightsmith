@@ -93,6 +93,15 @@
   ]
  },
  {
+  "id": "em-dye-near-gold-sphere",
+  "kind": "emission",
+  "category": "trap",
+  "traps": [
+   "diameter_vs_radius",
+   "distance_from_surface"
+  ]
+ },
+ {
   "id": "ls-quarter-wave-ar",
   "kind": "layer_stack",
   "category": "standard",

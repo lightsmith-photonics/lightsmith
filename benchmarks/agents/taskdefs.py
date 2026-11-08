@@ -252,6 +252,31 @@ task(id="sca-ps-bead-wavenumber", kind="scattering", category="trap", traps=["wa
      checks=[has_wavelength(1e7 / 15800.0, tol=0.5), approx("particles[0].shape.radius_nm", 500.0, abs=2)],
      naive_spec=sca([sphere(1000.0, n(1.59))], [633.0], WATER))
 
+# --- emission ------------------------------------------------------------------------
+
+
+def emitter(particles, position, orientation, wavelengths, medium=1.0):
+    return {"kind": "emission", "particles": particles, "medium_index": medium,
+            "dipole": {"position_nm": list(position), "orientation": list(orientation)}, "wavelengths": wavelengths}
+
+
+# Mie (exact): Purcell 14.77, efficiency 0.497. A diameter taken as the radius (sphere r = 60 nm, emitter 70 nm
+# from its centre) gives 25.7 and 0.706; a tangential dipole at the right place gives 2.49 and 0.058.
+task(id="em-dye-near-gold-sphere", kind="emission", category="trap",
+     traps=["diameter_vs_radius", "distance_from_surface"],
+     prompt="A dye molecule sits 10 nm from the surface of a 60 nm gold nanoparticle (60 nm is the diameter) in "
+            "water, with its transition dipole pointing radially, away from the particle. It emits at 650 nm. By what "
+            "factor does the particle change the molecule's total decay rate, and what fraction of the power it emits "
+            "is radiated rather than absorbed in the gold? Johnson & Christy data for the gold is fine.",
+     answer_fields=[field("purcell", "dimensionless", "total decay-rate enhancement at 650 nm"),
+                    field("efficiency", "dimensionless", "radiated fraction of the emitted power at 650 nm")],
+     reference_spec=emitter([sphere(30.0, AU)], (0.0, 0.0, 40.0), (0.0, 0.0, 1.0), [650.0], WATER),
+     targets=[val("purcell", {"kind": "emission", "field": "purcell", "wavelength_nm": 650.0}, rel=0.03),
+              val("efficiency", {"kind": "emission", "field": "efficiency", "wavelength_nm": 650.0}, abs=0.02)],
+     checks=[approx("particles[0].shape.radius_nm", 30.0, abs=0.5), approx("medium_index", WATER, abs=0.01),
+             has_wavelength(650.0)],
+     naive_spec=emitter([sphere(60.0, AU)], (0.0, 0.0, 70.0), (0.0, 0.0, 1.0), [650.0], WATER))
+
 # --- layer stacks -------------------------------------------------------------------
 
 D_MGF2 = 550.0 / (4 * 1.38)

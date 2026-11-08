@@ -1,0 +1,164 @@
+{
+ "id": "em-dye-near-gold-sphere",
+ "kind": "emission",
+ "category": "trap",
+ "traps": [
+  "diameter_vs_radius",
+  "distance_from_surface"
+ ],
+ "prompt": "A dye molecule sits 10 nm from the surface of a 60 nm gold nanoparticle (60 nm is the diameter) in water, with its transition dipole pointing radially, away from the particle. It emits at 650 nm. By what factor does the particle change the molecule's total decay rate, and what fraction of the power it emits is radiated rather than absorbed in the gold? Johnson & Christy data for the gold is fine.",
+ "answer_fields": [
+  {
+   "key": "purcell",
+   "unit": "dimensionless",
+   "description": "total decay-rate enhancement at 650 nm"
+  },
+  {
+   "key": "efficiency",
+   "unit": "dimensionless",
+   "description": "radiated fraction of the emitted power at 650 nm"
+  }
+ ],
+ "targets": {
+  "purcell": {
+   "extract": {
+    "kind": "emission",
+    "field": "purcell",
+    "wavelength_nm": 650.0
+   },
+   "tol": {
+    "rel": 0.03
+   }
+  },
+  "efficiency": {
+   "extract": {
+    "kind": "emission",
+    "field": "efficiency",
+    "wavelength_nm": 650.0
+   },
+   "tol": {
+    "abs": 0.02
+   }
+  }
+ },
+ "checks": [
+  {
+   "type": "spec",
+   "path": "particles[0].shape.radius_nm",
+   "approx": 30.0,
+   "abs": 0.5
+  },
+  {
+   "type": "spec",
+   "path": "medium_index",
+   "approx": 1.33,
+   "abs": 0.01
+  },
+  {
+   "type": "spec_wavelength",
+   "wavelength_nm": 650.0,
+   "abs": 0.5
+  }
+ ],
+ "naive_spec": {
+  "kind": "emission",
+  "particles": [
+   {
+    "shape": {
+     "kind": "sphere",
+     "radius_nm": 60.0
+    },
+    "material": {
+     "kind": "library",
+     "name": "Au",
+     "dataset": "Johnson-Christy"
+    },
+    "position_nm": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "medium_index": 1.33,
+  "dipole": {
+   "position_nm": [
+    0.0,
+    0.0,
+    70.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ]
+  },
+  "wavelengths": [
+   650.0
+  ]
+ },
+ "reference_method": "auto",
+ "reference_device": "auto",
+ "oracle": {},
+ "reference_spec": {
+  "kind": "emission",
+  "particles": [
+   {
+    "shape": {
+     "kind": "sphere",
+     "radius_nm": 30.0
+    },
+    "material": {
+     "kind": "library",
+     "name": "Au",
+     "dataset": "Johnson-Christy"
+    },
+    "position_nm": [
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  ],
+  "medium_index": 1.33,
+  "dipole": {
+   "position_nm": [
+    0.0,
+    0.0,
+    40.0
+   ],
+   "orientation": [
+    0.0,
+    0.0,
+    1.0
+   ]
+  },
+  "wavelengths": [
+   650.0
+  ]
+ },
+ "reference": {
+  "values": {
+   "purcell": 14.766197161607158,
+   "efficiency": 0.4971756573078053
+  },
+  "method": "mie",
+  "backend": "lightsmith-mie",
+  "device": null,
+  "runtime_s": 5.97,
+  "warnings": [],
+  "lightsmith_version": "0.2.0"
+ },
+ "oracle_extract": {
+  "purcell": {
+   "kind": "emission",
+   "field": "purcell",
+   "wavelength_nm": 650.0
+  },
+  "efficiency": {
+   "kind": "emission",
+   "field": "efficiency",
+   "wavelength_nm": 650.0
+  }
+ }
+}

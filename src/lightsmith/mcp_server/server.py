@@ -278,8 +278,8 @@ def build_server(config: ServerConfig | None = None) -> MCPServer:
 
     @mcp.tool(title="List problem kinds", annotations=READ_ONLY)
     def list_problem_kinds() -> dict[str, Any]:
-        """Every problem kind this server can solve (scattering, layer_stack, periodic, mode, device, bands,
-        circuit, optimization, plus any added by plugins), with the methods available for each, the
+        """Every problem kind this server can solve (scattering, emission, layer_stack, periodic, mode, device,
+        bands, circuit, optimization, plus any added by plugins), with the methods available for each, the
         auto-selection order and where to find its schema and example. Start here."""
         return {"kinds": [kinds.kind_summary(k) for k in kinds.kinds()], "conventions": kinds.CONVENTIONS}
 
