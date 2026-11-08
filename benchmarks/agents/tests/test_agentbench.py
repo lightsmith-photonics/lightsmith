@@ -115,10 +115,10 @@ def test_value_spec_and_estimate_checks():
     failed = Transcript([_call("solve", {"simulation": SPHERE}, None, ok=False)], _answer(c_abs_nm2=18300.0))
     assert {c.name: c.passed for c in grade(task, failed).checks}["solved_kind"] is False
 
-    est_task = FILES["sca-au-spheroid-dda"]
+    est_task = FILES["sca-au-nanorod-peak"]
     spec = est_task["reference_spec"]
     ok = Transcript([_call("estimate", {"problem": spec}, {}), _call("solve", {"problem": spec}, None)],
-                    _answer(q_ext=est_task["reference"]["values"]["q_ext"]))
+                    _answer(peak_wavelength_nm=est_task["reference"]["values"]["peak_wavelength_nm"]))
     assert grade(est_task, ok).passed
     late = Transcript([ok.calls[1], ok.calls[0]], ok.answer)
     assert {c.name: c.passed for c in grade(est_task, late).checks}["estimate_before_solve"] is False

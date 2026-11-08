@@ -1,26 +1,26 @@
 {
- "id": "sca-au-spheroid-dda",
+ "id": "sca-au-nanorod-peak",
  "kind": "scattering",
  "traps": [
   "estimate_first"
  ],
- "prompt": "I need the extinction efficiency of a small gold nanorod modelled as a prolate spheroid: semi-axes 10 nm x 10 nm x 25 nm, in water, light polarised along the long axis (propagating perpendicular to it), at 650 nm. Q_ext normalised by the volume-equivalent sphere, please.",
+ "reference_method": "bem",
+ "prompt": "I'm modelling a small gold nanorod as a prolate spheroid with semi-axes 10 nm x 10 nm x 25 nm, in water, with light polarised along the long axis (propagating perpendicular to it). At what wavelength does its longitudinal plasmon peak in extinction, somewhere between 550 and 750 nm? Johnson & Christy data for the gold is fine.",
  "answer_fields": [
   {
-   "key": "q_ext",
-   "unit": "dimensionless",
-   "description": "extinction efficiency, normalised by pi r_eq^2"
+   "key": "peak_wavelength_nm",
+   "unit": "nm",
+   "description": "vacuum wavelength of maximum extinction"
   }
  ],
  "targets": {
-  "q_ext": {
+  "peak_wavelength_nm": {
    "extract": {
-    "kind": "cross_section",
-    "quantity": "q_ext",
-    "wavelength_nm": 650.0
+    "kind": "peak_wavelength",
+    "quantity": "c_ext_nm2"
    },
    "tol": {
-    "rel": 0.08
+    "abs": 8.0
    }
   }
  },
@@ -33,6 +33,12 @@
    "path": "particles[0].shape.semi_axis_z_nm",
    "approx": 25.0,
    "abs": 0.5
+  },
+  {
+   "type": "spec",
+   "path": "medium_index",
+   "approx": 1.33,
+   "abs": 0.01
   }
  ],
  "naive_spec": {
@@ -65,12 +71,13 @@
     0
    ]
   },
-  "wavelengths": [
-   650.0
-  ]
+  "wavelengths": {
+   "start_nm": 550.0,
+   "stop_nm": 750.0,
+   "num": 41
+  }
  },
  "category": "standard",
- "reference_method": "auto",
  "reference_device": "auto",
  "oracle": {},
  "reference_spec": {
@@ -103,31 +110,27 @@
     1
    ]
   },
-  "wavelengths": [
-   650.0
-  ],
-  "options": {
-   "dda": {
-    "dipoles_per_diameter": 24
-   }
+  "wavelengths": {
+   "start_nm": 626.0,
+   "stop_nm": 656.0,
+   "num": 16
   }
  },
  "reference": {
   "values": {
-   "q_ext": 11.307750755275642
+   "peak_wavelength_nm": 638.8672646590575
   },
-  "method": "dda",
-  "backend": "lightsmith-dda",
+  "method": "bem",
+  "backend": "lightsmith-bem",
   "device": "cuda:0",
-  "runtime_s": 5.686,
+  "runtime_s": 72.875,
   "warnings": [],
-  "lightsmith_version": "0.1.0"
+  "lightsmith_version": "0.2.0"
  },
  "oracle_extract": {
-  "q_ext": {
-   "kind": "cross_section",
-   "quantity": "q_ext",
-   "wavelength_nm": 650.0
+  "peak_wavelength_nm": {
+   "kind": "peak_wavelength",
+   "quantity": "c_ext_nm2"
   }
  }
 }

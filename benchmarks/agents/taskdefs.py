@@ -180,18 +180,27 @@ task(id="sca-coreshell-nir", kind="scattering",
                                 "shells": [{"thickness_nm": 10.0, "material": AU}]},
                       "material": n(1.45)}], [800.0], WATER))
 
-task(id="sca-au-spheroid-dda", kind="scattering", traps=["estimate_first"],
-     prompt="I need the extinction efficiency of a small gold nanorod modelled as a prolate spheroid: semi-axes "
-            "10 nm x 10 nm x 25 nm, in water, light polarised along the long axis (propagating perpendicular to it), "
-            "at 650 nm. Q_ext normalised by the volume-equivalent sphere, please.",
-     answer_fields=[field("q_ext", "dimensionless", "extinction efficiency, normalised by pi r_eq^2")],
+# The longitudinal plasmon of this rod is sharp (FWHM ~25 nm, peak ~640 nm). Q_ext at a fixed wavelength on its flank
+# is ill-conditioned: a few nm of peak shift moves it by 20-40 %, and neither BEM (3 -> 1 nm mesh) nor DDA (24 -> 80
+# dipoles per diameter) converged there to 8 %. The peak wavelength is robust: BEM 638.9 / 639.5 nm at 2 / 1.5 nm
+# meshes, DDA 645.5 / 643.9 / 643.2 nm at 80 / 120 / 160 dipoles per diameter (1 nm sampling, parabolic peak; the
+# quasistatic Gans model gives 628 nm). The naive set-up (polarisation across the rod: only the transverse mode,
+# ~520 nm) lands far outside the tolerance.
+task(id="sca-au-nanorod-peak", kind="scattering", traps=["estimate_first"],
+     reference_method="bem",
+     prompt="I'm modelling a small gold nanorod as a prolate spheroid with semi-axes 10 nm x 10 nm x 25 nm, in water, "
+            "with light polarised along the long axis (propagating perpendicular to it). At what wavelength does its "
+            "longitudinal plasmon peak in extinction, somewhere between 550 and 750 nm? Johnson & Christy data for the "
+            "gold is fine.",
+     answer_fields=[field("peak_wavelength_nm", "nm", "vacuum wavelength of maximum extinction")],
      reference_spec=sca([{"shape": {"kind": "spheroid", "semi_axis_xy_nm": 10.0, "semi_axis_z_nm": 25.0},
-                          "material": AU}], [650.0], WATER, direction=(1, 0, 0), polarization=(0, 0, 1)),
-     reference_options={"dda": {"dipoles_per_diameter": 24}},
-     targets=[val("q_ext", {"kind": "cross_section", "quantity": "q_ext", "wavelength_nm": 650.0}, rel=0.08)],
-     checks=[ESTIMATE, approx("particles[0].shape.semi_axis_z_nm", 25.0, abs=0.5)],
+                          "material": AU}], wl_range(626.0, 656.0, 16), WATER, direction=(1, 0, 0),
+                        polarization=(0, 0, 1)),
+     targets=[val("peak_wavelength_nm", {"kind": "peak_wavelength", "quantity": "c_ext_nm2"}, abs=8.0)],
+     checks=[ESTIMATE, approx("particles[0].shape.semi_axis_z_nm", 25.0, abs=0.5),
+             approx("medium_index", WATER, abs=0.01)],
      naive_spec=sca([{"shape": {"kind": "spheroid", "semi_axis_xy_nm": 10.0, "semi_axis_z_nm": 25.0},
-                      "material": AU}], [650.0], WATER))
+                      "material": AU}], wl_range(550.0, 750.0, 41), WATER))
 
 task(id="sca-quasistatic-too-big", kind="scattering", category="warning", traps=["check_warnings"],
      reference_method="quasistatic",
