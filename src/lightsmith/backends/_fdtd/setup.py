@@ -8,6 +8,8 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from ...progress import report
+
 from .engine import DispersiveGroup, OffDiagonal, TensorMesh, flat_index, mirror_fold, pole_coefficients
 from .media import Medium
 
@@ -754,6 +756,8 @@ def run_until_decayed(eng, opts, *, max_steps: int, min_steps: int, window: int,
                     "or give lossy/dispersive materials as Drude/DrudeLorentz")
             win.append(e)
             peak, peak_ref = max(peak, e), max(peak_ref, e_ref)
+            report("fdtd_steps", 0.95 * steps / max_steps if opts.run_time_fs else None, steps=steps,
+                   max_steps=max_steps)
             if steps <= ref_steps:
                 grown_ref = peak
             floor = max(peak, 1e-6 * peak_ref)

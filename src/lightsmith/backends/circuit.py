@@ -37,6 +37,7 @@ class CircuitOptions(BaseModel):
 class NativeCircuit(Backend):
     name = "lightsmith-circuit"
     method = "circuit"
+    options_model = CircuitOptions
     license = "MIT"
     citation = ("S-matrix interconnection S_ee + S_ei C (I - S_ii C)^-1 S_ie; pairwise reduction as scikit-rf's "
                 "innerconnect (Arsenovic et al., IEEE Microwave Magazine 23, 98 (2022))")

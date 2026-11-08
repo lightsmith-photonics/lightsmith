@@ -29,6 +29,7 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..device import Device
+from ..progress import report
 from ..results import FarFieldData, NearFieldData, Result
 from ..spec import Simulation
 from .base import Backend, register, unsupported_outputs
@@ -366,6 +367,7 @@ def _extrapolate(npds: list[int], values: np.ndarray) -> np.ndarray:
 class NativeDDA(Backend):
     name = "lightsmith-dda"
     method = "dda"
+    options_model = DDAOptions
     license = "MIT"
     citation = "Draine & Flatau, JOSA A 11, 1491 (1994); Goodman, Draine & Flatau, Opt. Lett. 16, 1198 (1991)"
     gpu = True
@@ -406,6 +408,7 @@ class NativeDDA(Backend):
         incidences = _orientation_set(opts.orientations) if sim.orientation_average else [(khat, ehat)]
         npds = opts.extrapolate or [opts.dipoles_per_diameter or _default_npd(sim)]
 
+        total, done = len(npds) * len(wl) * len(incidences), 0
         runs, solvers = [], []
         for npd in npds:
             lat = _lattice(sim, npd, opts.discretization)
@@ -413,7 +416,16 @@ class NativeDDA(Backend):
                 raise ValueError(f"{lat.n_dip} dipoles exceeds max_dipoles={opts.max_dipoles}; "
                                  "lower dipoles_per_diameter or raise max_dipoles")
             solver = _Solver(sim, lat, opts, device)
-            cs = np.array([[solver.cross_sections(lam, kh, eh) for kh, eh in incidences] for lam in wl])
+            rows = []
+            for lam in wl:
+                row = []
+                for kh, eh in incidences:
+                    row.append(solver.cross_sections(lam, kh, eh))
+                    done += 1
+                    report("dda_solve", 0.95 * done / total, wavelength_nm=float(lam), dipoles=lat.n_dip,
+                           dipoles_per_diameter=npd)
+                rows.append(row)
+            cs = np.array(rows)
             runs.append(cs.mean(axis=1))  # (n_wl, 2): ext, abs averaged over incidences
             solvers.append(solver)
 

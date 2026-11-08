@@ -458,6 +458,8 @@ NOTHING = {
 def plan_for(backend, problem) -> dict | None:
     """The layout of `problem` for `backend` (layout_kind, summary, payload, warnings, error), or None."""
     kind, method = problem.kind, backend.method
+    if not backend.__module__.startswith("lightsmith."):  # third-party: override Backend.discretization to answer
+        return None
     if method == "fdtd":
         if kind == "device":
             return fdtd_device(problem, backend)

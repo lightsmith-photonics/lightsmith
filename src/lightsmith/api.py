@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from .backends import Backend, all_backends, get_backend
 from .device import resolve_device
 from .problems import parse_problem
+from .progress import ProgressCallback, report, reporting, scaled
 from .results import Result, relative_difference
 
 # Preference order per problem kind when method="auto": exact/cheap first, then more general.
@@ -115,12 +116,20 @@ def _versions(dev) -> dict[str, str]:
     return out
 
 
-def solve(problem: BaseModel | dict | str, method: str = "auto", device: str = "auto") -> BaseModel:
-    """Solve `problem` with one method (or backend name). `device`: auto | cpu | gpu | cuda:N | torch-cpu."""
+def solve(problem: BaseModel | dict | str, method: str = "auto", device: str = "auto",
+          progress: ProgressCallback | None = None) -> BaseModel:
+    """Solve `problem` with one method (or backend name). `device`: auto | cpu | gpu | cuda:N | torch-cpu.
+
+    `progress`, if given, is called with ``{"stage", "fraction", ...}`` dicts while solving
+    (see :mod:`lightsmith.progress`); it may raise ``progress.Cancelled`` to stop early.
+    """
     problem = parse_problem(problem)
     b, skipped = _resolve_with_skips(problem, method)
     dev = resolve_device(device if b.gpu else "cpu")
-    res = b.solve(problem, dev)
+    with reporting(progress):
+        report("solve_started", 0.0, backend=b.name, method=b.method, device=dev.name)
+        res = b.solve(problem, dev)
+        report("solve_done", 1.0, backend=b.name)
     res.provenance.setdefault("versions", _versions(dev))
     if skipped:
         res.provenance["auto_skipped"] = skipped
@@ -147,7 +156,7 @@ def discretization(problem: BaseModel | dict | str, method: str = "auto") -> dic
 
 
 def compare(problem: BaseModel | dict | str, methods: list[str] | None = None, device: str = "auto",
-            reference: str | None = None) -> dict[str, Any]:
+            reference: str | None = None, progress: ProgressCallback | None = None) -> dict[str, Any]:
     """Solve with several methods and report differences against a reference.
 
     By default runs every available backend that supports `problem`, in ``AUTO_ORDER``. The
@@ -167,7 +176,9 @@ def compare(problem: BaseModel | dict | str, methods: list[str] | None = None, d
         methods = [b.name for b in found]
     if not methods:
         raise ValueError(f"no available backend supports this {kind!r} problem")
-    results = {m: solve(problem, m, device) for m in methods}
+    n = len(methods)
+    results = {m: solve(problem, m, device, progress=scaled(progress, i / n, (i + 1) / n, compare_method=m))
+               for i, m in enumerate(methods)}
     if reference is None:
         reference = next((m for m, r in results.items() if getattr(r, "method", None) == "mie"), methods[0])
     ref = results[reference]

@@ -212,3 +212,37 @@ def test_cli_usage_errors_are_json_with_exit_status_1(capsys):
         assert e.value.code == 1
         err = json.loads(capsys.readouterr().err)
         assert err["error"] == "UsageError" and "--help" in err["message"]
+
+
+def test_backends_declare_their_options_and_the_schema_is_usable():
+    from pydantic import BaseModel
+
+    no_options = {"miepython", "lightsmith-inverse"}  # no options of their own
+    for b in ls.all_backends():
+        if b.name in no_options or not b.__module__.startswith("lightsmith."):
+            continue
+        assert isinstance(b.options_model, type) and issubclass(b.options_model, BaseModel), b.name
+        schema = b.options_model.model_json_schema()
+        assert schema["type"] == "object" and schema["properties"], b.name
+        b.options_model()  # every option has a default
+
+
+def test_the_planner_leaves_third_party_backends_to_answer_for_themselves():
+    from lightsmith.backends import Backend
+    from lightsmith.discretize import plan_for
+
+    class Plugin(Backend):
+        name, method, license = "x-dda", "dda", "MIT"
+        __module__ = "x_plugin.backend"
+
+        @classmethod
+        def supports(cls, sim):
+            return True, ""
+
+        @classmethod
+        def solve(cls, sim, device):
+            raise NotImplementedError
+
+    sim = ls.Simulation(particles=[ls.Particle(shape=ls.Sphere(radius_nm=20),
+                                               material=ls.ConstantIndex(n_real=1.5))], wavelengths=[600.0])
+    assert plan_for(Plugin, sim) is None  # the planners read the internals of built-in backends

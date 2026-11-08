@@ -8,6 +8,7 @@ from typing import Any
 
 import numpy as np
 
+from ...progress import report
 from ...problems import DeviceProblem, wavelength_array
 from . import linsolve
 from .grid import Grid3D, make_grid, node_fractions, permittivity, stretch_factors
@@ -160,7 +161,8 @@ class FDFD3D:
         S = []
         which = list(range(len(self.outputs)))
         dtype = getattr(xp, "complex64") if self.opts.precision == "single" else None
-        for lam in self.wavelengths:
+        for i, lam in enumerate(self.wavelengths):
+            report("fdfd_solve", 0.95 * i / len(self.wavelengths), wavelength_nm=float(lam))
             lam = float(lam)
             eps = self.base_eps(lam)
             modes = self.modes(eps, lam)

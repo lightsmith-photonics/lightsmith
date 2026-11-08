@@ -18,10 +18,17 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
 - The Mie refusal suggested `tmatrix` for non-spherical particles, which refuses them too; it now names `bem` and `dda`, as do
   the MCP prompts.
 - CLI usage errors are JSON on stderr with exit status 1, like every other failure.
+- `discretization` no longer assumes a third-party backend has a built-in backend's internals; it reports no plan unless the
+  plugin overrides `Backend.discretization`.
 - Backends' `differentiable` flag now means "has a torch-differentiable entry point", and native Mie and PWE set it.
 
 ### Added
 
+- **Progress callbacks and cancellation**: `solve(..., progress=callback)` and `compare(..., progress=callback)` call back with
+  `{"stage", "fraction", ...}` while solving: DDA per wavelength and incidence, BEM and FDFD per wavelength, FDTD per chunk of
+  steps, inverse design per iteration. A callback may raise `lightsmith.progress.Cancelled` to stop.
+- Backends declare `options_model`, so `list_backends` on the MCP server and `/v1/backends` on Cloud carry each backend's
+  options as a JSON Schema.
 - Every result records `provenance.versions` (library, NumPy, PyTorch when used). Under `method="auto"`, results and estimates
   record `auto_skipped`: why the earlier backends were passed over. DDA results keep their BiCGStab residuals.
 - `tests/test_optics.py` validates `lightsmith.optics` against closed forms; tests for the DDA's `weighted` and

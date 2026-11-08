@@ -126,6 +126,7 @@ def polarizability(sim: Simulation, wl: np.ndarray, corrections: str = "none") -
 class Quasistatic(Backend):
     name = "lightsmith-quasistatic"
     method = "quasistatic"
+    options_model = QuasistaticOptions
     license = "MIT"
     citation = ("Bohren & Huffman, Absorption and Scattering of Light by Small Particles (1983), ch. 5; "
                 "Meier & Wokaun, Opt. Lett. 8, 581 (1983)")

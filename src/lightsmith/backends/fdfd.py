@@ -59,6 +59,7 @@ class DifferentiableSolution:
 class FDFD(Backend):
     name = "lightsmith-fdfd"
     method = "fdfd"
+    options_model = FDFDOptions
     license = "MIT"
     citation = "Shin & Fan, J. Comput. Phys. 231, 3406 (2012); Hughes et al., ACS Photonics 6, 3010 (2019)"
     gpu = True

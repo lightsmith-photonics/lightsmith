@@ -85,6 +85,7 @@ def _resolved(problem: DeviceProblem) -> DeviceProblem:
 class NativeEME(Backend):
     name = "lightsmith-eme"
     method = "eme"
+    options_model = EMEOptions
     license = "MIT"
     citation = "Bienstman & Baets, Opt. Quantum Electron. 33, 327 (2001); Gallagher & Felici, Proc. SPIE 4987 (2003)"
     problem_kinds = ("device",)

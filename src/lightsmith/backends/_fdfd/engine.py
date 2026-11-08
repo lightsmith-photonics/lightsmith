@@ -9,6 +9,7 @@ from typing import Any, Literal
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field
 
+from ...progress import report
 from ...problems import DeviceProblem, wavelength_array
 from . import linsolve
 from .grid import Grid2D, make_grid, permittivity, stretch_factors
@@ -163,7 +164,8 @@ class FDFD2D:
         info: dict[str, Any] = {}
         S = []
         use_torch = device is not None and getattr(device, "framework", "numpy") == "torch"
-        for lam in self.wavelengths:
+        for i, lam in enumerate(self.wavelengths):
+            report("fdfd_solve", 0.95 * i / len(self.wavelengths), wavelength_nm=float(lam))
             if not use_torch and self.opts.solver != "block":
                 S.append(self.solve_fields(float(lam))[1])
                 info["factor"] = "scipy-superlu"

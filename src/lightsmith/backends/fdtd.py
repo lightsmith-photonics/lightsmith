@@ -55,6 +55,7 @@ __all__ = ["FDTDOptions", "NativeFDTD"]
 class NativeFDTD(Backend):
     name = "lightsmith-fdtd"
     method = "fdtd"
+    options_model = FDTDOptions
     license = "MIT"
     citation = ("Taflove & Hagness, Computational Electrodynamics (2005); Roden & Gedney, MOTL 27, 334 (2000); "
                 "Oskooi et al., CPC 181, 687 (2010)")

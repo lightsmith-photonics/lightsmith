@@ -375,6 +375,7 @@ def _amp(a) -> list:
 class NativeRCWA(Backend):
     name = "lightsmith-rcwa"
     method = "rcwa"
+    options_model = RCWAOptions
     license = "MIT"
     citation = ("Moharam et al., JOSA A 12, 1068 (1995); Li, JOSA A 13, 1870 (1996) and JOSA A 14, 2758 (1997); "
                 "Schuster et al., JOSA A 24, 2880 (2007); Rumpf, PIER B 35, 241 (2011)")

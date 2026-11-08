@@ -380,6 +380,7 @@ class _Solver:
 class TreamsTMatrix(Backend):
     name = "treams"
     method = "tmatrix"
+    options_model = TreamsOptions
     license = "MIT"
     citation = "Beutel, Fernandez-Corbaton & Rockstuhl, Comput. Phys. Commun. 297, 109076 (2024); treams, " \
                "https://github.com/tfp-photonics/treams"

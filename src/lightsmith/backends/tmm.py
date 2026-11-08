@@ -184,6 +184,7 @@ def _to_list(a) -> list:
 class NativeTMM(Backend):
     name = "lightsmith-tmm"
     method = "tmm"
+    options_model = TMMOptions
     license = "MIT"
     citation = ("Born & Wolf, Principles of Optics, Sec. 1.6; Katsidis & Siapkas, Appl. Opt. 41, 3978 (2002); "
                 "Byrnes, arXiv:1603.02720")

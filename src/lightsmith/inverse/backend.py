@@ -88,6 +88,13 @@ class InverseDesign(Backend):
 
     @classmethod
     def solve(cls, problem, device: Device):
+        from ..progress import report
         from .topopt import optimize
 
-        return optimize(problem, device=device)
+        n = max(1, problem.optimizer.max_iter)
+
+        def callback(state) -> None:  # forward iterations to solve(..., progress=...)
+            report("iteration", 0.95 * min(1.0, (state.iteration + 1) / n), iteration=state.iteration, max_iter=n,
+                   objective=state.objective, binarization=state.binarization, beta=state.beta)
+
+        return optimize(problem, device=device, callback=callback)

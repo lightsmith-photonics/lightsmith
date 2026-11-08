@@ -94,6 +94,7 @@ class BPMOptions(BaseModel):
 class NativeBPM(Backend):
     name = "lightsmith-bpm"
     method = "bpm"
+    options_model = BPMOptions
     license = "MIT"
     citation = ("Hadley, Opt. Lett. 17, 1426 (1992) (wide-angle Padé BPM); Huang & Xu, IEEE J. Quantum "
                 "Electron. 29, 2639 (1993) (vectorial BPM)")

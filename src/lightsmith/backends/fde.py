@@ -125,6 +125,7 @@ def _field(mode) -> ModeField:
 class NativeFDE(Backend):
     name = "lightsmith-fde"
     method = "fde"
+    options_model = FDEOptions
     license = "MIT"
     citation = ("Zhu & Brown, Opt. Express 10, 853 (2002); Fallahkhair, Li & Murphy, J. Lightwave Technol. 26, "
                 "1423 (2008)")

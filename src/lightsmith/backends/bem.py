@@ -34,6 +34,7 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..device import Device
+from ..progress import report
 from ..results import FarFieldData, NearFieldData, Result
 from ..spec import Simulation
 from ._bem import fields
@@ -82,6 +83,7 @@ def _orientation_set(n: int) -> list[tuple[np.ndarray, np.ndarray]]:
 class NativeBEM(Backend):
     name = "lightsmith-bem"
     method = "bem"
+    options_model = BEMOptions
     license = "MIT"
     citation = ("Kern & Martin, JOSA A 26, 732 (2009); Rao, Wilton & Glisson, IEEE TAP 30, 409 (1982); "
                 "Graglia, IEEE TAP 41, 1448 (1993)")
@@ -201,6 +203,7 @@ class NativeBEM(Backend):
         iterations, residuals, warnings = [], [], cls._gap_warnings(sim, mesh, h)
         t_asm = t_sol = 0.0
         for i, lam in enumerate(all_wl):
+            report("bem_solve", 0.95 * i / len(all_wl), wavelength_nm=float(lam))
             ta = time.perf_counter()
             Z = assemble(dg, lam, n0, budget)
             b = incident_rhs(geo, lam, n0, incidences if i < len(wl) else [(khat, ehat)])

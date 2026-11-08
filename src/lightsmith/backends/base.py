@@ -25,6 +25,7 @@ class Backend(ABC):
     gpu: ClassVar[bool] = False  # can run on a GPU device
     differentiable: ClassVar[bool] = False  # has a torch-differentiable entry point (see each backend's docs)
     problem_kinds: ClassVar[tuple[str, ...]] = ("scattering",)  # see lightsmith.problems.PROBLEM_KINDS
+    options_model: ClassVar[type | None] = None  # the pydantic model of problem.options[method], when it has one
 
     @classmethod
     def available(cls) -> tuple[bool, str]:

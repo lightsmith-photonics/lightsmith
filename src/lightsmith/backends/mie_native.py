@@ -467,6 +467,7 @@ def _radii(p) -> list[float]:
 class NativeMie(Backend):
     name = "lightsmith-mie"
     method = "mie"
+    options_model = MieOptions
     license = "MIT"
     citation = ("Bohren & Huffman (1983); Yang, Appl. Opt. 42, 1710 (2003); "
                 "Pena & Pal, Comput. Phys. Commun. 180, 2348 (2009)")

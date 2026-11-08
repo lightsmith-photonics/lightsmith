@@ -153,6 +153,7 @@ def _pols(problem: BandProblem) -> dict[str, str]:
 class NativePWE(Backend):
     name = "lightsmith-pwe"
     method = "pwe"
+    options_model = PWEOptions
     license = "MIT"
     citation = ("Ho, Chan & Soukoulis, PRL 65, 3152 (1990); Johnson & Joannopoulos, Opt. Express 8, 173 (2001); "
                 "Farjadpour et al., Opt. Lett. 31, 2972 (2006)")
