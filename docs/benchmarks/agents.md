@@ -42,7 +42,7 @@ They fall into four categories:
   lossless 1×2 splitter with 70 % in each arm.
 - **Warning** (2): the tools warn about the answer and the agent must pass the warning on.
 
-11 tasks use grid-based solvers (DDA, RCWA, EME, PWE, inverse design) and are also graded on whether the
+11 tasks use grid-based solvers (BEM, RCWA, EME, PWE, inverse design) and are also graded on whether the
 agent estimated before solving.
 
 Each task file in `benchmarks/agents/tasks/` holds the prompt, the answer fields with units, a hidden

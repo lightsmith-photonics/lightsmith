@@ -240,3 +240,32 @@ def test_gds_layout_device(tmp_path):
     s1 = ls.solve(explicit, method="fdfd", device="cpu").s()
     s2 = ls.solve(layout, method="fdfd", device="cpu").s()
     np.testing.assert_allclose(s2, s1, atol=1e-12)
+
+
+def test_mcp_device_example_runs_on_fdfd():
+    """A 2D port with z size 0, as the Port schema documents and the MCP server's example uses."""
+    from lightsmith.mcp_server.kinds import EXAMPLES
+
+    res = ls.solve(EXAMPLES["device"], "fdfd", "cpu")
+    assert abs(abs(res.s()[0, 1, 0]) - 1) < 1e-2  # a straight guide
+
+
+def test_fdfd_refuses_a_port_normal_to_z():
+    p = ls.problems.parse_problem(
+        {"kind": "device", "dimension": 2, "background": {"kind": "constant_index", "n_real": 1.44},
+         "domain_size_nm": [2000, 2000, 0], "wavelengths": [1550],
+         "ports": [{"name": "o1", "center_nm": [0, 0, 0], "size_nm": [500, 500, 0], "direction": "+"}]})
+    ok, why = ls.get_backend("fdfd").supports(p)
+    assert not ok and "normal to z" in why
+
+
+def test_fdfd_estimate_reports_memory_and_the_budget_refuses_it():
+    from lightsmith.mcp_server.budget import check
+    from lightsmith.mcp_server.config import ServerConfig
+    from lightsmith.mcp_server.kinds import EXAMPLES
+
+    prob = ls.problems.parse_problem(EXAMPLES["device"])
+    est = ls.estimate(prob, "fdfd", "cpu")
+    assert est["memory_bytes"] == est["memory_bytes_scipy"] > 0 and est["precision"] in ("single", "double")
+    verdict = check(est, prob, ServerConfig(max_memory_bytes=1))
+    assert not verdict["ok"] and any("memory" in r for r in verdict["reasons"])

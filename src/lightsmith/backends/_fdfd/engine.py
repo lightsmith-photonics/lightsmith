@@ -54,7 +54,7 @@ def _max_index(problem: DeviceProblem, wl: np.ndarray) -> float:
 class FDFD2D:
     """Frequency-domain solver for a 2D :class:`DeviceProblem` (structures in the xy plane)."""
 
-    def __init__(self, problem: DeviceProblem, opts: FDFDOptions | None = None):
+    def __init__(self, problem: DeviceProblem, opts: FDFDOptions | None = None, check_size: bool = True):
         if problem.layout is not None:  # GDS layouts become Prism structures
             from ...layout import resolved_device
 
@@ -67,7 +67,7 @@ class FDFD2D:
                                                            * _max_index(problem, self.wavelengths)))
         npml = tuple(opts.pml_cells)[:2] if isinstance(opts.pml_cells, tuple) else (opts.pml_cells, opts.pml_cells)
         self.grid: Grid2D = make_grid(problem, dl, npml)
-        if self.grid.size > opts.max_cells:
+        if check_size and self.grid.size > opts.max_cells:
             raise ValueError(f"grid {self.grid.shape} has {self.grid.size} cells > max_cells={opts.max_cells}; "
                              "increase dl_nm or max_cells")
         self.ports: list[PortGeom] = [port_geometry(p, self.grid) for p in problem.ports]
@@ -214,12 +214,16 @@ class FDFD2D:
         return {"s": torch.stack(S), "fields": torch.stack(F) if with_fields else None,
                 "outputs": list(self.labels), "inputs": [self.labels[i] for i in which]}
 
-    def estimate(self) -> dict[str, Any]:
+    def estimate(self, device=None) -> dict[str, Any]:
         nx, ny = self.grid.shape
         n = nx * ny
         bs = min(nx, ny)
+        scipy_bytes = int(16 * n * (12 + 3 * math.log2(max(n, 2))))
+        block_bytes = int((8 if self.opts.precision == "single" else 16) * max(nx, ny) * bs * bs * 2)
         return {"grid": [nx, ny], "dl_nm": self.grid.dl, "unknowns": n, "pml_cells": list(self.grid.npml),
                 "polarization": self.pol, "sources": len(self.outputs), "wavelengths": len(self.wavelengths),
-                "memory_bytes_scipy": int(16 * n * (12 + 3 * math.log2(max(n, 2)))),
-                "memory_bytes_block": int((8 if self.opts.precision == "single" else 16) * max(nx, ny) * bs * bs * 2),
+                "precision": self.opts.precision,
+                # the solver `solve` will use on this device: block-tridiagonal LU on a GPU, SuperLU on the CPU
+                "memory_bytes": block_bytes if device is not None and device.is_gpu else scipy_bytes,
+                "memory_bytes_scipy": scipy_bytes, "memory_bytes_block": block_bytes,
                 "fits": n <= self.opts.max_cells}

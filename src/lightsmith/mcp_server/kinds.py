@@ -102,9 +102,9 @@ EXAMPLES: dict[str, dict[str, Any]] = {
     "device": {
         "kind": "device",
         "dimension": 2,
-        "structures": [{"geometry": {"kind": "box", "size_nm": [6000, 500, 1]}, "material": _SI}],
+        "structures": [{"geometry": {"kind": "box", "size_nm": [8000, 500, 1]}, "material": _SI}],
         "background": _SIO2,
-        "domain_size_nm": [4000, 4000, 0],
+        "domain_size_nm": [6000, 4000, 0],  # room for the absorbing layers of FDFD and FDTD outside the ports
         "ports": [{"name": "o1", "center_nm": [-2000, 0, 0], "size_nm": [0, 3000, 0], "direction": "+"},
                   {"name": "o2", "center_nm": [2000, 0, 0], "size_nm": [0, 3000, 0], "direction": "-"}],
         "wavelengths": [1550],

@@ -30,9 +30,9 @@ class MiePython(Backend):
     @classmethod
     def supports(cls, sim: Simulation):
         if len(sim.particles) != 1:
-            return False, "Mie handles exactly one particle; use 'tmatrix' or 'dda' for clusters"
+            return False, "Mie handles exactly one particle; use 'tmatrix', 'bem' or 'dda' for clusters"
         if not isinstance(sim.particles[0].shape, Sphere):
-            return False, f"Mie handles spheres only, got {sim.particles[0].shape.kind!r}; use 'dda' or 'tmatrix'"
+            return False, f"Mie handles spheres only, got {sim.particles[0].shape.kind!r}; use 'bem' or 'dda'"
         why = unsupported_outputs(sim, orientation_average=True)
         return (not why), why
 

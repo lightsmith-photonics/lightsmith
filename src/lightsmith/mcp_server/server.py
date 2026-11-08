@@ -30,8 +30,8 @@ from .remote import CloudClient, MaterialsClient, RemoteError
 from .summaries import plot_png, result_kind, summarize, to_csv
 
 INSTRUCTIONS = """\
-Lightsmith solves electromagnetics / photonics problems (Mie, T-matrix, DDA, FDTD, TMM, RCWA, FDE, EME, FDFD,
-PWE, circuit models, inverse design). Everything is JSON. Units: nm, vacuum wavelengths, exp(-i omega t).
+Lightsmith solves electromagnetics / photonics problems (Mie, T-matrix, BEM, DDA, FDTD, TMM, RCWA, FDE, EME, BPM,
+FDFD, PWE, circuit models, inverse design). Everything is JSON. Units: nm, vacuum wavelengths, exp(-i omega t).
 
 Workflow:
 1. list_problem_kinds, then get_schema(kind) for the exact JSON Schema and a working example.
@@ -620,15 +620,15 @@ def build_server(config: ServerConfig | None = None) -> MCPServer:
     @mcp.prompt(title="Scattering by a nanoparticle")
     def scattering_study(particle: str, material: str, wavelength_range_nm: str = "400-900",
                          medium: str = "water (n = 1.33)") -> str:
-        """Optical cross sections of a nanoparticle (Mie for spheres, T-matrix/DDA otherwise)."""
+        """Optical cross sections of a nanoparticle (Mie for spheres, BEM or DDA otherwise)."""
         return (f"Compute extinction, scattering and absorption spectra of {particle} made of {material} in "
                 f"{medium} over {wavelength_range_nm} nm with Lightsmith.\n"
                 "- get_schema(kind='scattering') for the format; search_materials for the material (prefer bundled "
                 "measured data; check range_nm covers the band).\n"
-                "- Spheres and layered spheres: method auto picks Mie (exact). Other shapes: T-matrix or DDA; call "
+                "- Spheres and layered spheres: method auto picks Mie (exact). Other shapes: BEM or DDA; call "
                 "estimate first.\n"
                 "- solve with plot=true; report the peak wavelength, C_ext/Q_ext at the peak and the albedo.\n"
-                "- Non-spherical particles: compare DDA against T-matrix (or a sphere of equal volume against Mie).")
+                "- Non-spherical particles: compare BEM against DDA (or a sphere of equal volume against Mie).")
 
     @mcp.prompt(title="Cross-check methods")
     def cross_check_methods(problem_description: str) -> str:

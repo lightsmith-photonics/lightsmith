@@ -1,16 +1,16 @@
 {
  "meta": {
-  "agent": "oracle-no_pushback",
+  "agent": "oracle",
   "model": null,
-  "fault": "no_pushback",
-  "started": "2026-11-07T21:49:10",
+  "fault": null,
+  "started": "2026-11-08T10:09:15",
   "server_command": [
    "C:\\Users\\alexg\\Documents\\ChatGPT\\lightsmith\\.venv\\Scripts\\lightsmith-mcp.EXE"
   ],
   "transport": "stdio",
   "server_per_task": false,
   "lightsmith_version": "0.2.0",
-  "git_commit": "eeafaf0",
+  "git_commit": "73e1508",
   "platform": "Windows 11, Python 3.12.2",
   "tasks": [
    "sca-au40-water-peak",
@@ -25,6 +25,7 @@
    "sca-ejwt-gain-pushback",
    "sca-au-midir-dataset",
    "sca-ps-bead-wavenumber",
+   "em-dye-near-gold-sphere",
    "ls-quarter-wave-ar",
    "ls-brewster-angle",
    "ls-bragg-mirror",
@@ -78,12 +79,12 @@
    "fit_drude_lorentz"
   ],
   "server_instructions": "Lightsmith solves electromagnetics / photonics problems (Mie, T-matrix, DDA, FDTD, TMM, RCWA, FDE, EME, FDFD,\nPWE, circuit models, inverse design). Everything is JSON. Units: nm, vacuum wavelengths, exp(-i omega t).\n\nWorkflow:\n1. list_problem_kinds, then get_schema(kind) for the exact JSON Schema and a working example.\n2. Materials: search_materials / get_material; fit_drude_lorentz turns measured data into an FDTD-ready model.\n3. validate_problem, then estimate (memory, run time, budget verdict). Solves over the server's budget are\n   refused with ways to shrink them.\n4. solve (or compare to cross-check methods). Quick problems return a summary at once; longer ones become jobs:\n   poll get_job(job_id, wait_s=...) or cancel_job. start_solve always returns a job id immediately.\n5. Summaries hold the key numbers; full arrays are resources lightsmith://jobs/{job_id}/result (JSON) and\n   .../result.csv, a plot at .../plot.png (or get_result / plot=true). Always read the result's warnings.\n",
-  "wall_s": 182.3545561999781
+  "wall_s": 156.17400340002496
  },
  "summary": {
-  "tasks": 43,
-  "passed": 4,
-  "mean_score": 0.49611860465116275,
+  "tasks": 44,
+  "passed": 44,
+  "mean_score": 1.0,
   "cost_usd": null,
   "usage": {
    "input_tokens": 0,
@@ -98,19 +99,15 @@
    "kind": "scattering",
    "category": "standard",
    "traps": [],
-   "passed": false,
-   "score": 0.25,
-   "failed_checks": [
-    "value:peak_wavelength_nm",
-    "spec:particles[0].shape.radius_nm",
-    "spec:medium_index"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 1.64,
+   "wall_s": 1.82,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -122,12 +119,9 @@
    "traps": [
     "diameter_vs_radius"
    ],
-   "passed": false,
-   "score": 0.5,
-   "failed_checks": [
-    "value:c_abs_nm2",
-    "spec:particles[0].shape.radius_nm"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
@@ -145,12 +139,9 @@
    "traps": [
     "medium_vs_vacuum_wavelength"
    ],
-   "passed": false,
-   "score": 0.5,
-   "failed_checks": [
-    "value:c_ext_nm2",
-    "wavelength:598.5"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
@@ -159,9 +150,7 @@
    "wall_s": 0.06,
    "usage": {},
    "cost_usd": null,
-   "notes": [
-    "c_ext_nm2: wavelength 598.5 nm not in the result (have 450-450 nm)"
-   ]
+   "notes": []
   },
   {
    "task_id": "sca-si-sphere-ev",
@@ -171,41 +160,33 @@
     "photon_energy_units",
     "diameter_vs_radius"
    ],
-   "passed": false,
-   "score": 0.5,
-   "failed_checks": [
-    "value:q_sca",
-    "spec:particles[0].shape.radius_nm"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 0.07,
+   "wall_s": 0.06,
    "usage": {},
    "cost_usd": null,
-   "notes": [
-    "q_sca: wavelength 619.921 nm not in the result (have 620-620 nm)"
-   ]
+   "notes": []
   },
   {
    "task_id": "sca-au-oil-peak",
    "kind": "scattering",
    "category": "standard",
    "traps": [],
-   "passed": false,
-   "score": 0.5,
-   "failed_checks": [
-    "value:peak_wavelength_nm",
-    "spec:medium_index"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 0.7,
+   "wall_s": 1.09,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -215,18 +196,15 @@
    "kind": "scattering",
    "category": "standard",
    "traps": [],
-   "passed": false,
-   "score": 0.5,
-   "failed_checks": [
-    "value:c_ext_nm2",
-    "spec:particles[0].shape.core_radius_nm"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 4.13,
+   "wall_s": 4.97,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -238,17 +216,15 @@
    "traps": [
     "estimate_first"
    ],
-   "passed": false,
-   "score": 0.8,
-   "failed_checks": [
-    "value:peak_wavelength_nm"
-   ],
-   "tool_calls": 5,
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 4,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 90.7,
+   "wall_s": 49.86,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -268,7 +244,7 @@
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 0.08,
+   "wall_s": 0.07,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -280,18 +256,15 @@
    "traps": [
     "exp_plus_iwt_convention"
    ],
-   "passed": false,
-   "score": 0.3333,
-   "failed_checks": [
-    "value:c_abs_nm2",
-    "material:particles[0].material"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 0.06,
+   "wall_s": 0.08,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -304,18 +277,15 @@
     "exp_plus_iwt_convention",
     "gain"
    ],
-   "passed": false,
-   "score": 0.0,
-   "failed_checks": [
-    "pushback",
-    "mentions"
-   ],
-   "tool_calls": 3,
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 0,
    "tool_errors": 0,
-   "estimate_calls": 1,
+   "estimate_calls": 0,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 0.06,
+   "wall_s": 0.0,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -327,23 +297,18 @@
    "traps": [
     "material_range"
    ],
-   "passed": false,
-   "score": 0.3333,
-   "failed_checks": [
-    "value:c_ext_nm2",
-    "wavelength:2500"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 0.06,
+   "wall_s": 0.07,
    "usage": {},
    "cost_usd": null,
-   "notes": [
-    "c_ext_nm2: wavelength 2500 nm not in the result (have 1900-1900 nm)"
-   ]
+   "notes": []
   },
   {
    "task_id": "sca-ps-bead-wavenumber",
@@ -353,12 +318,30 @@
     "wavenumber_units",
     "diameter_vs_radius"
    ],
-   "passed": false,
-   "score": 0.5,
-   "failed_checks": [
-    "value:q_sca",
-    "spec:particles[0].shape.radius_nm"
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 3,
+   "tool_errors": 0,
+   "estimate_calls": 1,
+   "turns": 0,
+   "stop": "submitted",
+   "wall_s": 0.07,
+   "usage": {},
+   "cost_usd": null,
+   "notes": []
+  },
+  {
+   "task_id": "em-dye-near-gold-sphere",
+   "kind": "emission",
+   "category": "trap",
+   "traps": [
+    "diameter_vs_radius",
+    "distance_from_surface"
    ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
@@ -367,27 +350,22 @@
    "wall_s": 0.08,
    "usage": {},
    "cost_usd": null,
-   "notes": [
-    "q_sca: wavelength 632.911 nm not in the result (have 633-633 nm)"
-   ]
+   "notes": []
   },
   {
    "task_id": "ls-quarter-wave-ar",
    "kind": "layer_stack",
    "category": "standard",
    "traps": [],
-   "passed": false,
-   "score": 0.3333,
-   "failed_checks": [
-    "value:reflectance",
-    "spec:layers[0].thickness_nm"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 0.45,
+   "wall_s": 0.73,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -397,17 +375,15 @@
    "kind": "layer_stack",
    "category": "standard",
    "traps": [],
-   "passed": false,
-   "score": 0.5,
-   "failed_checks": [
-    "value:brewster_angle_deg"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 0.06,
+   "wall_s": 0.08,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -417,18 +393,15 @@
    "kind": "layer_stack",
    "category": "standard",
    "traps": [],
-   "passed": false,
-   "score": 0.3333,
-   "failed_checks": [
-    "value:reflectance",
-    "spec:layers[0].thickness_nm"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 0.06,
+   "wall_s": 0.07,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -440,19 +413,15 @@
    "traps": [
     "incidence_side"
    ],
-   "passed": false,
-   "score": 0.25,
-   "failed_checks": [
-    "value:reflectance",
-    "material:superstrate",
-    "material:substrate"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 0.06,
+   "wall_s": 0.07,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -464,41 +433,33 @@
    "traps": [
     "photon_energy_units"
    ],
-   "passed": false,
-   "score": 0.3333,
-   "failed_checks": [
-    "value:absorptance",
-    "wavelength:619.92"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 0.06,
+   "wall_s": 0.08,
    "usage": {},
    "cost_usd": null,
-   "notes": [
-    "absorptance: wavelength 619.921 nm not in the result (have 400-400 nm)"
-   ]
+   "notes": []
   },
   {
    "task_id": "ls-tir-glass-air",
    "kind": "layer_stack",
    "category": "standard",
    "traps": [],
-   "passed": false,
-   "score": 0.3333,
-   "failed_checks": [
-    "value:transmittance",
-    "material:superstrate"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 0.06,
+   "wall_s": 0.07,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -511,23 +472,18 @@
     "wavenumber_units",
     "um_units"
    ],
-   "passed": false,
-   "score": 0.5,
-   "failed_checks": [
-    "value:transmittance",
-    "wavelength:2000"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 0.06,
+   "wall_s": 0.08,
    "usage": {},
    "cost_usd": null,
-   "notes": [
-    "transmittance: wavelength 2000 nm not in the result (have 5000-5000 nm)"
-   ]
+   "notes": []
   },
   {
    "task_id": "ls-thick-slide-incoherent",
@@ -536,18 +492,15 @@
    "traps": [
     "incoherent_layer"
    ],
-   "passed": false,
-   "score": 0.3333,
-   "failed_checks": [
-    "value:transmittance",
-    "spec:layers[0].coherent"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 0.06,
+   "wall_s": 0.08,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -559,22 +512,18 @@
    "traps": [
     "estimate_first"
    ],
-   "passed": false,
-   "score": 0.8,
-   "failed_checks": [
-    "value:t_plus1"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 4.55,
+   "wall_s": 6.58,
    "usage": {},
    "cost_usd": null,
-   "notes": [
-    "t_plus1: polarization 's' not in the result (have ['p'])"
-   ]
+   "notes": []
   },
   {
    "task_id": "per-subwavelength-orders",
@@ -583,22 +532,18 @@
    "traps": [
     "estimate_first"
    ],
-   "passed": false,
-   "score": 0.6667,
-   "failed_checks": [
-    "value:num_transmitted_orders"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 4.56,
+   "wall_s": 5.57,
    "usage": {},
    "cost_usd": null,
-   "notes": [
-    "num_transmitted_orders: wavelength 633.0 nm not in the result"
-   ]
+   "notes": []
   },
   {
    "task_id": "per-tio2-metasurface",
@@ -607,17 +552,15 @@
    "traps": [
     "estimate_first"
    ],
-   "passed": false,
-   "score": 0.75,
-   "failed_checks": [
-    "value:reflectance"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 5.58,
+   "wall_s": 6.59,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -629,41 +572,33 @@
    "traps": [
     "estimate_first"
    ],
-   "passed": false,
-   "score": 0.5,
-   "failed_checks": [
-    "value:r_zeroth",
-    "spec:incidence.theta_deg"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 4.55,
+   "wall_s": 7.61,
    "usage": {},
    "cost_usd": null,
-   "notes": [
-    "r_zeroth: angle 20 deg not in the result (have [0.0])"
-   ]
+   "notes": []
   },
   {
    "task_id": "mode-si-strip-te0",
    "kind": "mode",
    "category": "standard",
    "traps": [],
-   "passed": false,
-   "score": 0.3333,
-   "failed_checks": [
-    "value:neff",
-    "spec:structures[0].profile.size_nm[0]"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 1.68,
+   "wall_s": 3.56,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -675,17 +610,15 @@
    "traps": [
     "group_vs_phase_index"
    ],
-   "passed": false,
-   "score": 0.5,
-   "failed_checks": [
-    "value:ng"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 1.67,
+   "wall_s": 2.52,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -695,22 +628,18 @@
    "kind": "mode",
    "category": "standard",
    "traps": [],
-   "passed": false,
-   "score": 0.5,
-   "failed_checks": [
-    "value:neff_tm0"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 1.67,
+   "wall_s": 2.55,
    "usage": {},
    "cost_usd": null,
-   "notes": [
-    "neff_tm0: only 0 tm mode(s) in the result"
-   ]
+   "notes": []
   },
   {
    "task_id": "mode-sin-thz",
@@ -719,23 +648,18 @@
    "traps": [
     "frequency_units"
    ],
-   "passed": false,
-   "score": 0.5,
-   "failed_checks": [
-    "value:neff",
-    "wavelength:1550.1"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 1.67,
+   "wall_s": 2.54,
    "usage": {},
    "cost_usd": null,
-   "notes": [
-    "neff: no modes at 1550.12 nm (have [1934.0])"
-   ]
+   "notes": []
   },
   {
    "task_id": "mode-guided-count",
@@ -744,17 +668,15 @@
    "traps": [
     "check_warnings"
    ],
-   "passed": false,
-   "score": 0.5,
-   "failed_checks": [
-    "value:num_guided_modes"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 0.71,
+   "wall_s": 2.54,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -766,12 +688,9 @@
    "traps": [
     "unphysical_request"
    ],
-   "passed": false,
-   "score": 0.0,
-   "failed_checks": [
-    "pushback",
-    "mentions"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 0,
    "tool_errors": 0,
    "estimate_calls": 0,
@@ -789,18 +708,15 @@
    "traps": [
     "um_units"
    ],
-   "passed": false,
-   "score": 0.3333,
-   "failed_checks": [
-    "value:neff",
-    "spec:structures[0].profile.radius_nm"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 15.68,
+   "wall_s": 1.68,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -812,18 +728,15 @@
    "traps": [
     "estimate_first"
    ],
-   "passed": false,
-   "score": 0.5,
-   "failed_checks": [
-    "value:t_upper",
-    "value:t_lower"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 1.09,
+   "wall_s": 1.68,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -835,17 +748,15 @@
    "traps": [
     "estimate_first"
    ],
-   "passed": false,
-   "score": 0.6667,
-   "failed_checks": [
-    "value:t_fundamental"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 0.71,
+   "wall_s": 1.11,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -857,17 +768,15 @@
    "traps": [
     "estimate_first"
    ],
-   "passed": false,
-   "score": 0.75,
-   "failed_checks": [
-    "value:gap_midgap_ratio"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 5.58,
+   "wall_s": 5.57,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -880,19 +789,15 @@
     "normalized_frequency",
     "estimate_first"
    ],
-   "passed": false,
-   "score": 0.4,
-   "failed_checks": [
-    "value:lambda_min_nm",
-    "value:lambda_max_nm",
-    "spec:lattice_vectors_nm[0][0]"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 3.56,
+   "wall_s": 5.56,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -912,7 +817,7 @@
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 6.6,
+   "wall_s": 7.6,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -932,7 +837,7 @@
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 3.56,
+   "wall_s": 5.58,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -942,39 +847,33 @@
    "kind": "circuit",
    "category": "standard",
    "traps": [],
-   "passed": false,
-   "score": 0.5,
-   "failed_checks": [
-    "value:fsr_nm"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 4.62,
+   "wall_s": 5.61,
    "usage": {},
    "cost_usd": null,
-   "notes": [
-    "fsr_nm: fewer than two transmission minima in the result"
-   ]
+   "notes": []
   },
   {
    "task_id": "circ-ring-fsr",
    "kind": "circuit",
    "category": "standard",
    "traps": [],
-   "passed": false,
-   "score": 0.5,
-   "failed_checks": [
-    "value:fsr_nm"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 3.62,
+   "wall_s": 5.66,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -984,17 +883,15 @@
    "kind": "circuit",
    "category": "standard",
    "traps": [],
-   "passed": false,
-   "score": 0.5,
-   "failed_checks": [
-    "value:output_db"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 0.29,
+   "wall_s": 0.45,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -1006,17 +903,15 @@
    "traps": [
     "length_units"
    ],
-   "passed": false,
-   "score": 0.5,
-   "failed_checks": [
-    "value:transmission_db"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 3,
    "tool_errors": 0,
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 0.07,
+   "wall_s": 0.08,
    "usage": {},
    "cost_usd": null,
    "notes": []
@@ -1028,12 +923,9 @@
    "traps": [
     "unphysical_request"
    ],
-   "passed": false,
-   "score": 0.0,
-   "failed_checks": [
-    "pushback",
-    "mentions"
-   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
    "tool_calls": 0,
    "tool_errors": 0,
    "estimate_calls": 0,
@@ -1060,7 +952,7 @@
    "estimate_calls": 1,
    "turns": 0,
    "stop": "submitted",
-   "wall_s": 7.57,
+   "wall_s": 10.64,
    "usage": {},
    "cost_usd": null,
    "notes": []

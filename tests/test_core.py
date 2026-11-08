@@ -146,3 +146,69 @@ def test_cli_json(capsys, tmp_path):
     assert out["method"] == "mie" and len(out["c_ext_nm2"]) == 3
     assert cli_main(["solve", str(tmp_path / "missing.json")]) == 1
     assert json.loads(capsys.readouterr().err)["error"] == "FileNotFoundError"
+
+
+# --- backend selection, provenance and messages ---------------------------------------
+
+
+def _crossing_device(**fdfd):
+    """Ports on two axes: EME and BPM refuse it, so `auto` reaches FDFD and then FDTD."""
+    from lightsmith.problems import DeviceProblem, Port
+
+    si, sio2 = ls.ConstantIndex(n_real=3.48), ls.ConstantIndex(n_real=1.44)
+    from lightsmith.problems import Box, Structure
+
+    return DeviceProblem(
+        dimension=2, background=sio2, domain_size_nm=(4000, 4000, 0), wavelengths=[1550.0],
+        structures=[Structure(geometry=Box(center_nm=(0, 0, 0), size_nm=(5000, 500, 1)), material=si),
+                    Structure(geometry=Box(center_nm=(0, 0, 0), size_nm=(500, 5000, 1)), material=si)],
+        ports=[Port(name="o1", center_nm=(-1500, 0, 0), size_nm=(0, 2000, 0), direction="+"),
+               Port(name="o2", center_nm=(0, 1500, 0), size_nm=(2000, 0, 0), direction="-")],
+        options={"fdfd": fdfd} if fdfd else {})
+
+
+def test_auto_passes_over_a_backend_that_is_too_large():
+    backend, skipped = ls.choose_method(_crossing_device(max_cells=100))
+    assert backend.method == "fdtd"
+    assert any("lightsmith-fdfd" in s and "too large" in s for s in skipped)
+    est = ls.estimate(_crossing_device(max_cells=100), "auto", "cpu")
+    assert est["method"] == "fdtd" and any("too large" in s for s in est["auto_skipped"])
+    assert ls.estimate(_crossing_device(max_cells=100), "fdfd", "cpu")["fits"] is False  # an answer, not an error
+    with pytest.raises(ValueError, match="max_cells"):
+        ls.solve(_crossing_device(max_cells=100), "fdfd", "cpu")  # solving it is still refused
+
+
+def test_every_result_records_versions_and_why_auto_passed_over_backends():
+    import numpy
+
+    res = ls.solve(ls.Simulation(particles=[ls.Particle(shape=ls.Spheroid(semi_axis_xy_nm=10, semi_axis_z_nm=12),
+                                                        material=ls.ConstantIndex(n_real=1.5))],
+                                 wavelengths=[600.0], options={"bem": {"mesh_size_nm": 5}}), device="cpu")
+    assert res.provenance["versions"]["lightsmith"] == ls.__version__
+    assert res.provenance["versions"]["numpy"] == numpy.__version__
+    assert res.method == "bem" and any("Mie handles spheres only" in s for s in res.provenance["auto_skipped"])
+    forced = ls.solve(ls.Simulation(particles=[ls.Particle(shape=ls.Sphere(radius_nm=20),
+                                                           material=ls.ConstantIndex(n_real=1.5))],
+                                    wavelengths=[600.0]), "mie", "cpu")
+    assert "auto_skipped" not in forced.provenance and "versions" in forced.provenance
+
+
+@pytest.mark.parametrize("backend", ["miepython", "lightsmith-mie"])
+def test_mie_refusal_suggests_backends_that_accept_the_shape(backend):
+    sim = ls.Simulation(particles=[ls.Particle(shape=ls.Spheroid(semi_axis_xy_nm=10, semi_axis_z_nm=20),
+                                               material=ls.ConstantIndex(n_real=1.5))], wavelengths=[600.0])
+    ok, why = ls.get_backend(backend).supports(sim)
+    assert not ok
+    import re
+
+    named = re.findall(r"'(bem|dda|tmatrix|fdtd)'", why)
+    assert named and all(ls.get_backend(m).supports(sim)[0] for m in named), why
+
+
+def test_cli_usage_errors_are_json_with_exit_status_1(capsys):
+    for argv in (["no-such-command"], ["solve"], ["estimate", "x.json", "--no-such-flag"]):
+        with pytest.raises(SystemExit) as e:
+            cli_main(argv)
+        assert e.value.code == 1
+        err = json.loads(capsys.readouterr().err)
+        assert err["error"] == "UsageError" and "--help" in err["message"]

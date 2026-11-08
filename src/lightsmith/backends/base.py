@@ -23,7 +23,7 @@ class Backend(ABC):
     license: ClassVar[str]
     citation: ClassVar[str] = ""
     gpu: ClassVar[bool] = False  # can run on a GPU device
-    differentiable: ClassVar[bool] = False  # gradients flow through solve() with a torch device
+    differentiable: ClassVar[bool] = False  # has a torch-differentiable entry point (see each backend's docs)
     problem_kinds: ClassVar[tuple[str, ...]] = ("scattering",)  # see lightsmith.problems.PROBLEM_KINDS
 
     @classmethod

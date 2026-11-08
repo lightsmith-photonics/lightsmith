@@ -1,0 +1,47 @@
+[ 1/44] FAIL sca-au40-water-peak                  score 0.25   3 calls     7.4 s  value:peak_wavelength_nm, spec:particles[0].shape.radius_nm, spec:medium_index
+[ 2/44] FAIL sca-au80-vendor-size-abs             score 0.50   3 calls     0.1 s  value:c_abs_nm2, spec:particles[0].shape.radius_nm
+[ 3/44] FAIL sca-au-medium-wavelength             score 0.50   3 calls     0.1 s  value:c_ext_nm2, wavelength:598.5
+[ 4/44] FAIL sca-si-sphere-ev                     score 0.50   3 calls     0.1 s  value:q_sca, spec:particles[0].shape.radius_nm
+[ 5/44] FAIL sca-au-oil-peak                      score 0.50   3 calls     3.9 s  value:peak_wavelength_nm, spec:medium_index
+[ 6/44] FAIL sca-coreshell-nir                    score 0.50   3 calls    13.4 s  value:c_ext_nm2, spec:particles[0].shape.core_radius_nm
+[ 7/44] FAIL sca-au-nanorod-peak                  score 0.80   7 calls   201.0 s  value:peak_wavelength_nm
+[ 8/44] PASS sca-quasistatic-too-big              score 1.00   3 calls     0.2 s  
+[ 9/44] FAIL sca-ejwt-absorbing                   score 0.33   3 calls     0.2 s  value:c_abs_nm2, material:particles[0].material
+[10/44] FAIL sca-ejwt-gain-pushback               score 0.00   3 calls     0.1 s  pushback, mentions
+[11/44] FAIL sca-au-midir-dataset                 score 0.33   3 calls     0.2 s  value:c_ext_nm2, wavelength:2500
+[12/44] FAIL sca-ps-bead-wavenumber               score 0.50   3 calls     0.5 s  value:q_sca, spec:particles[0].shape.radius_nm
+[13/44] FAIL em-dye-near-gold-sphere              score 0.50   3 calls     0.6 s  value:purcell, value:efficiency, spec:particles[0].shape.radius_nm
+[14/44] FAIL ls-quarter-wave-ar                   score 0.33   3 calls     2.1 s  value:reflectance, spec:layers[0].thickness_nm
+[15/44] FAIL ls-brewster-angle                    score 0.50   3 calls     0.1 s  value:brewster_angle_deg
+[16/44] FAIL ls-bragg-mirror                      score 0.33   3 calls     0.1 s  value:reflectance, spec:layers[0].thickness_nm
+[17/44] FAIL ls-gold-film-glass-side              score 0.25   3 calls     0.2 s  value:reflectance, material:superstrate, material:substrate
+[18/44] FAIL ls-silver-film-ev                    score 0.33   3 calls     0.4 s  value:absorptance, wavelength:619.92
+[19/44] FAIL ls-tir-glass-air                     score 0.33   3 calls     0.3 s  value:transmittance, material:superstrate
+[20/44] FAIL ls-si-film-wavenumber                score 0.50   3 calls     0.3 s  value:transmittance, wavelength:2000
+[21/44] FAIL ls-thick-slide-incoherent            score 0.33   3 calls     0.2 s  value:transmittance, spec:layers[0].coherent
+[22/44] FAIL per-grating-first-order              score 0.80   4 calls    23.6 s  value:t_plus1
+[23/44] FAIL per-subwavelength-orders             score 0.67   4 calls    24.7 s  value:num_transmitted_orders
+[24/44] FAIL per-tio2-metasurface                 score 0.75   4 calls    48.6 s  value:reflectance
+[25/44] FAIL per-grating-oblique-r0               score 0.50   4 calls    25.7 s  value:r_zeroth, spec:incidence.theta_deg
+[26/44] FAIL mode-si-strip-te0                    score 0.33   3 calls    12.5 s  value:neff, spec:structures[0].profile.size_nm[0]
+[27/44] FAIL mode-si-strip-ng                     score 0.50   3 calls    15.6 s  value:ng
+[28/44] FAIL mode-si-strip-tm0                    score 0.50   3 calls    13.6 s  value:neff_tm0
+[29/44] FAIL mode-sin-thz                         score 0.50   3 calls    13.7 s  value:neff, wavelength:1550.1
+[30/44] FAIL mode-guided-count                    score 0.50   3 calls     5.3 s  value:num_guided_modes
+[31/44] FAIL mode-neff-above-core-pushback        score 0.00   0 calls     0.0 s  pushback, mentions
+[32/44] FAIL mode-fiber-fundamental               score 0.33   8 calls   294.3 s  value:neff, spec:structures[0].profile.radius_nm
+[33/44] FAIL dev-mmi-1x2-2d                       score 0.50   3 calls     4.9 s  value:t_upper, value:t_lower
+[34/44] FAIL dev-width-step-2d                    score 0.67   3 calls     4.9 s  value:t_fundamental
+[35/44] FAIL bands-rods-tm-gap                    score 0.75   3 calls    15.4 s  value:gap_midgap_ratio
+[36/44] FAIL bands-gap-wavelengths                score 0.40   3 calls    16.4 s  value:lambda_min_nm, value:lambda_max_nm, spec:lattice_vectors_nm[0][0]
+[37/44] PASS bands-triangular-holes-complete      score 1.00   4 calls    26.8 s  
+[38/44] PASS bands-no-contrast                    score 1.00   3 calls    18.7 s  
+[39/44] FAIL circ-mzi-fsr                         score 0.50   3 calls    20.0 s  value:fsr_nm
+[40/44] FAIL circ-ring-fsr                        score 0.50   3 calls    17.8 s  value:fsr_nm
+[41/44] FAIL circ-splitter-tree                   score 0.50   3 calls     1.9 s  value:output_db
+[42/44] FAIL circ-link-budget-units               score 0.50   3 calls     0.6 s  value:transmission_db
+[43/44] FAIL circ-lossless-splitter-pushback      score 0.00   0 calls     0.0 s  pushback, mentions
+[44/44] PASS opt-bend-topology                    score 1.00   4 calls    30.7 s  
+
+passed 4/44, mean score 0.496
+-> benchmarks\agents\results\20261108-oracle-no_pushback

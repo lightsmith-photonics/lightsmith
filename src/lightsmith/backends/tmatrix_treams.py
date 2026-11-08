@@ -398,7 +398,7 @@ class TreamsTMatrix(Backend):
             if not isinstance(p.shape, (Sphere, LayeredSphere)):
                 return False, (f"the treams T-matrix backend handles spheres and layered spheres only, got "
                                f"{p.shape.kind!r} (particle {i}); treams has no supported T-matrix generator "
-                               "for non-spherical particles, use 'dda'")
+                               "for non-spherical particles, use 'bem' or 'dda'")
         pair = _overlap(sim)
         if pair is not None:
             return False, (f"particles {pair[0]} and {pair[1]} overlap; the T-matrix method needs "

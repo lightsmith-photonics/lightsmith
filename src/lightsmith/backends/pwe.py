@@ -157,7 +157,7 @@ class NativePWE(Backend):
     citation = ("Ho, Chan & Soukoulis, PRL 65, 3152 (1990); Johnson & Joannopoulos, Opt. Express 8, 173 (2001); "
                 "Farjadpour et al., Opt. Lett. 31, 2972 (2006)")
     gpu = True
-    differentiable = False  # see bands_from_permittivity for a differentiable entry point
+    differentiable = True  # through bands_from_permittivity
     problem_kinds = ("bands",)
 
     @classmethod

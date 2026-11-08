@@ -256,3 +256,22 @@ def test_graded_wire_step_3d_matches_uniform_fine_grid():
     np.testing.assert_allclose(S[:, 1, 0], [0.99666, 0.99737, 0.99768], atol=3e-5)
     np.testing.assert_allclose(S[:, 0, 1], S[:, 1, 0], atol=1e-5)
     np.testing.assert_allclose(S[:, 0, 0], [0.0168, 0.0181, 0.0193], atol=2e-4)
+
+
+def test_device_time_step_respects_the_dispersive_limit():
+    """A Drude metal on a coarse grid: the explicit ADE update would be unstable at the Courant step."""
+    from lightsmith.backends._fdtd.device import plan
+    from lightsmith.backends._fdtd.options import FDTDOptions
+    from lightsmith.backends._fdtd.setup import dispersive_dt_limit
+
+    metal = ls.Drude(eps_inf=1.0, wp_ev=16.0, gamma_ev=0.1)
+    dx = 60.0
+    p = device_2d([rect(0, 0, 20000, 500, metal)], "te", dx)
+    opts = FDTDOptions(spacing_nm=dx, polarization="te", precision="double")
+    out = plan(p, opts, False)
+    courant_step = opts.courant * dx / 2**0.5  # eps_inf = 1 here, so only the dispersive limit can shrink it
+    limit = dispersive_dt_limit(out["media"], 8 / dx**2)
+    assert limit < courant_step  # the case this test is for
+    assert out["dt"] <= limit
+    # a dielectric device keeps the Courant step
+    assert plan(device_2d([rect(0, 0, 20000, 500)], "te", dx), opts, False)["dt"] < courant_step + 1e-12

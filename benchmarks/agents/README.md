@@ -59,7 +59,7 @@ By category: 23 standard, 16 trap, 3 pushback and 2 warning tasks.
   - a lossless 1×2 splitter with 70% in each arm
 - **Warning**: the tools warn about the answer and the agent must pass the warning on. Examples: the quasistatic approximation used for a 150 nm sphere; counting guided modes when the solver flags modes below cladding index.
 
-11 tasks use grid-based solvers (DDA, RCWA, EME, PWE, inverse design) and also grade `estimate_before_solve`.
+11 tasks use grid-based solvers (BEM, RCWA, EME, PWE, inverse design) and also grade `estimate_before_solve`.
 
 Reference values come from the installed library at the resolution in `taskdefs.py`.
 Tolerances are physics tolerances, not reproducibility tolerances: a sensible agent at default resolution should land inside them, and a wrong setup should not.

@@ -20,13 +20,14 @@ Units: nm, vacuum wavelengths. Time convention exp(-i omega t) (Im eps > 0 = los
 - `lightsmith.estimate(problem, method, device) -> dict` (no solve)
 - `lightsmith.compare(problem, methods=None, device="auto") -> dict`
 - `lightsmith.doctor() -> dict` (frameworks and GPUs)
-- CLI: `lightsmith {doctor,backends,schema,estimate,solve,compare}`
+- `lightsmith.discretization(problem, method) -> dict`: what a backend will discretise (no solve)
+- CLI: `lightsmith {doctor,backends,schema,estimate,discretization,solve,compare}`
 - MCP server: `lightsmith-mcp` (stdio, or `--http`). See [docs/mcp.md](docs/mcp.md).
   - Tools: `list_problem_kinds`, `get_schema`, `list_backends`, `check_environment`, `validate_problem`,
-    `estimate`, `solve`, `start_solve`, `compare`, `get_job`, `list_jobs`, `cancel_job`, `get_result`,
+    `estimate`, `get_discretization`, `solve`, `start_solve`, `compare`, `get_job`, `list_jobs`, `cancel_job`, `get_result`,
     `search_materials`, `get_material`, `fit_drude_lorentz`.
   - Resources: `lightsmith://schema/{kind}`, `lightsmith://examples/{kind}` and `lightsmith://jobs/{id}/result`
     (also `.csv` and `/plot.png`).
 - Scattering methods (auto order): mie (spheres) > tmatrix (sphere clusters) > bem (surface integral equation: spheroids, cylinders, layered spheres, clusters; accurate for metals; no substrate) > dda > fdtd. BEM options: `{"bem": {"mesh_size_nm": ...}}`; `estimate` reports unknowns and memory (dense, grows as unknowns^2).
-- Device solvers: `eme` (bidirectional, exact for piecewise-uniform sections), `bpm` (one-way beam propagation: no reflections, S between ports on the same plane = 0; best for long, slowly varying devices; options under `options["bpm"]`), `fdfd` (2D full-wave)
+- Device solvers: `eme` (bidirectional, exact for piecewise-uniform sections), `bpm` (one-way beam propagation: no reflections, S between ports on the same plane = 0; best for long, slowly varying devices; options under `options["bpm"]`), `fdfd` (full-wave, 2D and 3D; S-parameters and inverse design), `fdtd` (time domain, broadband S-parameters, 2D and 3D)
 - PDK flow: `lightsmith.pdk.get_component(cell, **params)` -> layout/GDS/DeviceProblem; `lightsmith.pdk.flow.component_model(cell, flow, **params)` -> fitted, cached S-parameter model; netlists use `"pdk:<cell>"` instances

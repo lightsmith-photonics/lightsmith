@@ -435,7 +435,8 @@ class NativeDDA(Backend):
             "dipole_spacing_nm": [s.lat.d for s in solvers], "dipoles_per_diameter": npds,
             "precision": "single" if finest.single else "double", "polarizability": opts.polarizability,
             "tol": finest.tol, "incidences": len(incidences),
-            "iterations": [s.iterations for s in solvers], "runtime_s": time.perf_counter() - t0,
+            "iterations": [s.iterations for s in solvers], "residuals": [s.residuals for s in solvers],
+            "runtime_s": time.perf_counter() - t0,
         }
         if len(npds) > 1:
             provenance["unextrapolated"] = {str(n): {"c_ext_nm2": r[:, 0].tolist(), "c_abs_nm2": r[:, 1].tolist()}

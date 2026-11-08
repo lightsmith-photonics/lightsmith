@@ -37,9 +37,16 @@ def _out(obj, path: str | None = None) -> None:
         print(text)
 
 
+class _Parser(argparse.ArgumentParser):
+    """Usage errors are structured too (sub-parsers inherit this class)."""
+
+    def error(self, message: str):
+        print(json.dumps({"error": "UsageError", "message": f"{message} (see `{self.prog} --help`)"}), file=sys.stderr)
+        raise SystemExit(1)
+
+
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="lightsmith", description=__doc__,
-                                formatter_class=argparse.RawDescriptionHelpFormatter)
+    p = _Parser(prog="lightsmith", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("doctor", help="report CPU/GPU frameworks and devices")
     sub.add_parser("backends", help="list solver backends and their availability")

@@ -6,7 +6,28 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
 
 ## [Unreleased]
 
+### Fixed
+
+- `method="auto"` passes over a 2D FDFD problem that exceeds `max_cells` and goes on to FDTD; the estimate now says
+  `fits: false` instead of raising, and only an explicit solve is refused.
+- FDFD accepts 2D ports with z size 0, as the `Port` schema documents, and refuses only a true z normal. The MCP server's
+  device example now leaves room for absorbing layers, so it runs on EME, BPM, FDFD and FDTD.
+- The MCP budget now covers 2D FDFD and 2D inverse design: their estimates report `memory_bytes` for the solver the device
+  will use.
+- FDTD devices apply the same dispersive time-step limit as every other FDTD problem kind.
+- The Mie refusal suggested `tmatrix` for non-spherical particles, which refuses them too; it now names `bem` and `dda`, as do
+  the MCP prompts.
+- CLI usage errors are JSON on stderr with exit status 1, like every other failure.
+- Backends' `differentiable` flag now means "has a torch-differentiable entry point", and native Mie and PWE set it.
+
 ### Added
+
+- Every result records `provenance.versions` (library, NumPy, PyTorch when used). Under `method="auto"`, results and estimates
+  record `auto_skipped`: why the earlier backends were passed over. DDA results keep their BiCGStab residuals.
+- `tests/test_optics.py` validates `lightsmith.optics` against closed forms; tests for the DDA's `weighted` and
+  `extrapolate` modes, which also lose their "experimental" label in favour of what they do and where they fail.
+- The agent benchmark gained an emission task (44 tasks; every problem kind is now covered, and a test enforces it). Its gold
+  nanorod task now asks for the resonance wavelength, on which BEM and DDA agree.
 
 - **`lightsmith.discretization(problem, method)`**, `lightsmith discretization` and the MCP tool `get_discretization`: what a backend
   will discretise, before any solve, with a common envelope (`layout_kind`, a labelled `summary`, a `payload`, the

@@ -43,7 +43,7 @@ from .media import Medium, needs_fit, fit_module, to_medium
 from .options import FDTDOptions
 from .ports import ModeSource, ModeTable, PortFrame, node_eta
 from .grid import Grid as GradedGrid, Region, spacing_fn
-from .setup import FS, run_until_decayed, voxelise
+from .setup import FS, limit_dt, run_until_decayed, voxelise
 
 SLAB = 3  # cells beyond the source and monitor planes kept free of off-diagonal terms
 BUFFER = SLAB + 5  # cells added to the domain on every side (ports on its faces need room for source and slab)
@@ -427,9 +427,12 @@ def plan(problem, opts: FDTDOptions, single: bool) -> dict:
     dims = 2 if grid.two_d else 3
     if grid.graded is None:
         dt = opts.courant * grid.dx * math.sqrt(eps_min) / math.sqrt(dims)
+        kappa_max = 4 * dims / grid.dx**2
     else:  # the smallest cell per axis sets it (the invariant axis of a 2D run has no differences)
         h = [grid.min_spacing(a) for a in range(dims)]
         dt = opts.courant * math.sqrt(eps_min) / math.sqrt(sum(1 / v**2 for v in h))
+        kappa_max = sum(4 / v**2 for v in h)
+    dt = limit_dt(dt, opts.courant, media, kappa_max)  # a dispersive update can be unstable on a coarse grid
     w1, w2, wc, sigma, wa, wb = _band(wl)
     stride = opts.dft_stride or max(1, int(2 * np.pi / ((wb + w2) * dt)))
     max_steps = int(math.ceil((opts.run_time_fs or opts.max_time_fs) * FS / dt / stride)) * stride

@@ -2,8 +2,8 @@
 
 !!! info "Plan, not a feature list"
     This page lists what the [FDTD](../fdtd.md) solver lacks compared with Meep and commercial FDTD tools,
-    and the order in which we are adding it. Work happens on branch `fdtd-advanced`. A feature is part of a
-    release only when the [changelog](../../changelog.md) says so.
+    and the order in which we are adding it. A feature is part of a release only when the
+    [changelog](../../changelog.md) says so.
 
 The goal is the most capable open FDTD solver: everything users expect from Meep and the commercial tools,
 plus features none of them combine (GPU, dispersive conformal meshing, non-uniform grids, differentiable

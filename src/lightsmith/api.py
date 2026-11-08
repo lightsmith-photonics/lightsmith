@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
+import numpy as np
 from pydantic import BaseModel
 
 from .backends import Backend, all_backends, get_backend
@@ -87,31 +88,54 @@ def choose_method(problem: BaseModel | dict | str) -> tuple[type[Backend], list[
 
 
 def _resolve(problem: BaseModel, method: str) -> type[Backend]:
+    return _resolve_with_skips(problem, method)[0]
+
+
+def _resolve_with_skips(problem: BaseModel, method: str) -> tuple[type[Backend], list[str]]:
+    """The backend to run and, for `auto`, why the ones before it were passed over."""
     if method == "auto":
-        return choose_method(problem)[0]
+        return choose_method(problem)
     b = get_backend(method, kind=_kind(problem))
     if _kind(problem) not in b.problem_kinds:
         raise ValueError(f"backend {b.name!r} solves {list(b.problem_kinds)}, not {_kind(problem)!r}")
     for ok, why in (b.available(), b.supports(problem)):
         if not ok:
             raise ValueError(f"backend {b.name!r} cannot run this problem: {why}")
-    return b
+    return b, []
+
+
+def _versions(dev) -> dict[str, str]:
+    from . import __version__
+
+    out = {"lightsmith": __version__, "numpy": np.__version__}
+    if dev.framework == "torch":
+        import torch
+
+        out["torch"] = torch.__version__
+    return out
 
 
 def solve(problem: BaseModel | dict | str, method: str = "auto", device: str = "auto") -> BaseModel:
     """Solve `problem` with one method (or backend name). `device`: auto | cpu | gpu | cuda:N | torch-cpu."""
     problem = parse_problem(problem)
-    b = _resolve(problem, method)
+    b, skipped = _resolve_with_skips(problem, method)
     dev = resolve_device(device if b.gpu else "cpu")
-    return b.solve(problem, dev)
+    res = b.solve(problem, dev)
+    res.provenance.setdefault("versions", _versions(dev))
+    if skipped:
+        res.provenance["auto_skipped"] = skipped
+    return res
 
 
 def estimate(problem: BaseModel | dict | str, method: str = "auto", device: str = "auto") -> dict[str, Any]:
     """Pre-flight: which backend would run, on what device, and roughly how big. Never solves."""
     problem = parse_problem(problem)
-    b = _resolve(problem, method)
+    b, skipped = _resolve_with_skips(problem, method)
     dev = resolve_device(device if b.gpu else "cpu")
-    return {"backend": b.name, "method": b.method, **dev.describe(), **b.estimate(problem, dev)}
+    out = {"backend": b.name, "method": b.method, **dev.describe(), **b.estimate(problem, dev)}
+    if skipped:
+        out["auto_skipped"] = skipped
+    return out
 
 
 def discretization(problem: BaseModel | dict | str, method: str = "auto") -> dict[str, Any]:

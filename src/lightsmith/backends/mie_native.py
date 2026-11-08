@@ -471,6 +471,7 @@ class NativeMie(Backend):
     citation = ("Bohren & Huffman (1983); Yang, Appl. Opt. 42, 1710 (2003); "
                 "Pena & Pal, Comput. Phys. Commun. 180, 2348 (2009)")
     gpu = True
+    differentiable = True  # through the functional API above
     problem_kinds = ("scattering", "emission")
 
     @classmethod
@@ -478,10 +479,10 @@ class NativeMie(Backend):
         if isinstance(sim, EmissionProblem):
             return cls._supports_emission(sim)
         if len(sim.particles) != 1:
-            return False, "Mie handles exactly one particle; use 'tmatrix' or 'dda' for clusters"
+            return False, "Mie handles exactly one particle; use 'tmatrix', 'bem' or 'dda' for clusters"
         if not isinstance(sim.particles[0].shape, (Sphere, LayeredSphere)):
             return False, (f"Mie handles spheres only (plain or layered), got {sim.particles[0].shape.kind!r}; "
-                           "use 'dda' or 'tmatrix'")
+                           "use 'bem' or 'dda'")
         why = unsupported_outputs(sim, near_field=True, far_field=True, orientation_average=True)
         return (not why), why
 

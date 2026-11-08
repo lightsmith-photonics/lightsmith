@@ -77,7 +77,7 @@ class FDFD(Backend):
             return False, "FDFD solves device problems"
         if problem.dimension == 2:
             for p in problem.ports:
-                if p.size_nm[2] == 0:
+                if p.normal_axis == 2:
                     return False, f"port {p.name!r} is normal to z; 2D ports must be normal to x or y"
         try:
             cls._options(problem)
@@ -90,16 +90,16 @@ class FDFD(Backend):
         return FDFDOptions.model_validate(options_for(problem, cls.name, cls.method))
 
     @classmethod
-    def engine(cls, problem: DeviceProblem) -> FDFD2D | FDFD3D:
+    def engine(cls, problem: DeviceProblem, check_size: bool = True) -> FDFD2D | FDFD3D:
         """The underlying :class:`FDFD2D` or :class:`FDFD3D` (grid, permittivity, modes, field solves)."""
         if problem.dimension == 3:
             return FDFD3D(problem, cls._options(problem))
-        return FDFD2D(problem, cls._options(problem))
+        return FDFD2D(problem, cls._options(problem), check_size=check_size)
 
     @classmethod
     def estimate(cls, problem, device):
-        eng = cls.engine(problem)
-        return eng.estimate(device) if isinstance(eng, FDFD3D) else eng.estimate()
+        eng = cls.engine(problem, check_size=False)  # too large is an answer (fits=False), not an error
+        return eng.estimate(device)
 
     @classmethod
     def solve(cls, problem: DeviceProblem, device: Device) -> SParameterResult:
@@ -112,7 +112,7 @@ class FDFD(Backend):
             if excess > 1e-2:
                 warnings.append(f"output power exceeds input by {excess:.2%} in a lossless device; "
                                 "refine the grid (dl_nm) or thicken the PML")
-        est = eng.estimate(device) if isinstance(eng, FDFD3D) else eng.estimate()
+        est = eng.estimate(device)
         provenance = {**device.describe(), **est, "solver": info.get("factor"),
                       "runtime_s": info.get("runtime_s"),
                       "port_planes_nm": {pg.name: float(eng.grid.axis(pg.axis)[pg.i0]) for pg in eng.ports}}
