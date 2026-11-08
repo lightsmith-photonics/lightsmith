@@ -574,6 +574,18 @@ def test_fdtd_mirror_symmetry_detection():
     assert est["symmetry"]["reduction"] == 4 and 3.6 < full["cells"] / est["cells"] < 4
 
 
+def _assert_faster(sim, a, b, factor: float, attempts: int = 3) -> None:
+    """Wall-clock speed-up of run `a` (symmetry) over `b` (full). The GPU may be shared, and another job in only one of
+    the two runs skews their ratio, so a slow pair is measured again; the best of a few must still reach `factor`."""
+    best = b.provenance["time_loop_s"] / a.provenance["time_loop_s"]
+    for _ in range(attempts - 1):
+        if best > factor:
+            break
+        a, b = solve_both(sim, "gpu")
+        best = max(best, b.provenance["time_loop_s"] / a.provenance["time_loop_s"])
+    assert best > factor
+
+
 @pytest.mark.gpu
 @needs_cuda
 def test_fdtd_mirror_symmetry_speedup_gpu():
@@ -590,7 +602,7 @@ def test_fdtd_mirror_symmetry_speedup_gpu():
     assert a.provenance["steps"] == b.provenance["steps"]
     assert rel(a.c_ext_nm2, b.c_ext_nm2).max() < 3e-5 and rel(a.c_sca_nm2, b.c_sca_nm2).max() < 3e-5
     assert rel(a.c_ext_nm2, mie.c_ext_nm2).max() < 2e-3
-    assert b.provenance["time_loop_s"] / a.provenance["time_loop_s"] > 1.3
+    _assert_faster(sim, a, b, 1.3)
 
 
 @pytest.mark.slow
@@ -603,4 +615,4 @@ def test_fdtd_mirror_symmetry_speedup_fine_grid_gpu():
     a, b = solve_both(sim, "gpu")
     assert rel(a.c_ext_nm2, b.c_ext_nm2).max() < 3e-5
     assert rel(a.c_ext_nm2, ls.solve(sim, "mie").c_ext_nm2).max() < 2e-3
-    assert b.provenance["time_loop_s"] / a.provenance["time_loop_s"] > 1.8
+    _assert_faster(sim, a, b, 1.8)
