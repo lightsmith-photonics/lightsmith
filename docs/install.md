@@ -83,7 +83,8 @@ lightsmith doctor
 ```
 
 The output should show the GPU under `"cuda_gpus"`, and `"auto_device"` should name `cuda:0`. With
-`device="auto"`, which is the default, solvers that support a GPU use it. Pass `device="cpu"` to force the
+`device="auto"`, which is the default, solvers that support a GPU use it, unless `estimate` says the problem
+will not fit in the GPU's free memory: then the solve runs on the CPU and says so in `warnings`. Pass `device="cpu"` to force the
 CPU, `device="cuda:1"` to pick a specific GPU, or `device="torch-cpu"` to run the PyTorch code path on
 the CPU, for example to get gradients without a GPU.
 

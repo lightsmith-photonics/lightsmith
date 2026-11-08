@@ -33,6 +33,51 @@ def straight(pol="te", dl=25.0, width=500.0, wavelengths=(1500.0, 1550.0, 1600.0
         options={"fdfd": {"polarization": pol, "dl_nm": dl}})
 
 
+class _Gpu:
+    """resolve_device stand-in: a GPU for "auto" and "gpu", whatever this machine has."""
+
+    def __init__(self, monkeypatch, free_bytes):
+        from lightsmith import api
+        from lightsmith.device import Device, resolve_device
+
+        gpu = Device("torch", "cuda:0")
+        monkeypatch.setattr(api, "resolve_device", lambda d: resolve_device("cpu") if d == "cpu" else gpu)
+        monkeypatch.setattr(Device, "memory_free_bytes", lambda self: free_bytes)
+        self.api, self.gpu = api, gpu
+
+
+def test_auto_leaves_a_gpu_the_problem_does_not_fit(monkeypatch):
+    # The block LU that FDFD uses on a GPU can need 20x SuperLU's memory: the example examples/pdk_mzi.py needs
+    # 12.9 GB against 0.8 GB, and on a 12 GB GPU under Windows it pages for hours instead of failing.
+    prob = straight(wavelengths=(1550.0,))
+    backend = ls.get_backend("fdfd")
+    free = 1000
+    g = _Gpu(monkeypatch, free)
+    assert backend.estimate(prob, g.gpu)["memory_bytes"] > free
+    dev, note = g.api._select_device(backend, prob, "auto")
+    assert dev.name == "cpu" and "ran on the CPU" in note and "cuda:0" in note
+
+    res = ls.solve(prob, "fdfd")
+    assert res.provenance["device"] == "cpu" and any("ran on the CPU" in w for w in res.warnings)
+    assert abs(res.s()[0, 1, 0]) ** 2 > 0.95
+
+
+def test_auto_keeps_a_gpu_the_problem_fits_and_naming_a_device_is_obeyed(monkeypatch):
+    prob = straight(wavelengths=(1550.0,))
+    backend = ls.get_backend("fdfd")
+    g = _Gpu(monkeypatch, 2**50)
+    assert g.api._select_device(backend, prob, "auto") == (g.gpu, None)
+
+    _Gpu(monkeypatch, 1000)
+    assert g.api._select_device(backend, prob, "gpu") == (g.gpu, None)  # asked for by name
+
+
+def test_auto_stays_on_the_gpu_when_its_free_memory_is_unknown(monkeypatch):
+    prob = straight(wavelengths=(1550.0,))
+    g = _Gpu(monkeypatch, None)
+    assert g.api._select_device(ls.get_backend("fdfd"), prob, "auto") == (g.gpu, None)
+
+
 @pytest.mark.parametrize("pol", ["te", "tm"])
 def test_straight_waveguide_transmits(pol):
     from lightsmith.backends.fdfd import FDFD

@@ -83,6 +83,20 @@ class Device:
             return a.get()
         return np.asarray(a)
 
+    def memory_free_bytes(self) -> int | None:
+        """Memory free on this GPU, counting what this process's allocator holds but is not using.
+        None where it is not known (CPU, CuPy)."""
+        if self.framework != "torch" or not self.is_gpu:
+            return None
+        import torch
+
+        dev = torch.device(self.name)
+        try:
+            free, _ = torch.cuda.mem_get_info(dev)
+            return int(free + torch.cuda.memory_reserved(dev) - torch.cuda.memory_allocated(dev))
+        except Exception:  # an old driver or a device that cannot say
+            return None
+
     def describe(self) -> dict[str, Any]:
         d: dict[str, Any] = {"framework": self.framework, "device": self.name}
         if self.framework == "torch" and self.is_gpu:
@@ -95,7 +109,8 @@ class Device:
 def resolve_device(device: str = "auto") -> Device:
     """Map a user-facing device string to a concrete :class:`Device`.
 
-    ``"auto"`` picks a CUDA GPU when one is usable, else CPU.
+    ``"auto"`` picks a CUDA GPU when one is usable, else CPU. ``solve`` and ``estimate`` go further and
+    leave the GPU for the CPU when the problem would not fit in its free memory.
     ``"gpu"``/``"cuda"``/``"cuda:N"`` require a GPU and raise with install hints otherwise.
     ``"torch-cpu"`` runs the native solvers through PyTorch on the CPU.
     """

@@ -6,6 +6,11 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
 
 ## [Unreleased]
 
+- `device="auto"` runs on the CPU, with a warning, when the problem will not fit in the GPU's free memory. Before,
+  `examples/pdk_mzi.py` took FDFD's block LU (12.9 GB) onto a 12 GB GPU, where Windows paged it for hours, although
+  SuperLU on the CPU needs 0.8 GB. `estimate` reports the same choice (`device`, `device_note`). Naming a device
+  still gets that device.
+
 ### Fixed
 
 - `method="auto"` passes over a 2D FDFD problem that exceeds `max_cells` and goes on to FDTD; the estimate now says

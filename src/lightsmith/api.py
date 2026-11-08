@@ -116,6 +116,30 @@ def _versions(dev) -> dict[str, str]:
     return out
 
 
+def _select_device(b: Backend, problem: BaseModel, device: str):
+    """The device a solve runs on, and why it is not the GPU `device="auto"` would otherwise pick.
+
+    A GPU that cannot hold the problem is the wrong choice for "auto": it fails, or on Windows pages to host
+    memory and takes hours, while the CPU solver may need a small fraction of the memory (FDFD's block LU
+    against SuperLU). Naming a device ("gpu", "cuda:0") always gets that device.
+    """
+    dev = resolve_device(device if b.gpu else "cpu")
+    if device.lower() != "auto" or not dev.is_gpu:
+        return dev, None
+    free = dev.memory_free_bytes()
+    if free is None:
+        return dev, None
+    try:
+        need = b.estimate(problem, dev).get("memory_bytes")
+    except Exception:  # the solve will report what is wrong with the problem
+        return dev, None
+    if not need or need <= free:
+        return dev, None
+    return resolve_device("cpu"), (
+        f"device='auto' ran on the CPU: {b.name} needs about {need / 2**30:.1f} GiB on {dev.name}, which has "
+        f"{free / 2**30:.1f} GiB free. Pass device='{dev.name}' to use the GPU anyway.")
+
+
 def solve(problem: BaseModel | dict | str, method: str = "auto", device: str = "auto",
           progress: ProgressCallback | None = None) -> BaseModel:
     """Solve `problem` with one method (or backend name). `device`: auto | cpu | gpu | cuda:N | torch-cpu.
@@ -125,7 +149,7 @@ def solve(problem: BaseModel | dict | str, method: str = "auto", device: str = "
     """
     problem = parse_problem(problem)
     b, skipped = _resolve_with_skips(problem, method)
-    dev = resolve_device(device if b.gpu else "cpu")
+    dev, device_note = _select_device(b, problem, device)
     with reporting(progress):
         report("solve_started", 0.0, backend=b.name, method=b.method, device=dev.name)
         res = b.solve(problem, dev)
@@ -133,6 +157,8 @@ def solve(problem: BaseModel | dict | str, method: str = "auto", device: str = "
     res.provenance.setdefault("versions", _versions(dev))
     if skipped:
         res.provenance["auto_skipped"] = skipped
+    if device_note:
+        res.warnings.append(device_note)
     return res
 
 
@@ -140,10 +166,12 @@ def estimate(problem: BaseModel | dict | str, method: str = "auto", device: str 
     """Pre-flight: which backend would run, on what device, and roughly how big. Never solves."""
     problem = parse_problem(problem)
     b, skipped = _resolve_with_skips(problem, method)
-    dev = resolve_device(device if b.gpu else "cpu")
+    dev, device_note = _select_device(b, problem, device)
     out = {"backend": b.name, "method": b.method, **dev.describe(), **b.estimate(problem, dev)}
     if skipped:
         out["auto_skipped"] = skipped
+    if device_note:
+        out["device_note"] = device_note
     return out
 
 
