@@ -38,3 +38,5 @@ src-tauri/target/
 
 # outputs of examples
 examples/output/
+inverse_bend_out/
+inverse_3d_out/
