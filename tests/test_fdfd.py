@@ -78,6 +78,68 @@ def test_auto_stays_on_the_gpu_when_its_free_memory_is_unknown(monkeypatch):
     assert g.api._select_device(ls.get_backend("fdfd"), prob, "auto") == (g.gpu, None)
 
 
+def _mixed_device():
+    """One of every shape, overlapping, some leaving the domain, one with sloped sidewalls that widen it."""
+    from lightsmith.problems import Ball, Box, Circle, Ellipse
+
+    return DeviceProblem(
+        dimension=2, background=SIO2, domain_size_nm=(3000, 2400, 0), wavelengths=[1500.0, 1600.0],
+        structures=[
+            rect(0, 0, 9000, 400),
+            prism(Circle(center_nm=(300, 200), radius_nm=350), SIN),
+            prism(Ellipse(center_nm=(-500, -300), semi_axes_nm=(500, 150), angle_deg=30)),
+            prism(Polygon(vertices_nm=[(0, -900), (800, -400), (500, 100), (-200, -200)]), SIN),
+            Structure(geometry=Prism(profile=Rectangle(center_nm=(-900, 700), size_nm=(300, 300)), z_min_nm=-110, z_max_nm=110,
+                                     sidewall_angle_deg=-20), material=SI),
+            Structure(geometry=Box(center_nm=(900, 800, 0), size_nm=(500, 200, 220)), material=SIN),
+            Structure(geometry=Ball(center_nm=(1200, -800, 0), radius_nm=300), material=SI),
+            Structure(geometry=Box(center_nm=(0, 0, 5000), size_nm=(100, 100, 100)), material=SI),  # not in this plane
+        ],
+        ports=[Port(name="o1", center_nm=(-1000, 0, 0), size_nm=(0, 1800, 1), direction="+"),
+               Port(name="o2", center_nm=(1000, 0, 0), size_nm=(0, 1800, 1), direction="-")],
+        options={"fdfd": {"dl_nm": 40.0}})
+
+
+def test_fill_fractions_match_testing_every_shape_on_the_whole_grid():
+    from lightsmith.backends._fdfd.grid import make_grid, node_fractions
+    from lightsmith.raster import inside_geometry
+
+    prob = _mixed_device()
+    grid = make_grid(prob, 40.0, (10, 10))
+    subsamples = 4
+    frac = node_fractions(prob, grid, subsamples)
+
+    structs = [s for s in prob.structures if abs(getattr(s.geometry, "center_nm", (0, 0, 0))[2]) < 1000]
+    assert frac.shape == (len(structs), len(grid.x), len(grid.y))
+    X, Y = np.meshgrid(grid.x, grid.y, indexing="ij")
+    offs = ((np.arange(subsamples) + 0.5) / subsamples - 0.5) * grid.dl
+    want = np.zeros(frac.shape)
+    for ox in offs:
+        for oy in offs:
+            owner = np.full(X.shape, -1)
+            for i, s in enumerate(structs):
+                owner[inside_geometry(s.geometry, X + ox, Y + oy, np.full(X.shape, grid.z0))] = i
+            for i in range(len(structs)):
+                want[i] += owner == i
+    np.testing.assert_array_equal(frac, want / subsamples**2)
+    assert (frac.sum(axis=(1, 2)) > 0).all()  # every shape really is on the grid
+
+
+def test_geometry_is_rasterised_once_per_solve(monkeypatch):
+    from lightsmith.backends._fdfd import grid as grid_module
+    from lightsmith.backends._fdfd.engine import FDFD2D
+    from lightsmith.backends.fdfd import FDFDOptions
+
+    calls = []
+    real = grid_module.node_fractions
+    monkeypatch.setattr("lightsmith.backends._fdfd.engine.node_fractions", lambda *a, **k: calls.append(1) or real(*a, **k))
+    engine = FDFD2D(_mixed_device(), FDFDOptions(dl_nm=40.0))
+    a, b = engine.base_eps(1500.0), engine.base_eps(1600.0)
+    assert len(calls) == 1
+    np.testing.assert_array_equal(a, grid_module.permittivity(engine.problem, engine.grid, 1500.0, engine.opts.subsamples))
+    np.testing.assert_array_equal(b, grid_module.permittivity(engine.problem, engine.grid, 1600.0, engine.opts.subsamples))
+
+
 @pytest.mark.parametrize("pol", ["te", "tm"])
 def test_straight_waveguide_transmits(pol):
     from lightsmith.backends.fdfd import FDFD

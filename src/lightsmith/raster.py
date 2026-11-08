@@ -44,6 +44,39 @@ def inside_profile(profile, x: np.ndarray, y: np.ndarray) -> np.ndarray:
     raise TypeError(f"unknown profile {type(profile).__name__}")
 
 
+def profile_bounds(profile) -> tuple[float, float, float, float]:
+    """(x_min, x_max, y_min, y_max) enclosing a 2D profile."""
+    if isinstance(profile, Rectangle):
+        (cx, cy), (w, h) = profile.center_nm, profile.size_nm
+        return cx - w / 2, cx + w / 2, cy - h / 2, cy + h / 2
+    if isinstance(profile, Circle):
+        (cx, cy), r = profile.center_nm, profile.radius_nm
+        return cx - r, cx + r, cy - r, cy + r
+    if isinstance(profile, Ellipse):
+        (cx, cy), r = profile.center_nm, max(profile.semi_axes_nm)
+        return cx - r, cx + r, cy - r, cy + r
+    if isinstance(profile, Polygon):
+        vx, vy = np.asarray(profile.vertices_nm, float).T
+        return float(vx.min()), float(vx.max()), float(vy.min()), float(vy.max())
+    raise TypeError(f"unknown profile {type(profile).__name__}")
+
+
+def geometry_xy_bounds(geometry) -> tuple[float, float, float, float]:
+    """(x_min, x_max, y_min, y_max) enclosing a 3D geometry in plan view."""
+    if isinstance(geometry, Box):
+        (cx, cy, _), (sx, sy, _) = geometry.center_nm, geometry.size_nm
+        return cx - sx / 2, cx + sx / 2, cy - sy / 2, cy + sy / 2
+    if isinstance(geometry, Ball):
+        (cx, cy, _), r = geometry.center_nm, geometry.radius_nm
+        return cx - r, cx + r, cy - r, cy + r
+    if isinstance(geometry, Prism):
+        x0, x1, y0, y1 = profile_bounds(geometry.profile)
+        # a negative sidewall angle widens the profile with height
+        grow = abs(np.tan(np.radians(geometry.sidewall_angle_deg))) * (geometry.z_max_nm - geometry.z_min_nm)
+        return x0 - grow, x1 + grow, y0 - grow, y1 + grow
+    raise TypeError(f"unknown geometry {type(geometry).__name__}")
+
+
 def _offset_profile_inside(profile, x, y, inset: np.ndarray | float):
     """Inside test for a profile shrunk by `inset` (used for sloped sidewalls). Approximate for polygons."""
     if np.all(np.asarray(inset) == 0):

@@ -19,7 +19,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from ...problems import Ball, Box, DeviceProblem, Prism
-from ...raster import inside_geometry
+from ...raster import geometry_xy_bounds, inside_geometry
 
 
 @dataclass(frozen=True)
@@ -88,29 +88,51 @@ def _cross_section(geometry, z0: float) -> bool:
     return True
 
 
-def permittivity(problem: DeviceProblem, grid: Grid2D, wavelength_nm: float, subsamples: int = 4) -> np.ndarray:
+def node_fractions(problem: DeviceProblem, grid: Grid2D, subsamples: int = 4) -> np.ndarray:
+    """Area fraction of each structure in each node's cell, painter's order: (n_structures, Nx, Ny).
+
+    Later structures override earlier ones, as everywhere in lightsmith. Depends only on the geometry, so a
+    solve computes it once. Each structure is tested inside its bounding box only: a layout's structures
+    are small against its domain, and a many-vertex bend on the whole grid costs far more than the solve.
+    """
+    structs = [s for s in problem.structures if _cross_section(s.geometry, grid.z0)]
+    shape = (len(grid.x), len(grid.y))
+    frac = np.zeros((len(structs),) + shape)
+    if not structs:
+        return frac
+    boxes = []
+    for s in structs:
+        x0, x1, y0, y1 = geometry_xy_bounds(s.geometry)
+        # one cell of margin: the subsamples of a node's cell reach dl/2 from it
+        boxes.append((np.s_[int(np.searchsorted(grid.x, x0 - grid.dl)):int(np.searchsorted(grid.x, x1 + grid.dl, side="right"))],
+                      np.s_[int(np.searchsorted(grid.y, y0 - grid.dl)):int(np.searchsorted(grid.y, y1 + grid.dl, side="right"))]))
+    points = [np.meshgrid(grid.x[bx], grid.y[by], indexing="ij") for bx, by in boxes]
+    offs = ((np.arange(subsamples) + 0.5) / subsamples - 0.5) * grid.dl
+    owner = np.empty(shape, dtype=np.int32)
+    for ox in offs:
+        for oy in offs:
+            owner.fill(-1)
+            for i, (s, box, (X, Y)) in enumerate(zip(structs, boxes, points)):
+                owner[box][inside_geometry(s.geometry, X + ox, Y + oy, np.full(X.shape, grid.z0))] = i
+            for i, box in enumerate(boxes):
+                frac[(i, *box)] += owner[box] == i
+    return frac / subsamples**2
+
+
+def permittivity(problem: DeviceProblem, grid: Grid2D, wavelength_nm: float, subsamples: int = 4,
+                 fractions: np.ndarray | None = None) -> np.ndarray:
     """Complex relative permittivity at the nodes, volume-averaged by supersampling each cell.
 
-    3D geometries are cut at z = ``grid.z0`` (the domain centre). Later structures
-    override earlier ones (painter's order), as everywhere in lightsmith.
+    3D geometries are cut at z = ``grid.z0`` (the domain centre). `fractions` is :func:`node_fractions`, if the
+    caller already has it.
     """
     wl = np.array([wavelength_nm])
     eps_bg = complex(problem.background.eps(wl)[0])
     structs = [s for s in problem.structures if _cross_section(s.geometry, grid.z0)]
-    X, Y = np.meshgrid(grid.x, grid.y, indexing="ij")
-    eps = np.full(X.shape, eps_bg, dtype=complex)
+    eps = np.full((len(grid.x), len(grid.y)), eps_bg, dtype=complex)
     if not structs:
         return eps
-    offs = ((np.arange(subsamples) + 0.5) / subsamples - 0.5) * grid.dl
-    frac = np.zeros((len(structs),) + X.shape)
-    for ox in offs:
-        for oy in offs:
-            owner = np.full(X.shape, -1)
-            for i, s in enumerate(structs):
-                owner[inside_geometry(s.geometry, X + ox, Y + oy, np.full(X.shape, grid.z0))] = i
-            for i in range(len(structs)):
-                frac[i] += owner == i
-    frac /= subsamples**2
+    frac = node_fractions(problem, grid, subsamples) if fractions is None else fractions
     for f, s in zip(frac, structs):
         eps += f * (complex(s.material.eps(wl)[0]) - eps_bg)
     return eps

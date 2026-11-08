@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ...progress import report
 from ...problems import DeviceProblem, wavelength_array
 from . import linsolve
-from .grid import Grid2D, make_grid, permittivity, stretch_factors
+from .grid import Grid2D, make_grid, node_fractions, permittivity, stretch_factors
 from .modes import SlabMode
 from .operators import Diagonals, boundary_masks, helmholtz, matvec
 from .ports import PortGeom, decompose, mode_source, port_geometry, port_modes
@@ -77,6 +77,7 @@ class FDFD2D:
             raise ValueError("port names must be unique")
         self.outputs: list[tuple[int, int]] = [(k, m) for k, pg in enumerate(self.ports) for m in range(pg.num_modes)]
         self.labels: list[str] = [lab for pg in self.ports for lab in pg.labels()]
+        self._frac: np.ndarray | None = None
         self._eps: dict[float, np.ndarray] = {}
         self.warnings: list[str] = []
 
@@ -87,7 +88,9 @@ class FDFD2D:
 
     def base_eps(self, lam: float) -> np.ndarray:
         if lam not in self._eps:
-            self._eps[lam] = permittivity(self.problem, self.grid, lam, self.opts.subsamples)
+            if self._frac is None:
+                self._frac = node_fractions(self.problem, self.grid, self.opts.subsamples)
+            self._eps[lam] = permittivity(self.problem, self.grid, lam, fractions=self._frac)
         return self._eps[lam]
 
     def _stretch(self, lam: float):
