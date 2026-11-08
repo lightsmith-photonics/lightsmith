@@ -1,6 +1,6 @@
 [project]
 name = "lightsmith"
-version = "0.2.0"
+version = "0.3.0"
 description = "Open photonics suite: one typed problem description solved by Mie, T-matrix, BEM, DDA, FDTD, TMM, RCWA, FDE, EME, BPM, FDFD, PWE and circuit solvers on CPU or GPU, with differentiable inverse design, built for humans and AI agents."
 readme = "README.md"
 license = "MIT"

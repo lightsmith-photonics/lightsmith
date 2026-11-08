@@ -24,7 +24,7 @@ from .results import FarFieldData, NearFieldData, Result, relative_difference
 from .spec import (Cylinder, FarFieldRequest, LayeredSphere, NearFieldRequest, Outputs, Particle, PlaneWave, Shell,
                    Simulation, Sphere, Spheroid, Substrate, WavelengthRange, json_schema)
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 
 def __getattr__(name):  # lazy: materials_fit pulls in scipy.optimize

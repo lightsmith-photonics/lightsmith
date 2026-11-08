@@ -6,10 +6,14 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-08
+
 - `device="auto"` runs on the CPU, with a warning, when the problem will not fit in the GPU's free memory. Before,
   `examples/pdk_mzi.py` took FDFD's block LU (12.9 GB) onto a 12 GB GPU, where Windows paged it for hours, although
   SuperLU on the CPU needs 0.8 GB. `estimate` reports the same choice (`device`, `device_note`). Naming a device
   still gets that device.
+- 2D FDFD rasterises the geometry once per solve, as 3D does, and tests each structure only inside its bounding box.
+  For the whole MZI of `examples/pdk_mzi.py` that took 690 of 846 s per wavelength, against 76 s for the factorisation.
 
 ### Fixed
 
@@ -256,6 +260,7 @@ First public release.
 - The `mcp` extra is pinned to `mcp>=1.2,<2`: the server uses the mcp 1.x `FastMCP` API, which mcp 2.x
   renamed.
 
-[Unreleased]: https://github.com/lightsmith-photonics/lightsmith/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/lightsmith-photonics/lightsmith/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/lightsmith-photonics/lightsmith/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/lightsmith-photonics/lightsmith/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/lightsmith-photonics/lightsmith/releases/tag/v0.1.0
