@@ -44,8 +44,9 @@ class DDAOptions(BaseModel):
         "Default: max(16, enough for |m| k d <= 0.5).")
     polarizability: Literal["ldr", "cm_rr"] = Field("ldr", description="LDR, or Clausius-Mossotti + radiative reaction.")
     discretization: Literal["center", "weighted"] = Field(
-        "center", description="center: classic staircase with volume rescaling. weighted (experimental): "
-        "boundary sites mix full-site polarizabilities by volume fraction.")
+        "center", description="center: classic staircase with volume rescaling. weighted: boundary sites mix "
+        "full-site polarizabilities by volume fraction; as accurate on dielectrics, but BiCGStab often fails to "
+        "converge on metals.")
     precision: Literal["auto", "single", "double"] = Field("auto", description="auto = double on CPU, single on GPU.")
     tol: float | None = Field(None, gt=0, description="Relative residual target. Default 1e-8 double, 1e-5 single.")
     max_iter: int = Field(10000, ge=1)
@@ -53,8 +54,8 @@ class DDAOptions(BaseModel):
     orientations: int = Field(32, ge=1, description="Incidence directions (x2 polarizations) for orientation_average.")
     extrapolate: list[int] | None = Field(
         None, min_length=2, description="dipoles_per_diameter values to extrapolate to zero dipole size, "
-        "e.g. [12, 16, 24]. Quadratic in 1/npd for 3+ values, linear for 2. Experimental: staircase "
-        "noise makes it unreliable for metal spheres.")
+        "e.g. [12, 16, 24]. Quadratic in 1/npd for 3+ values, linear for 2. Improves smooth (dielectric) "
+        "ladders; staircase noise makes it unreliable for metals.")
 
 
 # --- geometry ---------------------------------------------------------------
@@ -106,9 +107,9 @@ def _lattice(sim: Simulation, npd: int, discretization: str = "weighted", subsam
 
     "center": a site is filled if its centre is inside; the lattice is then rescaled
     so the dipole volume equals the true volume. "weighted": each site carries the
-    volume fraction of every material (supersampled), which removes most of the
-    staircase noise that otherwise dominates DDA errors for metals (cf. Piller,
-    Opt. Lett. 24, 1001 (1999)).
+    volume fraction of every material (supersampled; cf. Piller, Opt. Lett. 24, 1001
+    (1999)). On metals its strongly mixed boundary sites leave BiCGStab unconverged at
+    most resolutions, so it does not remove the staircase noise there in practice.
     """
     diam = min(2 * p.shape.bounding_half_extent().max() for p in sim.particles)
     d0 = diam / npd

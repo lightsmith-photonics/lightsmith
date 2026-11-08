@@ -29,13 +29,13 @@ The same code runs on NumPy, PyTorch (CPU or CUDA) and CuPy through the array AP
 |---|---|---|
 | `dipoles_per_diameter` | `None` | Lattice sites across the smallest particle's largest dimension. Default: max(16, enough for \|m\| k d ≤ 0.5). |
 | `polarizability` | `"ldr"` | `"ldr"`, or `"cm_rr"` (Clausius–Mossotti + radiative reaction) |
-| `discretization` | `"center"` | `"center"` (staircase with volume rescaling), or `"weighted"` (experimental: boundary sites mixed by volume fraction) |
+| `discretization` | `"center"` | `"center"` (staircase with volume rescaling), or `"weighted"` (boundary sites mixed by volume fraction; as accurate on dielectrics, but BiCGStab often fails to converge on metals) |
 | `precision` | `"auto"` | `"auto"` means double on the CPU and single on the GPU |
 | `tol` | `None` | BiCGStab relative residual. Default 1e-8 (double) or 1e-5 (single). |
 | `max_iter` | `10000` | BiCGStab iteration cap |
 | `max_dipoles` | `5000000` | Refuse problems larger than this |
 | `orientations` | `32` | Incidence directions (× 2 polarisations) for `orientation_average` |
-| `extrapolate` | `None` | List of `dipoles_per_diameter` values to extrapolate to zero dipole size, for example `[12, 16, 24]`. Experimental: staircase noise makes it unreliable for metal spheres. |
+| `extrapolate` | `None` | List of `dipoles_per_diameter` values to extrapolate to zero dipole size, for example `[12, 16, 24]`. It improves smooth dielectric ladders; staircase noise makes it unreliable for metals. |
 
 There are no gradients.
 

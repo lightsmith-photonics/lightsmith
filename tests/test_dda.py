@@ -62,3 +62,43 @@ def test_dimer_runs_and_reports_provenance():
     assert ls.choose_method(s)[0].method in ("tmatrix", "bem")  # T-matrix wins for spheres when treams is installed
     r = ls.solve(s, "dda", "cpu")
     assert r.provenance["dipoles"][0] > 0 and r.c_ext_nm2[0] > 0
+
+
+@pytest.mark.parametrize("npd", [12, 16, 24])
+def test_weighted_discretization_matches_mie_on_a_dielectric(npd):
+    mie = ls.solve(sim(), "mie", "cpu")
+    r = ls.solve(sim(npd=npd, options={"discretization": "weighted"}), "dda", "cpu")
+    assert r.c_ext_nm2[0] == pytest.approx(mie.c_ext_nm2[0], rel=5e-3)
+    assert r.c_abs_nm2[0] == pytest.approx(mie.c_abs_nm2[0], rel=5e-3)
+
+
+def test_weighted_lattice_keeps_the_particle_volume():
+    from lightsmith.backends.dda import _lattice
+
+    for npd in (12, 24):
+        lat = _lattice(sim(npd=npd), npd, "weighted", subsamples=8)
+        volume = lat.frac.sum() * lat.d**3
+        assert volume == pytest.approx(4 / 3 * np.pi * 40**3, rel=2e-3)
+        assert lat.frac.max() == 1.0 and 0 < lat.frac[lat.frac < 1].max() < 1  # full and partial sites
+
+
+def test_extrapolation_is_exact_on_a_polynomial_in_one_over_npd():
+    from lightsmith.backends.dda import _extrapolate
+
+    npds = [12, 16, 24]
+    h = 1 / np.array(npds, float)
+    values = np.stack([3.0 + 2.0 * h + 5.0 * h**2, -1.0 + 7.0 * h - 4.0 * h**2], axis=1)[:, None, :]
+    np.testing.assert_allclose(_extrapolate(npds, values), [[3.0, -1.0]], atol=1e-12)
+    linear = (2.0 + 6.0 * h[:2])[:, None, None]  # two values: a straight line
+    np.testing.assert_allclose(_extrapolate(npds[:2], linear), [[2.0]], atol=1e-12)
+
+
+def test_extrapolation_beats_the_finest_lattice_on_a_dielectric():
+    mie = ls.solve(sim(), "mie", "cpu")
+    finest = ls.solve(sim(npd=24), "dda", "cpu")
+    r = ls.solve(sim(options={"extrapolate": [12, 16, 24]}), "dda", "cpu")
+    err = abs(r.c_ext_nm2[0] / mie.c_ext_nm2[0] - 1)
+    assert err < 3e-4 and err < abs(finest.c_ext_nm2[0] / mie.c_ext_nm2[0] - 1)
+    assert any("extrapolated" in w for w in r.warnings)  # says what it did
+    assert set(r.provenance["unextrapolated"]) == {"12", "16", "24"}  # and keeps each rung
+    assert r.provenance["unextrapolated"]["24"]["c_ext_nm2"][0] == pytest.approx(finest.c_ext_nm2[0], rel=1e-9)
