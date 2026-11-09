@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use Lightsmith in your work, please cite it as below, and also cite the solver backends you used (see `lightsmith backends` and `Result.provenance`)."
 type: software
-title: "Lightsmith: an open, GPU-native photonics suite built for AI agents"
+title: "Lightsmith: an open, GPU-native, differentiable photonics suite for humans and AI agents"
 abstract: >-
   Lightsmith describes a photonics problem once, as typed JSON, and solves it
   with Mie, T-matrix, BEM, DDA, FDTD, TMM, RCWA, FDE, EME, BPM, FDFD, PWE and

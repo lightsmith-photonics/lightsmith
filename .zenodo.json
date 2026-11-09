@@ -1,5 +1,5 @@
 {
-  "title": "Lightsmith: an open, GPU-native photonics suite built for AI agents",
+  "title": "Lightsmith: an open, GPU-native, differentiable photonics suite for humans and AI agents",
   "upload_type": "software",
   "description": "<p>Lightsmith describes a photonics problem once, as typed JSON, and solves it with Mie, T-matrix, DDA, FDTD, TMM, RCWA, FDE, EME, FDFD, PWE and S-matrix circuit solvers on CPU or GPU, with differentiable inverse design. Every result uses the same units and conventions and carries provenance, so methods can be cross-checked directly. Python, CLI and MCP interfaces are JSON in, JSON out.</p>",
   "creators": [
