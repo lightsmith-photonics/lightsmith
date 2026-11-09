@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # Build the documentation and publish it to docs.lightsmith.dev (nginx on the Lightsmith server).
 #
-#   scripts/deploy_docs.sh                 # needs SSH access as root@95.217.87.43
-#   DOCS_HOST=user@host scripts/deploy_docs.sh
+#   scripts/deploy_docs.sh                 # needs SSH access as alex@65.109.121.40
+#   DOCS_HOST=user@host DOCS_BASE=/path scripts/deploy_docs.sh
 #
 # Each deploy is unpacked into its own release directory and switched in atomically by
 # repointing the `current` symlink, which nginx serves; the last five releases are kept.
 set -euo pipefail
 
-host="${DOCS_HOST:-root@95.217.87.43}"
-base=/var/www/lightsmith-docs
+host="${DOCS_HOST:-alex@65.109.121.40}"
+base="${DOCS_BASE:-/srv/lightsmith-DO-NOT-DELETE/docs}"
 release="$(date -u +%Y%m%dT%H%M%SZ)-$(git rev-parse --short HEAD)"
 
 cd "$(dirname "$0")/.."
