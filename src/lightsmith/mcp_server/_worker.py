@@ -37,45 +37,34 @@ def run(job_dir: str, events, t0: float) -> int:
     try:
         emit(type="progress", stage="importing", progress=0.01)
         from lightsmith import api
-        from lightsmith.device import resolve_device
         from lightsmith.mcp_server.summaries import json_safe
         from lightsmith.problems import parse_problem
 
         problem = parse_problem(req["problem"])
         emit(type="progress", stage="started", progress=0.05)
         if req["operation"] == "compare":
-            orig = api.solve
-            n = max(1, len(req.get("methods") or [1]))
-            done = [0]
+            def on_method(ev: dict) -> None:  # lightsmith.progress events, per method
+                f = ev.get("fraction")
+                emit(type="progress", stage="method_done" if ev["stage"] == "solve_done" else "method_started",
+                     method=ev["compare_method"], **({} if f is None else {"progress": 0.05 + 0.9 * f}))
 
-            def traced(p, m="auto", dev="auto"):  # this process only: report per-method progress
-                emit(type="progress", stage="method_started", method=m, progress=0.05 + 0.9 * done[0] / n)
-                r = orig(p, m, dev)
-                done[0] += 1
-                emit(type="progress", stage="method_done", method=m, progress=0.05 + 0.9 * done[0] / n)
-                return r
-
-            api.solve = traced
-            c = api.compare(problem, req.get("methods"), req.get("device", "auto"), req.get("reference"))
+            c = api.compare(problem, req.get("methods"), req.get("device", "auto"), req.get("reference"),
+                            progress=on_method)
             result = {**c, "results": {k: v.model_dump(mode="json") for k, v in c["results"].items()}}
         else:
             b = api._resolve(problem, req.get("method", "auto"))
-            if b.method == "inverse":  # per-iteration progress for inverse design
-                from lightsmith.inverse.topopt import optimize
+            emit(type="progress", stage="solving", method=b.method, backend=b.name, progress=0.1)
 
-                dev = resolve_device(req.get("device", "auto") if b.gpu else "cpu")
-                max_iter = problem.optimizer.max_iter
+            def on_solve(ev: dict) -> None:  # lightsmith.progress events: inverse design per iteration, others as they go
+                f = ev.get("fraction")
+                where = {} if f is None else {"progress": min(0.95, 0.1 + 0.85 * f)}
+                if ev["stage"] == "iteration":
+                    emit(type="progress", stage="iteration", **{k: ev[k] for k in ("iteration", "max_iter", "objective",
+                                                                                   "binarization", "beta")}, **where)
+                else:
+                    emit(type="progress", stage="solving", method=b.method, backend=b.name, **where)
 
-                def cb(state):
-                    emit(type="progress", stage="iteration", iteration=state.iteration, max_iter=max_iter,
-                         objective=state.objective, binarization=state.binarization, beta=state.beta,
-                         progress=min(0.95, 0.05 + 0.9 * (state.iteration + 1) / max_iter))
-
-                res = optimize(problem, device=dev, callback=cb)
-            else:
-                emit(type="progress", stage="solving", method=b.method, backend=b.name, progress=0.1)
-                res = api.solve(problem, b.name, req.get("device", "auto"))
-            result = res.model_dump(mode="json")
+            result = api.solve(problem, b.name, req.get("device", "auto"), progress=on_solve).model_dump(mode="json")
         tmp = d / "result.json.tmp"
         tmp.write_text(json.dumps(json_safe(result), allow_nan=False), encoding="utf-8")
         tmp.replace(d / "result.json")

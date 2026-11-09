@@ -83,7 +83,7 @@ def test_compare_reference_follows_the_auto_order(monkeypatch):
     c = ls.compare(p, ["tmm", "rcwa"], device="cpu")
     assert c["reference"] == "tmm" and max(d["max"] for d in c["relative_difference"]["rcwa"].values()) < 1e-6
     real_solve, ran = api.solve, []
-    monkeypatch.setattr(api, "solve", lambda prob, m, dev: ran.append(m) or real_solve(prob, "tmm", "cpu"))
+    monkeypatch.setattr(api, "solve", lambda prob, m, dev, progress=None: ran.append(m) or real_solve(prob, "tmm", "cpu"))
     c = ls.compare(p)  # every applicable backend, solves stubbed (no FDTD run)
     assert ran[0] == c["reference"] == "lightsmith-tmm" and "lightsmith-fdtd" in ran
 

@@ -5,6 +5,7 @@ Most tests talk to the server through the SDK's in-process client; the transport
 """
 
 import base64
+import io
 import json
 import os
 import socket
@@ -184,6 +185,41 @@ def test_solve_inline_summary_plot_and_resources(cfg):
     img = [x for x in r.content if x.type == "image"]
     assert img and base64.b64decode(img[0].data)[:4] == b"\x89PNG"
     assert base64.b64decode(reads["/plot.png"].blob)[:4] == b"\x89PNG"
+
+
+def test_worker_reports_library_progress(tmp_path):
+    """The solver process turns lightsmith.progress events into job events, for compare and for solve."""
+    from lightsmith.mcp_server import _worker
+
+    def events(request):
+        d = tmp_path / request["operation"]
+        d.mkdir()
+        (d / "request.json").write_text(json.dumps(request), encoding="utf-8")
+        out = io.StringIO()
+        assert _worker.run(str(d), out, time.perf_counter()) == 0, out.getvalue()
+        assert json.loads((d / "result.json").read_text(encoding="utf-8"))
+        return [json.loads(line) for line in out.getvalue().splitlines()]
+
+    ev = events({"operation": "compare", "problem": EXAMPLES["layer_stack"], "methods": ["tmm", "rcwa"], "device": "cpu"})
+    seen = [(e["stage"], e.get("method")) for e in ev if e.get("method")]
+    assert ("method_started", "tmm") in seen and ("method_done", "tmm") in seen and ("method_done", "rcwa") in seen
+    done = [e["progress"] for e in ev if e.get("stage") == "method_done"]
+    assert done == sorted(done) and done[-1] == pytest.approx(0.95)
+    assert ev[-1]["type"] == "done"
+
+    sphere = {"kind": "scattering", "medium_index": 1.0, "wavelengths": [500.0, 550.0, 600.0],
+              "particles": [{"shape": {"kind": "sphere", "radius_nm": 40}, "material": {"kind": "constant_index", "n_real": 1.5}}]}
+    ev = events({"operation": "solve", "problem": sphere, "method": "bem", "device": "cpu"})
+    solving = [e for e in ev if e.get("stage") == "solving"]
+    assert len(solving) > 2 and solving[0]["backend"] == "lightsmith-bem"  # one per wavelength
+    assert [e["progress"] for e in solving] == sorted(e["progress"] for e in solving)
+
+    design = json.loads(json.dumps(EXAMPLES["optimization"]))
+    design["optimizer"]["max_iter"] = 2
+    ev = events({"operation": "optimize", "problem": design, "method": "auto", "device": "cpu"})
+    iterations = [e for e in ev if e.get("stage") == "iteration"]
+    assert [e["iteration"] for e in iterations] == [0, 1] and iterations[0]["max_iter"] == 2
+    assert isinstance(iterations[0]["objective"], float)
 
 
 def test_compare_reports_relative_differences(cfg):

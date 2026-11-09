@@ -12,6 +12,8 @@ All notable changes to the `lightsmith` library are recorded here. The format fo
   `examples/pdk_mzi.py` took FDFD's block LU (12.9 GB) onto a 12 GB GPU, where Windows paged it for hours, although
   SuperLU on the CPU needs 0.8 GB. `estimate` reports the same choice (`device`, `device_note`). Naming a device
   still gets that device.
+- The MCP server's solver process reports progress through `lightsmith.progress`: every wavelength or iteration of a
+  solve, and each method of a `compare`. Inverse design goes through `solve`, so `device="auto"` treats it the same.
 - 2D FDFD rasterises the geometry once per solve, as 3D does, and tests each structure only inside its bounding box.
   For the whole MZI of `examples/pdk_mzi.py` that took 690 of 846 s per wavelength, against 76 s for the factorisation.
 
