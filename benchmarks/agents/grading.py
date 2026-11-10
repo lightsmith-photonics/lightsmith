@@ -15,13 +15,16 @@ Check types (all ``required`` unless the task says otherwise):
 - ``value``: reported number within the target tolerance of the reference
 - ``spec`` / ``spec_material`` / ``spec_wavelength``: some successfully solved problem
   of the task's kind has this field value / material index / wavelength
+- ``spec_ratio``: some successfully solved problem has this ratio of two fields (the second
+  may be a vector, then its length), for prompts that give sizes relative to a scale
 - ``solved_kind``: the agent solved at least one problem of the task's kind
   (added to every task that has a reference spec)
 - ``estimate_before_solve``: an estimate of a problem of this kind came before
   its first successful solve
 - ``pushback``: the agent declined, or gave no numbers and stated concerns
 - ``mentions``: concerns/summary contain one of the given words
-- ``self_consistent``: the reported number matches the agent's own last result
+- ``self_consistent``: the reported number matches the agent's own last result (a full
+  result, or the summary the server attaches to a finished job)
 - ``threshold``: the reported number is at least ``min``
 """
 
@@ -33,7 +36,7 @@ import re
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
-from extract import RESULT_KIND, ExtractError, extract, result_kind
+from extract import RESULT_KIND, ExtractError, extract, extract_summary, result_kind
 
 SOLVE_WORDS = ("solve", "compare", "optimiz", "run")
 
@@ -103,6 +106,26 @@ def results_in(obj: Any, depth: int = 0):
             yield from results_in(v, depth + 1)
 
 
+def summaries_in(obj: Any, depth: int = 0):
+    """Job summaries (``{"result_kind": ..., ...}``) anywhere in a tool reply, outermost first."""
+    if depth > 5:
+        return
+    if isinstance(obj, str) and obj.lstrip().startswith(("{", "[")):
+        try:
+            obj = json.loads(obj)
+        except ValueError:
+            return
+    if isinstance(obj, dict):
+        if isinstance(obj.get("result_kind"), str):
+            yield obj
+            return
+        for v in obj.values():
+            yield from summaries_in(v, depth + 1)
+    elif isinstance(obj, list):
+        for v in obj[:50]:
+            yield from summaries_in(v, depth + 1)
+
+
 @dataclass
 class Transcript:
     """What graders need from one agent run."""
@@ -131,6 +154,20 @@ class Transcript:
         for c in self.calls:
             if c["ok"]:
                 out += [r for r in results_in(c.get("result")) if r.get("kind") == want]
+        return out
+
+    def outputs(self, kind: str) -> list[tuple[str, dict]]:
+        """("result" | "summary", dict) of every full result and job summary of this kind, in order.
+
+        Within one reply, full results come after its summary, so a reply carrying both
+        counts as its full result."""
+        want = RESULT_KIND[kind]
+        out = []
+        for c in self.calls:
+            if c["ok"]:
+                r = c.get("result")
+                out += [("summary", s) for s in summaries_in(r) if s.get("result_kind") == want]
+                out += [("result", x) for x in results_in(r) if x.get("kind") == want]
         return out
 
     def value(self, key: str) -> float | None:
@@ -229,6 +266,15 @@ def check(tr: Transcript, task: dict, c: dict) -> CheckResult:
             return within(float(v), c["approx"], {k: c[k] for k in ("abs", "rel") if k in c}), v
 
         r = _spec_check(tr, kind, f"spec:{path}", test)
+    elif t == "spec_ratio":
+        def length(v):
+            return math.hypot(*map(float, v)) if isinstance(v, (list, tuple)) else float(v)
+
+        def test(spec, model):
+            v = length(get_path(spec, c["path"])) / length(get_path(spec, c["over"]))
+            return within(v, c["approx"], {k: c[k] for k in ("abs", "rel") if k in c}), round(v, 6)
+
+        r = _spec_check(tr, kind, f"spec_ratio:{c['path']}/{c['over']}", test)
     elif t == "spec_material":
         wl = c["wavelength_nm"]
 
@@ -269,17 +315,25 @@ def check(tr: Transcript, task: dict, c: dict) -> CheckResult:
         hit = next((w for w in c["any"] if w.lower() in txt), None)
         r = CheckResult("mentions", hit is not None, detail=f"matched {hit!r}" if hit else f"none of {c['any']}")
     elif t == "self_consistent":
-        v, res = tr.value(c["key"]), tr.results(kind)
-        if v is None or not res:
-            r = CheckResult(f"self_consistent:{c['key']}", False,
+        name, v, outs = f"self_consistent:{c['key']}", tr.value(c["key"]), tr.outputs(kind)
+        if v is None or not outs:
+            r = CheckResult(name, False,
                             detail="not reported" if v is None else "no result of this kind in the transcript")
         else:
-            try:
-                own = extract(c["extract"], res[-1])
-                ok = within(v, own, {k: c[k] for k in ("abs", "rel") if k in c})
-                r = CheckResult(f"self_consistent:{c['key']}", ok, detail=f"reported {v:.6g}, own result {own:.6g}")
-            except ExtractError as e:
-                r = CheckResult(f"self_consistent:{c['key']}", False, detail=str(e))
+            # the last full result or job summary the quantity can be read from
+            own, src, errors = None, "", []
+            for what, out in reversed(outs):
+                try:
+                    own = extract(c["extract"], out) if what == "result" else extract_summary(c["extract"], out)
+                    src = "own result" if what == "result" else "own job summary"
+                    break
+                except ExtractError as e:
+                    errors.append(f"{what}: {e}")
+            if own is None:
+                r = CheckResult(name, False, detail="; ".join(errors[:2]))
+            else:
+                ok = bool(within(v, own, {k: c[k] for k in ("abs", "rel") if k in c}))  # not numpy.bool_
+                r = CheckResult(name, ok, detail=f"reported {v:.6g}, {src} {own:.6g}")
     elif t == "threshold":
         v = tr.value(c["key"])
         r = CheckResult(f"threshold:{c['key']}", v is not None and v >= c["min"],

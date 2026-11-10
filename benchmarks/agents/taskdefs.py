@@ -80,6 +80,12 @@ def approx(path, value, **tol):
     return {"type": "spec", "path": path, "approx": value, **({"abs": 1e-6 * max(1, abs(value))} | tol)}
 
 
+def ratio(path, over, value, **tol):
+    """Scale-free spec check: the number at `path` divided by the number (or vector length) at `over`."""
+    return {"type": "spec_ratio", "path": path, "over": over, "approx": value,
+            **({"abs": 1e-6 * max(1, abs(value))} | tol)}
+
+
 def material(path, wavelength_nm, n_real, n_imag, tol=0.02):
     return {"type": "spec_material", "path": path, "wavelength_nm": wavelength_nm, "n_real": n_real,
             "n_imag": n_imag, "abs": tol}
@@ -586,7 +592,8 @@ task(id="bands-rods-tm-gap", kind="bands", traps=["estimate_first"],
      reference_spec=rods(),
      targets=[val("gap_midgap_ratio", {"kind": "band_gap", "pol": "tm", "field": "gap_midgap_ratio",
                                        "between_bands": [1, 2]}, abs=0.015)],
-     checks=[ESTIMATE, approx("structures_2d[0].profile.radius_nm", 0.2 * 400.0, rel=0.01)],
+     # the prompt gives r = 0.2a and no lattice constant: any a is right, so check r / |a1|
+     checks=[ESTIMATE, ratio("structures_2d[0].profile.radius_nm", "lattice_vectors_nm[0]", 0.2, rel=0.01)],
      naive_spec=rods(pol="te"))
 
 task(id="bands-gap-wavelengths", kind="bands", category="trap", traps=["normalized_frequency", "estimate_first"],

@@ -228,6 +228,45 @@ def extract(spec: dict[str, Any], res: dict[str, Any]) -> float:
     raise ExtractError(f"unknown extractor kind {k!r}")
 
 
+def extract_summary(spec: dict[str, Any], summary: dict[str, Any]) -> float:
+    """Apply an extractor to the MCP server's job summary instead of the full result.
+
+    A ``solve`` reply for a job carries ``summary`` (see ``lightsmith.mcp_server.summaries``),
+    and an agent may answer from it without fetching the full result. Supported: ``sparam``
+    (power or dB) on S-parameter and optimisation summaries, which give |S|^2 per port path
+    at the centre wavelength (an optimisation's ``validated_sparameters`` are the same
+    re-solved S-parameters of the final device that ``extract`` reads from the full result),
+    and ``optimization`` fields. Anything the summary does not pin down raises ExtractError.
+    """
+    k, rk = spec["kind"], summary.get("result_kind")
+    if k == "optimization" and rk == "optimization":
+        v = summary.get(spec["field"])
+        if not isinstance(v, (int, float)):
+            raise ExtractError(f"summary has no {spec['field']!r}")
+        return float(v)
+    if k == "sparam" and rk in ("sparameters", "optimization"):
+        sp = summary if rk == "sparameters" else summary.get("validated_sparameters")
+        if not sp:
+            raise ExtractError("optimization summary has no validated S-parameters")
+        if spec.get("as", "power") not in ("power", "db"):
+            raise ExtractError(f"summary gives no S-parameter {spec['as']}")
+        want = f"{spec['in']} -> {spec['out']}"
+        path = next((p for p in sp.get("significant_paths") or [] if p.get("path") == want), None)
+        if path is None:
+            raise ExtractError(f"path {want} not in the summary")
+        centre, wl = sp.get("center_wavelength_nm"), spec["wavelength_nm"]
+        lo, hi = (sp.get("wavelength_range_nm") or [math.inf, -math.inf])[:2]
+        if centre is not None and abs(centre - wl) <= 0.5:
+            p = path["power_center"]
+        elif lo - 0.5 <= wl <= hi + 0.5 and path.get("power_min") is not None \
+                and path.get("power_min") == path.get("power_max"):
+            p = path["power_min"]  # flat over a band that contains the wavelength
+        else:
+            raise ExtractError(f"summary gives {want} only at {centre} nm, not {spec['wavelength_nm']} nm")
+        return float(p) if spec.get("as", "power") == "power" else 10 * math.log10(max(float(p), 1e-30))
+    raise ExtractError(f"extractor {k!r} cannot read a {rk!r} summary")
+
+
 def result_kind(res: Any) -> str | None:
     """The result kind of a solver output dict ('cross_sections', 'spectrum', 'modes', ...), else None."""
     if isinstance(res, dict) and isinstance(res.get("kind"), str) and "backend" in res and "method" in res:

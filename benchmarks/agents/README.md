@@ -101,10 +101,11 @@ The **score** is the fraction of all checks that pass, which shows partial credi
 | `value:<key>` | The reported number is within `abs + rel·|ref|` of the reference. |
 | `solved_kind` | At least one solve of a problem of the task's kind succeeded. This is added to every task with a reference spec, so a correct number without a simulation does not pass. |
 | `spec:<path>`, `material:<path>`, `wavelength:<λ>` | Some successfully solved problem has this field value, material index at λ, or wavelength. These are read from the tool-call arguments, not from the agent's claims, and they diagnose *why* a value check failed. |
+| `spec_ratio:<path>/<over>` | Some successfully solved problem has this ratio of two fields (the length, if `<over>` is a vector). Used where the prompt gives sizes only relative to a lattice constant, e.g. a rod radius of 0.2a. |
 | `estimate_before_solve` | An `estimate` call for a problem of this kind came before its first successful solve. |
 | `pushback` | `declined` is true, or no values were given and concerns were stated. |
 | `mentions` | The concerns or summary contain one of the expected words (e.g. "gain", "unreliable", "energy conservation"). |
-| `self_consistent`, `threshold` | For the optimisation task: the reported transmission matches the agent's own final result, and that transmission is ≥ 0.5. |
+| `self_consistent`, `threshold` | For the optimisation task: the reported transmission matches the agent's own final result, and that transmission is ≥ 0.5. The final result is the last full result in the transcript or, if the agent answered from the job summary that `solve` returns, that summary's `validated_sparameters`. |
 
 The graders are independent of server generation:
 - An "estimate" is any tool whose name contains `estimate`.
@@ -153,6 +154,7 @@ Useful options:
 | `--shared-server` / `--server-per-task` | Share one server across tasks, or start a fresh one per task. |
 | `--no-fallbacks` | Turn off the server-side refusal fallback. |
 | `--strict` | Exit 1 unless every task passes. |
+| `--regrade <dir>` | Grade a finished run again from its saved transcripts with the current graders and task files. No model or server calls. Writes `<dir>-regraded-<timestamp>/` (or `--out`); the original run is left as it is, and `results.json` lists the tasks whose grade changed under `meta.regraded`. |
 
 **Model call settings.**
 The Claude adapter uses adaptive thinking with summarised thinking display, `output_config.effort`, streaming, and automatic prompt caching (top-level `cache_control`).

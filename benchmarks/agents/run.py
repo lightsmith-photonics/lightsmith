@@ -2,11 +2,17 @@
 
     uv run --no-sync python benchmarks/agents/run.py --agent oracle
     uv run --no-sync --with anthropic python benchmarks/agents/run.py --agent claude --model claude-opus-5-5
+    uv run --no-sync python benchmarks/agents/run.py --regrade benchmarks/agents/results/<run>   # no model calls
 
 Writes ``benchmarks/agents/results/<timestamp>-<agent>/``: ``results.json`` (run
 metadata, per-task grades, usage and cost), ``results.md`` (tables) and
 ``transcripts/<task>.json`` (prompt, every tool call with arguments and
 replies, the model-side messages, the answer and the grade).
+
+``--regrade <dir>`` grades a finished run again from its saved transcripts with the
+current graders and task files, and writes ``<dir>-regraded-<timestamp>/`` (the
+original is left as it is); ``results.json`` gains ``meta.regraded`` listing every
+task whose grade changed.
 """
 
 from __future__ import annotations
@@ -122,6 +128,10 @@ def markdown(meta: dict, rows: list[dict]) -> str:
         lines += [f"| {k} | {len(v)} | {sum(x['passed'] for x in v)} | {sum(x['score'] for x in v) / len(v):.3f} |"
                   for k, v in sorted(agg.items())]
         lines.append("")
+    if meta.get("regraded"):
+        rg = meta["regraded"]
+        lines[5:5] = [f"- Regraded {rg['at']} from `{rg['from']}` at commit {rg['git_commit']}: "
+                      f"{len(rg['changed'])} task grade(s) changed", ""]
     lines += ["| task | kind | category | pass | score | tool calls (errors) | turns | stop | time s | cost $ "
               "| failed checks |",
               "|---|---|---|:-:|---:|---:|---:|---|---:|---:|---|"]
@@ -131,6 +141,56 @@ def markdown(meta: dict, rows: list[dict]) -> str:
                      f"{r['score']:.2f} | {r['tool_calls']} ({r['tool_errors']}) | {r['turns']} | {r['stop']} | "
                      f"{r['wall_s']:.1f} | {cost} | {', '.join(r['failed_checks'])} |")
     return "\n".join(lines) + "\n"
+
+
+def run_summary(meta: dict, rows: list[dict]) -> dict:
+    return {"tasks": len(rows), "passed": sum(r["passed"] for r in rows),
+            "mean_score": sum(r["score"] for r in rows) / len(rows),
+            "cost_usd": sum(r["cost_usd"] or 0 for r in rows) if meta["model"] else None,
+            "usage": {k: sum((r["usage"] or {}).get(k, 0) for r in rows)
+                      for k in ("input_tokens", "output_tokens", "cache_creation_input_tokens",
+                                "cache_read_input_tokens")}}
+
+
+def regrade(src: Path, out: Path | None = None) -> Path:
+    """Grade a finished run again from its transcripts; write a new results directory."""
+    src = Path(src).resolve()
+    old = json.loads((src / "results.json").read_text(encoding="utf-8"))
+    meta, rows = old["meta"], old["results"]
+    files = {t["id"]: t for t in load_tasks()}
+    missing = [r["task_id"] for r in rows if r["task_id"] not in files]
+    if missing:
+        raise SystemExit(f"no task file for {missing}")
+    stamp = datetime.now()
+    out = Path(out) if out else src.with_name(f"{src.name}-regraded-{stamp.strftime('%Y%m%d-%H%M%S')}")
+    (out / "transcripts").mkdir(parents=True, exist_ok=False)
+    changed = []
+    for row in rows:
+        tid = row["task_id"]
+        log = json.loads((src / "transcripts" / f"{tid}.json").read_text(encoding="utf-8"))
+        calls = log["tool_calls"]
+        g = grade(files[tid], Transcript(calls=calls, answer=log["answer"], final_text=log.get("final_text") or ""))
+        before = {"passed": row["passed"], "score": row["score"], "failed_checks": row["failed_checks"]}
+        row.update(passed=g.passed, score=round(g.score, 4),
+                   failed_checks=[c.name for c in g.checks if not c.passed and c.required])
+        if (before["passed"], before["score"]) != (row["passed"], row["score"]):
+            changed.append({"task_id": tid, "before": before, "after": {k: row[k] for k in before}})
+        log["original_grade"], log["grade"] = log["grade"], g.to_json()
+        (out / "transcripts" / f"{tid}.json").write_text(json.dumps(log, indent=1, default=str), encoding="utf-8")
+        mark = "PASS" if g.passed else "FAIL"
+        delta = f"  (was {before['score']:.2f})" if before["score"] != row["score"] else ""
+        print(f"{mark} {tid:36s} score {g.score:.2f}{delta}  {', '.join(row['failed_checks'])}", flush=True)
+    meta["regraded"] = {"from": src.name, "at": stamp.isoformat(timespec="seconds"), "git_commit": _git_commit(),
+                        "original_summary": {k: old["summary"][k] for k in ("tasks", "passed", "mean_score")},
+                        "changed": changed}
+    summary = run_summary(meta, rows)
+    (out / "results.json").write_text(json.dumps({"meta": meta, "summary": summary, "results": rows}, indent=1,
+                                                 default=str), encoding="utf-8")
+    (out / "results.md").write_text(markdown(meta, rows), encoding="utf-8")
+    o = old["summary"]
+    print(f"\npassed {o['passed']}/{o['tasks']} -> {summary['passed']}/{summary['tasks']}, mean score "
+          f"{o['mean_score']:.3f} -> {summary['mean_score']:.3f}, {len(changed)} task(s) changed\n-> {out}")
+    return out
 
 
 async def main_async(args) -> int:
@@ -190,12 +250,7 @@ async def main_async(args) -> int:
     meta["wall_s"] = time.perf_counter() - t_start
     meta.setdefault("server", None)
     meta.setdefault("tools", [])
-    summary = {"tasks": len(rows), "passed": sum(r["passed"] for r in rows),
-               "mean_score": sum(r["score"] for r in rows) / len(rows),
-               "cost_usd": sum(r["cost_usd"] or 0 for r in rows) if meta["model"] else None,
-               "usage": {k: sum((r["usage"] or {}).get(k, 0) for r in rows)
-                         for k in ("input_tokens", "output_tokens", "cache_creation_input_tokens",
-                                   "cache_read_input_tokens")}}
+    summary = run_summary(meta, rows)
     (out / "results.json").write_text(json.dumps({"meta": meta, "summary": summary, "results": rows}, indent=1,
                                                  default=str), encoding="utf-8")
     (out / "results.md").write_text(markdown(meta, rows), encoding="utf-8")
@@ -231,11 +286,18 @@ def parse_args(argv=None):
     ap.add_argument("--task-timeout", type=float, default=3600.0, help="seconds per task")
     ap.add_argument("--out", default=None, help="output directory")
     ap.add_argument("--strict", action="store_true", help="exit 1 unless every task passes")
+    ap.add_argument("--regrade", default=None, metavar="DIR",
+                    help="grade a finished run again from its transcripts (no agent, no server); writes "
+                         "DIR-regraded-<timestamp>/ or --out")
     return ap.parse_args(argv)
 
 
 def main(argv=None) -> int:
-    return asyncio.run(main_async(parse_args(argv)))
+    args = parse_args(argv)
+    if args.regrade:
+        regrade(Path(args.regrade), args.out)
+        return 0
+    return asyncio.run(main_async(args))
 
 
 if __name__ == "__main__":

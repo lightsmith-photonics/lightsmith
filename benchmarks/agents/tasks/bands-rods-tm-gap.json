@@ -33,10 +33,11 @@
    "type": "estimate_before_solve"
   },
   {
-   "type": "spec",
+   "type": "spec_ratio",
    "path": "structures_2d[0].profile.radius_nm",
-   "approx": 80.0,
-   "abs": 7.999999999999999e-05,
+   "over": "lattice_vectors_nm[0]",
+   "approx": 0.2,
+   "abs": 1e-06,
    "rel": 0.01
   }
  ],

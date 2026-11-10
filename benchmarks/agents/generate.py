@@ -9,6 +9,7 @@ as they are.
     uv run --no-sync python benchmarks/agents/generate.py            # all tasks
     uv run --no-sync python benchmarks/agents/generate.py --only sca-  # id prefix
     uv run --no-sync python benchmarks/agents/generate.py --check      # recompute, compare, write nothing
+    uv run --no-sync python benchmarks/agents/generate.py --keep-reference --only bands-  # checks/prompts only
 """
 
 from __future__ import annotations
@@ -89,12 +90,30 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--only", default="", help="comma-separated id prefixes")
     ap.add_argument("--check", action="store_true", help="recompute and compare with the stored values; write nothing")
+    ap.add_argument("--keep-reference", action="store_true",
+                    help="rewrite task files from taskdefs.py but keep the stored reference results (no solving; "
+                         "for edits to prompts, checks or tolerances)")
     args = ap.parse_args(argv)
     prefixes = [p for p in args.only.split(",") if p]
     TASK_DIR.mkdir(exist_ok=True)
     failures = 0
     for t in TASKS:
         if prefixes and not any(t["id"].startswith(p) for p in prefixes):
+            continue
+        path = TASK_DIR / f"{t['id']}.json"
+        if args.keep_reference and not args.check:
+            if not path.exists():
+                print(f"{t['id']:36s} no task file to keep the reference of; run without --keep-reference")
+                failures += 1
+                continue
+            stored = json.loads(path.read_text(encoding="utf-8"))
+            if stored.get("reference_spec") != full_spec(t):
+                print(f"{t['id']:36s} reference spec changed; run without --keep-reference")
+                failures += 1
+                continue
+            path.write_text(json.dumps(task_record(t, stored["reference"]), indent=1, ensure_ascii=False) + "\n",
+                            encoding="utf-8", newline="\n")
+            print(f"{t['id']:36s} {t['kind']:12s} rewritten, reference kept")
             continue
         ref = solve_reference(t) if t["reference_spec"] is not None else None
         line = f"{t['id']:36s} {t['kind']:12s}"
@@ -104,7 +123,6 @@ def main(argv=None) -> int:
             if ref["warnings"]:
                 line += f"  [warnings: {len(ref['warnings'])}]"
         print(line, flush=True)
-        path = TASK_DIR / f"{t['id']}.json"
         if args.check:
             old = json.loads(path.read_text(encoding="utf-8"))["reference"] if path.exists() else None
             for k, v in (ref or {}).get("values", {}).items():

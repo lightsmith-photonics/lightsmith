@@ -17,6 +17,7 @@ from __future__ import annotations
 import asyncio
 import copy
 import json
+import math
 import os
 import sys
 from pathlib import Path
@@ -25,7 +26,7 @@ import pytest
 
 import run as harness
 from agents import OracleAgent
-from extract import ExtractError, extract
+from extract import ExtractError, extract, extract_summary
 from grading import Transcript, grade, problems_in, results_in
 from taskdefs import TASKS
 
@@ -144,6 +145,101 @@ def test_extractors():
         extract({"kind": "cross_section", "quantity": "c_abs_nm2", "wavelength_nm": 600}, _result())
     assert extract({"kind": "cross_section", "quantity": "q_abs", "wavelength_nm": 532}, _result(1000.0)) == \
         pytest.approx(1000.0 / (3.141592653589793 * 1600))
+
+
+def _rods(a, r, pol="tm"):
+    spec = copy.deepcopy(FILES["bands-rods-tm-gap"]["reference_spec"])
+    spec["lattice_vectors_nm"] = [[a, 0, 0], [0, a, 0]]
+    spec["structures_2d"][0]["profile"]["radius_nm"] = r
+    spec["polarization"] = pol
+    return spec
+
+
+def test_relative_rod_radius_is_graded_scale_free():
+    """The prompt gives r = 0.2a and no lattice constant: a = 1000 nm with r = 200 nm is as right as a = 400 nm."""
+    task = FILES["bands-rods-tm-gap"]
+    gap = task["reference"]["values"]["gap_midgap_ratio"]
+    name = "spec_ratio:structures_2d[0].profile.radius_nm/lattice_vectors_nm[0]"
+
+    def graded(spec, value=gap):
+        calls = [_call("estimate", {"problem": spec}, {}), _call("solve", {"problem": spec}, None)]
+        g = grade(task, Transcript(calls, _answer(gap_midgap_ratio=value)))
+        return g.passed, {c.name: c.passed for c in g.checks}
+
+    for a in (400.0, 600.0, 1000.0):
+        ok, checks = graded(_rods(a, 0.2 * a))
+        assert ok and checks[name], (a, checks)
+    ok, checks = graded(_rods(1000.0, 80.0))  # 80 nm at a = 1000 nm is r = 0.08a
+    assert not ok and checks[name] is False
+    # the naive setup (TE instead of TM) has the right geometry but no gap between bands 1 and 2
+    ok, checks = graded(_rods(400.0, 80.0, pol="te"), value=0.0)
+    assert not ok and checks[name] and checks["value:gap_midgap_ratio"] is False
+
+
+def _bend_summary_reply(p21=0.8569, centre=1550.0, band=(1550.0, 1550.0), p_min=None, p_max=None):
+    """A 0.3.0 server's `solve` reply for a finished optimisation job: a summary, no full result."""
+    path = {"path": "o1 -> o2", "power_center": p21, "dB_center": 10 * math.log10(p21),
+            "power_min": p21 if p_min is None else p_min, "power_max": p21 if p_max is None else p_max}
+    sp = {"n_wavelengths": 1 if band[0] == band[1] else 11, "wavelength_range_nm": list(band), "ports": ["o1", "o2"],
+          "center_wavelength_nm": centre, "units": {"power": "|S|^2 fraction"}, "significant_paths": [path]}
+    return {"status": "succeeded", "job_id": "j1", "job": {"job_id": "j1", "status": "succeeded"},
+            "summary": {"result_kind": "optimization", "method": "mma", "backend": "lightsmith-fdfd", "warnings": [],
+                        "iterations": 10, "objective_initial": 0.0209, "objective_final": 0.8596,
+                        "objective_binary": 0.8583, "validated_sparameters": sp}}
+
+
+def _bend_full_result(p21):
+    return {"kind": "optimization", "method": "mma", "backend": "lightsmith-fdfd", "objective_binary": p21,
+            "sparameters": {"kind": "sparameters", "method": "fdfd", "backend": "lightsmith-fdfd",
+                            "wavelengths_nm": [1550.0], "ports": ["o1", "o2"],
+                            "s_real": [[[0.0, 0.0], [math.sqrt(p21), 0.0]]], "s_imag": [[[0.0, 0.0], [0.0, 0.0]]]}}
+
+
+def test_self_consistency_reads_the_job_summary():
+    """An agent may answer from the summary of its solve reply without fetching the full result."""
+    task = FILES["opt-bend-topology"]
+    spec = task["reference_spec"]
+    est = _call("estimate", {"problem": spec}, {})
+    name = "self_consistent:transmission"
+
+    def graded(calls, value):
+        g = grade(task, Transcript(calls, _answer(transmission=value)))
+        return g.passed, {c.name: c for c in g.checks}
+
+    summary_only = [est, _call("solve", {"problem": spec}, _bend_summary_reply())]
+    ok, checks = graded(summary_only, 0.858)
+    assert ok and checks[name].passed is True and "job summary" in checks[name].detail, checks[name]
+    ok, checks = graded(summary_only, 0.70)  # above the threshold, but not what its own run gave
+    assert not ok and checks[name].passed is False and checks["threshold:transmission"].passed
+
+    # a later full result (get_result) is what the agent's last result is
+    with_full = [*summary_only, _call("get_result", {"job_id": "j1"}, _bend_full_result(0.6))]
+    assert graded(with_full, 0.6)[1][name].passed
+    assert not graded(with_full, 0.858)[1][name].passed
+
+    # a summary that does not pin the number down is no evidence
+    no_sp = _bend_summary_reply()
+    del no_sp["summary"]["validated_sparameters"]
+    ok, checks = graded([est, _call("solve", {"problem": spec}, no_sp)], 0.858)
+    assert not ok and "no validated S-parameters" in checks[name].detail
+
+
+def test_summary_extractor():
+    spec = {"kind": "sparam", "out": "o2", "in": "o1", "wavelength_nm": 1550.0}
+    s = _bend_summary_reply()["summary"]
+    assert extract_summary(spec, s) == pytest.approx(0.8569)
+    assert extract_summary({**spec, "as": "db"}, s) == pytest.approx(10 * math.log10(0.8569))
+    assert extract_summary({"kind": "optimization", "field": "objective_binary"}, s) == pytest.approx(0.8583)
+    # a band of wavelengths: the summary gives |S|^2 at the centre only, or everywhere when it is flat
+    swept = _bend_summary_reply(centre=1560.0, band=(1540.0, 1580.0), p_min=0.80, p_max=0.90)["summary"]
+    assert extract_summary({**spec, "wavelength_nm": 1560.0}, swept) == pytest.approx(0.8569)
+    flat = _bend_summary_reply(centre=1560.0, band=(1540.0, 1580.0))["summary"]
+    assert extract_summary(spec, flat) == pytest.approx(0.8569)
+    for bad_spec, bad_summary in (({**spec}, swept), ({**spec, "wavelength_nm": 1600.0}, flat),
+                                  ({**spec, "in": "o2", "out": "o1"}, s), ({**spec, "as": "phase"}, s),
+                                  ({"kind": "mode", "field": "neff_real"}, s)):
+        with pytest.raises(ExtractError):
+            extract_summary(bad_spec, bad_summary)
 
 
 # --- end to end over MCP ------------------------------------------------------------------
