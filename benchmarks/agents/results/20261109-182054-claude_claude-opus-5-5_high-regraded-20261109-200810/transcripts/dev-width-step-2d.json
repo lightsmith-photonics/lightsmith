@@ -1,0 +1,2882 @@
+{
+ "task_id": "dev-width-step-2d",
+ "agent": "claude:claude-opus-5-5:high",
+ "prompt": "In a 2D slab model (core n = 2.85, cladding n = 1.44, TE), a 500 nm wide waveguide is butt-joined to a 2 \u00b5m wide one with no taper. At 1550 nm, what fraction of the fundamental-mode power arrives in the fundamental mode of the wide guide?\n\n---\nReport your result by calling submit_answer with these values:\n- `t_fundamental` (fraction (0-1)): fundamental-to-fundamental power transmission",
+ "answer": {
+  "values": {
+   "t_fundamental": 0.588
+  },
+  "declined": false,
+  "concerns": [
+   "I took 'TE' to mean the electric field points along the junction face, perpendicular to the direction of travel and in the plane of the slab cross-section. My analytic mode-overlap check uses this convention and agrees with the solver (0.583 vs 0.588).",
+   "I assumed the two guides are joined on the same axis with no offset. Because the joint is symmetric, odd modes of the wide guide are not excited.",
+   "Only the single joint is modelled. The 2 \u00b5m guide's far end is not reflecting, so there are no cavity effects from reflections between two ends."
+  ],
+  "summary": "About 59% of the power (t_fundamental \u2248 0.588, about 2.3 dB loss) arrives in the fundamental mode of the 2 \u00b5m guide. I solved the 2D joint between the 500 nm and 2 \u00b5m guides (core n = 2.85, cladding n = 1.44) at 1550 nm with eigenmode expansion, using 30 modes per section. About 0.297 of the power goes into the second symmetric mode of the wide guide. The remaining ~11% doesn't reach the guided modes resolved at the output; it is mostly reflected back at the joint or radiated into the cladding. An analytic overlap of the two fundamental modes gives 0.583, which agrees with the solver to within about 1%. The solver gave no warnings and the result is reciprocal to about 3e-16."
+ },
+ "final_text": "",
+ "stop": "submitted",
+ "error": null,
+ "notes": [],
+ "turns": 6,
+ "usage": {
+  "input_tokens": 14,
+  "output_tokens": 4648,
+  "cache_creation_input_tokens": 28174,
+  "cache_read_input_tokens": 89819
+ },
+ "cost_usd": 0.2518498,
+ "wall_s": 47.24,
+ "grade": {
+  "task_id": "dev-width-step-2d",
+  "passed": false,
+  "score": 0.6667,
+  "checks": [
+   {
+    "name": "value:t_fundamental",
+    "passed": true,
+    "required": true,
+    "detail": "reported 0.588, reference 0.589202 (abs 0.02)"
+   },
+   {
+    "name": "solved_kind",
+    "passed": true,
+    "required": true,
+    "detail": "1 successful device solve(s)"
+   },
+   {
+    "name": "estimate_before_solve",
+    "passed": false,
+    "required": true,
+    "detail": "estimates at calls [], first solve at call 4"
+   }
+  ]
+ },
+ "reference": {
+  "values": {
+   "t_fundamental": 0.5892021043010368
+  },
+  "method": "eme",
+  "backend": "lightsmith-eme",
+  "device": "cpu",
+  "runtime_s": 1.769,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "tool_calls": [
+  {
+   "name": "list_problem_kinds",
+   "arguments": {},
+   "ok": true,
+   "result": {
+    "kinds": [
+     {
+      "kind": "scattering",
+      "description": "Single or multiple particles (spheres, spheroids, cylinders, layered spheres) under plane-wave illumination: extinction/scattering/absorption cross sections, near and far fields.",
+      "model": "Simulation",
+      "auto_method_order": [
+       "mie",
+       "tmatrix",
+       "bem",
+       "dda",
+       "fdtd"
+      ],
+      "methods": [
+       "bem",
+       "dda",
+       "fdtd",
+       "mie",
+       "quasistatic",
+       "tmatrix"
+      ],
+      "backends_available": [
+       "lightsmith-mie",
+       "miepython",
+       "treams",
+       "lightsmith-bem",
+       "lightsmith-dda",
+       "lightsmith-fdtd",
+       "lightsmith-quasistatic"
+      ],
+      "has_example": true,
+      "schema_uri": "lightsmith://schema/scattering",
+      "example_uri": "lightsmith://examples/scattering"
+     },
+     {
+      "kind": "layer_stack",
+      "description": "Planar multilayer thin films: R/T/A vs wavelength, angle and polarization.",
+      "model": "LayerStackProblem",
+      "auto_method_order": [
+       "tmm",
+       "rcwa",
+       "fdtd"
+      ],
+      "methods": [
+       "fdtd",
+       "rcwa",
+       "tmm"
+      ],
+      "backends_available": [
+       "lightsmith-tmm",
+       "lightsmith-rcwa",
+       "lightsmith-fdtd"
+      ],
+      "has_example": true,
+      "schema_uri": "lightsmith://schema/layer_stack",
+      "example_uri": "lightsmith://examples/layer_stack"
+     },
+     {
+      "kind": "periodic",
+      "description": "1D/2D-periodic patterned layers (gratings, metasurfaces, photonic-crystal slabs): R/T/A and diffraction orders.",
+      "model": "PeriodicProblem",
+      "auto_method_order": [
+       "rcwa",
+       "fdfd",
+       "fdtd"
+      ],
+      "methods": [
+       "fdtd",
+       "rcwa"
+      ],
+      "backends_available": [
+       "lightsmith-rcwa",
+       "lightsmith-fdtd"
+      ],
+      "has_example": true,
+      "schema_uri": "lightsmith://schema/periodic",
+      "example_uri": "lightsmith://examples/periodic"
+     },
+     {
+      "kind": "mode",
+      "description": "Waveguide cross-section eigenmodes: effective index, group index, loss, mode fields.",
+      "model": "ModeProblem",
+      "auto_method_order": [
+       "fde"
+      ],
+      "methods": [
+       "fde"
+      ],
+      "backends_available": [
+       "lightsmith-fde"
+      ],
+      "has_example": true,
+      "schema_uri": "lightsmith://schema/mode",
+      "example_uri": "lightsmith://examples/mode"
+     },
+     {
+      "kind": "device",
+      "description": "Photonic devices with ports (waveguides, couplers, tapers, GDS layouts): S-parameters.",
+      "model": "DeviceProblem",
+      "auto_method_order": [
+       "eme",
+       "bpm",
+       "fdfd",
+       "fdtd"
+      ],
+      "methods": [
+       "bpm",
+       "eme",
+       "fdfd",
+       "fdtd"
+      ],
+      "backends_available": [
+       "lightsmith-eme",
+       "lightsmith-bpm",
+       "lightsmith-fdfd",
+       "lightsmith-fdtd"
+      ],
+      "has_example": true,
+      "schema_uri": "lightsmith://schema/device",
+      "example_uri": "lightsmith://examples/device"
+     },
+     {
+      "kind": "bands",
+      "description": "Photonic-crystal band structure along a k-path.",
+      "model": "BandProblem",
+      "auto_method_order": [
+       "pwe",
+       "fdfd"
+      ],
+      "methods": [
+       "pwe"
+      ],
+      "backends_available": [
+       "lightsmith-pwe"
+      ],
+      "has_example": true,
+      "schema_uri": "lightsmith://schema/bands",
+      "example_uri": "lightsmith://examples/bands"
+     },
+     {
+      "kind": "circuit",
+      "description": "Netlists of compact-model components (waveguides, couplers, rings, Touchstone files): circuit S-parameters.",
+      "model": "CircuitProblem",
+      "auto_method_order": [
+       "circuit"
+      ],
+      "methods": [
+       "circuit"
+      ],
+      "backends_available": [
+       "lightsmith-circuit"
+      ],
+      "has_example": true,
+      "schema_uri": "lightsmith://schema/circuit",
+      "example_uri": "lightsmith://examples/circuit"
+     },
+     {
+      "kind": "optimization",
+      "description": "Inverse design (topology optimisation) of a device's design region against S-parameter or field objectives.",
+      "model": "OptimizationProblem",
+      "auto_method_order": [
+       "inverse"
+      ],
+      "methods": [
+       "inverse"
+      ],
+      "backends_available": [
+       "lightsmith-inverse"
+      ],
+      "has_example": true,
+      "schema_uri": "lightsmith://schema/optimization",
+      "example_uri": "lightsmith://examples/optimization"
+     },
+     {
+      "kind": "emission",
+      "description": "A point dipole emitter near particles: Purcell (decay-rate) enhancement, radiative enhancement, quantum efficiency of the antenna and radiation pattern.",
+      "model": "EmissionProblem",
+      "auto_method_order": [
+       "mie",
+       "fdtd"
+      ],
+      "methods": [
+       "fdtd",
+       "mie"
+      ],
+      "backends_available": [
+       "lightsmith-mie",
+       "lightsmith-fdtd"
+      ],
+      "has_example": true,
+      "schema_uri": "lightsmith://schema/emission",
+      "example_uri": "lightsmith://examples/emission"
+     }
+    ],
+    "conventions": "Lightsmith conventions (fixed; changing them needs a schema version bump):\n- Lengths in nm. Wavelengths are vacuum wavelengths in nm.\n- Time dependence exp(-i omega t): absorbing materials have Im(eps) > 0 and Im(n) > 0.\n- Cross sections in nm^2; efficiencies Q = C / (pi r_eq^2), r_eq = volume-equivalent radius of all particles.\n- layer_stack / periodic: layers listed from the superstrate (incidence side) to the substrate; light travels +z.\n  R is measured in the superstrate, T in the substrate.\n- mode: cross-section in the xy plane, propagation along +z.\n- device: ports are planes whose normal is the axis where size_nm is zero; direction is into the device.\n- problem.options[<method or backend name>] holds solver options, validated by that backend.\n- Materials: {\"kind\": \"constant_index\", \"n_real\": .., \"n_imag\": ..}, {\"kind\": \"library\", \"name\": \"Au\"},\n  drude, drude_lorentz, tabulated, constant_permittivity. FDTD needs dispersive models (fit_drude_lorentz).\n- Results carry provenance and warnings: read the warnings before trusting the numbers.\n"
+   },
+   "text": "{\n  \"kinds\": [\n    {\n      \"kind\": \"scattering\",\n      \"description\": \"Single or multiple particles (spheres, spheroids, cylinders, layered spheres) under plane-wave illumination: extinction/scattering/absorption cross sections, near and far fields.\",\n      \"model\": \"Simulation\",\n      \"auto_method_order\": [\n        \"mie\",\n        \"tmatrix\",\n        \"bem\",\n        \"dda\",\n        \"fdtd\"\n      ],\n      \"methods\": [\n        \"bem\",\n        \"dda\",\n        \"fdtd\",\n        \"mie\",\n        \"quasistatic\",\n        \"tmatrix\"\n      ],\n      \"backends_available\": [\n        \"lightsmith-mie\",\n        \"miepython\",\n        \"treams\",\n        \"lightsmith-bem\",\n        \"lightsmith-dda\",\n        \"lightsmith-fdtd\",\n        \"lightsmith-quasistatic\"\n      ],\n      \"has_example\": true,\n      \"schema_uri\": \"lightsmith://schema/scattering\",\n      \"example_uri\": \"lightsmith://examples/scattering\"\n    },\n    {\n      \"kind\": \"layer_stack\",\n      \"description\": \"Planar multilayer thin films: R/T/A vs wavelength, angle and polarization.\",\n      \"model\": \"LayerStackProblem\",\n      \"auto_method_order\": [\n        \"tmm\",\n        \"rcwa\",\n        \"fdtd\"\n      ],\n      \"methods\": [\n        \"fdtd\",\n        \"rcwa\",\n        \"tmm\"\n      ],\n      \"backends_available\": [\n        \"lightsmith-tmm\",\n        \"lightsmith-rcwa\",\n        \"lightsmith-fdtd\"\n      ],\n      \"has_example\": true,\n      \"schema_uri\": \"lightsmith://schema/layer_stack\",\n      \"example_uri\": \"lightsmith://examples/layer_stack\"\n    },\n    {\n      \"kind\": \"periodic\",\n      \"description\": \"1D/2D-periodic patterned layers (gratings, metasurfaces, photonic-crystal slabs): R/T/A and diffraction orders.\",\n      \"model\": \"PeriodicProblem\",\n      \"auto_method_order\": [\n        \"rcwa\",\n        \"fdfd\",\n        \"fdtd\"\n      ],\n      \"methods\": [\n        \"fdtd\",\n        \"rcwa\"\n      ],\n      \"backends_available\": [\n        \"lightsmith-rcwa\",\n        \"lightsmith-fdtd\"\n      ],\n      \"has_example\": true,\n      \"schema_uri\": \"lightsmith://schema/periodic\",\n      \"example_uri\": \"lightsmith://examples/periodic\"\n    },\n    {\n      \"kind\": \"mode\",\n      \"description\": \"Waveguide cross-section eigenmodes: effective index, group index, loss, mode fields.\",\n      \"model\": \"ModeProblem\",\n      \"auto_method_order\": [\n        \"fde\"\n      ],\n      \"methods\": [\n        \"fde\"\n      ],\n      \"backends_available\": [\n        \"lightsmith-fde\"\n      ],\n      \"has_example\": true,\n      \"schema_uri\": \"lightsmith://schema/mode\",\n      \"example_uri\": \"lightsmith://examples/mode\"\n    },\n    {\n      \"kind\": \"device\",\n      \"description\": \"Photonic devices with ports (waveguides, couplers, tapers, GDS layouts): S-parameters.\",\n      \"model\": \"DeviceProblem\",\n      \"auto_method_order\": [\n        \"eme\",\n        \"bpm\",\n        \"fdfd\",\n        \"fdtd\"\n      ],\n      \"methods\": [\n        \"bpm\",\n        \"eme\",\n        \"fdfd\",\n        \"fdtd\"\n      ],\n      \"backends_available\": [\n        \"lightsmith-eme\",\n        \"lightsmith-bpm\",\n        \"lightsmith-fdfd\",\n        \"lightsmith-fdtd\"\n      ],\n      \"has_example\": true,\n      \"schema_uri\": \"lightsmith://schema/device\",\n      \"example_uri\": \"lightsmith://examples/device\"\n    },\n    {\n      \"kind\": \"bands\",\n      \"description\": \"Photonic-crystal band structure along a k-path.\",\n      \"model\": \"BandProblem\",\n      \"auto_method_order\": [\n        \"pwe\",\n        \"fdfd\"\n      ],\n      \"methods\": [\n        \"pwe\"\n      ],\n      \"backends_available\": [\n        \"lightsmith-pwe\"\n      ],\n      \"has_example\": true,\n      \"schema_uri\": \"lightsmith://schema/bands\",\n      \"example_uri\": \"lightsmith://examples/bands\"\n    },\n    {\n      \"kind\": \"circuit\",\n      \"description\": \"Netlists of compact-model components (waveguides, couplers, rings, Touchstone files): circuit S-parameters.\",\n      \"model\": \"CircuitProblem\",\n      \"auto_method_order\": [\n        \"circuit\"\n      ],\n      \"methods\": [\n        \"circuit\"\n      ],\n      \"backends_available\": [\n        \"lightsmith-circuit\"\n      ],\n      \"has_example\": true,\n      \"schema_uri\": \"lightsmith://schema/circuit\",\n      \"example_uri\": \"lightsmith://examples/circuit\"\n    },\n    {\n      \"kind\": \"optimization\",\n      \"description\": \"Inverse design (topology optimisation) of a device's design region against S-parameter or field objectives.\",\n      \"model\": \"OptimizationProblem\",\n      \"auto_method_order\": [\n        \"inverse\"\n      ],\n      \"methods\": [\n        \"inverse\"\n      ],\n      \"backends_available\": [\n        \"lightsmith-inverse\"\n      ],\n      \"has_example\": true,\n      \"schema_uri\": \"lightsmith://schema/optimization\",\n      \"example_uri\": \"lightsmith://examples/optimization\"\n    },\n    {\n      \"kind\": \"emission\",\n      \"description\": \"A point dipole emitter near particles: Purcell (decay-rate) enhancement, radiative enhancement, quantum efficiency of the antenna and radiation pattern.\",\n      \"model\": \"EmissionProblem\",\n      \"auto_method_order\": [\n        \"mie\",\n        \"fdtd\"\n      ],\n      \"methods\": [\n        \"fdtd\",\n        \"mie\"\n      ],\n      \"backends_available\": [\n        \"lightsmith-mie\",\n        \"lightsmith-fdtd\"\n      ],\n      \"has_example\": true,\n      \"schema_uri\": \"lightsmith://schema/emission\",\n      \"example_uri\": \"lightsmith://examples/emission\"\n    }\n  ],\n  \"conventions\": \"Lightsmith conventions (fixed; changing them needs a schema version bump):\\n- Lengths in nm. Wavelengths are vacuum wavelengths in nm.\\n- Time dependence exp(-i omega t): absorbing materials have Im(eps) > 0 and Im(n) > 0.\\n- Cross sections in nm^2; efficiencies Q = C / (pi r_eq^2), r_eq = volume-equivalent radius of all particles.\\n- layer_stack / periodic: layers listed from the superstrate (incidence side) to the substrate; light travels +z.\\n  R is measured in the superstrate, T in the substrate.\\n- mode: cross-section in the xy plane, propagation along +z.\\n- device: ports are planes whose normal is the axis where size_nm is zero; direction is into the device.\\n- problem.options[<method or backend name>] holds solver options, validated by that backend.\\n- Materials: {\\\"kind\\\": \\\"constant_index\\\", \\\"n_real\\\": .., \\\"n_imag\\\": ..}, {\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\"},\\n  drude, drude_lorentz, tabulated, constant_permittivity. FDTD needs dispersive models (fit_drude_lorentz).\\n- Results carry provenance and warnings: read the warnings before trusting the numbers.\\n\"\n}",
+   "images": [],
+   "error": null,
+   "duration_s": 0.493,
+   "started_at": 1794268148.0985856,
+   "source": "mcp"
+  },
+  {
+   "name": "get_schema",
+   "arguments": {
+    "kind": "device"
+   },
+   "ok": true,
+   "result": {
+    "kind": "device",
+    "schema": {
+     "$defs": {
+      "Ball": {
+       "additionalProperties": false,
+       "properties": {
+        "kind": {
+         "const": "ball",
+         "default": "ball",
+         "title": "Kind",
+         "type": "string"
+        },
+        "center_nm": {
+         "default": [
+          0.0,
+          0.0,
+          0.0
+         ],
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Center Nm",
+         "type": "array"
+        },
+        "radius_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Radius Nm",
+         "type": "number"
+        }
+       },
+       "required": [
+        "radius_nm"
+       ],
+       "title": "Ball",
+       "type": "object"
+      },
+      "Box": {
+       "additionalProperties": false,
+       "properties": {
+        "kind": {
+         "const": "box",
+         "default": "box",
+         "title": "Kind",
+         "type": "string"
+        },
+        "center_nm": {
+         "default": [
+          0.0,
+          0.0,
+          0.0
+         ],
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Center Nm",
+         "type": "array"
+        },
+        "size_nm": {
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Size Nm",
+         "type": "array"
+        }
+       },
+       "required": [
+        "size_nm"
+       ],
+       "title": "Box",
+       "type": "object"
+      },
+      "Circle": {
+       "additionalProperties": false,
+       "properties": {
+        "kind": {
+         "const": "circle",
+         "default": "circle",
+         "title": "Kind",
+         "type": "string"
+        },
+        "center_nm": {
+         "default": [
+          0.0,
+          0.0
+         ],
+         "maxItems": 2,
+         "minItems": 2,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Center Nm",
+         "type": "array"
+        },
+        "radius_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Radius Nm",
+         "type": "number"
+        }
+       },
+       "required": [
+        "radius_nm"
+       ],
+       "title": "Circle",
+       "type": "object"
+      },
+      "ConstantIndex": {
+       "additionalProperties": false,
+       "description": "Wavelength-independent complex refractive index n + ik.",
+       "properties": {
+        "kind": {
+         "const": "constant_index",
+         "default": "constant_index",
+         "title": "Kind",
+         "type": "string"
+        },
+        "n_real": {
+         "description": "Real part of the refractive index.",
+         "title": "N Real",
+         "type": "number"
+        },
+        "n_imag": {
+         "default": 0.0,
+         "description": "Extinction coefficient k (>= 0 for loss).",
+         "minimum": 0,
+         "title": "N Imag",
+         "type": "number"
+        }
+       },
+       "required": [
+        "n_real"
+       ],
+       "title": "ConstantIndex",
+       "type": "object"
+      },
+      "ConstantPermittivity": {
+       "additionalProperties": false,
+       "description": "Wavelength-independent complex relative permittivity.",
+       "properties": {
+        "kind": {
+         "const": "constant_permittivity",
+         "default": "constant_permittivity",
+         "title": "Kind",
+         "type": "string"
+        },
+        "eps_real": {
+         "title": "Eps Real",
+         "type": "number"
+        },
+        "eps_imag": {
+         "default": 0.0,
+         "minimum": 0,
+         "title": "Eps Imag",
+         "type": "number"
+        }
+       },
+       "required": [
+        "eps_real"
+       ],
+       "title": "ConstantPermittivity",
+       "type": "object"
+      },
+      "Drude": {
+       "additionalProperties": false,
+       "description": "eps(w) = eps_inf - wp^2 / (w^2 + i*gamma*w), energies in eV.",
+       "properties": {
+        "kind": {
+         "const": "drude",
+         "default": "drude",
+         "title": "Kind",
+         "type": "string"
+        },
+        "eps_inf": {
+         "default": 1.0,
+         "title": "Eps Inf",
+         "type": "number"
+        },
+        "wp_ev": {
+         "description": "Plasma frequency in eV.",
+         "exclusiveMinimum": 0,
+         "title": "Wp Ev",
+         "type": "number"
+        },
+        "gamma_ev": {
+         "description": "Damping rate in eV.",
+         "minimum": 0,
+         "title": "Gamma Ev",
+         "type": "number"
+        }
+       },
+       "required": [
+        "wp_ev",
+        "gamma_ev"
+       ],
+       "title": "Drude",
+       "type": "object"
+      },
+      "DrudeLorentz": {
+       "additionalProperties": false,
+       "description": "eps(w) = eps_inf - wp^2/(w^2 + i g w) + sum_j d_j w0_j^2 / (w0_j^2 - w^2 - i G_j w).\n\nThe form FDTD needs for auxiliary-differential-equation dispersion.\nFit one to measured data with :func:`lightsmith.materials_fit.fit_drude_lorentz`.",
+       "properties": {
+        "kind": {
+         "const": "drude_lorentz",
+         "default": "drude_lorentz",
+         "title": "Kind",
+         "type": "string"
+        },
+        "eps_inf": {
+         "default": 1.0,
+         "title": "Eps Inf",
+         "type": "number"
+        },
+        "wp_ev": {
+         "default": 0.0,
+         "minimum": 0,
+         "title": "Wp Ev",
+         "type": "number"
+        },
+        "gamma_ev": {
+         "default": 0.0,
+         "minimum": 0,
+         "title": "Gamma Ev",
+         "type": "number"
+        },
+        "poles": {
+         "items": {
+          "$ref": "#/$defs/LorentzPole"
+         },
+         "title": "Poles",
+         "type": "array"
+        }
+       },
+       "title": "DrudeLorentz",
+       "type": "object"
+      },
+      "Ellipse": {
+       "additionalProperties": false,
+       "properties": {
+        "kind": {
+         "const": "ellipse",
+         "default": "ellipse",
+         "title": "Kind",
+         "type": "string"
+        },
+        "center_nm": {
+         "default": [
+          0.0,
+          0.0
+         ],
+         "maxItems": 2,
+         "minItems": 2,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Center Nm",
+         "type": "array"
+        },
+        "semi_axes_nm": {
+         "maxItems": 2,
+         "minItems": 2,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Semi Axes Nm",
+         "type": "array"
+        },
+        "angle_deg": {
+         "default": 0.0,
+         "title": "Angle Deg",
+         "type": "number"
+        }
+       },
+       "required": [
+        "semi_axes_nm"
+       ],
+       "title": "Ellipse",
+       "type": "object"
+      },
+      "GdsLayout": {
+       "additionalProperties": false,
+       "description": "Import geometry from a GDS file: each layer/datatype is extruded with a material.",
+       "properties": {
+        "path": {
+         "title": "Path",
+         "type": "string"
+        },
+        "cell": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "title": "Cell"
+        },
+        "layer_map": {
+         "additionalProperties": {
+          "additionalProperties": true,
+          "type": "object"
+         },
+         "description": "'layer/datatype' -> {'material': Material JSON, 'z_min_nm': .., 'z_max_nm': ..}",
+         "title": "Layer Map",
+         "type": "object"
+        }
+       },
+       "required": [
+        "path",
+        "layer_map"
+       ],
+       "title": "GdsLayout",
+       "type": "object"
+      },
+      "LibraryMaterial": {
+       "additionalProperties": false,
+       "description": "Measured n, k bundled with lightsmith, e.g. ``{\"kind\": \"library\", \"name\": \"Au\",\n\"dataset\": \"Johnson-Christy\"}``. Linear interpolation in n and k, no extrapolation.\n\nNames and datasets accept aliases (\"gold\", \"JC\") and are stored in canonical form;\nan omitted dataset is filled with the material's default so the spec stays\nreproducible. See :func:`list_materials`.",
+       "properties": {
+        "kind": {
+         "const": "library",
+         "default": "library",
+         "title": "Kind",
+         "type": "string"
+        },
+        "name": {
+         "description": "Material, e.g. 'Au', 'Ag', 'Al', 'Cu', 'Si', 'TiO2', 'SiO2', 'H2O'.",
+         "title": "Name",
+         "type": "string"
+        },
+        "dataset": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "description": "Dataset, e.g. 'Johnson-Christy'; omitted = material default.",
+         "title": "Dataset"
+        }
+       },
+       "required": [
+        "name"
+       ],
+       "title": "LibraryMaterial",
+       "type": "object"
+      },
+      "LorentzPole": {
+       "additionalProperties": false,
+       "properties": {
+        "delta_eps": {
+         "description": "Oscillator strength (permittivity step).",
+         "title": "Delta Eps",
+         "type": "number"
+        },
+        "omega0_ev": {
+         "description": "Resonance energy in eV.",
+         "exclusiveMinimum": 0,
+         "title": "Omega0 Ev",
+         "type": "number"
+        },
+        "gamma_ev": {
+         "description": "Damping in eV.",
+         "minimum": 0,
+         "title": "Gamma Ev",
+         "type": "number"
+        }
+       },
+       "required": [
+        "delta_eps",
+        "omega0_ev",
+        "gamma_ev"
+       ],
+       "title": "LorentzPole",
+       "type": "object"
+      },
+      "Polygon": {
+       "additionalProperties": false,
+       "properties": {
+        "kind": {
+         "const": "polygon",
+         "default": "polygon",
+         "title": "Kind",
+         "type": "string"
+        },
+        "vertices_nm": {
+         "items": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+           {
+            "type": "number"
+           },
+           {
+            "type": "number"
+           }
+          ],
+          "type": "array"
+         },
+         "minItems": 3,
+         "title": "Vertices Nm",
+         "type": "array"
+        }
+       },
+       "required": [
+        "vertices_nm"
+       ],
+       "title": "Polygon",
+       "type": "object"
+      },
+      "Port": {
+       "additionalProperties": false,
+       "properties": {
+        "name": {
+         "title": "Name",
+         "type": "string"
+        },
+        "center_nm": {
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Center Nm",
+         "type": "array"
+        },
+        "size_nm": {
+         "description": "Zero along the port normal. In 2D devices z may also be zero, e.g. (0, w, 0) for an x-normal port.",
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Size Nm",
+         "type": "array"
+        },
+        "direction": {
+         "description": "Direction of propagation *into* the device along the normal.",
+         "enum": [
+          "+",
+          "-"
+         ],
+         "title": "Direction",
+         "type": "string"
+        },
+        "num_modes": {
+         "default": 1,
+         "minimum": 1,
+         "title": "Num Modes",
+         "type": "integer"
+        }
+       },
+       "required": [
+        "name",
+        "center_nm",
+        "size_nm",
+        "direction"
+       ],
+       "title": "Port",
+       "type": "object"
+      },
+      "Prism": {
+       "additionalProperties": false,
+       "description": "A 2D profile in the xy plane extruded from z_min to z_max (with optional sidewall angle).",
+       "properties": {
+        "kind": {
+         "const": "prism",
+         "default": "prism",
+         "title": "Kind",
+         "type": "string"
+        },
+        "profile": {
+         "discriminator": {
+          "mapping": {
+           "circle": "#/$defs/Circle",
+           "ellipse": "#/$defs/Ellipse",
+           "polygon": "#/$defs/Polygon",
+           "rectangle": "#/$defs/Rectangle"
+          },
+          "propertyName": "kind"
+         },
+         "oneOf": [
+          {
+           "$ref": "#/$defs/Rectangle"
+          },
+          {
+           "$ref": "#/$defs/Circle"
+          },
+          {
+           "$ref": "#/$defs/Ellipse"
+          },
+          {
+           "$ref": "#/$defs/Polygon"
+          }
+         ],
+         "title": "Profile"
+        },
+        "z_min_nm": {
+         "title": "Z Min Nm",
+         "type": "number"
+        },
+        "z_max_nm": {
+         "title": "Z Max Nm",
+         "type": "number"
+        },
+        "sidewall_angle_deg": {
+         "default": 0.0,
+         "description": "0 = vertical; positive = narrower at the top.",
+         "title": "Sidewall Angle Deg",
+         "type": "number"
+        }
+       },
+       "required": [
+        "profile",
+        "z_min_nm",
+        "z_max_nm"
+       ],
+       "title": "Prism",
+       "type": "object"
+      },
+      "Rectangle": {
+       "additionalProperties": false,
+       "properties": {
+        "kind": {
+         "const": "rectangle",
+         "default": "rectangle",
+         "title": "Kind",
+         "type": "string"
+        },
+        "center_nm": {
+         "default": [
+          0.0,
+          0.0
+         ],
+         "maxItems": 2,
+         "minItems": 2,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Center Nm",
+         "type": "array"
+        },
+        "size_nm": {
+         "maxItems": 2,
+         "minItems": 2,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Size Nm",
+         "type": "array"
+        }
+       },
+       "required": [
+        "size_nm"
+       ],
+       "title": "Rectangle",
+       "type": "object"
+      },
+      "Structure": {
+       "additionalProperties": false,
+       "description": "A material region. Later structures override earlier ones where they overlap.",
+       "properties": {
+        "name": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "title": "Name"
+        },
+        "geometry": {
+         "discriminator": {
+          "mapping": {
+           "ball": "#/$defs/Ball",
+           "box": "#/$defs/Box",
+           "prism": "#/$defs/Prism"
+          },
+          "propertyName": "kind"
+         },
+         "oneOf": [
+          {
+           "$ref": "#/$defs/Prism"
+          },
+          {
+           "$ref": "#/$defs/Box"
+          },
+          {
+           "$ref": "#/$defs/Ball"
+          }
+         ],
+         "title": "Geometry"
+        },
+        "material": {
+         "discriminator": {
+          "mapping": {
+           "constant_index": "#/$defs/ConstantIndex",
+           "constant_permittivity": "#/$defs/ConstantPermittivity",
+           "drude": "#/$defs/Drude",
+           "drude_lorentz": "#/$defs/DrudeLorentz",
+           "library": "#/$defs/LibraryMaterial",
+           "tabulated": "#/$defs/Tabulated"
+          },
+          "propertyName": "kind"
+         },
+         "oneOf": [
+          {
+           "$ref": "#/$defs/ConstantIndex"
+          },
+          {
+           "$ref": "#/$defs/ConstantPermittivity"
+          },
+          {
+           "$ref": "#/$defs/Drude"
+          },
+          {
+           "$ref": "#/$defs/DrudeLorentz"
+          },
+          {
+           "$ref": "#/$defs/Tabulated"
+          },
+          {
+           "$ref": "#/$defs/LibraryMaterial"
+          }
+         ],
+         "title": "Material"
+        }
+       },
+       "required": [
+        "geometry",
+        "material"
+       ],
+       "title": "Structure",
+       "type": "object"
+      },
+      "Tabulated": {
+       "additionalProperties": false,
+       "description": "Tabulated n, k data, linearly interpolated (no extrapolation).",
+       "properties": {
+        "kind": {
+         "const": "tabulated",
+         "default": "tabulated",
+         "title": "Kind",
+         "type": "string"
+        },
+        "wavelength_nm": {
+         "items": {
+          "type": "number"
+         },
+         "title": "Wavelength Nm",
+         "type": "array"
+        },
+        "n_real": {
+         "items": {
+          "type": "number"
+         },
+         "title": "N Real",
+         "type": "array"
+        },
+        "n_imag": {
+         "items": {
+          "type": "number"
+         },
+         "title": "N Imag",
+         "type": "array"
+        },
+        "source": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "description": "Citation / provenance of the data.",
+         "title": "Source"
+        }
+       },
+       "required": [
+        "wavelength_nm",
+        "n_real",
+        "n_imag"
+       ],
+       "title": "Tabulated",
+       "type": "object"
+      },
+      "WavelengthRange": {
+       "additionalProperties": false,
+       "properties": {
+        "start_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Start Nm",
+         "type": "number"
+        },
+        "stop_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Stop Nm",
+         "type": "number"
+        },
+        "num": {
+         "minimum": 1,
+         "title": "Num",
+         "type": "integer"
+        }
+       },
+       "required": [
+        "start_nm",
+        "stop_nm",
+        "num"
+       ],
+       "title": "WavelengthRange",
+       "type": "object"
+      }
+     },
+     "additionalProperties": false,
+     "description": "A photonic device (waveguides, couplers, gratings, ...) characterised by its S-matrix.",
+     "properties": {
+      "kind": {
+       "const": "device",
+       "default": "device",
+       "title": "Kind",
+       "type": "string"
+      },
+      "dimension": {
+       "default": 3,
+       "enum": [
+        2,
+        3
+       ],
+       "title": "Dimension",
+       "type": "integer"
+      },
+      "structures": {
+       "items": {
+        "$ref": "#/$defs/Structure"
+       },
+       "title": "Structures",
+       "type": "array"
+      },
+      "layout": {
+       "anyOf": [
+        {
+         "$ref": "#/$defs/GdsLayout"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null
+      },
+      "background": {
+       "discriminator": {
+        "mapping": {
+         "constant_index": "#/$defs/ConstantIndex",
+         "constant_permittivity": "#/$defs/ConstantPermittivity",
+         "drude": "#/$defs/Drude",
+         "drude_lorentz": "#/$defs/DrudeLorentz",
+         "library": "#/$defs/LibraryMaterial",
+         "tabulated": "#/$defs/Tabulated"
+        },
+        "propertyName": "kind"
+       },
+       "oneOf": [
+        {
+         "$ref": "#/$defs/ConstantIndex"
+        },
+        {
+         "$ref": "#/$defs/ConstantPermittivity"
+        },
+        {
+         "$ref": "#/$defs/Drude"
+        },
+        {
+         "$ref": "#/$defs/DrudeLorentz"
+        },
+        {
+         "$ref": "#/$defs/Tabulated"
+        },
+        {
+         "$ref": "#/$defs/LibraryMaterial"
+        }
+       ],
+       "title": "Background"
+      },
+      "domain_center_nm": {
+       "default": [
+        0.0,
+        0.0,
+        0.0
+       ],
+       "maxItems": 3,
+       "minItems": 3,
+       "prefixItems": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "number"
+        },
+        {
+         "type": "number"
+        }
+       ],
+       "title": "Domain Center Nm",
+       "type": "array"
+      },
+      "domain_size_nm": {
+       "maxItems": 3,
+       "minItems": 3,
+       "prefixItems": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "number"
+        },
+        {
+         "type": "number"
+        }
+       ],
+       "title": "Domain Size Nm",
+       "type": "array"
+      },
+      "ports": {
+       "items": {
+        "$ref": "#/$defs/Port"
+       },
+       "minItems": 1,
+       "title": "Ports",
+       "type": "array"
+      },
+      "wavelengths": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "number"
+         },
+         "type": "array"
+        },
+        {
+         "$ref": "#/$defs/WavelengthRange"
+        }
+       ],
+       "title": "Wavelengths"
+      },
+      "options": {
+       "additionalProperties": {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       "title": "Options",
+       "type": "object"
+      }
+     },
+     "required": [
+      "background",
+      "domain_size_nm",
+      "ports",
+      "wavelengths"
+     ],
+     "title": "DeviceProblem",
+     "type": "object"
+    },
+    "conventions": "Lightsmith conventions (fixed; changing them needs a schema version bump):\n- Lengths in nm. Wavelengths are vacuum wavelengths in nm.\n- Time dependence exp(-i omega t): absorbing materials have Im(eps) > 0 and Im(n) > 0.\n- Cross sections in nm^2; efficiencies Q = C / (pi r_eq^2), r_eq = volume-equivalent radius of all particles.\n- layer_stack / periodic: layers listed from the superstrate (incidence side) to the substrate; light travels +z.\n  R is measured in the superstrate, T in the substrate.\n- mode: cross-section in the xy plane, propagation along +z.\n- device: ports are planes whose normal is the axis where size_nm is zero; direction is into the device.\n- problem.options[<method or backend name>] holds solver options, validated by that backend.\n- Materials: {\"kind\": \"constant_index\", \"n_real\": .., \"n_imag\": ..}, {\"kind\": \"library\", \"name\": \"Au\"},\n  drude, drude_lorentz, tabulated, constant_permittivity. FDTD needs dispersive models (fit_drude_lorentz).\n- Results carry provenance and warnings: read the warnings before trusting the numbers.\n",
+    "backends": [
+     {
+      "name": "lightsmith-eme",
+      "method": "eme",
+      "available": true,
+      "gpu": false,
+      "auto_rank": 0
+     },
+     {
+      "name": "lightsmith-bpm",
+      "method": "bpm",
+      "available": true,
+      "gpu": true,
+      "auto_rank": 1
+     },
+     {
+      "name": "lightsmith-fdfd",
+      "method": "fdfd",
+      "available": true,
+      "gpu": true,
+      "auto_rank": 2
+     },
+     {
+      "name": "lightsmith-fdtd",
+      "method": "fdtd",
+      "available": true,
+      "gpu": true,
+      "auto_rank": 3
+     }
+    ],
+    "example": {
+     "kind": "device",
+     "dimension": 2,
+     "structures": [
+      {
+       "geometry": {
+        "kind": "box",
+        "size_nm": [
+         8000,
+         500,
+         1
+        ]
+       },
+       "material": {
+        "kind": "constant_index",
+        "n_real": 3.48
+       }
+      }
+     ],
+     "background": {
+      "kind": "constant_index",
+      "n_real": 1.44
+     },
+     "domain_size_nm": [
+      6000,
+      4000,
+      0
+     ],
+     "ports": [
+      {
+       "name": "o1",
+       "center_nm": [
+        -2000,
+        0,
+        0
+       ],
+       "size_nm": [
+        0,
+        3000,
+        0
+       ],
+       "direction": "+"
+      },
+      {
+       "name": "o2",
+       "center_nm": [
+        2000,
+        0,
+        0
+       ],
+       "size_nm": [
+        0,
+        3000,
+        0
+       ],
+       "direction": "-"
+      }
+     ],
+     "wavelengths": [
+      1550
+     ]
+    }
+   },
+   "text": "{\n  \"kind\": \"device\",\n  \"schema\": {\n    \"$defs\": {\n      \"Ball\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"ball\",\n            \"default\": \"ball\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Radius Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"radius_nm\"\n        ],\n        \"title\": \"Ball\",\n        \"type\": \"object\"\n      },\n      \"Box\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"box\",\n            \"default\": \"box\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"size_nm\": {\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Size Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"size_nm\"\n        ],\n        \"title\": \"Box\",\n        \"type\": \"object\"\n      },\n      \"Circle\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"circle\",\n            \"default\": \"circle\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Radius Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"radius_nm\"\n        ],\n        \"title\": \"Circle\",\n        \"type\": \"object\"\n      },\n      \"ConstantIndex\": {\n        \"additionalProperties\": false,\n        \"description\": \"Wavelength-independent complex refractive index n + ik.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"constant_index\",\n            \"default\": \"constant_index\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"n_real\": {\n            \"description\": \"Real part of the refractive index.\",\n            \"title\": \"N Real\",\n            \"type\": \"number\"\n          },\n          \"n_imag\": {\n            \"default\": 0.0,\n            \"description\": \"Extinction coefficient k (>= 0 for loss).\",\n            \"minimum\": 0,\n            \"title\": \"N Imag\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"n_real\"\n        ],\n        \"title\": \"ConstantIndex\",\n        \"type\": \"object\"\n      },\n      \"ConstantPermittivity\": {\n        \"additionalProperties\": false,\n        \"description\": \"Wavelength-independent complex relative permittivity.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"constant_permittivity\",\n            \"default\": \"constant_permittivity\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_real\": {\n            \"title\": \"Eps Real\",\n            \"type\": \"number\"\n          },\n          \"eps_imag\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Eps Imag\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"eps_real\"\n        ],\n        \"title\": \"ConstantPermittivity\",\n        \"type\": \"object\"\n      },\n      \"Drude\": {\n        \"additionalProperties\": false,\n        \"description\": \"eps(w) = eps_inf - wp^2 / (w^2 + i*gamma*w), energies in eV.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"drude\",\n            \"default\": \"drude\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_inf\": {\n            \"default\": 1.0,\n            \"title\": \"Eps Inf\",\n            \"type\": \"number\"\n          },\n          \"wp_ev\": {\n            \"description\": \"Plasma frequency in eV.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Wp Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"description\": \"Damping rate in eV.\",\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"wp_ev\",\n          \"gamma_ev\"\n        ],\n        \"title\": \"Drude\",\n        \"type\": \"object\"\n      },\n      \"DrudeLorentz\": {\n        \"additionalProperties\": false,\n        \"description\": \"eps(w) = eps_inf - wp^2/(w^2 + i g w) + sum_j d_j w0_j^2 / (w0_j^2 - w^2 - i G_j w).\\n\\nThe form FDTD needs for auxiliary-differential-equation dispersion.\\nFit one to measured data with :func:`lightsmith.materials_fit.fit_drude_lorentz`.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"drude_lorentz\",\n            \"default\": \"drude_lorentz\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_inf\": {\n            \"default\": 1.0,\n            \"title\": \"Eps Inf\",\n            \"type\": \"number\"\n          },\n          \"wp_ev\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Wp Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          },\n          \"poles\": {\n            \"items\": {\n              \"$ref\": \"#/$defs/LorentzPole\"\n            },\n            \"title\": \"Poles\",\n            \"type\": \"array\"\n          }\n        },\n        \"title\": \"DrudeLorentz\",\n        \"type\": \"object\"\n      },\n      \"Ellipse\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"ellipse\",\n            \"default\": \"ellipse\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"semi_axes_nm\": {\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Semi Axes Nm\",\n            \"type\": \"array\"\n          },\n          \"angle_deg\": {\n            \"default\": 0.0,\n            \"title\": \"Angle Deg\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"semi_axes_nm\"\n        ],\n        \"title\": \"Ellipse\",\n        \"type\": \"object\"\n      },\n      \"GdsLayout\": {\n        \"additionalProperties\": false,\n        \"description\": \"Import geometry from a GDS file: each layer/datatype is extruded with a material.\",\n        \"properties\": {\n          \"path\": {\n            \"title\": \"Path\",\n            \"type\": \"string\"\n          },\n          \"cell\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"title\": \"Cell\"\n          },\n          \"layer_map\": {\n            \"additionalProperties\": {\n              \"additionalProperties\": true,\n              \"type\": \"object\"\n            },\n            \"description\": \"'layer/datatype' -> {'material': Material JSON, 'z_min_nm': .., 'z_max_nm': ..}\",\n            \"title\": \"Layer Map\",\n            \"type\": \"object\"\n          }\n        },\n        \"required\": [\n          \"path\",\n          \"layer_map\"\n        ],\n        \"title\": \"GdsLayout\",\n        \"type\": \"object\"\n      },\n      \"LibraryMaterial\": {\n        \"additionalProperties\": false,\n        \"description\": \"Measured n, k bundled with lightsmith, e.g. ``{\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\",\\n\\\"dataset\\\": \\\"Johnson-Christy\\\"}``. Linear interpolation in n and k, no extrapolation.\\n\\nNames and datasets accept aliases (\\\"gold\\\", \\\"JC\\\") and are stored in canonical form;\\nan omitted dataset is filled with the material's default so the spec stays\\nreproducible. See :func:`list_materials`.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"library\",\n            \"default\": \"library\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"name\": {\n            \"description\": \"Material, e.g. 'Au', 'Ag', 'Al', 'Cu', 'Si', 'TiO2', 'SiO2', 'H2O'.\",\n            \"title\": \"Name\",\n            \"type\": \"string\"\n          },\n          \"dataset\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Dataset, e.g. 'Johnson-Christy'; omitted = material default.\",\n            \"title\": \"Dataset\"\n          }\n        },\n        \"required\": [\n          \"name\"\n        ],\n        \"title\": \"LibraryMaterial\",\n        \"type\": \"object\"\n      },\n      \"LorentzPole\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"delta_eps\": {\n            \"description\": \"Oscillator strength (permittivity step).\",\n            \"title\": \"Delta Eps\",\n            \"type\": \"number\"\n          },\n          \"omega0_ev\": {\n            \"description\": \"Resonance energy in eV.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Omega0 Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"description\": \"Damping in eV.\",\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"delta_eps\",\n          \"omega0_ev\",\n          \"gamma_ev\"\n        ],\n        \"title\": \"LorentzPole\",\n        \"type\": \"object\"\n      },\n      \"Polygon\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"polygon\",\n            \"default\": \"polygon\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"vertices_nm\": {\n            \"items\": {\n              \"maxItems\": 2,\n              \"minItems\": 2,\n              \"prefixItems\": [\n                {\n                  \"type\": \"number\"\n                },\n                {\n                  \"type\": \"number\"\n                }\n              ],\n              \"type\": \"array\"\n            },\n            \"minItems\": 3,\n            \"title\": \"Vertices Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"vertices_nm\"\n        ],\n        \"title\": \"Polygon\",\n        \"type\": \"object\"\n      },\n      \"Port\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"name\": {\n            \"title\": \"Name\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"size_nm\": {\n            \"description\": \"Zero along the port normal. In 2D devices z may also be zero, e.g. (0, w, 0) for an x-normal port.\",\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Size Nm\",\n            \"type\": \"array\"\n          },\n          \"direction\": {\n            \"description\": \"Direction of propagation *into* the device along the normal.\",\n            \"enum\": [\n              \"+\",\n              \"-\"\n            ],\n            \"title\": \"Direction\",\n            \"type\": \"string\"\n          },\n          \"num_modes\": {\n            \"default\": 1,\n            \"minimum\": 1,\n            \"title\": \"Num Modes\",\n            \"type\": \"integer\"\n          }\n        },\n        \"required\": [\n          \"name\",\n          \"center_nm\",\n          \"size_nm\",\n          \"direction\"\n        ],\n        \"title\": \"Port\",\n        \"type\": \"object\"\n      },\n      \"Prism\": {\n        \"additionalProperties\": false,\n        \"description\": \"A 2D profile in the xy plane extruded from z_min to z_max (with optional sidewall angle).\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"prism\",\n            \"default\": \"prism\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"profile\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"circle\": \"#/$defs/Circle\",\n                \"ellipse\": \"#/$defs/Ellipse\",\n                \"polygon\": \"#/$defs/Polygon\",\n                \"rectangle\": \"#/$defs/Rectangle\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/Rectangle\"\n              },\n              {\n                \"$ref\": \"#/$defs/Circle\"\n              },\n              {\n                \"$ref\": \"#/$defs/Ellipse\"\n              },\n              {\n                \"$ref\": \"#/$defs/Polygon\"\n              }\n            ],\n            \"title\": \"Profile\"\n          },\n          \"z_min_nm\": {\n            \"title\": \"Z Min Nm\",\n            \"type\": \"number\"\n          },\n          \"z_max_nm\": {\n            \"title\": \"Z Max Nm\",\n            \"type\": \"number\"\n          },\n          \"sidewall_angle_deg\": {\n            \"default\": 0.0,\n            \"description\": \"0 = vertical; positive = narrower at the top.\",\n            \"title\": \"Sidewall Angle Deg\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"profile\",\n          \"z_min_nm\",\n          \"z_max_nm\"\n        ],\n        \"title\": \"Prism\",\n        \"type\": \"object\"\n      },\n      \"Rectangle\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"rectangle\",\n            \"default\": \"rectangle\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"size_nm\": {\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Size Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"size_nm\"\n        ],\n        \"title\": \"Rectangle\",\n        \"type\": \"object\"\n      },\n      \"Structure\": {\n        \"additionalProperties\": false,\n        \"description\": \"A material region. Later structures override earlier ones where they overlap.\",\n        \"properties\": {\n          \"name\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"title\": \"Name\"\n          },\n          \"geometry\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"ball\": \"#/$defs/Ball\",\n                \"box\": \"#/$defs/Box\",\n                \"prism\": \"#/$defs/Prism\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/Prism\"\n              },\n              {\n                \"$ref\": \"#/$defs/Box\"\n              },\n              {\n                \"$ref\": \"#/$defs/Ball\"\n              }\n            ],\n            \"title\": \"Geometry\"\n          },\n          \"material\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Material\"\n          }\n        },\n        \"required\": [\n          \"geometry\",\n          \"material\"\n        ],\n        \"title\": \"Structure\",\n        \"type\": \"object\"\n      },\n      \"Tabulated\": {\n        \"additionalProperties\": false,\n        \"description\": \"Tabulated n, k data, linearly interpolated (no extrapolation).\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"tabulated\",\n            \"default\": \"tabulated\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"wavelength_nm\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"Wavelength Nm\",\n            \"type\": \"array\"\n          },\n          \"n_real\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"N Real\",\n            \"type\": \"array\"\n          },\n          \"n_imag\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"N Imag\",\n            \"type\": \"array\"\n          },\n          \"source\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Citation / provenance of the data.\",\n            \"title\": \"Source\"\n          }\n        },\n        \"required\": [\n          \"wavelength_nm\",\n          \"n_real\",\n          \"n_imag\"\n        ],\n        \"title\": \"Tabulated\",\n        \"type\": \"object\"\n      },\n      \"WavelengthRange\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"start_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Start Nm\",\n            \"type\": \"number\"\n          },\n          \"stop_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Stop Nm\",\n            \"type\": \"number\"\n          },\n          \"num\": {\n            \"minimum\": 1,\n            \"title\": \"Num\",\n            \"type\": \"integer\"\n          }\n        },\n        \"required\": [\n          \"start_nm\",\n          \"stop_nm\",\n          \"num\"\n        ],\n        \"title\": \"WavelengthRange\",\n        \"type\": \"object\"\n      }\n    },\n    \"additionalProperties\": false,\n    \"description\": \"A photonic device (waveguides, couplers, gratings, ...) characterised by its S-matrix.\",\n    \"properties\": {\n      \"kind\": {\n        \"const\": \"device\",\n        \"default\": \"device\",\n        \"title\": \"Kind\",\n        \"type\": \"string\"\n      },\n      \"dimension\": {\n        \"default\": 3,\n        \"enum\": [\n          2,\n          3\n        ],\n        \"title\": \"Dimension\",\n        \"type\": \"integer\"\n      },\n      \"structures\": {\n        \"items\": {\n          \"$ref\": \"#/$defs/Structure\"\n        },\n        \"title\": \"Structures\",\n        \"type\": \"array\"\n      },\n      \"layout\": {\n        \"anyOf\": [\n          {\n            \"$ref\": \"#/$defs/GdsLayout\"\n          },\n          {\n            \"type\": \"null\"\n          }\n        ],\n        \"default\": null\n      },\n      \"background\": {\n        \"discriminator\": {\n          \"mapping\": {\n            \"constant_index\": \"#/$defs/ConstantIndex\",\n            \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n            \"drude\": \"#/$defs/Drude\",\n            \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n            \"library\": \"#/$defs/LibraryMaterial\",\n            \"tabulated\": \"#/$defs/Tabulated\"\n          },\n          \"propertyName\": \"kind\"\n        },\n        \"oneOf\": [\n          {\n            \"$ref\": \"#/$defs/ConstantIndex\"\n          },\n          {\n            \"$ref\": \"#/$defs/ConstantPermittivity\"\n          },\n          {\n            \"$ref\": \"#/$defs/Drude\"\n          },\n          {\n            \"$ref\": \"#/$defs/DrudeLorentz\"\n          },\n          {\n            \"$ref\": \"#/$defs/Tabulated\"\n          },\n          {\n            \"$ref\": \"#/$defs/LibraryMaterial\"\n          }\n        ],\n        \"title\": \"Background\"\n      },\n      \"domain_center_nm\": {\n        \"default\": [\n          0.0,\n          0.0,\n          0.0\n        ],\n        \"maxItems\": 3,\n        \"minItems\": 3,\n        \"prefixItems\": [\n          {\n            \"type\": \"number\"\n          },\n          {\n            \"type\": \"number\"\n          },\n          {\n            \"type\": \"number\"\n          }\n        ],\n        \"title\": \"Domain Center Nm\",\n        \"type\": \"array\"\n      },\n      \"domain_size_nm\": {\n        \"maxItems\": 3,\n        \"minItems\": 3,\n        \"prefixItems\": [\n          {\n            \"type\": \"number\"\n          },\n          {\n            \"type\": \"number\"\n          },\n          {\n            \"type\": \"number\"\n          }\n        ],\n        \"title\": \"Domain Size Nm\",\n        \"type\": \"array\"\n      },\n      \"ports\": {\n        \"items\": {\n          \"$ref\": \"#/$defs/Port\"\n        },\n        \"minItems\": 1,\n        \"title\": \"Ports\",\n        \"type\": \"array\"\n      },\n      \"wavelengths\": {\n        \"anyOf\": [\n          {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"type\": \"array\"\n          },\n          {\n            \"$ref\": \"#/$defs/WavelengthRange\"\n          }\n        ],\n        \"title\": \"Wavelengths\"\n      },\n      \"options\": {\n        \"additionalProperties\": {\n          \"additionalProperties\": true,\n          \"type\": \"object\"\n        },\n        \"title\": \"Options\",\n        \"type\": \"object\"\n      }\n    },\n    \"required\": [\n      \"background\",\n      \"domain_size_nm\",\n      \"ports\",\n      \"wavelengths\"\n    ],\n    \"title\": \"DeviceProblem\",\n    \"type\": \"object\"\n  },\n  \"conventions\": \"Lightsmith conventions (fixed; changing them needs a schema version bump):\\n- Lengths in nm. Wavelengths are vacuum wavelengths in nm.\\n- Time dependence exp(-i omega t): absorbing materials have Im(eps) > 0 and Im(n) > 0.\\n- Cross sections in nm^2; efficiencies Q = C / (pi r_eq^2), r_eq = volume-equivalent radius of all particles.\\n- layer_stack / periodic: layers listed from the superstrate (incidence side) to the substrate; light travels +z.\\n  R is measured in the superstrate, T in the substrate.\\n- mode: cross-section in the xy plane, propagation along +z.\\n- device: ports are planes whose normal is the axis where size_nm is zero; direction is into the device.\\n- problem.options[<method or backend name>] holds solver options, validated by that backend.\\n- Materials: {\\\"kind\\\": \\\"constant_index\\\", \\\"n_real\\\": .., \\\"n_imag\\\": ..}, {\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\"},\\n  drude, drude_lorentz, tabulated, constant_permittivity. FDTD needs dispersive models (fit_drude_lorentz).\\n- Results carry provenance and warnings: read the warnings before trusting the numbers.\\n\",\n  \"backends\": [\n    {\n      \"name\": \"lightsmith-eme\",\n      \"method\": \"eme\",\n      \"available\": true,\n      \"gpu\": false,\n      \"auto_rank\": 0\n    },\n    {\n      \"name\": \"lightsmith-bpm\",\n      \"method\": \"bpm\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 1\n    },\n    {\n      \"name\": \"lightsmith-fdfd\",\n      \"method\": \"fdfd\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 2\n    },\n    {\n      \"name\": \"lightsmith-fdtd\",\n      \"method\": \"fdtd\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 3\n    }\n  ],\n  \"example\": {\n    \"kind\": \"device\",\n    \"dimension\": 2,\n    \"structures\": [\n      {\n        \"geometry\": {\n          \"kind\": \"box\",\n          \"size_nm\": [\n            8000,\n            500,\n            1\n          ]\n        },\n        \"material\": {\n          \"kind\": \"constant_index\",\n          \"n_real\": 3.48\n        }\n      }\n    ],\n    \"background\": {\n      \"kind\": \"constant_index\",\n      \"n_real\": 1.44\n    },\n    \"domain_size_nm\": [\n      6000,\n      4000,\n      0\n    ],\n    \"ports\": [\n      {\n        \"name\": \"o1\",\n        \"center_nm\": [\n          -2000,\n          0,\n          0\n        ],\n        \"size_nm\": [\n          0,\n          3000,\n          0\n        ],\n        \"direction\": \"+\"\n      },\n      {\n        \"name\": \"o2\",\n        \"center_nm\": [\n          2000,\n          0,\n          0\n        ],\n        \"size_nm\": [\n          0,\n          3000,\n          0\n        ],\n        \"direction\": \"-\"\n      }\n    ],\n    \"wavelengths\": [\n      1550\n    ]\n  }\n}",
+   "images": [],
+   "error": null,
+   "duration_s": 0.012,
+   "started_at": 1794268149.6475084,
+   "source": "mcp"
+  },
+  {
+   "name": "validate_problem",
+   "arguments": {
+    "problem": {
+     "kind": "device",
+     "dimension": 2,
+     "structures": [
+      {
+       "name": "narrow",
+       "geometry": {
+        "kind": "box",
+        "center_nm": [
+         -2500,
+         0,
+         0
+        ],
+        "size_nm": [
+         5000,
+         500,
+         1
+        ]
+       },
+       "material": {
+        "kind": "constant_index",
+        "n_real": 2.85
+       }
+      },
+      {
+       "name": "wide",
+       "geometry": {
+        "kind": "box",
+        "center_nm": [
+         2500,
+         0,
+         0
+        ],
+        "size_nm": [
+         5000,
+         2000,
+         1
+        ]
+       },
+       "material": {
+        "kind": "constant_index",
+        "n_real": 2.85
+       }
+      }
+     ],
+     "background": {
+      "kind": "constant_index",
+      "n_real": 1.44
+     },
+     "domain_size_nm": [
+      6000,
+      5000,
+      0
+     ],
+     "ports": [
+      {
+       "name": "o1",
+       "center_nm": [
+        -2000,
+        0,
+        0
+       ],
+       "size_nm": [
+        0,
+        4500,
+        0
+       ],
+       "direction": "+",
+       "num_modes": 1
+      },
+      {
+       "name": "o2",
+       "center_nm": [
+        2000,
+        0,
+        0
+       ],
+       "size_nm": [
+        0,
+        4500,
+        0
+       ],
+       "direction": "-",
+       "num_modes": 4
+      }
+     ],
+     "wavelengths": [
+      1550
+     ]
+    }
+   },
+   "ok": true,
+   "result": {
+    "valid": true,
+    "kind": "device",
+    "auto_backend": "lightsmith-eme",
+    "backends": [
+     {
+      "name": "lightsmith-eme",
+      "method": "eme",
+      "available": true,
+      "supported": true,
+      "reason": null
+     },
+     {
+      "name": "lightsmith-bpm",
+      "method": "bpm",
+      "available": true,
+      "supported": true,
+      "reason": null
+     },
+     {
+      "name": "lightsmith-fdfd",
+      "method": "fdfd",
+      "available": true,
+      "supported": true,
+      "reason": null
+     },
+     {
+      "name": "lightsmith-fdtd",
+      "method": "fdtd",
+      "available": true,
+      "supported": true,
+      "reason": null
+     }
+    ],
+    "problem": {
+     "kind": "device",
+     "dimension": 2,
+     "structures": [
+      {
+       "name": "narrow",
+       "geometry": {
+        "kind": "box",
+        "center_nm": [
+         -2500.0,
+         0.0,
+         0.0
+        ],
+        "size_nm": [
+         5000.0,
+         500.0,
+         1.0
+        ]
+       },
+       "material": {
+        "kind": "constant_index",
+        "n_real": 2.85,
+        "n_imag": 0.0
+       }
+      },
+      {
+       "name": "wide",
+       "geometry": {
+        "kind": "box",
+        "center_nm": [
+         2500.0,
+         0.0,
+         0.0
+        ],
+        "size_nm": [
+         5000.0,
+         2000.0,
+         1.0
+        ]
+       },
+       "material": {
+        "kind": "constant_index",
+        "n_real": 2.85,
+        "n_imag": 0.0
+       }
+      }
+     ],
+     "layout": null,
+     "background": {
+      "kind": "constant_index",
+      "n_real": 1.44,
+      "n_imag": 0.0
+     },
+     "domain_center_nm": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "domain_size_nm": [
+      6000.0,
+      5000.0,
+      0.0
+     ],
+     "ports": [
+      {
+       "name": "o1",
+       "center_nm": [
+        -2000.0,
+        0.0,
+        0.0
+       ],
+       "size_nm": [
+        0.0,
+        4500.0,
+        0.0
+       ],
+       "direction": "+",
+       "num_modes": 1
+      },
+      {
+       "name": "o2",
+       "center_nm": [
+        2000.0,
+        0.0,
+        0.0
+       ],
+       "size_nm": [
+        0.0,
+        4500.0,
+        0.0
+       ],
+       "direction": "-",
+       "num_modes": 4
+      }
+     ],
+     "wavelengths": [
+      1550.0
+     ],
+     "options": {}
+    }
+   },
+   "text": "{\n  \"valid\": true,\n  \"kind\": \"device\",\n  \"auto_backend\": \"lightsmith-eme\",\n  \"backends\": [\n    {\n      \"name\": \"lightsmith-eme\",\n      \"method\": \"eme\",\n      \"available\": true,\n      \"supported\": true,\n      \"reason\": null\n    },\n    {\n      \"name\": \"lightsmith-bpm\",\n      \"method\": \"bpm\",\n      \"available\": true,\n      \"supported\": true,\n      \"reason\": null\n    },\n    {\n      \"name\": \"lightsmith-fdfd\",\n      \"method\": \"fdfd\",\n      \"available\": true,\n      \"supported\": true,\n      \"reason\": null\n    },\n    {\n      \"name\": \"lightsmith-fdtd\",\n      \"method\": \"fdtd\",\n      \"available\": true,\n      \"supported\": true,\n      \"reason\": null\n    }\n  ],\n  \"problem\": {\n    \"kind\": \"device\",\n    \"dimension\": 2,\n    \"structures\": [\n      {\n        \"name\": \"narrow\",\n        \"geometry\": {\n          \"kind\": \"box\",\n          \"center_nm\": [\n            -2500.0,\n            0.0,\n            0.0\n          ],\n          \"size_nm\": [\n            5000.0,\n            500.0,\n            1.0\n          ]\n        },\n        \"material\": {\n          \"kind\": \"constant_index\",\n          \"n_real\": 2.85,\n          \"n_imag\": 0.0\n        }\n      },\n      {\n        \"name\": \"wide\",\n        \"geometry\": {\n          \"kind\": \"box\",\n          \"center_nm\": [\n            2500.0,\n            0.0,\n            0.0\n          ],\n          \"size_nm\": [\n            5000.0,\n            2000.0,\n            1.0\n          ]\n        },\n        \"material\": {\n          \"kind\": \"constant_index\",\n          \"n_real\": 2.85,\n          \"n_imag\": 0.0\n        }\n      }\n    ],\n    \"layout\": null,\n    \"background\": {\n      \"kind\": \"constant_index\",\n      \"n_real\": 1.44,\n      \"n_imag\": 0.0\n    },\n    \"domain_center_nm\": [\n      0.0,\n      0.0,\n      0.0\n    ],\n    \"domain_size_nm\": [\n      6000.0,\n      5000.0,\n      0.0\n    ],\n    \"ports\": [\n      {\n        \"name\": \"o1\",\n        \"center_nm\": [\n          -2000.0,\n          0.0,\n          0.0\n        ],\n        \"size_nm\": [\n          0.0,\n          4500.0,\n          0.0\n        ],\n        \"direction\": \"+\",\n        \"num_modes\": 1\n      },\n      {\n        \"name\": \"o2\",\n        \"center_nm\": [\n          2000.0,\n          0.0,\n          0.0\n        ],\n        \"size_nm\": [\n          0.0,\n          4500.0,\n          0.0\n        ],\n        \"direction\": \"-\",\n        \"num_modes\": 4\n      }\n    ],\n    \"wavelengths\": [\n      1550.0\n    ],\n    \"options\": {}\n  }\n}",
+   "images": [],
+   "error": null,
+   "duration_s": 0.004,
+   "started_at": 1794268154.3206933,
+   "source": "mcp"
+  },
+  {
+   "name": "get_discretization",
+   "arguments": {
+    "problem": {
+     "kind": "device",
+     "dimension": 2,
+     "structures": [
+      {
+       "name": "narrow",
+       "geometry": {
+        "kind": "box",
+        "center_nm": [
+         -2500,
+         0,
+         0
+        ],
+        "size_nm": [
+         5000,
+         500,
+         1
+        ]
+       },
+       "material": {
+        "kind": "constant_index",
+        "n_real": 2.85
+       }
+      },
+      {
+       "name": "wide",
+       "geometry": {
+        "kind": "box",
+        "center_nm": [
+         2500,
+         0,
+         0
+        ],
+        "size_nm": [
+         5000,
+         2000,
+         1
+        ]
+       },
+       "material": {
+        "kind": "constant_index",
+        "n_real": 2.85
+       }
+      }
+     ],
+     "background": {
+      "kind": "constant_index",
+      "n_real": 1.44
+     },
+     "domain_size_nm": [
+      6000,
+      5000,
+      0
+     ],
+     "ports": [
+      {
+       "name": "o1",
+       "center_nm": [
+        -2000,
+        0,
+        0
+       ],
+       "size_nm": [
+        0,
+        4500,
+        0
+       ],
+       "direction": "+",
+       "num_modes": 1
+      },
+      {
+       "name": "o2",
+       "center_nm": [
+        2000,
+        0,
+        0
+       ],
+       "size_nm": [
+        0,
+        4500,
+        0
+       ],
+       "direction": "-",
+       "num_modes": 4
+      }
+     ],
+     "wavelengths": [
+      1550
+     ]
+    },
+    "method": "eme"
+   },
+   "ok": true,
+   "result": {
+    "backend": "lightsmith-eme",
+    "method": "eme",
+    "problem_kind": "device",
+    "layout_kind": "cells",
+    "summary": {
+     "propagation axis": "x",
+     "length (nm)": 4000.0,
+     "cells": 2,
+     "cross-section grid": "368 \u00d7 1",
+     "modes per cell": 30
+    },
+    "payload": {
+     "axis": "x",
+     "lo_nm": -2000.0,
+     "hi_nm": 2000.0,
+     "cells": [
+      {
+       "start_nm": -2000.0,
+       "stop_nm": 0.0
+      },
+      {
+       "start_nm": 0.0,
+       "stop_nm": 2000.0
+      }
+     ],
+     "cross_section": {
+      "x_nm": [
+       -2500.0,
+       -2486.413043,
+       -2472.826087,
+       -2459.23913,
+       -2445.652174,
+       -2432.065217,
+       -2418.478261,
+       -2404.891304,
+       -2391.304348,
+       -2377.717391,
+       -2364.130435,
+       -2350.543478,
+       -2336.956522,
+       -2323.369565,
+       -2309.782609,
+       -2296.195652,
+       -2282.608696,
+       -2269.021739,
+       -2255.434783,
+       -2241.847826,
+       -2228.26087,
+       -2214.673913,
+       -2201.086957,
+       -2187.5,
+       -2173.913043,
+       -2160.326087,
+       -2146.73913,
+       -2133.152174,
+       -2119.565217,
+       -2105.978261,
+       -2092.391304,
+       -2078.804348,
+       -2065.217391,
+       -2051.630435,
+       -2038.043478,
+       -2024.456522,
+       -2010.869565,
+       -1997.282609,
+       -1983.695652,
+       -1970.108696,
+       -1956.521739,
+       -1942.934783,
+       -1929.347826,
+       -1915.76087,
+       -1902.173913,
+       -1888.586957,
+       -1875.0,
+       -1861.413043,
+       -1847.826087,
+       -1834.23913,
+       -1820.652174,
+       -1807.065217,
+       -1793.478261,
+       -1779.891304,
+       -1766.304348,
+       -1752.717391,
+       -1739.130435,
+       -1725.543478,
+       -1711.956522,
+       -1698.369565,
+       -1684.782609,
+       -1671.195652,
+       -1657.608696,
+       -1644.021739,
+       -1630.434783,
+       -1616.847826,
+       -1603.26087,
+       -1589.673913,
+       -1576.086957,
+       -1562.5,
+       -1548.913043,
+       -1535.326087,
+       -1521.73913,
+       -1508.152174,
+       -1494.565217,
+       -1480.978261,
+       -1467.391304,
+       -1453.804348,
+       -1440.217391,
+       -1426.630435,
+       -1413.043478,
+       -1399.456522,
+       -1385.869565,
+       -1372.282609,
+       -1358.695652,
+       -1345.108696,
+       -1331.521739,
+       -1317.934783,
+       -1304.347826,
+       -1290.76087,
+       -1277.173913,
+       -1263.586957,
+       -1250.0,
+       -1236.413043,
+       -1222.826087,
+       -1209.23913,
+       -1195.652174,
+       -1182.065217,
+       -1168.478261,
+       -1154.891304,
+       -1141.304348,
+       -1127.717391,
+       -1114.130435,
+       -1100.543478,
+       -1086.956522,
+       -1073.369565,
+       -1059.782609,
+       -1046.195652,
+       -1032.608696,
+       -1019.021739,
+       -1005.434783,
+       -991.847826,
+       -978.26087,
+       -964.673913,
+       -951.086957,
+       -937.5,
+       -923.913043,
+       -910.326087,
+       -896.73913,
+       -883.152174,
+       -869.565217,
+       -855.978261,
+       -842.391304,
+       -828.804348,
+       -815.217391,
+       -801.630435,
+       -788.043478,
+       -774.456522,
+       -760.869565,
+       -747.282609,
+       -733.695652,
+       -720.108696,
+       -706.521739,
+       -692.934783,
+       -679.347826,
+       -665.76087,
+       -652.173913,
+       -638.586957,
+       -625.0,
+       -611.413043,
+       -597.826087,
+       -584.23913,
+       -570.652174,
+       -557.065217,
+       -543.478261,
+       -529.891304,
+       -516.304348,
+       -502.717391,
+       -489.130435,
+       -475.543478,
+       -461.956522,
+       -448.369565,
+       -434.782609,
+       -421.195652,
+       -407.608696,
+       -394.021739,
+       -380.434783,
+       -366.847826,
+       -353.26087,
+       -339.673913,
+       -326.086957,
+       -312.5,
+       -298.913043,
+       -285.326087,
+       -271.73913,
+       -258.152174,
+       -244.565217,
+       -230.978261,
+       -217.391304,
+       -203.804348,
+       -190.217391,
+       -176.630435,
+       -163.043478,
+       -149.456522,
+       -135.869565,
+       -122.282609,
+       -108.695652,
+       -95.108696,
+       -81.521739,
+       -67.934783,
+       -54.347826,
+       -40.76087,
+       -27.173913,
+       -13.586957,
+       0.0,
+       13.586957,
+       27.173913,
+       40.76087,
+       54.347826,
+       67.934783,
+       81.521739,
+       95.108696,
+       108.695652,
+       122.282609,
+       135.869565,
+       149.456522,
+       163.043478,
+       176.630435,
+       190.217391,
+       203.804348,
+       217.391304,
+       230.978261,
+       244.565217,
+       258.152174,
+       271.73913,
+       285.326087,
+       298.913043,
+       312.5,
+       326.086957,
+       339.673913,
+       353.26087,
+       366.847826,
+       380.434783,
+       394.021739,
+       407.608696,
+       421.195652,
+       434.782609,
+       448.369565,
+       461.956522,
+       475.543478,
+       489.130435,
+       502.717391,
+       516.304348,
+       529.891304,
+       543.478261,
+       557.065217,
+       570.652174,
+       584.23913,
+       597.826087,
+       611.413043,
+       625.0,
+       638.586957,
+       652.173913,
+       665.76087,
+       679.347826,
+       692.934783,
+       706.521739,
+       720.108696,
+       733.695652,
+       747.282609,
+       760.869565,
+       774.456522,
+       788.043478,
+       801.630435,
+       815.217391,
+       828.804348,
+       842.391304,
+       855.978261,
+       869.565217,
+       883.152174,
+       896.73913,
+       910.326087,
+       923.913043,
+       937.5,
+       951.086957,
+       964.673913,
+       978.26087,
+       991.847826,
+       1005.434783,
+       1019.021739,
+       1032.608696,
+       1046.195652,
+       1059.782609,
+       1073.369565,
+       1086.956522,
+       1100.543478,
+       1114.130435,
+       1127.717391,
+       1141.304348,
+       1154.891304,
+       1168.478261,
+       1182.065217,
+       1195.652174,
+       1209.23913,
+       1222.826087,
+       1236.413043,
+       1250.0,
+       1263.586957,
+       1277.173913,
+       1290.76087,
+       1304.347826,
+       1317.934783,
+       1331.521739,
+       1345.108696,
+       1358.695652,
+       1372.282609,
+       1385.869565,
+       1399.456522,
+       1413.043478,
+       1426.630435,
+       1440.217391,
+       1453.804348,
+       1467.391304,
+       1480.978261,
+       1494.565217,
+       1508.152174,
+       1521.73913,
+       1535.326087,
+       1548.913043,
+       1562.5,
+       1576.086957,
+       1589.673913,
+       1603.26087,
+       1616.847826,
+       1630.434783,
+       1644.021739,
+       1657.608696,
+       1671.195652,
+       1684.782609,
+       1698.369565,
+       1711.956522,
+       1725.543478,
+       1739.130435,
+       1752.717391,
+       1766.304348,
+       1779.891304,
+       1793.478261,
+       1807.065217,
+       1820.652174,
+       1834.23913,
+       1847.826087,
+       1861.413043,
+       1875.0,
+       1888.586957,
+       1902.173913,
+       1915.76087,
+       1929.347826,
+       1942.934783,
+       1956.521739,
+       1970.108696,
+       1983.695652,
+       1997.282609,
+       2010.869565,
+       2024.456522,
+       2038.043478,
+       2051.630435,
+       2065.217391,
+       2078.804348,
+       2092.391304,
+       2105.978261,
+       2119.565217,
+       2133.152174,
+       2146.73913,
+       2160.326087,
+       2173.913043,
+       2187.5,
+       2201.086957,
+       2214.673913,
+       2228.26087,
+       2241.847826,
+       2255.434783,
+       2269.021739,
+       2282.608696,
+       2296.195652,
+       2309.782609,
+       2323.369565,
+       2336.956522,
+       2350.543478,
+       2364.130435,
+       2377.717391,
+       2391.304348,
+       2404.891304,
+       2418.478261,
+       2432.065217,
+       2445.652174,
+       2459.23913,
+       2472.826087,
+       2486.413043
+      ],
+      "y_nm": [
+       0.0
+      ],
+      "dx_nm": 13.58695652173913,
+      "dy_nm": 1.0,
+      "pml_cells": [
+       [
+        0,
+        0
+       ],
+       [
+        0,
+        0
+       ]
+      ],
+      "symmetry": [
+       false,
+       false
+      ],
+      "bc_min": [
+       "pec",
+       "pec"
+      ]
+     },
+     "modes_per_cell": 30
+    },
+    "estimate": {
+     "backend": "lightsmith-eme",
+     "method": "eme",
+     "framework": "numpy",
+     "device": "cpu",
+     "axis": "x",
+     "length_nm": 4000.0,
+     "cross_section_grid": [
+      368,
+      1
+     ],
+     "grid_spacing_nm": [
+      13.58695652173913,
+      null
+     ],
+     "modes_per_cell": 30,
+     "unknowns_per_cell": 736,
+     "memory_bytes": 2119680,
+     "fits": true
+    },
+    "warnings": [],
+    "error": null
+   },
+   "text": "{\n  \"backend\": \"lightsmith-eme\",\n  \"method\": \"eme\",\n  \"problem_kind\": \"device\",\n  \"layout_kind\": \"cells\",\n  \"summary\": {\n    \"propagation axis\": \"x\",\n    \"length (nm)\": 4000.0,\n    \"cells\": 2,\n    \"cross-section grid\": \"368 \u00d7 1\",\n    \"modes per cell\": 30\n  },\n  \"payload\": {\n    \"axis\": \"x\",\n    \"lo_nm\": -2000.0,\n    \"hi_nm\": 2000.0,\n    \"cells\": [\n      {\n        \"start_nm\": -2000.0,\n        \"stop_nm\": 0.0\n      },\n      {\n        \"start_nm\": 0.0,\n        \"stop_nm\": 2000.0\n      }\n    ],\n    \"cross_section\": {\n      \"x_nm\": [\n        -2500.0,\n        -2486.413043,\n        -2472.826087,\n        -2459.23913,\n        -2445.652174,\n        -2432.065217,\n        -2418.478261,\n        -2404.891304,\n        -2391.304348,\n        -2377.717391,\n        -2364.130435,\n        -2350.543478,\n        -2336.956522,\n        -2323.369565,\n        -2309.782609,\n        -2296.195652,\n        -2282.608696,\n        -2269.021739,\n        -2255.434783,\n        -2241.847826,\n        -2228.26087,\n        -2214.673913,\n        -2201.086957,\n        -2187.5,\n        -2173.913043,\n        -2160.326087,\n        -2146.73913,\n        -2133.152174,\n        -2119.565217,\n        -2105.978261,\n        -2092.391304,\n        -2078.804348,\n        -2065.217391,\n        -2051.630435,\n        -2038.043478,\n        -2024.456522,\n        -2010.869565,\n        -1997.282609,\n        -1983.695652,\n        -1970.108696,\n        -1956.521739,\n        -1942.934783,\n        -1929.347826,\n        -1915.76087,\n        -1902.173913,\n        -1888.586957,\n        -1875.0,\n        -1861.413043,\n        -1847.826087,\n        -1834.23913,\n        -1820.652174,\n        -1807.065217,\n        -1793.478261,\n        -1779.891304,\n        -1766.304348,\n        -1752.717391,\n        -1739.130435,\n        -1725.543478,\n        -1711.956522,\n        -1698.369565,\n        -1684.782609,\n        -1671.195652,\n        -1657.608696,\n        -1644.021739,\n        -1630.434783,\n        -1616.847826,\n        -1603.26087,\n        -1589.673913,\n        -1576.086957,\n        -1562.5,\n        -1548.913043,\n        -1535.326087,\n        -1521.73913,\n        -1508.152174,\n        -1494.565217,\n        -1480.978261,\n        -1467.391304,\n        -1453.804348,\n        -1440.217391,\n        -1426.630435,\n        -1413.043478,\n        -1399.456522,\n        -1385.869565,\n        -1372.282609,\n        -1358.695652,\n        -1345.108696,\n        -1331.521739,\n        -1317.934783,\n        -1304.347826,\n        -1290.76087,\n        -1277.173913,\n        -1263.586957,\n        -1250.0,\n        -1236.413043,\n        -1222.826087,\n        -1209.23913,\n        -1195.652174,\n        -1182.065217,\n        -1168.478261,\n        -1154.891304,\n        -1141.304348,\n        -1127.717391,\n        -1114.130435,\n        -1100.543478,\n        -1086.956522,\n        -1073.369565,\n        -1059.782609,\n        -1046.195652,\n        -1032.608696,\n        -1019.021739,\n        -1005.434783,\n        -991.847826,\n        -978.26087,\n        -964.673913,\n        -951.086957,\n        -937.5,\n        -923.913043,\n        -910.326087,\n        -896.73913,\n        -883.152174,\n        -869.565217,\n        -855.978261,\n        -842.391304,\n        -828.804348,\n        -815.217391,\n        -801.630435,\n        -788.043478,\n        -774.456522,\n        -760.869565,\n        -747.282609,\n        -733.695652,\n        -720.108696,\n        -706.521739,\n        -692.934783,\n        -679.347826,\n        -665.76087,\n        -652.173913,\n        -638.586957,\n        -625.0,\n        -611.413043,\n        -597.826087,\n        -584.23913,\n        -570.652174,\n        -557.065217,\n        -543.478261,\n        -529.891304,\n        -516.304348,\n        -502.717391,\n        -489.130435,\n        -475.543478,\n        -461.956522,\n        -448.369565,\n        -434.782609,\n        -421.195652,\n        -407.608696,\n        -394.021739,\n        -380.434783,\n        -366.847826,\n        -353.26087,\n        -339.673913,\n        -326.086957,\n        -312.5,\n        -298.913043,\n        -285.326087,\n        -271.73913,\n        -258.152174,\n        -244.565217,\n        -230.978261,\n        -217.391304,\n        -203.804348,\n        -190.217391,\n        -176.630435,\n        -163.043478,\n        -149.456522,\n        -135.869565,\n        -122.282609,\n        -108.695652,\n        -95.108696,\n        -81.521739,\n        -67.934783,\n        -54.347826,\n        -40.76087,\n        -27.173913,\n        -13.586957,\n        0.0,\n        13.586957,\n        27.173913,\n        40.76087,\n        54.347826,\n        67.934783,\n        81.521739,\n        95.108696,\n        108.695652,\n        122.282609,\n        135.869565,\n        149.456522,\n        163.043478,\n        176.630435,\n        190.217391,\n        203.804348,\n        217.391304,\n        230.978261,\n        244.565217,\n        258.152174,\n        271.73913,\n        285.326087,\n        298.913043,\n        312.5,\n        326.086957,\n        339.673913,\n        353.26087,\n        366.847826,\n        380.434783,\n        394.021739,\n        407.608696,\n        421.195652,\n        434.782609,\n        448.369565,\n        461.956522,\n        475.543478,\n        489.130435,\n        502.717391,\n        516.304348,\n        529.891304,\n        543.478261,\n        557.065217,\n        570.652174,\n        584.23913,\n        597.826087,\n        611.413043,\n        625.0,\n        638.586957,\n        652.173913,\n        665.76087,\n        679.347826,\n        692.934783,\n        706.521739,\n        720.108696,\n        733.695652,\n        747.282609,\n        760.869565,\n        774.456522,\n        788.043478,\n        801.630435,\n        815.217391,\n        828.804348,\n        842.391304,\n        855.978261,\n        869.565217,\n        883.152174,\n        896.73913,\n        910.326087,\n        923.913043,\n        937.5,\n        951.086957,\n        964.673913,\n        978.26087,\n        991.847826,\n        1005.434783,\n        1019.021739,\n        1032.608696,\n        1046.195652,\n        1059.782609,\n        1073.369565,\n        1086.956522,\n        1100.543478,\n        1114.130435,\n        1127.717391,\n        1141.304348,\n        1154.891304,\n        1168.478261,\n        1182.065217,\n        1195.652174,\n        1209.23913,\n        1222.826087,\n        1236.413043,\n        1250.0,\n        1263.586957,\n        1277.173913,\n        1290.76087,\n        1304.347826,\n        1317.934783,\n        1331.521739,\n        1345.108696,\n        1358.695652,\n        1372.282609,\n        1385.869565,\n        1399.456522,\n        1413.043478,\n        1426.630435,\n        1440.217391,\n        1453.804348,\n        1467.391304,\n        1480.978261,\n        1494.565217,\n        1508.152174,\n        1521.73913,\n        1535.326087,\n        1548.913043,\n        1562.5,\n        1576.086957,\n        1589.673913,\n        1603.26087,\n        1616.847826,\n        1630.434783,\n        1644.021739,\n        1657.608696,\n        1671.195652,\n        1684.782609,\n        1698.369565,\n        1711.956522,\n        1725.543478,\n        1739.130435,\n        1752.717391,\n        1766.304348,\n        1779.891304,\n        1793.478261,\n        1807.065217,\n        1820.652174,\n        1834.23913,\n        1847.826087,\n        1861.413043,\n        1875.0,\n        1888.586957,\n        1902.173913,\n        1915.76087,\n        1929.347826,\n        1942.934783,\n        1956.521739,\n        1970.108696,\n        1983.695652,\n        1997.282609,\n        2010.869565,\n        2024.456522,\n        2038.043478,\n        2051.630435,\n        2065.217391,\n        2078.804348,\n        2092.391304,\n        2105.978261,\n        2119.565217,\n        2133.152174,\n        2146.73913,\n        2160.326087,\n        2173.913043,\n        2187.5,\n        2201.086957,\n        2214.673913,\n        2228.26087,\n        2241.847826,\n        2255.434783,\n        2269.021739,\n        2282.608696,\n        2296.195652,\n        2309.782609,\n        2323.369565,\n        2336.956522,\n        2350.543478,\n        2364.130435,\n        2377.717391,\n        2391.304348,\n        2404.891304,\n        2418.478261,\n        2432.065217,\n        2445.652174,\n        2459.23913,\n        2472.826087,\n        2486.413043\n      ],\n      \"y_nm\": [\n        0.0\n      ],\n      \"dx_nm\": 13.58695652173913,\n      \"dy_nm\": 1.0,\n      \"pml_cells\": [\n        [\n          0,\n          0\n        ],\n        [\n          0,\n          0\n        ]\n      ],\n      \"symmetry\": [\n        false,\n        false\n      ],\n      \"bc_min\": [\n        \"pec\",\n        \"pec\"\n      ]\n    },\n    \"modes_per_cell\": 30\n  },\n  \"estimate\": {\n    \"backend\": \"lightsmith-eme\",\n    \"method\": \"eme\",\n    \"framework\": \"numpy\",\n    \"device\": \"cpu\",\n    \"axis\": \"x\",\n    \"length_nm\": 4000.0,\n    \"cross_section_grid\": [\n      368,\n      1\n    ],\n    \"grid_spacing_nm\": [\n      13.58695652173913,\n      null\n    ],\n    \"modes_per_cell\": 30,\n    \"unknowns_per_cell\": 736,\n    \"memory_bytes\": 2119680,\n    \"fits\": true\n  },\n  \"warnings\": [],\n  \"error\": null\n}",
+   "images": [],
+   "error": null,
+   "duration_s": 0.022,
+   "started_at": 1794268157.989291,
+   "source": "mcp"
+  },
+  {
+   "name": "solve",
+   "arguments": {
+    "problem": {
+     "kind": "device",
+     "dimension": 2,
+     "structures": [
+      {
+       "name": "narrow",
+       "geometry": {
+        "kind": "box",
+        "center_nm": [
+         -2500,
+         0,
+         0
+        ],
+        "size_nm": [
+         5000,
+         500,
+         1
+        ]
+       },
+       "material": {
+        "kind": "constant_index",
+        "n_real": 2.85
+       }
+      },
+      {
+       "name": "wide",
+       "geometry": {
+        "kind": "box",
+        "center_nm": [
+         2500,
+         0,
+         0
+        ],
+        "size_nm": [
+         5000,
+         2000,
+         1
+        ]
+       },
+       "material": {
+        "kind": "constant_index",
+        "n_real": 2.85
+       }
+      }
+     ],
+     "background": {
+      "kind": "constant_index",
+      "n_real": 1.44
+     },
+     "domain_size_nm": [
+      6000,
+      5000,
+      0
+     ],
+     "ports": [
+      {
+       "name": "o1",
+       "center_nm": [
+        -2000,
+        0,
+        0
+       ],
+       "size_nm": [
+        0,
+        4500,
+        0
+       ],
+       "direction": "+",
+       "num_modes": 1
+      },
+      {
+       "name": "o2",
+       "center_nm": [
+        2000,
+        0,
+        0
+       ],
+       "size_nm": [
+        0,
+        4500,
+        0
+       ],
+       "direction": "-",
+       "num_modes": 4
+      }
+     ],
+     "wavelengths": [
+      1550
+     ]
+    },
+    "method": "eme"
+   },
+   "ok": true,
+   "result": {
+    "status": "succeeded",
+    "job_id": "67375b89c157c1f98154e38de0de03c5",
+    "job": {
+     "job_id": "67375b89c157c1f98154e38de0de03c5",
+     "operation": "solve",
+     "problem_kind": "device",
+     "status": "succeeded",
+     "progress": 1.0,
+     "stage": "done",
+     "message": null,
+     "method": "eme",
+     "methods": null,
+     "device": "auto",
+     "label": null,
+     "runner": "process",
+     "created_at": "2026-11-09T23:49:22+00:00",
+     "started_at": "2026-11-09T23:49:22+00:00",
+     "finished_at": "2026-11-09T23:49:23+00:00",
+     "elapsed_s": 1.531,
+     "error": null,
+     "resources": {
+      "job": "lightsmith://jobs/67375b89c157c1f98154e38de0de03c5",
+      "result": "lightsmith://jobs/67375b89c157c1f98154e38de0de03c5/result",
+      "csv": "lightsmith://jobs/67375b89c157c1f98154e38de0de03c5/result.csv",
+      "plot": "lightsmith://jobs/67375b89c157c1f98154e38de0de03c5/plot.png"
+     },
+     "estimated_runtime_s": 0.003
+    },
+    "summary": {
+     "result_kind": "sparameters",
+     "method": "eme",
+     "backend": "lightsmith-eme",
+     "warnings": [],
+     "provenance": {
+      "device": "cpu",
+      "framework": "numpy",
+      "runtime_s": 0.14279790001455694,
+      "cells": 2
+     },
+     "n_wavelengths": 1,
+     "wavelength_range_nm": [
+      1550.0,
+      1550.0
+     ],
+     "ports": [
+      "o1",
+      "o2@0",
+      "o2@1",
+      "o2@2",
+      "o2@3"
+     ],
+     "center_wavelength_nm": 1550.0,
+     "units": {
+      "power": "|S|^2 fraction",
+      "dB": "10 log10 |S|^2"
+     },
+     "significant_paths": [
+      {
+       "path": "o1 -> o2@0",
+       "power_center": 0.5884,
+       "dB_center": -2.303,
+       "power_min": 0.5884,
+       "power_max": 0.5884
+      },
+      {
+       "path": "o2@0 -> o1",
+       "power_center": 0.5884,
+       "dB_center": -2.303,
+       "power_min": 0.5884,
+       "power_max": 0.5884
+      },
+      {
+       "path": "o1 -> o2@2",
+       "power_center": 0.2973,
+       "dB_center": -5.268,
+       "power_min": 0.2973,
+       "power_max": 0.2973
+      },
+      {
+       "path": "o2@2 -> o1",
+       "power_center": 0.2973,
+       "dB_center": -5.268,
+       "power_min": 0.2973,
+       "power_max": 0.2973
+      },
+      {
+       "path": "o2@1 -> o2@1",
+       "power_center": 0.08098,
+       "dB_center": -10.92,
+       "power_min": 0.08098,
+       "power_max": 0.08098
+      },
+      {
+       "path": "o2@2 -> o2@2",
+       "power_center": 0.03549,
+       "dB_center": -14.5,
+       "power_min": 0.03549,
+       "power_max": 0.03549
+      },
+      {
+       "path": "o2@0 -> o2@0",
+       "power_center": 0.02774,
+       "dB_center": -15.57,
+       "power_min": 0.02774,
+       "power_max": 0.02774
+      },
+      {
+       "path": "o2@0 -> o2@2",
+       "power_center": 0.01783,
+       "dB_center": -17.49,
+       "power_min": 0.01783,
+       "power_max": 0.01783
+      },
+      {
+       "path": "o2@2 -> o2@0",
+       "power_center": 0.01783,
+       "dB_center": -17.49,
+       "power_min": 0.01783,
+       "power_max": 0.01783
+      },
+      {
+       "path": "o2@3 -> o2@3",
+       "power_center": 0.01434,
+       "dB_center": -18.44,
+       "power_min": 0.01434,
+       "power_max": 0.01434
+      }
+     ],
+     "max_reciprocity_error": 2.78e-16,
+     "max_column_power": 0.8858
+    },
+    "next_step": "Full arrays: read lightsmith://jobs/67375b89c157c1f98154e38de0de03c5/result (JSON) or lightsmith://jobs/67375b89c157c1f98154e38de0de03c5/result.csv, or call get_result. Check summary.warnings."
+   },
+   "text": "{\"status\": \"succeeded\", \"job_id\": \"67375b89c157c1f98154e38de0de03c5\", \"job\": {\"job_id\": \"67375b89c157c1f98154e38de0de03c5\", \"operation\": \"solve\", \"problem_kind\": \"device\", \"status\": \"succeeded\", \"progress\": 1.0, \"stage\": \"done\", \"message\": null, \"method\": \"eme\", \"methods\": null, \"device\": \"auto\", \"label\": null, \"runner\": \"process\", \"created_at\": \"2026-11-09T23:49:22+00:00\", \"started_at\": \"2026-11-09T23:49:22+00:00\", \"finished_at\": \"2026-11-09T23:49:23+00:00\", \"elapsed_s\": 1.531, \"error\": null, \"resources\": {\"job\": \"lightsmith://jobs/67375b89c157c1f98154e38de0de03c5\", \"result\": \"lightsmith://jobs/67375b89c157c1f98154e38de0de03c5/result\", \"csv\": \"lightsmith://jobs/67375b89c157c1f98154e38de0de03c5/result.csv\", \"plot\": \"lightsmith://jobs/67375b89c157c1f98154e38de0de03c5/plot.png\"}, \"estimated_runtime_s\": 0.003}, \"summary\": {\"result_kind\": \"sparameters\", \"method\": \"eme\", \"backend\": \"lightsmith-eme\", \"warnings\": [], \"provenance\": {\"device\": \"cpu\", \"framework\": \"numpy\", \"runtime_s\": 0.14279790001455694, \"cells\": 2}, \"n_wavelengths\": 1, \"wavelength_range_nm\": [1550.0, 1550.0], \"ports\": [\"o1\", \"o2@0\", \"o2@1\", \"o2@2\", \"o2@3\"], \"center_wavelength_nm\": 1550.0, \"units\": {\"power\": \"|S|^2 fraction\", \"dB\": \"10 log10 |S|^2\"}, \"significant_paths\": [{\"path\": \"o1 -> o2@0\", \"power_center\": 0.5884, \"dB_center\": -2.303, \"power_min\": 0.5884, \"power_max\": 0.5884}, {\"path\": \"o2@0 -> o1\", \"power_center\": 0.5884, \"dB_center\": -2.303, \"power_min\": 0.5884, \"power_max\": 0.5884}, {\"path\": \"o1 -> o2@2\", \"power_center\": 0.2973, \"dB_center\": -5.268, \"power_min\": 0.2973, \"power_max\": 0.2973}, {\"path\": \"o2@2 -> o1\", \"power_center\": 0.2973, \"dB_center\": -5.268, \"power_min\": 0.2973, \"power_max\": 0.2973}, {\"path\": \"o2@1 -> o2@1\", \"power_center\": 0.08098, \"dB_center\": -10.92, \"power_min\": 0.08098, \"power_max\": 0.08098}, {\"path\": \"o2@2 -> o2@2\", \"power_center\": 0.03549, \"dB_center\": -14.5, \"power_min\": 0.03549, \"power_max\": 0.03549}, {\"path\": \"o2@0 -> o2@0\", \"power_center\": 0.02774, \"dB_center\": -15.57, \"power_min\": 0.02774, \"power_max\": 0.02774}, {\"path\": \"o2@0 -> o2@2\", \"power_center\": 0.01783, \"dB_center\": -17.49, \"power_min\": 0.01783, \"power_max\": 0.01783}, {\"path\": \"o2@2 -> o2@0\", \"power_center\": 0.01783, \"dB_center\": -17.49, \"power_min\": 0.01783, \"power_max\": 0.01783}, {\"path\": \"o2@3 -> o2@3\", \"power_center\": 0.01434, \"dB_center\": -18.44, \"power_min\": 0.01434, \"power_max\": 0.01434}], \"max_reciprocity_error\": 2.78e-16, \"max_column_power\": 0.8858}, \"next_step\": \"Full arrays: read lightsmith://jobs/67375b89c157c1f98154e38de0de03c5/result (JSON) or lightsmith://jobs/67375b89c157c1f98154e38de0de03c5/result.csv, or call get_result. Check summary.warnings.\"}",
+   "images": [],
+   "error": null,
+   "duration_s": 1.682,
+   "started_at": 1794268162.184749,
+   "source": "mcp"
+  }
+ ],
+ "messages": [
+  {
+   "role": "user",
+   "content": "In a 2D slab model (core n = 2.85, cladding n = 1.44, TE), a 500 nm wide waveguide is butt-joined to a 2 \u00b5m wide one with no taper. At 1550 nm, what fraction of the fundamental-mode power arrives in the fundamental mode of the wide guide?\n\n---\nReport your result by calling submit_answer with these values:\n- `t_fundamental` (fraction (0-1)): fundamental-to-fundamental power transmission"
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "CAQSsAUKEAgTGAI4AUIIdGhpbmtpbmcSDKMkYXbX+LmLksEtnBoM4YChUgoomnIYwG/EIjAO8VSnrhsHWGPkgzWmDRwdI50l0OrzR9Evs+75kBAbR+Mc3+GcwItQVQ+Sgn3U/XAqzQSfz7d8yEg5xULDZ5OVyXRkuBnawuPwzcpjlF56sF2qupPp40pRHUO6clZkjK5LvpWIIBxdSgUP0ntqX//du3IYBF2ttWzX41oxMMyQfco74PdFsFlKRYhrjw6owKa8QFpVPyTPfObvk5uoReFLVCvWjJQZ4qYMtwZHmGv0o5/qkdIW8PWxuGCAc+Jg1i2ghQhJYkO6OBFjeyDs1bZFAB4hv0U7UVZexbBqcHsJaphB/LTFCWhjpqCj9qXu+kZBk6qUKTIDZDvdDm3xcaccuVuSDE2J8JGokq54wN4Optd4lhiiapNxKAxXpj0eRwxUDDkjVAnZXbTYML3qeI2CvD1NzWtvUY+pf8M3/j8AwtW3NTlGE6hv9arlmofiKXqzO1RgIOH6KJ0GAONOwAKRIpDSmkmVdGDDUqtSvGmyRF3F6G7xvPrtYh0zvtCnxGcEosfLneSJr6uO/fCXARBsL/qW+NPvfC87hOxbTQdi2v4AO1ratW7NSrqDbRVVUwbCYQH4yyEpgTlxM1B43rA2JHdigC/Zbze/65xnOFLLxDUqhORyEoTuXcWqk5ky8E87OvwA5hRUSLLz0OhTJZlbUxlB4bu8WPjrSaZef3WE/zfse/2aHfM/caUtFQ0umanKXeTAMVEvD9A3AJTj+zxy1CL6h+jgGD8kp+2DqOu8DC63RXY/uoyghSPlUxsKquC+ZiZOd+Dx92XPjcrqofQDdaXkv0kdqDtNYGmLoj+3s8TzNEfgFI2s0VJSn2DuAMrSIynpVhWzpSvOfCurfri7GAE=",
+     "thinking": "I'm starting by checking the problem kinds and schema, and I suspect it's the \"device\" kind with EME. I'll confirm that next.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_01SbSiQL5ECXdQG7ERgYtyyu",
+     "input": {},
+     "name": "list_problem_kinds",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_01SbSiQL5ECXdQG7ERgYtyyu",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\n  \"kinds\": [\n    {\n      \"kind\": \"scattering\",\n      \"description\": \"Single or multiple particles (spheres, spheroids, cylinders, layered spheres) under plane-wave illumination: extinction/scattering/absorption cross sections, near and far fields.\",\n      \"model\": \"Simulation\",\n      \"auto_method_order\": [\n        \"mie\",\n        \"tmatrix\",\n        \"bem\",\n        \"dda\",\n        \"fdtd\"\n      ],\n      \"methods\": [\n        \"bem\",\n        \"dda\",\n        \"fdtd\",\n        \"mie\",\n        \"quasistatic\",\n        \"tmatrix\"\n      ],\n      \"backends_available\": [\n        \"lightsmith-mie\",\n        \"miepython\",\n        \"treams\",\n        \"lightsmith-bem\",\n        \"lightsmith-dda\",\n        \"lightsmith-fdtd\",\n        \"lightsmith-quasistatic\"\n      ],\n      \"has_example\": true,\n      \"schema_uri\": \"lightsmith://schema/scattering\",\n      \"example_uri\": \"lightsmith://examples/scattering\"\n    },\n    {\n      \"kind\": \"layer_stack\",\n      \"description\": \"Planar multilayer thin films: R/T/A vs wavelength, angle and polarization.\",\n      \"model\": \"LayerStackProblem\",\n      \"auto_method_order\": [\n        \"tmm\",\n        \"rcwa\",\n        \"fdtd\"\n      ],\n      \"methods\": [\n        \"fdtd\",\n        \"rcwa\",\n        \"tmm\"\n      ],\n      \"backends_available\": [\n        \"lightsmith-tmm\",\n        \"lightsmith-rcwa\",\n        \"lightsmith-fdtd\"\n      ],\n      \"has_example\": true,\n      \"schema_uri\": \"lightsmith://schema/layer_stack\",\n      \"example_uri\": \"lightsmith://examples/layer_stack\"\n    },\n    {\n      \"kind\": \"periodic\",\n      \"description\": \"1D/2D-periodic patterned layers (gratings, metasurfaces, photonic-crystal slabs): R/T/A and diffraction orders.\",\n      \"model\": \"PeriodicProblem\",\n      \"auto_method_order\": [\n        \"rcwa\",\n        \"fdfd\",\n        \"fdtd\"\n      ],\n      \"methods\": [\n        \"fdtd\",\n        \"rcwa\"\n      ],\n      \"backends_available\": [\n        \"lightsmith-rcwa\",\n        \"lightsmith-fdtd\"\n      ],\n      \"has_example\": true,\n      \"schema_uri\": \"lightsmith://schema/periodic\",\n      \"example_uri\": \"lightsmith://examples/periodic\"\n    },\n    {\n      \"kind\": \"mode\",\n      \"description\": \"Waveguide cross-section eigenmodes: effective index, group index, loss, mode fields.\",\n      \"model\": \"ModeProblem\",\n      \"auto_method_order\": [\n        \"fde\"\n      ],\n      \"methods\": [\n        \"fde\"\n      ],\n      \"backends_available\": [\n        \"lightsmith-fde\"\n      ],\n      \"has_example\": true,\n      \"schema_uri\": \"lightsmith://schema/mode\",\n      \"example_uri\": \"lightsmith://examples/mode\"\n    },\n    {\n      \"kind\": \"device\",\n      \"description\": \"Photonic devices with ports (waveguides, couplers, tapers, GDS layouts): S-parameters.\",\n      \"model\": \"DeviceProblem\",\n      \"auto_method_order\": [\n        \"eme\",\n        \"bpm\",\n        \"fdfd\",\n        \"fdtd\"\n      ],\n      \"methods\": [\n        \"bpm\",\n        \"eme\",\n        \"fdfd\",\n        \"fdtd\"\n      ],\n      \"backends_available\": [\n        \"lightsmith-eme\",\n        \"lightsmith-bpm\",\n        \"lightsmith-fdfd\",\n        \"lightsmith-fdtd\"\n      ],\n      \"has_example\": true,\n      \"schema_uri\": \"lightsmith://schema/device\",\n      \"example_uri\": \"lightsmith://examples/device\"\n    },\n    {\n      \"kind\": \"bands\",\n      \"description\": \"Photonic-crystal band structure along a k-path.\",\n      \"model\": \"BandProblem\",\n      \"auto_method_order\": [\n        \"pwe\",\n        \"fdfd\"\n      ],\n      \"methods\": [\n        \"pwe\"\n      ],\n      \"backends_available\": [\n        \"lightsmith-pwe\"\n      ],\n      \"has_example\": true,\n      \"schema_uri\": \"lightsmith://schema/bands\",\n      \"example_uri\": \"lightsmith://examples/bands\"\n    },\n    {\n      \"kind\": \"circuit\",\n      \"description\": \"Netlists of compact-model components (waveguides, couplers, rings, Touchstone files): circuit S-parameters.\",\n      \"model\": \"CircuitProblem\",\n      \"auto_method_order\": [\n        \"circuit\"\n      ],\n      \"methods\": [\n        \"circuit\"\n      ],\n      \"backends_available\": [\n        \"lightsmith-circuit\"\n      ],\n      \"has_example\": true,\n      \"schema_uri\": \"lightsmith://schema/circuit\",\n      \"example_uri\": \"lightsmith://examples/circuit\"\n    },\n    {\n      \"kind\": \"optimization\",\n      \"description\": \"Inverse design (topology optimisation) of a device's design region against S-parameter or field objectives.\",\n      \"model\": \"OptimizationProblem\",\n      \"auto_method_order\": [\n        \"inverse\"\n      ],\n      \"methods\": [\n        \"inverse\"\n      ],\n      \"backends_available\": [\n        \"lightsmith-inverse\"\n      ],\n      \"has_example\": true,\n      \"schema_uri\": \"lightsmith://schema/optimization\",\n      \"example_uri\": \"lightsmith://examples/optimization\"\n    },\n    {\n      \"kind\": \"emission\",\n      \"description\": \"A point dipole emitter near particles: Purcell (decay-rate) enhancement, radiative enhancement, quantum efficiency of the antenna and radiation pattern.\",\n      \"model\": \"EmissionProblem\",\n      \"auto_method_order\": [\n        \"mie\",\n        \"fdtd\"\n      ],\n      \"methods\": [\n        \"fdtd\",\n        \"mie\"\n      ],\n      \"backends_available\": [\n        \"lightsmith-mie\",\n        \"lightsmith-fdtd\"\n      ],\n      \"has_example\": true,\n      \"schema_uri\": \"lightsmith://schema/emission\",\n      \"example_uri\": \"lightsmith://examples/emission\"\n    }\n  ],\n  \"conventions\": \"Lightsmith conventions (fixed; changing them needs a schema version bump):\\n- Lengths in nm. Wavelengths are vacuum wavelengths in nm.\\n- Time dependence exp(-i omega t): absorbing materials have Im(eps) > 0 and Im(n) > 0.\\n- Cross sections in nm^2; efficiencies Q = C / (pi r_eq^2), r_eq = volume-equivalent radius of all particles.\\n- layer_stack / periodic: layers listed from the superstrate (incidence side) to the substrate; light travels +z.\\n  R is measured in the superstrate, T in the substrate.\\n- mode: cross-section in the xy plane, propagation along +z.\\n- device: ports are planes whose normal is the axis where size_nm is zero; direction is into the device.\\n- problem.options[<method or backend name>] holds solver options, validated by that backend.\\n- Materials: {\\\"kind\\\": \\\"constant_index\\\", \\\"n_real\\\": .., \\\"n_imag\\\": ..}, {\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\"},\\n  drude, drude_lorentz, tabulated, constant_permittivity. FDTD needs dispersive models (fit_drude_lorentz).\\n- Results carry provenance and warnings: read the warnings before trusting the numbers.\\n\"\n}"
+      }
+     ],
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "id": "toolu_01QnGcTiVvMvp4Y7Hfsq9PUu",
+     "input": {
+      "kind": "device"
+     },
+     "name": "get_schema",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_01QnGcTiVvMvp4Y7Hfsq9PUu",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\n  \"kind\": \"device\",\n  \"schema\": {\n    \"$defs\": {\n      \"Ball\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"ball\",\n            \"default\": \"ball\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Radius Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"radius_nm\"\n        ],\n        \"title\": \"Ball\",\n        \"type\": \"object\"\n      },\n      \"Box\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"box\",\n            \"default\": \"box\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"size_nm\": {\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Size Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"size_nm\"\n        ],\n        \"title\": \"Box\",\n        \"type\": \"object\"\n      },\n      \"Circle\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"circle\",\n            \"default\": \"circle\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Radius Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"radius_nm\"\n        ],\n        \"title\": \"Circle\",\n        \"type\": \"object\"\n      },\n      \"ConstantIndex\": {\n        \"additionalProperties\": false,\n        \"description\": \"Wavelength-independent complex refractive index n + ik.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"constant_index\",\n            \"default\": \"constant_index\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"n_real\": {\n            \"description\": \"Real part of the refractive index.\",\n            \"title\": \"N Real\",\n            \"type\": \"number\"\n          },\n          \"n_imag\": {\n            \"default\": 0.0,\n            \"description\": \"Extinction coefficient k (>= 0 for loss).\",\n            \"minimum\": 0,\n            \"title\": \"N Imag\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"n_real\"\n        ],\n        \"title\": \"ConstantIndex\",\n        \"type\": \"object\"\n      },\n      \"ConstantPermittivity\": {\n        \"additionalProperties\": false,\n        \"description\": \"Wavelength-independent complex relative permittivity.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"constant_permittivity\",\n            \"default\": \"constant_permittivity\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_real\": {\n            \"title\": \"Eps Real\",\n            \"type\": \"number\"\n          },\n          \"eps_imag\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Eps Imag\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"eps_real\"\n        ],\n        \"title\": \"ConstantPermittivity\",\n        \"type\": \"object\"\n      },\n      \"Drude\": {\n        \"additionalProperties\": false,\n        \"description\": \"eps(w) = eps_inf - wp^2 / (w^2 + i*gamma*w), energies in eV.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"drude\",\n            \"default\": \"drude\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_inf\": {\n            \"default\": 1.0,\n            \"title\": \"Eps Inf\",\n            \"type\": \"number\"\n          },\n          \"wp_ev\": {\n            \"description\": \"Plasma frequency in eV.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Wp Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"description\": \"Damping rate in eV.\",\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"wp_ev\",\n          \"gamma_ev\"\n        ],\n        \"title\": \"Drude\",\n        \"type\": \"object\"\n      },\n      \"DrudeLorentz\": {\n        \"additionalProperties\": false,\n        \"description\": \"eps(w) = eps_inf - wp^2/(w^2 + i g w) + sum_j d_j w0_j^2 / (w0_j^2 - w^2 - i G_j w).\\n\\nThe form FDTD needs for auxiliary-differential-equation dispersion.\\nFit one to measured data with :func:`lightsmith.materials_fit.fit_drude_lorentz`.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"drude_lorentz\",\n            \"default\": \"drude_lorentz\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_inf\": {\n            \"default\": 1.0,\n            \"title\": \"Eps Inf\",\n            \"type\": \"number\"\n          },\n          \"wp_ev\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Wp Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          },\n          \"poles\": {\n            \"items\": {\n              \"$ref\": \"#/$defs/LorentzPole\"\n            },\n            \"title\": \"Poles\",\n            \"type\": \"array\"\n          }\n        },\n        \"title\": \"DrudeLorentz\",\n        \"type\": \"object\"\n      },\n      \"Ellipse\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"ellipse\",\n            \"default\": \"ellipse\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"semi_axes_nm\": {\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Semi Axes Nm\",\n            \"type\": \"array\"\n          },\n          \"angle_deg\": {\n            \"default\": 0.0,\n            \"title\": \"Angle Deg\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"semi_axes_nm\"\n        ],\n        \"title\": \"Ellipse\",\n        \"type\": \"object\"\n      },\n      \"GdsLayout\": {\n        \"additionalProperties\": false,\n        \"description\": \"Import geometry from a GDS file: each layer/datatype is extruded with a material.\",\n        \"properties\": {\n          \"path\": {\n            \"title\": \"Path\",\n            \"type\": \"string\"\n          },\n          \"cell\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"title\": \"Cell\"\n          },\n          \"layer_map\": {\n            \"additionalProperties\": {\n              \"additionalProperties\": true,\n              \"type\": \"object\"\n            },\n            \"description\": \"'layer/datatype' -> {'material': Material JSON, 'z_min_nm': .., 'z_max_nm': ..}\",\n            \"title\": \"Layer Map\",\n            \"type\": \"object\"\n          }\n        },\n        \"required\": [\n          \"path\",\n          \"layer_map\"\n        ],\n        \"title\": \"GdsLayout\",\n        \"type\": \"object\"\n      },\n      \"LibraryMaterial\": {\n        \"additionalProperties\": false,\n        \"description\": \"Measured n, k bundled with lightsmith, e.g. ``{\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\",\\n\\\"dataset\\\": \\\"Johnson-Christy\\\"}``. Linear interpolation in n and k, no extrapolation.\\n\\nNames and datasets accept aliases (\\\"gold\\\", \\\"JC\\\") and are stored in canonical form;\\nan omitted dataset is filled with the material's default so the spec stays\\nreproducible. See :func:`list_materials`.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"library\",\n            \"default\": \"library\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"name\": {\n            \"description\": \"Material, e.g. 'Au', 'Ag', 'Al', 'Cu', 'Si', 'TiO2', 'SiO2', 'H2O'.\",\n            \"title\": \"Name\",\n            \"type\": \"string\"\n          },\n          \"dataset\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Dataset, e.g. 'Johnson-Christy'; omitted = material default.\",\n            \"title\": \"Dataset\"\n          }\n        },\n        \"required\": [\n          \"name\"\n        ],\n        \"title\": \"LibraryMaterial\",\n        \"type\": \"object\"\n      },\n      \"LorentzPole\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"delta_eps\": {\n            \"description\": \"Oscillator strength (permittivity step).\",\n            \"title\": \"Delta Eps\",\n            \"type\": \"number\"\n          },\n          \"omega0_ev\": {\n            \"description\": \"Resonance energy in eV.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Omega0 Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"description\": \"Damping in eV.\",\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"delta_eps\",\n          \"omega0_ev\",\n          \"gamma_ev\"\n        ],\n        \"title\": \"LorentzPole\",\n        \"type\": \"object\"\n      },\n      \"Polygon\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"polygon\",\n            \"default\": \"polygon\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"vertices_nm\": {\n            \"items\": {\n              \"maxItems\": 2,\n              \"minItems\": 2,\n              \"prefixItems\": [\n                {\n                  \"type\": \"number\"\n                },\n                {\n                  \"type\": \"number\"\n                }\n              ],\n              \"type\": \"array\"\n            },\n            \"minItems\": 3,\n            \"title\": \"Vertices Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"vertices_nm\"\n        ],\n        \"title\": \"Polygon\",\n        \"type\": \"object\"\n      },\n      \"Port\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"name\": {\n            \"title\": \"Name\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"size_nm\": {\n            \"description\": \"Zero along the port normal. In 2D devices z may also be zero, e.g. (0, w, 0) for an x-normal port.\",\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Size Nm\",\n            \"type\": \"array\"\n          },\n          \"direction\": {\n            \"description\": \"Direction of propagation *into* the device along the normal.\",\n            \"enum\": [\n              \"+\",\n              \"-\"\n            ],\n            \"title\": \"Direction\",\n            \"type\": \"string\"\n          },\n          \"num_modes\": {\n            \"default\": 1,\n            \"minimum\": 1,\n            \"title\": \"Num Modes\",\n            \"type\": \"integer\"\n          }\n        },\n        \"required\": [\n          \"name\",\n          \"center_nm\",\n          \"size_nm\",\n          \"direction\"\n        ],\n        \"title\": \"Port\",\n        \"type\": \"object\"\n      },\n      \"Prism\": {\n        \"additionalProperties\": false,\n        \"description\": \"A 2D profile in the xy plane extruded from z_min to z_max (with optional sidewall angle).\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"prism\",\n            \"default\": \"prism\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"profile\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"circle\": \"#/$defs/Circle\",\n                \"ellipse\": \"#/$defs/Ellipse\",\n                \"polygon\": \"#/$defs/Polygon\",\n                \"rectangle\": \"#/$defs/Rectangle\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/Rectangle\"\n              },\n              {\n                \"$ref\": \"#/$defs/Circle\"\n              },\n              {\n                \"$ref\": \"#/$defs/Ellipse\"\n              },\n              {\n                \"$ref\": \"#/$defs/Polygon\"\n              }\n            ],\n            \"title\": \"Profile\"\n          },\n          \"z_min_nm\": {\n            \"title\": \"Z Min Nm\",\n            \"type\": \"number\"\n          },\n          \"z_max_nm\": {\n            \"title\": \"Z Max Nm\",\n            \"type\": \"number\"\n          },\n          \"sidewall_angle_deg\": {\n            \"default\": 0.0,\n            \"description\": \"0 = vertical; positive = narrower at the top.\",\n            \"title\": \"Sidewall Angle Deg\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"profile\",\n          \"z_min_nm\",\n          \"z_max_nm\"\n        ],\n        \"title\": \"Prism\",\n        \"type\": \"object\"\n      },\n      \"Rectangle\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"rectangle\",\n            \"default\": \"rectangle\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"size_nm\": {\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Size Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"size_nm\"\n        ],\n        \"title\": \"Rectangle\",\n        \"type\": \"object\"\n      },\n      \"Structure\": {\n        \"additionalProperties\": false,\n        \"description\": \"A material region. Later structures override earlier ones where they overlap.\",\n        \"properties\": {\n          \"name\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"title\": \"Name\"\n          },\n          \"geometry\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"ball\": \"#/$defs/Ball\",\n                \"box\": \"#/$defs/Box\",\n                \"prism\": \"#/$defs/Prism\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/Prism\"\n              },\n              {\n                \"$ref\": \"#/$defs/Box\"\n              },\n              {\n                \"$ref\": \"#/$defs/Ball\"\n              }\n            ],\n            \"title\": \"Geometry\"\n          },\n          \"material\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Material\"\n          }\n        },\n        \"required\": [\n          \"geometry\",\n          \"material\"\n        ],\n        \"title\": \"Structure\",\n        \"type\": \"object\"\n      },\n      \"Tabulated\": {\n        \"additionalProperties\": false,\n        \"description\": \"Tabulated n, k data, linearly interpolated (no extrapolation).\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"tabulated\",\n            \"default\": \"tabulated\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"wavelength_nm\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"Wavelength Nm\",\n            \"type\": \"array\"\n          },\n          \"n_real\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"N Real\",\n            \"type\": \"array\"\n          },\n          \"n_imag\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"N Imag\",\n            \"type\": \"array\"\n          },\n          \"source\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Citation / provenance of the data.\",\n            \"title\": \"Source\"\n          }\n        },\n        \"required\": [\n          \"wavelength_nm\",\n          \"n_real\",\n          \"n_imag\"\n        ],\n        \"title\": \"Tabulated\",\n        \"type\": \"object\"\n      },\n      \"WavelengthRange\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"start_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Start Nm\",\n            \"type\": \"number\"\n          },\n          \"stop_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Stop Nm\",\n            \"type\": \"number\"\n          },\n          \"num\": {\n            \"minimum\": 1,\n            \"title\": \"Num\",\n            \"type\": \"integer\"\n          }\n        },\n        \"required\": [\n          \"start_nm\",\n          \"stop_nm\",\n          \"num\"\n        ],\n        \"title\": \"WavelengthRange\",\n        \"type\": \"object\"\n      }\n    },\n    \"additionalProperties\": false,\n    \"description\": \"A photonic device (waveguides, couplers, gratings, ...) characterised by its S-matrix.\",\n    \"properties\": {\n      \"kind\": {\n        \"const\": \"device\",\n        \"default\": \"device\",\n        \"title\": \"Kind\",\n        \"type\": \"string\"\n      },\n      \"dimension\": {\n        \"default\": 3,\n        \"enum\": [\n          2,\n          3\n        ],\n        \"title\": \"Dimension\",\n        \"type\": \"integer\"\n      },\n      \"structures\": {\n        \"items\": {\n          \"$ref\": \"#/$defs/Structure\"\n        },\n        \"title\": \"Structures\",\n        \"type\": \"array\"\n      },\n      \"layout\": {\n        \"anyOf\": [\n          {\n            \"$ref\": \"#/$defs/GdsLayout\"\n          },\n          {\n            \"type\": \"null\"\n          }\n        ],\n        \"default\": null\n      },\n      \"background\": {\n        \"discriminator\": {\n          \"mapping\": {\n            \"constant_index\": \"#/$defs/ConstantIndex\",\n            \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n            \"drude\": \"#/$defs/Drude\",\n            \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n            \"library\": \"#/$defs/LibraryMaterial\",\n            \"tabulated\": \"#/$defs/Tabulated\"\n          },\n          \"propertyName\": \"kind\"\n        },\n        \"oneOf\": [\n          {\n            \"$ref\": \"#/$defs/ConstantIndex\"\n          },\n          {\n            \"$ref\": \"#/$defs/ConstantPermittivity\"\n          },\n          {\n            \"$ref\": \"#/$defs/Drude\"\n          },\n          {\n            \"$ref\": \"#/$defs/DrudeLorentz\"\n          },\n          {\n            \"$ref\": \"#/$defs/Tabulated\"\n          },\n          {\n            \"$ref\": \"#/$defs/LibraryMaterial\"\n          }\n        ],\n        \"title\": \"Background\"\n      },\n      \"domain_center_nm\": {\n        \"default\": [\n          0.0,\n          0.0,\n          0.0\n        ],\n        \"maxItems\": 3,\n        \"minItems\": 3,\n        \"prefixItems\": [\n          {\n            \"type\": \"number\"\n          },\n          {\n            \"type\": \"number\"\n          },\n          {\n            \"type\": \"number\"\n          }\n        ],\n        \"title\": \"Domain Center Nm\",\n        \"type\": \"array\"\n      },\n      \"domain_size_nm\": {\n        \"maxItems\": 3,\n        \"minItems\": 3,\n        \"prefixItems\": [\n          {\n            \"type\": \"number\"\n          },\n          {\n            \"type\": \"number\"\n          },\n          {\n            \"type\": \"number\"\n          }\n        ],\n        \"title\": \"Domain Size Nm\",\n        \"type\": \"array\"\n      },\n      \"ports\": {\n        \"items\": {\n          \"$ref\": \"#/$defs/Port\"\n        },\n        \"minItems\": 1,\n        \"title\": \"Ports\",\n        \"type\": \"array\"\n      },\n      \"wavelengths\": {\n        \"anyOf\": [\n          {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"type\": \"array\"\n          },\n          {\n            \"$ref\": \"#/$defs/WavelengthRange\"\n          }\n        ],\n        \"title\": \"Wavelengths\"\n      },\n      \"options\": {\n        \"additionalProperties\": {\n          \"additionalProperties\": true,\n          \"type\": \"object\"\n        },\n        \"title\": \"Options\",\n        \"type\": \"object\"\n      }\n    },\n    \"required\": [\n      \"background\",\n      \"domain_size_nm\",\n      \"ports\",\n      \"wavelengths\"\n    ],\n    \"title\": \"DeviceProblem\",\n    \"type\": \"object\"\n  },\n  \"conventions\": \"Lightsmith conventions (fixed; changing them needs a schema version bump):\\n- Lengths in nm. Wavelengths are vacuum wavelengths in nm.\\n- Time dependence exp(-i omega t): absorbing materials have Im(eps) > 0 and Im(n) > 0.\\n- Cross sections in nm^2; efficiencies Q = C / (pi r_eq^2), r_eq = volume-equivalent radius of all particles.\\n- layer_stack / periodic: layers listed from the superstrate (incidence side) to the substrate; light travels +z.\\n  R is measured in the superstrate, T in the substrate.\\n- mode: cross-section in the xy plane, propagation along +z.\\n- device: ports are planes whose normal is the axis where size_nm is zero; direction is into the device.\\n- problem.options[<method or backend name>] holds solver options, validated by that backend.\\n- Materials: {\\\"kind\\\": \\\"constant_index\\\", \\\"n_real\\\": .., \\\"n_imag\\\": ..}, {\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\"},\\n  drude, drude_lorentz, tabulated, constant_permittivity. FDTD needs dispersive models (fit_drude_lorentz).\\n- Results carry provenance and warnings: read the warnings before trusting the numbers.\\n\",\n  \"backends\": [\n    {\n      \"name\": \"lightsmith-eme\",\n      \"method\": \"eme\",\n      \"available\": true,\n      \"gpu\": false,\n      \"auto_rank\": 0\n    },\n    {\n      \"name\": \"lightsmith-bpm\",\n      \"method\": \"bpm\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 1\n    },\n    {\n      \"name\": \"lightsmith-fdfd\",\n      \"method\": \"fdfd\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 2\n    },\n    {\n      \"name\": \"lightsmith-fdtd\",\n      \"method\": \"fdtd\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 3\n    }\n  ],\n  \"example\": {\n    \"kind\": \"device\",\n    \"dimension\": 2,\n    \"structures\": [\n      {\n        \"geometry\": {\n          \"kind\": \"box\",\n          \"size_nm\": [\n            8000,\n            500,\n            1\n          ]\n        },\n        \"material\": {\n          \"kind\": \"constant_index\",\n          \"n_real\": 3.48\n        }\n      }\n    ],\n    \"background\": {\n      \"kind\": \"constant_index\",\n      \"n_real\": 1.44\n    },\n    \"domain_size_nm\": [\n      6000,\n      4000,\n      0\n    ],\n    \"ports\": [\n      {\n        \"name\": \"o1\",\n        \"center_nm\": [\n          -2000,\n          0,\n          0\n        ],\n        \"size_nm\": [\n          0,\n          3000,\n          0\n        ],\n        \"direction\": \"+\"\n      },\n      {\n        \"name\": \"o2\",\n        \"center_nm\": [\n          2000,\n          0,\n          0\n        ],\n        \"size_nm\": [\n          0,\n          3000,\n          0\n        ],\n        \"direction\": \"-\"\n      }\n    ],\n    \"wavelengths\": [\n      1550\n    ]\n  }\n}"
+      }
+     ],
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "CAQS1wcKEAgTGAI4AUIIdGhpbmtpbmcSDL/pR8JfRNM9GUI3wxoMQCQ3K82z48tMcmezIjCRN0HTT+IQ3hML8H42dT+yJon93RrgW433bjiDQuex2yBUYJuC95LlJu/RvJJcnEAq9Abk5oBSW7Ve65OL3+akEp3nroBJ6vGlYXfoEkfFPBPGWT+GtE+6KsvVvoc+oLJChzfv1hwV+ieg/AuhsxkxNBknf1oWFUHcElWEh+x2RBsQ89CEI3EkaCEdPYDoKHvhn40dNmzNiCU7RrP20J1Ghxjd6B/wkaoz8tgwO5+VDWDfOc8bMw5fcXoyscq9UXZdU1xp360K9irgxf3eqbBvnbDqvYm5VuBmJQI1qOxxFhZ4Po/RgRENlHYCnumV6gpB4xTw7KMtU6Mx1+dfCpu6uFqasuZl295FFYETjvQuR3IGkXIQ3wpybgQlXnlhR7GeBeZ+LWyDzPWp2MrDHQZtPPfGii2U0iMF5dAjcc8Z7u7aMq3lyB/6x9WMVOfQPt50bXsvJPhnz5IVCDdsD4vDfvrYmCaqU6h+KAI1HQLEFC1uAAXxlj2nLWZILmvU3ACl7xTDZ7UaG6wpP5Xk3EeyUUoE/AErF4OlxhVrnutO8mFzKk3digQoYRBgbjk5cMHqf4eZIYQOTUkWPXIzz42cecqfBxEzSjS5v2ea+zkd2u6l/zwDKGZ3qSBxAAvpzm7ZEl4HzH4Qp2MWj/lDYVH4/p27TJlh8kZPhsviv29F4tA67c3Bj18ecT0t7F7+DzMuhCSUGcfgBmaiRwEi15r8TpytnVunWSDEkUcOe+mqARbEMrP02viLNMK4aIUpvB9EPzdKHgseYK5jaHZaGPWdJ+/yR1TuVrA3G/PSpNXgEBbQ/H8ZgqXgF2zDe0NZH3r/jfIpEZjgVwQCjJ45dhCD2PwiT6q3y7s8jmO9XOrOc8GzLN/sR4Y8w5zQ68L4PrW2msFFPj2GsMDGke4lCNrkvYpfyR6GfkXlaYBB8qDWpkw3thuvxmr/UHnMZXzcd2GbGfuuyqCGgczAXPWlbSv5zF78hvShSoOYAoZiayX4dwG057/DZ1qZ161AakG9KJ+9SlFyQeqeiwUMpw0PZXM3i/2wQeRkq/bZZiS3QY6Lskn97vsPZj1ZI5RiP4YYrpjOghpk1XQOMcb0S3ZMzt06futqgjI0CgeqH3wMvz2uZ9Y0nTsoMlPcLLSJXyWAqFqyH4mLfMddWF6+UgbNtXO+qDGK6UOcgoDv4GgBY3cIBTB78MT0A6IiFY6vjOWlo7sh5ktGIs+tD6b7p/DUangqktzH/480HxgB",
+     "thinking": "I'm setting up the geometry: a narrow guide from -4000 to 0 and a wide one from 0 to 4000, in a 6000 by 5000 domain, with ports at \u00b12000. I'll check the default polarization for TE in 2D and the eme options, then validate the discretization. I also want an analytical estimate from the overlap of the fundamental slab modes, so I'll run it.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_01CddKs2jUQe2jfYeQn6x1Vo",
+     "input": {
+      "problem": {
+       "kind": "device",
+       "dimension": 2,
+       "structures": [
+        {
+         "name": "narrow",
+         "geometry": {
+          "kind": "box",
+          "center_nm": [
+           -2500,
+           0,
+           0
+          ],
+          "size_nm": [
+           5000,
+           500,
+           1
+          ]
+         },
+         "material": {
+          "kind": "constant_index",
+          "n_real": 2.85
+         }
+        },
+        {
+         "name": "wide",
+         "geometry": {
+          "kind": "box",
+          "center_nm": [
+           2500,
+           0,
+           0
+          ],
+          "size_nm": [
+           5000,
+           2000,
+           1
+          ]
+         },
+         "material": {
+          "kind": "constant_index",
+          "n_real": 2.85
+         }
+        }
+       ],
+       "background": {
+        "kind": "constant_index",
+        "n_real": 1.44
+       },
+       "domain_size_nm": [
+        6000,
+        5000,
+        0
+       ],
+       "ports": [
+        {
+         "name": "o1",
+         "center_nm": [
+          -2000,
+          0,
+          0
+         ],
+         "size_nm": [
+          0,
+          4500,
+          0
+         ],
+         "direction": "+",
+         "num_modes": 1
+        },
+        {
+         "name": "o2",
+         "center_nm": [
+          2000,
+          0,
+          0
+         ],
+         "size_nm": [
+          0,
+          4500,
+          0
+         ],
+         "direction": "-",
+         "num_modes": 4
+        }
+       ],
+       "wavelengths": [
+        1550
+       ]
+      }
+     },
+     "name": "validate_problem",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_01CddKs2jUQe2jfYeQn6x1Vo",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\n  \"valid\": true,\n  \"kind\": \"device\",\n  \"auto_backend\": \"lightsmith-eme\",\n  \"backends\": [\n    {\n      \"name\": \"lightsmith-eme\",\n      \"method\": \"eme\",\n      \"available\": true,\n      \"supported\": true,\n      \"reason\": null\n    },\n    {\n      \"name\": \"lightsmith-bpm\",\n      \"method\": \"bpm\",\n      \"available\": true,\n      \"supported\": true,\n      \"reason\": null\n    },\n    {\n      \"name\": \"lightsmith-fdfd\",\n      \"method\": \"fdfd\",\n      \"available\": true,\n      \"supported\": true,\n      \"reason\": null\n    },\n    {\n      \"name\": \"lightsmith-fdtd\",\n      \"method\": \"fdtd\",\n      \"available\": true,\n      \"supported\": true,\n      \"reason\": null\n    }\n  ],\n  \"problem\": {\n    \"kind\": \"device\",\n    \"dimension\": 2,\n    \"structures\": [\n      {\n        \"name\": \"narrow\",\n        \"geometry\": {\n          \"kind\": \"box\",\n          \"center_nm\": [\n            -2500.0,\n            0.0,\n            0.0\n          ],\n          \"size_nm\": [\n            5000.0,\n            500.0,\n            1.0\n          ]\n        },\n        \"material\": {\n          \"kind\": \"constant_index\",\n          \"n_real\": 2.85,\n          \"n_imag\": 0.0\n        }\n      },\n      {\n        \"name\": \"wide\",\n        \"geometry\": {\n          \"kind\": \"box\",\n          \"center_nm\": [\n            2500.0,\n            0.0,\n            0.0\n          ],\n          \"size_nm\": [\n            5000.0,\n            2000.0,\n            1.0\n          ]\n        },\n        \"material\": {\n          \"kind\": \"constant_index\",\n          \"n_real\": 2.85,\n          \"n_imag\": 0.0\n        }\n      }\n    ],\n    \"layout\": null,\n    \"background\": {\n      \"kind\": \"constant_index\",\n      \"n_real\": 1.44,\n      \"n_imag\": 0.0\n    },\n    \"domain_center_nm\": [\n      0.0,\n      0.0,\n      0.0\n    ],\n    \"domain_size_nm\": [\n      6000.0,\n      5000.0,\n      0.0\n    ],\n    \"ports\": [\n      {\n        \"name\": \"o1\",\n        \"center_nm\": [\n          -2000.0,\n          0.0,\n          0.0\n        ],\n        \"size_nm\": [\n          0.0,\n          4500.0,\n          0.0\n        ],\n        \"direction\": \"+\",\n        \"num_modes\": 1\n      },\n      {\n        \"name\": \"o2\",\n        \"center_nm\": [\n          2000.0,\n          0.0,\n          0.0\n        ],\n        \"size_nm\": [\n          0.0,\n          4500.0,\n          0.0\n        ],\n        \"direction\": \"-\",\n        \"num_modes\": 4\n      }\n    ],\n    \"wavelengths\": [\n      1550.0\n    ],\n    \"options\": {}\n  }\n}"
+      }
+     ],
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "CAQS9AUKEAgTGAI4AUIIdGhpbmtpbmcSDAKvdB15Fu+kTnGu6RoMzTDEI7uSfiIXIQklIjBrPhFJ2TI8C9vgkytldqr70CcWVuMBd/OKt6xynbPb/+P38wqK8NoRTSqZ3sck4u0qkQWUUStYRb0hPIz3m4fwwvfRpymm0thqlZ7i/7i8uBeUTnrvR395jBDdxtvEM1xOHADy047fboYVTN2LxLq2DHSLk1svKhqVCO6WatSeS/YAmeIeXiI5cEYadruCeUuZz1t/ZYwVC0mR8eG1RjgYMLPVJd7ZTyutH4bB/oSFDzPurxbEEmS8M91vlr2usEWwujuYMZLI4sFXFelocACET17B7TbxpWQWgO9qYrFvoYqBwmfzCM+2ApdFXqvK4mKRjxOLAWx9btRJFQJh6fZussO75nC47kAzSbAyc9U12NhzESAFfFREI79vn9st9odMbXlHvtS2FPs2BqrGCN5C+CDrqTYmGRIqMVUout86tmjDIwm47qj8xvqDg5grWrio8ohTqBhmhfUV1LxUqOpGlBUBKdXMP1V99aUUSNjObHN+4zz0fE33WLnifZAAk/4ol6joQ4xKt/jy4kyI9sr5b4jFFN7sopUbObotRhVR3ByFm8w/T5ZVuXkQqHLUaSzEM9IU9S6Hew+tbgwMmGmrbp8KJEV3S8sr4KmInB24gnNh0NBkg1gzOoNotb2fL0C5qyxIf5Z3JiwIhUFFQPR7rtngjjFnctw/9IugJBgRgBCZ5oGhyJJcTseOsL4ngLNPbXqR0MSf05bLNLSilxvkA4ZNual5JhqDwQa5GiSzWyo8r7idSoT+diNcGC9izhQdIVSgvpDInnCAVknTUPSavNg8iO3+T/kloDds/T5nhREmYh1AeBAx/Qe8/PKo0TCbFOGKU9l1ZcJ5lk3oo8Nhdlzc+1x5no6WXppjBV1pfm32K3RzTYj/NqS/UnV+r3St30u4mgSpQaGswRArQiOvSDmuHIAnJkJesAMGpJIyvWrGKeYYAQ==",
+     "thinking": "I'm wondering whether there's a polarization option, so I'll check what get_discretization offers for eme.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_0165RdBw6YQD9PJppU1mnZ4j",
+     "input": {
+      "problem": {
+       "kind": "device",
+       "dimension": 2,
+       "structures": [
+        {
+         "name": "narrow",
+         "geometry": {
+          "kind": "box",
+          "center_nm": [
+           -2500,
+           0,
+           0
+          ],
+          "size_nm": [
+           5000,
+           500,
+           1
+          ]
+         },
+         "material": {
+          "kind": "constant_index",
+          "n_real": 2.85
+         }
+        },
+        {
+         "name": "wide",
+         "geometry": {
+          "kind": "box",
+          "center_nm": [
+           2500,
+           0,
+           0
+          ],
+          "size_nm": [
+           5000,
+           2000,
+           1
+          ]
+         },
+         "material": {
+          "kind": "constant_index",
+          "n_real": 2.85
+         }
+        }
+       ],
+       "background": {
+        "kind": "constant_index",
+        "n_real": 1.44
+       },
+       "domain_size_nm": [
+        6000,
+        5000,
+        0
+       ],
+       "ports": [
+        {
+         "name": "o1",
+         "center_nm": [
+          -2000,
+          0,
+          0
+         ],
+         "size_nm": [
+          0,
+          4500,
+          0
+         ],
+         "direction": "+",
+         "num_modes": 1
+        },
+        {
+         "name": "o2",
+         "center_nm": [
+          2000,
+          0,
+          0
+         ],
+         "size_nm": [
+          0,
+          4500,
+          0
+         ],
+         "direction": "-",
+         "num_modes": 4
+        }
+       ],
+       "wavelengths": [
+        1550
+       ]
+      },
+      "method": "eme"
+     },
+     "name": "get_discretization",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_0165RdBw6YQD9PJppU1mnZ4j",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\n  \"backend\": \"lightsmith-eme\",\n  \"method\": \"eme\",\n  \"problem_kind\": \"device\",\n  \"layout_kind\": \"cells\",\n  \"summary\": {\n    \"propagation axis\": \"x\",\n    \"length (nm)\": 4000.0,\n    \"cells\": 2,\n    \"cross-section grid\": \"368 \u00d7 1\",\n    \"modes per cell\": 30\n  },\n  \"payload\": {\n    \"axis\": \"x\",\n    \"lo_nm\": -2000.0,\n    \"hi_nm\": 2000.0,\n    \"cells\": [\n      {\n        \"start_nm\": -2000.0,\n        \"stop_nm\": 0.0\n      },\n      {\n        \"start_nm\": 0.0,\n        \"stop_nm\": 2000.0\n      }\n    ],\n    \"cross_section\": {\n      \"x_nm\": [\n        -2500.0,\n        -2486.413043,\n        -2472.826087,\n        -2459.23913,\n        -2445.652174,\n        -2432.065217,\n        -2418.478261,\n        -2404.891304,\n        -2391.304348,\n        -2377.717391,\n        -2364.130435,\n        -2350.543478,\n        -2336.956522,\n        -2323.369565,\n        -2309.782609,\n        -2296.195652,\n        -2282.608696,\n        -2269.021739,\n        -2255.434783,\n        -2241.847826,\n        -2228.26087,\n        -2214.673913,\n        -2201.086957,\n        -2187.5,\n        -2173.913043,\n        -2160.326087,\n        -2146.73913,\n        -2133.152174,\n        -2119.565217,\n        -2105.978261,\n        -2092.391304,\n        -2078.804348,\n        -2065.217391,\n        -2051.630435,\n        -2038.043478,\n        -2024.456522,\n        -2010.869565,\n        -1997.282609,\n        -1983.695652,\n        -1970.108696,\n        -1956.521739,\n        -1942.934783,\n        -1929.347826,\n        -1915.76087,\n        -1902.173913,\n        -1888.586957,\n        -1875.0,\n        -1861.413043,\n        -1847.826087,\n        -1834.23913,\n        -1820.652174,\n        -1807.065217,\n        -1793.478261,\n        -1779.891304,\n        -1766.304348,\n        -1752.717391,\n        -1739.130435,\n        -1725.543478,\n        -1711.956522,\n        -1698.369565,\n        -1684.782609,\n        -1671.195652,\n        -1657.608696,\n        -1644.021739,\n        -1630.434783,\n        -1616.847826,\n        -1603.26087,\n        -1589.673913,\n        -1576.086957,\n        -1562.5,\n        -1548.913043,\n        -1535.326087,\n        -1521.73913,\n        -1508.152174,\n        -1494.565217,\n        -1480.978261,\n        -1467.391304,\n        -1453.804348,\n        -1440.217391,\n        -1426.630435,\n        -1413.043478,\n        -1399.456522,\n        -1385.869565,\n        -1372.282609,\n        -1358.695652,\n        -1345.108696,\n        -1331.521739,\n        -1317.934783,\n        -1304.347826,\n        -1290.76087,\n        -1277.173913,\n        -1263.586957,\n        -1250.0,\n        -1236.413043,\n        -1222.826087,\n        -1209.23913,\n        -1195.652174,\n        -1182.065217,\n        -1168.478261,\n        -1154.891304,\n        -1141.304348,\n        -1127.717391,\n        -1114.130435,\n        -1100.543478,\n        -1086.956522,\n        -1073.369565,\n        -1059.782609,\n        -1046.195652,\n        -1032.608696,\n        -1019.021739,\n        -1005.434783,\n        -991.847826,\n        -978.26087,\n        -964.673913,\n        -951.086957,\n        -937.5,\n        -923.913043,\n        -910.326087,\n        -896.73913,\n        -883.152174,\n        -869.565217,\n        -855.978261,\n        -842.391304,\n        -828.804348,\n        -815.217391,\n        -801.630435,\n        -788.043478,\n        -774.456522,\n        -760.869565,\n        -747.282609,\n        -733.695652,\n        -720.108696,\n        -706.521739,\n        -692.934783,\n        -679.347826,\n        -665.76087,\n        -652.173913,\n        -638.586957,\n        -625.0,\n        -611.413043,\n        -597.826087,\n        -584.23913,\n        -570.652174,\n        -557.065217,\n        -543.478261,\n        -529.891304,\n        -516.304348,\n        -502.717391,\n        -489.130435,\n        -475.543478,\n        -461.956522,\n        -448.369565,\n        -434.782609,\n        -421.195652,\n        -407.608696,\n        -394.021739,\n        -380.434783,\n        -366.847826,\n        -353.26087,\n        -339.673913,\n        -326.086957,\n        -312.5,\n        -298.913043,\n        -285.326087,\n        -271.73913,\n        -258.152174,\n        -244.565217,\n        -230.978261,\n        -217.391304,\n        -203.804348,\n        -190.217391,\n        -176.630435,\n        -163.043478,\n        -149.456522,\n        -135.869565,\n        -122.282609,\n        -108.695652,\n        -95.108696,\n        -81.521739,\n        -67.934783,\n        -54.347826,\n        -40.76087,\n        -27.173913,\n        -13.586957,\n        0.0,\n        13.586957,\n        27.173913,\n        40.76087,\n        54.347826,\n        67.934783,\n        81.521739,\n        95.108696,\n        108.695652,\n        122.282609,\n        135.869565,\n        149.456522,\n        163.043478,\n        176.630435,\n        190.217391,\n        203.804348,\n        217.391304,\n        230.978261,\n        244.565217,\n        258.152174,\n        271.73913,\n        285.326087,\n        298.913043,\n        312.5,\n        326.086957,\n        339.673913,\n        353.26087,\n        366.847826,\n        380.434783,\n        394.021739,\n        407.608696,\n        421.195652,\n        434.782609,\n        448.369565,\n        461.956522,\n        475.543478,\n        489.130435,\n        502.717391,\n        516.304348,\n        529.891304,\n        543.478261,\n        557.065217,\n        570.652174,\n        584.23913,\n        597.826087,\n        611.413043,\n        625.0,\n        638.586957,\n        652.173913,\n        665.76087,\n        679.347826,\n        692.934783,\n        706.521739,\n        720.108696,\n        733.695652,\n        747.282609,\n        760.869565,\n        774.456522,\n        788.043478,\n        801.630435,\n        815.217391,\n        828.804348,\n        842.391304,\n        855.978261,\n        869.565217,\n        883.152174,\n        896.73913,\n        910.326087,\n        923.913043,\n        937.5,\n        951.086957,\n        964.673913,\n        978.26087,\n        991.847826,\n        1005.434783,\n        1019.021739,\n        1032.608696,\n        1046.195652,\n        1059.782609,\n        1073.369565,\n        1086.956522,\n        1100.543478,\n        1114.130435,\n        1127.717391,\n        1141.304348,\n        1154.891304,\n        1168.478261,\n        1182.065217,\n        1195.652174,\n        1209.23913,\n        1222.826087,\n        1236.413043,\n        1250.0,\n        1263.586957,\n        1277.173913,\n        1290.76087,\n        1304.347826,\n        1317.934783,\n        1331.521739,\n        1345.108696,\n        1358.695652,\n        1372.282609,\n        1385.869565,\n        1399.456522,\n        1413.043478,\n        1426.630435,\n        1440.217391,\n        1453.804348,\n        1467.391304,\n        1480.978261,\n        1494.565217,\n        1508.152174,\n        1521.73913,\n        1535.326087,\n        1548.913043,\n        1562.5,\n        1576.086957,\n        1589.673913,\n        1603.26087,\n        1616.847826,\n        1630.434783,\n        1644.021739,\n        1657.608696,\n        1671.195652,\n        1684.782609,\n        1698.369565,\n        1711.956522,\n        1725.543478,\n        1739.130435,\n        1752.717391,\n        1766.304348,\n        1779.891304,\n        1793.478261,\n        1807.065217,\n        1820.652174,\n        1834.23913,\n        1847.826087,\n        1861.413043,\n        1875.0,\n        1888.586957,\n        1902.173913,\n        1915.76087,\n        1929.347826,\n        1942.934783,\n        1956.521739,\n        1970.108696,\n        1983.695652,\n        1997.282609,\n        2010.869565,\n        2024.456522,\n        2038.043478,\n        2051.630435,\n        2065.217391,\n        2078.804348,\n        2092.391304,\n        2105.978261,\n        2119.565217,\n        2133.152174,\n        2146.73913,\n        2160.326087,\n        2173.913043,\n        2187.5,\n        2201.086957,\n        2214.673913,\n        2228.26087,\n        2241.847826,\n        2255.434783,\n        2269.021739,\n        2282.608696,\n        2296.195652,\n        2309.782609,\n        2323.369565,\n        2336.956522,\n        2350.543478,\n        2364.130435,\n        2377.717391,\n        2391.304348,\n        2404.891304,\n        2418.478261,\n        2432.065217,\n        2445.652174,\n        2459.23913,\n        2472.826087,\n        2486.413043\n      ],\n      \"y_nm\": [\n        0.0\n      ],\n      \"dx_nm\": 13.58695652173913,\n      \"dy_nm\": 1.0,\n      \"pml_cells\": [\n        [\n          0,\n          0\n        ],\n        [\n          0,\n          0\n        ]\n      ],\n      \"symmetry\": [\n        false,\n        false\n      ],\n      \"bc_min\": [\n        \"pec\",\n        \"pec\"\n      ]\n    },\n    \"modes_per_cell\": 30\n  },\n  \"estimate\": {\n    \"backend\": \"lightsmith-eme\",\n    \"method\": \"eme\",\n    \"framework\": \"numpy\",\n    \"device\": \"cpu\",\n    \"axis\": \"x\",\n    \"length_nm\": 4000.0,\n    \"cross_section_grid\": [\n      368,\n      1\n    ],\n    \"grid_spacing_nm\": [\n      13.58695652173913,\n      null\n    ],\n    \"modes_per_cell\": 30,\n    \"unknowns_per_cell\": 736,\n    \"memory_bytes\": 2119680,\n    \"fits\": true\n  },\n  \"warnings\": [],\n  \"error\": null\n}"
+      }
+     ],
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "CAQSjwcKEAgTGAI4AUIIdGhpbmtpbmcSDH7mN+XhO9UgGn+gLBoMbgpnP60wjFPp7rVVIjCLKnr3uBeb2sCXnNVpdeAEzNpnDTADNbPTEPdMgXoK55q2uS9gsNccBtNMQJvxAT0qrAb237VOC9bD4OJ2rpg36kLlYzWmLghJspgegpLR9hF2dgJtatx4QzwG8iWEm2h8qMU9ZBqGark38i1XAdnFlSWTVaAIjuleaKDkMh35sOr3O6iaEIvs1Qk2EoYmdAQXM+K+cZM5AUXoQPXtncmI2eiGaX76h+eb7UMof3f3V7Vu8YeNuT/tWmtit5i+ZfmOmxGiGBQSq11HVSN4Xu+dUmPSOig1xRCpNjBq++U65f9RtQIkdQpI4VVCv1WLofoDqrRwZuvmIg326pep5Vlj0XHReRVhddjB1AIW6URzTksWKPpEmkAETecInUAV3OhqV3YNKgzAOfBPVWgCQwctwpy6lvEOh2nXrNxGsGqYKPKLo6DuGpVmhQmux7ElutLpGDtcYN7tdgopK0Yc8vXaZb95ccZm7MmukW59jt3wVVZ8Pb2V4jaDDZ9vYvN8OMiN9qT2qYAOm5gjIuWw6rYHOEIbnIdefwYAGL1u+cJuCB/BEcSw/+OYrRzLYV2JtPK7+gbiCofmUrG57Z83qLHvswXGUY+m/iI/Cwrpm7JnuARJdYRMGQAIMBlNaav6eO8hDjz+pqCyLa/blseExO05LIDyVF6a+8iVI+fTRMUR7deF0qVQCCLBwd6OTVvMHeUXu/pQRbmdTTu/SS7GzckQWc/XxujtY/BAsxCEm2cZfOln8h9VNwmmnKCZ7GSk9hPLG7iY1+B8JGLnoj2+MqtC/hjmFO4LVkUwFUzn/ZEBvASBasQpPkBq/w9blEV3kcKt6557kJm3LTg/yYiXHQw930Jm5os1YmWDbL+Gq37JBT0m4nZpcOSP5JT1iah0P5uNKrCWbclL96u1oIduuzdtijreS7APQgEkBSk9hm5c8h02gFbdTco8K1pGne22iewMvRI7jQheL8P4UiwnQ0BiqTrUgBrhwsjYWVdnVr/7nxH3sRnQIGy50yPk6esVEJkZM5FKaXtv61sGKo2N9ywJEAqLBlvS1MWtBIgbktsglzKb0dzZn49IdMQYRk7/ZprCbZ5cmHM3qonP8uWJNQG00a1h5fE9+7MOLHRjxIqbZA1d0PD6seXelXtCikj0KhgB",
+     "thinking": "I'm checking which field the 2D TE mode refers to: in slab convention that's E out of plane, so Ez in the xy domain. I'm not sure the solver uses that convention, so I'll run it and check whether the options expose a polarization setting.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_018q3FsExqmjmYQLSfXdLWsv",
+     "input": {
+      "problem": {
+       "kind": "device",
+       "dimension": 2,
+       "structures": [
+        {
+         "name": "narrow",
+         "geometry": {
+          "kind": "box",
+          "center_nm": [
+           -2500,
+           0,
+           0
+          ],
+          "size_nm": [
+           5000,
+           500,
+           1
+          ]
+         },
+         "material": {
+          "kind": "constant_index",
+          "n_real": 2.85
+         }
+        },
+        {
+         "name": "wide",
+         "geometry": {
+          "kind": "box",
+          "center_nm": [
+           2500,
+           0,
+           0
+          ],
+          "size_nm": [
+           5000,
+           2000,
+           1
+          ]
+         },
+         "material": {
+          "kind": "constant_index",
+          "n_real": 2.85
+         }
+        }
+       ],
+       "background": {
+        "kind": "constant_index",
+        "n_real": 1.44
+       },
+       "domain_size_nm": [
+        6000,
+        5000,
+        0
+       ],
+       "ports": [
+        {
+         "name": "o1",
+         "center_nm": [
+          -2000,
+          0,
+          0
+         ],
+         "size_nm": [
+          0,
+          4500,
+          0
+         ],
+         "direction": "+",
+         "num_modes": 1
+        },
+        {
+         "name": "o2",
+         "center_nm": [
+          2000,
+          0,
+          0
+         ],
+         "size_nm": [
+          0,
+          4500,
+          0
+         ],
+         "direction": "-",
+         "num_modes": 4
+        }
+       ],
+       "wavelengths": [
+        1550
+       ]
+      },
+      "method": "eme"
+     },
+     "name": "solve",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_018q3FsExqmjmYQLSfXdLWsv",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\"status\": \"succeeded\", \"job_id\": \"67375b89c157c1f98154e38de0de03c5\", \"job\": {\"job_id\": \"67375b89c157c1f98154e38de0de03c5\", \"operation\": \"solve\", \"problem_kind\": \"device\", \"status\": \"succeeded\", \"progress\": 1.0, \"stage\": \"done\", \"message\": null, \"method\": \"eme\", \"methods\": null, \"device\": \"auto\", \"label\": null, \"runner\": \"process\", \"created_at\": \"2026-11-09T23:49:22+00:00\", \"started_at\": \"2026-11-09T23:49:22+00:00\", \"finished_at\": \"2026-11-09T23:49:23+00:00\", \"elapsed_s\": 1.531, \"error\": null, \"resources\": {\"job\": \"lightsmith://jobs/67375b89c157c1f98154e38de0de03c5\", \"result\": \"lightsmith://jobs/67375b89c157c1f98154e38de0de03c5/result\", \"csv\": \"lightsmith://jobs/67375b89c157c1f98154e38de0de03c5/result.csv\", \"plot\": \"lightsmith://jobs/67375b89c157c1f98154e38de0de03c5/plot.png\"}, \"estimated_runtime_s\": 0.003}, \"summary\": {\"result_kind\": \"sparameters\", \"method\": \"eme\", \"backend\": \"lightsmith-eme\", \"warnings\": [], \"provenance\": {\"device\": \"cpu\", \"framework\": \"numpy\", \"runtime_s\": 0.14279790001455694, \"cells\": 2}, \"n_wavelengths\": 1, \"wavelength_range_nm\": [1550.0, 1550.0], \"ports\": [\"o1\", \"o2@0\", \"o2@1\", \"o2@2\", \"o2@3\"], \"center_wavelength_nm\": 1550.0, \"units\": {\"power\": \"|S|^2 fraction\", \"dB\": \"10 log10 |S|^2\"}, \"significant_paths\": [{\"path\": \"o1 -> o2@0\", \"power_center\": 0.5884, \"dB_center\": -2.303, \"power_min\": 0.5884, \"power_max\": 0.5884}, {\"path\": \"o2@0 -> o1\", \"power_center\": 0.5884, \"dB_center\": -2.303, \"power_min\": 0.5884, \"power_max\": 0.5884}, {\"path\": \"o1 -> o2@2\", \"power_center\": 0.2973, \"dB_center\": -5.268, \"power_min\": 0.2973, \"power_max\": 0.2973}, {\"path\": \"o2@2 -> o1\", \"power_center\": 0.2973, \"dB_center\": -5.268, \"power_min\": 0.2973, \"power_max\": 0.2973}, {\"path\": \"o2@1 -> o2@1\", \"power_center\": 0.08098, \"dB_center\": -10.92, \"power_min\": 0.08098, \"power_max\": 0.08098}, {\"path\": \"o2@2 -> o2@2\", \"power_center\": 0.03549, \"dB_center\": -14.5, \"power_min\": 0.03549, \"power_max\": 0.03549}, {\"path\": \"o2@0 -> o2@0\", \"power_center\": 0.02774, \"dB_center\": -15.57, \"power_min\": 0.02774, \"power_max\": 0.02774}, {\"path\": \"o2@0 -> o2@2\", \"power_center\": 0.01783, \"dB_center\": -17.49, \"power_min\": 0.01783, \"power_max\": 0.01783}, {\"path\": \"o2@2 -> o2@0\", \"power_center\": 0.01783, \"dB_center\": -17.49, \"power_min\": 0.01783, \"power_max\": 0.01783}, {\"path\": \"o2@3 -> o2@3\", \"power_center\": 0.01434, \"dB_center\": -18.44, \"power_min\": 0.01434, \"power_max\": 0.01434}], \"max_reciprocity_error\": 2.78e-16, \"max_column_power\": 0.8858}, \"next_step\": \"Full arrays: read lightsmith://jobs/67375b89c157c1f98154e38de0de03c5/result (JSON) or lightsmith://jobs/67375b89c157c1f98154e38de0de03c5/result.csv, or call get_result. Check summary.warnings.\"}"
+      }
+     ],
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "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",
+     "thinking": "I'm checking the reported 0.588 against a column power of 0.886, since something like reflection and radiation loss would account for the gap. Next I want to pin down the polarization, so I'm setting up a quick analytical estimate for a narrow 0.5 \u00b5m slab with the given indices at 1.55 \u00b5m, starting from the normalized frequency.\n\nI'm working out the TE modes for both slabs: the narrow one gives u\u22481.109 and w\u22482.232, and the wide one gives u\u22481.4275. Next I need to estimate the overlap between the two field profiles to see how much power couples across.\n\nI'm estimating the mode profiles for both slabs next: the narrow one decays outside its core with a fast falloff, and the wide one has a shallower tail. I'm also computing the normalization constants for the narrow mode, which come out to about 0.04 for its tail term.\n\nNow I'm computing the normalization constants for both modes, starting with the narrow slab, and then setting up the overlap integral between the two field profiles.\n\nNow I'm estimating the second part of the overlap integral, the contribution from the evanescent tail of the narrow mode, using a complex exponential over the wide mode's cosine.\n\nNow I'm computing the coupling efficiency from the overlap integral, which comes out to about 0.58, and then correcting it for the different propagation constants of the two modes.\n\nI'm checking the mode-overlap estimate against the solver's 0.588: the hand calculation gives about 0.583, with the propagation-constant correction barely changing it. The gap is under 1%, which I'll put down to rounding in my numbers, so I'll report 0.588.\n\n",
+     "type": "thinking"
+    },
+    {
+     "signature": "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",
+     "thinking": "The EME solve puts about 59% of the input power (roughly 2.3 dB loss) into the fundamental mode of the 2 \u00b5m guide, with about 30% in the next symmetric mode and about 11% reflected or radiated. A hand overlap calculation agrees within about 1%, and I'm now checking the TE polarisation convention I assumed.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_01WQ3gDZqFWy3zDMM4NNk6Qb",
+     "input": {
+      "values": {
+       "t_fundamental": 0.588
+      },
+      "declined": false,
+      "concerns": [
+       "I took 'TE' to mean the electric field points along the junction face, perpendicular to the direction of travel and in the plane of the slab cross-section. My analytic mode-overlap check uses this convention and agrees with the solver (0.583 vs 0.588).",
+       "I assumed the two guides are joined on the same axis with no offset. Because the joint is symmetric, odd modes of the wide guide are not excited.",
+       "Only the single joint is modelled. The 2 \u00b5m guide's far end is not reflecting, so there are no cavity effects from reflections between two ends."
+      ],
+      "summary": "About 59% of the power (t_fundamental \u2248 0.588, about 2.3 dB loss) arrives in the fundamental mode of the 2 \u00b5m guide. I solved the 2D joint between the 500 nm and 2 \u00b5m guides (core n = 2.85, cladding n = 1.44) at 1550 nm with eigenmode expansion, using 30 modes per section. About 0.297 of the power goes into the second symmetric mode of the wide guide. The remaining ~11% doesn't reach the guided modes resolved at the output; it is mostly reflected back at the joint or radiated into the cladding. An analytic overlap of the two fundamental modes gives 0.583, which agrees with the solver to within about 1%. The solver gave no warnings and the result is reciprocal to about 3e-16."
+     },
+     "name": "submit_answer",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_01WQ3gDZqFWy3zDMM4NNk6Qb",
+     "content": "Answer recorded."
+    }
+   ]
+  }
+ ],
+ "original_grade": {
+  "task_id": "dev-width-step-2d",
+  "passed": false,
+  "score": 0.6667,
+  "checks": [
+   {
+    "name": "value:t_fundamental",
+    "passed": true,
+    "required": true,
+    "detail": "reported 0.588, reference 0.589202 (abs 0.02)"
+   },
+   {
+    "name": "solved_kind",
+    "passed": true,
+    "required": true,
+    "detail": "1 successful device solve(s)"
+   },
+   {
+    "name": "estimate_before_solve",
+    "passed": false,
+    "required": true,
+    "detail": "estimates at calls [], first solve at call 4"
+   }
+  ]
+ }
+}

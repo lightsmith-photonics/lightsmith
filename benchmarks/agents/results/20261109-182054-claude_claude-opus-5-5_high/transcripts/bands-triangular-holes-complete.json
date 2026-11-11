@@ -1,0 +1,2471 @@
+{
+ "task_id": "bands-triangular-holes-complete",
+ "agent": "claude:claude-opus-5-5:high",
+ "prompt": "Triangular lattice of air holes (radius 0.45a) in a dielectric with \u03b5 = 13, 2D. Is there a complete band gap (both TE and TM)? Give the gap-to-midgap ratio of the largest complete gap.\n\n---\nReport your result by calling submit_answer with these values:\n- `complete_gap_midgap_ratio` (fraction): largest complete gap / midgap (0 if none)",
+ "answer": {
+  "values": {
+   "complete_gap_midgap_ratio": 0.104
+  },
+  "declined": false,
+  "concerns": [
+   "The k-path was only \u0393\u2013M\u2013K\u2013\u0393, the edge of the irreducible Brillouin zone, with 16 points per segment. For this high-symmetry lattice the band edges usually lie on that path, so this is the standard approach.",
+   "Polarization naming: TE means E in the plane (H along z) and TM means E along z.",
+   "The solver also listed some very small TM 'gaps' (smaller than 1e-3). These come from bands that touch or are degenerate along the path. They are artifacts of sampling the bands at discrete k-points, not real gaps."
+  ],
+  "summary": "Yes, there is a complete 2D band gap: about 10.4% of the midgap frequency. I set up a triangular lattice of air holes with r = 0.45a in a background with \u03b5 = 13. I then computed the band structure with the plane-wave expansion method for both polarizations along \u0393\u2013M\u2013K\u2013\u0393.\n\n- **TE (E in plane):** there is a large gap between bands 1 and 2, from a/\u03bb \u2248 0.2886 to 0.4880 (gap-to-midgap ratio about 51%).\n- **TM (E along z):** there is a gap between bands 2 and 3, from a/\u03bb \u2248 0.3830 to 0.4251.\n- **Complete gap:** the TM gap lies entirely inside the TE gap, so the complete gap is a/\u03bb \u2248 0.383\u20130.425. The midgap frequency is about 0.404, so the gap-to-midgap ratio is \u0394\u03c9/\u03c9_mid \u2248 0.104 (10.4%).\n\nNo other TE and TM gaps overlap in the first 6\u201310 bands. The result is stable as the grid is refined: 0.1038 at 64 grid points per lattice constant and 0.1042 at 128. As a rough cross-check, I recall Joannopoulos et al. quoting about 19% for r = 0.48a, and a smaller gap at r = 0.45a fits the expected trend."
+ },
+ "final_text": "",
+ "stop": "submitted",
+ "error": null,
+ "notes": [],
+ "turns": 6,
+ "usage": {
+  "input_tokens": 14,
+  "output_tokens": 3048,
+  "cache_creation_input_tokens": 25291,
+  "cache_read_input_tokens": 90994
+ },
+ "cost_usd": 0.20566979999999999,
+ "wall_s": 64.0,
+ "grade": {
+  "task_id": "bands-triangular-holes-complete",
+  "passed": true,
+  "score": 1.0,
+  "checks": [
+   {
+    "name": "value:complete_gap_midgap_ratio",
+    "passed": true,
+    "required": true,
+    "detail": "reported 0.104, reference 0.104254 (abs 0.025)"
+   },
+   {
+    "name": "solved_kind",
+    "passed": true,
+    "required": true,
+    "detail": "2 successful bands solve(s)"
+   },
+   {
+    "name": "estimate_before_solve",
+    "passed": true,
+    "required": true,
+    "detail": "estimates at calls [1], first solve at call 3"
+   }
+  ]
+ },
+ "reference": {
+  "values": {
+   "complete_gap_midgap_ratio": 0.10425370253815097
+  },
+  "method": "pwe",
+  "backend": "lightsmith-pwe",
+  "device": "cuda:0",
+  "runtime_s": 19.891,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "tool_calls": [
+  {
+   "name": "get_schema",
+   "arguments": {
+    "kind": "bands"
+   },
+   "ok": true,
+   "result": {
+    "kind": "bands",
+    "schema": {
+     "$defs": {
+      "Ball": {
+       "additionalProperties": false,
+       "properties": {
+        "kind": {
+         "const": "ball",
+         "default": "ball",
+         "title": "Kind",
+         "type": "string"
+        },
+        "center_nm": {
+         "default": [
+          0.0,
+          0.0,
+          0.0
+         ],
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Center Nm",
+         "type": "array"
+        },
+        "radius_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Radius Nm",
+         "type": "number"
+        }
+       },
+       "required": [
+        "radius_nm"
+       ],
+       "title": "Ball",
+       "type": "object"
+      },
+      "Box": {
+       "additionalProperties": false,
+       "properties": {
+        "kind": {
+         "const": "box",
+         "default": "box",
+         "title": "Kind",
+         "type": "string"
+        },
+        "center_nm": {
+         "default": [
+          0.0,
+          0.0,
+          0.0
+         ],
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Center Nm",
+         "type": "array"
+        },
+        "size_nm": {
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Size Nm",
+         "type": "array"
+        }
+       },
+       "required": [
+        "size_nm"
+       ],
+       "title": "Box",
+       "type": "object"
+      },
+      "Circle": {
+       "additionalProperties": false,
+       "properties": {
+        "kind": {
+         "const": "circle",
+         "default": "circle",
+         "title": "Kind",
+         "type": "string"
+        },
+        "center_nm": {
+         "default": [
+          0.0,
+          0.0
+         ],
+         "maxItems": 2,
+         "minItems": 2,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Center Nm",
+         "type": "array"
+        },
+        "radius_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Radius Nm",
+         "type": "number"
+        }
+       },
+       "required": [
+        "radius_nm"
+       ],
+       "title": "Circle",
+       "type": "object"
+      },
+      "ConstantIndex": {
+       "additionalProperties": false,
+       "description": "Wavelength-independent complex refractive index n + ik.",
+       "properties": {
+        "kind": {
+         "const": "constant_index",
+         "default": "constant_index",
+         "title": "Kind",
+         "type": "string"
+        },
+        "n_real": {
+         "description": "Real part of the refractive index.",
+         "title": "N Real",
+         "type": "number"
+        },
+        "n_imag": {
+         "default": 0.0,
+         "description": "Extinction coefficient k (>= 0 for loss).",
+         "minimum": 0,
+         "title": "N Imag",
+         "type": "number"
+        }
+       },
+       "required": [
+        "n_real"
+       ],
+       "title": "ConstantIndex",
+       "type": "object"
+      },
+      "ConstantPermittivity": {
+       "additionalProperties": false,
+       "description": "Wavelength-independent complex relative permittivity.",
+       "properties": {
+        "kind": {
+         "const": "constant_permittivity",
+         "default": "constant_permittivity",
+         "title": "Kind",
+         "type": "string"
+        },
+        "eps_real": {
+         "title": "Eps Real",
+         "type": "number"
+        },
+        "eps_imag": {
+         "default": 0.0,
+         "minimum": 0,
+         "title": "Eps Imag",
+         "type": "number"
+        }
+       },
+       "required": [
+        "eps_real"
+       ],
+       "title": "ConstantPermittivity",
+       "type": "object"
+      },
+      "Drude": {
+       "additionalProperties": false,
+       "description": "eps(w) = eps_inf - wp^2 / (w^2 + i*gamma*w), energies in eV.",
+       "properties": {
+        "kind": {
+         "const": "drude",
+         "default": "drude",
+         "title": "Kind",
+         "type": "string"
+        },
+        "eps_inf": {
+         "default": 1.0,
+         "title": "Eps Inf",
+         "type": "number"
+        },
+        "wp_ev": {
+         "description": "Plasma frequency in eV.",
+         "exclusiveMinimum": 0,
+         "title": "Wp Ev",
+         "type": "number"
+        },
+        "gamma_ev": {
+         "description": "Damping rate in eV.",
+         "minimum": 0,
+         "title": "Gamma Ev",
+         "type": "number"
+        }
+       },
+       "required": [
+        "wp_ev",
+        "gamma_ev"
+       ],
+       "title": "Drude",
+       "type": "object"
+      },
+      "DrudeLorentz": {
+       "additionalProperties": false,
+       "description": "eps(w) = eps_inf - wp^2/(w^2 + i g w) + sum_j d_j w0_j^2 / (w0_j^2 - w^2 - i G_j w).\n\nThe form FDTD needs for auxiliary-differential-equation dispersion.\nFit one to measured data with :func:`lightsmith.materials_fit.fit_drude_lorentz`.",
+       "properties": {
+        "kind": {
+         "const": "drude_lorentz",
+         "default": "drude_lorentz",
+         "title": "Kind",
+         "type": "string"
+        },
+        "eps_inf": {
+         "default": 1.0,
+         "title": "Eps Inf",
+         "type": "number"
+        },
+        "wp_ev": {
+         "default": 0.0,
+         "minimum": 0,
+         "title": "Wp Ev",
+         "type": "number"
+        },
+        "gamma_ev": {
+         "default": 0.0,
+         "minimum": 0,
+         "title": "Gamma Ev",
+         "type": "number"
+        },
+        "poles": {
+         "items": {
+          "$ref": "#/$defs/LorentzPole"
+         },
+         "title": "Poles",
+         "type": "array"
+        }
+       },
+       "title": "DrudeLorentz",
+       "type": "object"
+      },
+      "Ellipse": {
+       "additionalProperties": false,
+       "properties": {
+        "kind": {
+         "const": "ellipse",
+         "default": "ellipse",
+         "title": "Kind",
+         "type": "string"
+        },
+        "center_nm": {
+         "default": [
+          0.0,
+          0.0
+         ],
+         "maxItems": 2,
+         "minItems": 2,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Center Nm",
+         "type": "array"
+        },
+        "semi_axes_nm": {
+         "maxItems": 2,
+         "minItems": 2,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Semi Axes Nm",
+         "type": "array"
+        },
+        "angle_deg": {
+         "default": 0.0,
+         "title": "Angle Deg",
+         "type": "number"
+        }
+       },
+       "required": [
+        "semi_axes_nm"
+       ],
+       "title": "Ellipse",
+       "type": "object"
+      },
+      "KPoint": {
+       "additionalProperties": false,
+       "properties": {
+        "label": {
+         "title": "Label",
+         "type": "string"
+        },
+        "reduced": {
+         "description": "Coordinates in units of the reciprocal lattice vectors.",
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Reduced",
+         "type": "array"
+        }
+       },
+       "required": [
+        "label",
+        "reduced"
+       ],
+       "title": "KPoint",
+       "type": "object"
+      },
+      "LibraryMaterial": {
+       "additionalProperties": false,
+       "description": "Measured n, k bundled with lightsmith, e.g. ``{\"kind\": \"library\", \"name\": \"Au\",\n\"dataset\": \"Johnson-Christy\"}``. Linear interpolation in n and k, no extrapolation.\n\nNames and datasets accept aliases (\"gold\", \"JC\") and are stored in canonical form;\nan omitted dataset is filled with the material's default so the spec stays\nreproducible. See :func:`list_materials`.",
+       "properties": {
+        "kind": {
+         "const": "library",
+         "default": "library",
+         "title": "Kind",
+         "type": "string"
+        },
+        "name": {
+         "description": "Material, e.g. 'Au', 'Ag', 'Al', 'Cu', 'Si', 'TiO2', 'SiO2', 'H2O'.",
+         "title": "Name",
+         "type": "string"
+        },
+        "dataset": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "description": "Dataset, e.g. 'Johnson-Christy'; omitted = material default.",
+         "title": "Dataset"
+        }
+       },
+       "required": [
+        "name"
+       ],
+       "title": "LibraryMaterial",
+       "type": "object"
+      },
+      "LorentzPole": {
+       "additionalProperties": false,
+       "properties": {
+        "delta_eps": {
+         "description": "Oscillator strength (permittivity step).",
+         "title": "Delta Eps",
+         "type": "number"
+        },
+        "omega0_ev": {
+         "description": "Resonance energy in eV.",
+         "exclusiveMinimum": 0,
+         "title": "Omega0 Ev",
+         "type": "number"
+        },
+        "gamma_ev": {
+         "description": "Damping in eV.",
+         "minimum": 0,
+         "title": "Gamma Ev",
+         "type": "number"
+        }
+       },
+       "required": [
+        "delta_eps",
+        "omega0_ev",
+        "gamma_ev"
+       ],
+       "title": "LorentzPole",
+       "type": "object"
+      },
+      "Polygon": {
+       "additionalProperties": false,
+       "properties": {
+        "kind": {
+         "const": "polygon",
+         "default": "polygon",
+         "title": "Kind",
+         "type": "string"
+        },
+        "vertices_nm": {
+         "items": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+           {
+            "type": "number"
+           },
+           {
+            "type": "number"
+           }
+          ],
+          "type": "array"
+         },
+         "minItems": 3,
+         "title": "Vertices Nm",
+         "type": "array"
+        }
+       },
+       "required": [
+        "vertices_nm"
+       ],
+       "title": "Polygon",
+       "type": "object"
+      },
+      "Prism": {
+       "additionalProperties": false,
+       "description": "A 2D profile in the xy plane extruded from z_min to z_max (with optional sidewall angle).",
+       "properties": {
+        "kind": {
+         "const": "prism",
+         "default": "prism",
+         "title": "Kind",
+         "type": "string"
+        },
+        "profile": {
+         "discriminator": {
+          "mapping": {
+           "circle": "#/$defs/Circle",
+           "ellipse": "#/$defs/Ellipse",
+           "polygon": "#/$defs/Polygon",
+           "rectangle": "#/$defs/Rectangle"
+          },
+          "propertyName": "kind"
+         },
+         "oneOf": [
+          {
+           "$ref": "#/$defs/Rectangle"
+          },
+          {
+           "$ref": "#/$defs/Circle"
+          },
+          {
+           "$ref": "#/$defs/Ellipse"
+          },
+          {
+           "$ref": "#/$defs/Polygon"
+          }
+         ],
+         "title": "Profile"
+        },
+        "z_min_nm": {
+         "title": "Z Min Nm",
+         "type": "number"
+        },
+        "z_max_nm": {
+         "title": "Z Max Nm",
+         "type": "number"
+        },
+        "sidewall_angle_deg": {
+         "default": 0.0,
+         "description": "0 = vertical; positive = narrower at the top.",
+         "title": "Sidewall Angle Deg",
+         "type": "number"
+        }
+       },
+       "required": [
+        "profile",
+        "z_min_nm",
+        "z_max_nm"
+       ],
+       "title": "Prism",
+       "type": "object"
+      },
+      "Rectangle": {
+       "additionalProperties": false,
+       "properties": {
+        "kind": {
+         "const": "rectangle",
+         "default": "rectangle",
+         "title": "Kind",
+         "type": "string"
+        },
+        "center_nm": {
+         "default": [
+          0.0,
+          0.0
+         ],
+         "maxItems": 2,
+         "minItems": 2,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Center Nm",
+         "type": "array"
+        },
+        "size_nm": {
+         "maxItems": 2,
+         "minItems": 2,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Size Nm",
+         "type": "array"
+        }
+       },
+       "required": [
+        "size_nm"
+       ],
+       "title": "Rectangle",
+       "type": "object"
+      },
+      "Structure": {
+       "additionalProperties": false,
+       "description": "A material region. Later structures override earlier ones where they overlap.",
+       "properties": {
+        "name": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "title": "Name"
+        },
+        "geometry": {
+         "discriminator": {
+          "mapping": {
+           "ball": "#/$defs/Ball",
+           "box": "#/$defs/Box",
+           "prism": "#/$defs/Prism"
+          },
+          "propertyName": "kind"
+         },
+         "oneOf": [
+          {
+           "$ref": "#/$defs/Prism"
+          },
+          {
+           "$ref": "#/$defs/Box"
+          },
+          {
+           "$ref": "#/$defs/Ball"
+          }
+         ],
+         "title": "Geometry"
+        },
+        "material": {
+         "discriminator": {
+          "mapping": {
+           "constant_index": "#/$defs/ConstantIndex",
+           "constant_permittivity": "#/$defs/ConstantPermittivity",
+           "drude": "#/$defs/Drude",
+           "drude_lorentz": "#/$defs/DrudeLorentz",
+           "library": "#/$defs/LibraryMaterial",
+           "tabulated": "#/$defs/Tabulated"
+          },
+          "propertyName": "kind"
+         },
+         "oneOf": [
+          {
+           "$ref": "#/$defs/ConstantIndex"
+          },
+          {
+           "$ref": "#/$defs/ConstantPermittivity"
+          },
+          {
+           "$ref": "#/$defs/Drude"
+          },
+          {
+           "$ref": "#/$defs/DrudeLorentz"
+          },
+          {
+           "$ref": "#/$defs/Tabulated"
+          },
+          {
+           "$ref": "#/$defs/LibraryMaterial"
+          }
+         ],
+         "title": "Material"
+        }
+       },
+       "required": [
+        "geometry",
+        "material"
+       ],
+       "title": "Structure",
+       "type": "object"
+      },
+      "Structure2D": {
+       "additionalProperties": false,
+       "properties": {
+        "name": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "title": "Name"
+        },
+        "profile": {
+         "discriminator": {
+          "mapping": {
+           "circle": "#/$defs/Circle",
+           "ellipse": "#/$defs/Ellipse",
+           "polygon": "#/$defs/Polygon",
+           "rectangle": "#/$defs/Rectangle"
+          },
+          "propertyName": "kind"
+         },
+         "oneOf": [
+          {
+           "$ref": "#/$defs/Rectangle"
+          },
+          {
+           "$ref": "#/$defs/Circle"
+          },
+          {
+           "$ref": "#/$defs/Ellipse"
+          },
+          {
+           "$ref": "#/$defs/Polygon"
+          }
+         ],
+         "title": "Profile"
+        },
+        "material": {
+         "discriminator": {
+          "mapping": {
+           "constant_index": "#/$defs/ConstantIndex",
+           "constant_permittivity": "#/$defs/ConstantPermittivity",
+           "drude": "#/$defs/Drude",
+           "drude_lorentz": "#/$defs/DrudeLorentz",
+           "library": "#/$defs/LibraryMaterial",
+           "tabulated": "#/$defs/Tabulated"
+          },
+          "propertyName": "kind"
+         },
+         "oneOf": [
+          {
+           "$ref": "#/$defs/ConstantIndex"
+          },
+          {
+           "$ref": "#/$defs/ConstantPermittivity"
+          },
+          {
+           "$ref": "#/$defs/Drude"
+          },
+          {
+           "$ref": "#/$defs/DrudeLorentz"
+          },
+          {
+           "$ref": "#/$defs/Tabulated"
+          },
+          {
+           "$ref": "#/$defs/LibraryMaterial"
+          }
+         ],
+         "title": "Material"
+        }
+       },
+       "required": [
+        "profile",
+        "material"
+       ],
+       "title": "Structure2D",
+       "type": "object"
+      },
+      "Tabulated": {
+       "additionalProperties": false,
+       "description": "Tabulated n, k data, linearly interpolated (no extrapolation).",
+       "properties": {
+        "kind": {
+         "const": "tabulated",
+         "default": "tabulated",
+         "title": "Kind",
+         "type": "string"
+        },
+        "wavelength_nm": {
+         "items": {
+          "type": "number"
+         },
+         "title": "Wavelength Nm",
+         "type": "array"
+        },
+        "n_real": {
+         "items": {
+          "type": "number"
+         },
+         "title": "N Real",
+         "type": "array"
+        },
+        "n_imag": {
+         "items": {
+          "type": "number"
+         },
+         "title": "N Imag",
+         "type": "array"
+        },
+        "source": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "description": "Citation / provenance of the data.",
+         "title": "Source"
+        }
+       },
+       "required": [
+        "wavelength_nm",
+        "n_real",
+        "n_imag"
+       ],
+       "title": "Tabulated",
+       "type": "object"
+      }
+     },
+     "additionalProperties": false,
+     "description": "Band structure of a photonic crystal along a k-path.",
+     "properties": {
+      "kind": {
+       "const": "bands",
+       "default": "bands",
+       "title": "Kind",
+       "type": "string"
+      },
+      "dimension": {
+       "default": 2,
+       "enum": [
+        2,
+        3
+       ],
+       "title": "Dimension",
+       "type": "integer"
+      },
+      "lattice_vectors_nm": {
+       "items": {
+        "maxItems": 3,
+        "minItems": 3,
+        "prefixItems": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "number"
+         },
+         {
+          "type": "number"
+         }
+        ],
+        "type": "array"
+       },
+       "maxItems": 3,
+       "minItems": 2,
+       "title": "Lattice Vectors Nm",
+       "type": "array"
+      },
+      "background": {
+       "discriminator": {
+        "mapping": {
+         "constant_index": "#/$defs/ConstantIndex",
+         "constant_permittivity": "#/$defs/ConstantPermittivity",
+         "drude": "#/$defs/Drude",
+         "drude_lorentz": "#/$defs/DrudeLorentz",
+         "library": "#/$defs/LibraryMaterial",
+         "tabulated": "#/$defs/Tabulated"
+        },
+        "propertyName": "kind"
+       },
+       "oneOf": [
+        {
+         "$ref": "#/$defs/ConstantIndex"
+        },
+        {
+         "$ref": "#/$defs/ConstantPermittivity"
+        },
+        {
+         "$ref": "#/$defs/Drude"
+        },
+        {
+         "$ref": "#/$defs/DrudeLorentz"
+        },
+        {
+         "$ref": "#/$defs/Tabulated"
+        },
+        {
+         "$ref": "#/$defs/LibraryMaterial"
+        }
+       ],
+       "title": "Background"
+      },
+      "structures_2d": {
+       "description": "Unit-cell inclusions for 2D crystals.",
+       "items": {
+        "$ref": "#/$defs/Structure2D"
+       },
+       "title": "Structures 2D",
+       "type": "array"
+      },
+      "structures": {
+       "description": "Unit-cell inclusions for 3D crystals.",
+       "items": {
+        "$ref": "#/$defs/Structure"
+       },
+       "title": "Structures",
+       "type": "array"
+      },
+      "k_path": {
+       "items": {
+        "$ref": "#/$defs/KPoint"
+       },
+       "minItems": 2,
+       "title": "K Path",
+       "type": "array"
+      },
+      "points_per_segment": {
+       "default": 16,
+       "minimum": 1,
+       "title": "Points Per Segment",
+       "type": "integer"
+      },
+      "num_bands": {
+       "default": 8,
+       "minimum": 1,
+       "title": "Num Bands",
+       "type": "integer"
+      },
+      "polarization": {
+       "default": "both",
+       "description": "2D only: TE = E in plane, TM = E along z.",
+       "enum": [
+        "te",
+        "tm",
+        "both"
+       ],
+       "title": "Polarization",
+       "type": "string"
+      },
+      "options": {
+       "additionalProperties": {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       "title": "Options",
+       "type": "object"
+      }
+     },
+     "required": [
+      "lattice_vectors_nm",
+      "background",
+      "k_path"
+     ],
+     "title": "BandProblem",
+     "type": "object"
+    },
+    "conventions": "Lightsmith conventions (fixed; changing them needs a schema version bump):\n- Lengths in nm. Wavelengths are vacuum wavelengths in nm.\n- Time dependence exp(-i omega t): absorbing materials have Im(eps) > 0 and Im(n) > 0.\n- Cross sections in nm^2; efficiencies Q = C / (pi r_eq^2), r_eq = volume-equivalent radius of all particles.\n- layer_stack / periodic: layers listed from the superstrate (incidence side) to the substrate; light travels +z.\n  R is measured in the superstrate, T in the substrate.\n- mode: cross-section in the xy plane, propagation along +z.\n- device: ports are planes whose normal is the axis where size_nm is zero; direction is into the device.\n- problem.options[<method or backend name>] holds solver options, validated by that backend.\n- Materials: {\"kind\": \"constant_index\", \"n_real\": .., \"n_imag\": ..}, {\"kind\": \"library\", \"name\": \"Au\"},\n  drude, drude_lorentz, tabulated, constant_permittivity. FDTD needs dispersive models (fit_drude_lorentz).\n- Results carry provenance and warnings: read the warnings before trusting the numbers.\n",
+    "backends": [
+     {
+      "name": "lightsmith-pwe",
+      "method": "pwe",
+      "available": true,
+      "gpu": true,
+      "auto_rank": 0
+     }
+    ],
+    "example": {
+     "kind": "bands",
+     "lattice_vectors_nm": [
+      [
+       500,
+       0,
+       0
+      ],
+      [
+       0,
+       500,
+       0
+      ]
+     ],
+     "background": {
+      "kind": "constant_index",
+      "n_real": 1.0
+     },
+     "structures_2d": [
+      {
+       "profile": {
+        "kind": "circle",
+        "radius_nm": 100
+       },
+       "material": {
+        "kind": "constant_permittivity",
+        "eps_real": 8.9
+       }
+      }
+     ],
+     "k_path": [
+      {
+       "label": "G",
+       "reduced": [
+        0,
+        0,
+        0
+       ]
+      },
+      {
+       "label": "X",
+       "reduced": [
+        0.5,
+        0,
+        0
+       ]
+      },
+      {
+       "label": "M",
+       "reduced": [
+        0.5,
+        0.5,
+        0
+       ]
+      },
+      {
+       "label": "G",
+       "reduced": [
+        0,
+        0,
+        0
+       ]
+      }
+     ],
+     "points_per_segment": 8,
+     "num_bands": 6,
+     "polarization": "tm"
+    }
+   },
+   "text": "{\n  \"kind\": \"bands\",\n  \"schema\": {\n    \"$defs\": {\n      \"Ball\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"ball\",\n            \"default\": \"ball\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Radius Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"radius_nm\"\n        ],\n        \"title\": \"Ball\",\n        \"type\": \"object\"\n      },\n      \"Box\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"box\",\n            \"default\": \"box\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"size_nm\": {\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Size Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"size_nm\"\n        ],\n        \"title\": \"Box\",\n        \"type\": \"object\"\n      },\n      \"Circle\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"circle\",\n            \"default\": \"circle\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Radius Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"radius_nm\"\n        ],\n        \"title\": \"Circle\",\n        \"type\": \"object\"\n      },\n      \"ConstantIndex\": {\n        \"additionalProperties\": false,\n        \"description\": \"Wavelength-independent complex refractive index n + ik.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"constant_index\",\n            \"default\": \"constant_index\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"n_real\": {\n            \"description\": \"Real part of the refractive index.\",\n            \"title\": \"N Real\",\n            \"type\": \"number\"\n          },\n          \"n_imag\": {\n            \"default\": 0.0,\n            \"description\": \"Extinction coefficient k (>= 0 for loss).\",\n            \"minimum\": 0,\n            \"title\": \"N Imag\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"n_real\"\n        ],\n        \"title\": \"ConstantIndex\",\n        \"type\": \"object\"\n      },\n      \"ConstantPermittivity\": {\n        \"additionalProperties\": false,\n        \"description\": \"Wavelength-independent complex relative permittivity.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"constant_permittivity\",\n            \"default\": \"constant_permittivity\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_real\": {\n            \"title\": \"Eps Real\",\n            \"type\": \"number\"\n          },\n          \"eps_imag\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Eps Imag\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"eps_real\"\n        ],\n        \"title\": \"ConstantPermittivity\",\n        \"type\": \"object\"\n      },\n      \"Drude\": {\n        \"additionalProperties\": false,\n        \"description\": \"eps(w) = eps_inf - wp^2 / (w^2 + i*gamma*w), energies in eV.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"drude\",\n            \"default\": \"drude\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_inf\": {\n            \"default\": 1.0,\n            \"title\": \"Eps Inf\",\n            \"type\": \"number\"\n          },\n          \"wp_ev\": {\n            \"description\": \"Plasma frequency in eV.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Wp Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"description\": \"Damping rate in eV.\",\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"wp_ev\",\n          \"gamma_ev\"\n        ],\n        \"title\": \"Drude\",\n        \"type\": \"object\"\n      },\n      \"DrudeLorentz\": {\n        \"additionalProperties\": false,\n        \"description\": \"eps(w) = eps_inf - wp^2/(w^2 + i g w) + sum_j d_j w0_j^2 / (w0_j^2 - w^2 - i G_j w).\\n\\nThe form FDTD needs for auxiliary-differential-equation dispersion.\\nFit one to measured data with :func:`lightsmith.materials_fit.fit_drude_lorentz`.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"drude_lorentz\",\n            \"default\": \"drude_lorentz\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_inf\": {\n            \"default\": 1.0,\n            \"title\": \"Eps Inf\",\n            \"type\": \"number\"\n          },\n          \"wp_ev\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Wp Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          },\n          \"poles\": {\n            \"items\": {\n              \"$ref\": \"#/$defs/LorentzPole\"\n            },\n            \"title\": \"Poles\",\n            \"type\": \"array\"\n          }\n        },\n        \"title\": \"DrudeLorentz\",\n        \"type\": \"object\"\n      },\n      \"Ellipse\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"ellipse\",\n            \"default\": \"ellipse\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"semi_axes_nm\": {\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Semi Axes Nm\",\n            \"type\": \"array\"\n          },\n          \"angle_deg\": {\n            \"default\": 0.0,\n            \"title\": \"Angle Deg\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"semi_axes_nm\"\n        ],\n        \"title\": \"Ellipse\",\n        \"type\": \"object\"\n      },\n      \"KPoint\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"label\": {\n            \"title\": \"Label\",\n            \"type\": \"string\"\n          },\n          \"reduced\": {\n            \"description\": \"Coordinates in units of the reciprocal lattice vectors.\",\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Reduced\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"label\",\n          \"reduced\"\n        ],\n        \"title\": \"KPoint\",\n        \"type\": \"object\"\n      },\n      \"LibraryMaterial\": {\n        \"additionalProperties\": false,\n        \"description\": \"Measured n, k bundled with lightsmith, e.g. ``{\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\",\\n\\\"dataset\\\": \\\"Johnson-Christy\\\"}``. Linear interpolation in n and k, no extrapolation.\\n\\nNames and datasets accept aliases (\\\"gold\\\", \\\"JC\\\") and are stored in canonical form;\\nan omitted dataset is filled with the material's default so the spec stays\\nreproducible. See :func:`list_materials`.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"library\",\n            \"default\": \"library\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"name\": {\n            \"description\": \"Material, e.g. 'Au', 'Ag', 'Al', 'Cu', 'Si', 'TiO2', 'SiO2', 'H2O'.\",\n            \"title\": \"Name\",\n            \"type\": \"string\"\n          },\n          \"dataset\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Dataset, e.g. 'Johnson-Christy'; omitted = material default.\",\n            \"title\": \"Dataset\"\n          }\n        },\n        \"required\": [\n          \"name\"\n        ],\n        \"title\": \"LibraryMaterial\",\n        \"type\": \"object\"\n      },\n      \"LorentzPole\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"delta_eps\": {\n            \"description\": \"Oscillator strength (permittivity step).\",\n            \"title\": \"Delta Eps\",\n            \"type\": \"number\"\n          },\n          \"omega0_ev\": {\n            \"description\": \"Resonance energy in eV.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Omega0 Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"description\": \"Damping in eV.\",\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"delta_eps\",\n          \"omega0_ev\",\n          \"gamma_ev\"\n        ],\n        \"title\": \"LorentzPole\",\n        \"type\": \"object\"\n      },\n      \"Polygon\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"polygon\",\n            \"default\": \"polygon\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"vertices_nm\": {\n            \"items\": {\n              \"maxItems\": 2,\n              \"minItems\": 2,\n              \"prefixItems\": [\n                {\n                  \"type\": \"number\"\n                },\n                {\n                  \"type\": \"number\"\n                }\n              ],\n              \"type\": \"array\"\n            },\n            \"minItems\": 3,\n            \"title\": \"Vertices Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"vertices_nm\"\n        ],\n        \"title\": \"Polygon\",\n        \"type\": \"object\"\n      },\n      \"Prism\": {\n        \"additionalProperties\": false,\n        \"description\": \"A 2D profile in the xy plane extruded from z_min to z_max (with optional sidewall angle).\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"prism\",\n            \"default\": \"prism\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"profile\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"circle\": \"#/$defs/Circle\",\n                \"ellipse\": \"#/$defs/Ellipse\",\n                \"polygon\": \"#/$defs/Polygon\",\n                \"rectangle\": \"#/$defs/Rectangle\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/Rectangle\"\n              },\n              {\n                \"$ref\": \"#/$defs/Circle\"\n              },\n              {\n                \"$ref\": \"#/$defs/Ellipse\"\n              },\n              {\n                \"$ref\": \"#/$defs/Polygon\"\n              }\n            ],\n            \"title\": \"Profile\"\n          },\n          \"z_min_nm\": {\n            \"title\": \"Z Min Nm\",\n            \"type\": \"number\"\n          },\n          \"z_max_nm\": {\n            \"title\": \"Z Max Nm\",\n            \"type\": \"number\"\n          },\n          \"sidewall_angle_deg\": {\n            \"default\": 0.0,\n            \"description\": \"0 = vertical; positive = narrower at the top.\",\n            \"title\": \"Sidewall Angle Deg\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"profile\",\n          \"z_min_nm\",\n          \"z_max_nm\"\n        ],\n        \"title\": \"Prism\",\n        \"type\": \"object\"\n      },\n      \"Rectangle\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"rectangle\",\n            \"default\": \"rectangle\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"size_nm\": {\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Size Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"size_nm\"\n        ],\n        \"title\": \"Rectangle\",\n        \"type\": \"object\"\n      },\n      \"Structure\": {\n        \"additionalProperties\": false,\n        \"description\": \"A material region. Later structures override earlier ones where they overlap.\",\n        \"properties\": {\n          \"name\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"title\": \"Name\"\n          },\n          \"geometry\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"ball\": \"#/$defs/Ball\",\n                \"box\": \"#/$defs/Box\",\n                \"prism\": \"#/$defs/Prism\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/Prism\"\n              },\n              {\n                \"$ref\": \"#/$defs/Box\"\n              },\n              {\n                \"$ref\": \"#/$defs/Ball\"\n              }\n            ],\n            \"title\": \"Geometry\"\n          },\n          \"material\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Material\"\n          }\n        },\n        \"required\": [\n          \"geometry\",\n          \"material\"\n        ],\n        \"title\": \"Structure\",\n        \"type\": \"object\"\n      },\n      \"Structure2D\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"name\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"title\": \"Name\"\n          },\n          \"profile\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"circle\": \"#/$defs/Circle\",\n                \"ellipse\": \"#/$defs/Ellipse\",\n                \"polygon\": \"#/$defs/Polygon\",\n                \"rectangle\": \"#/$defs/Rectangle\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/Rectangle\"\n              },\n              {\n                \"$ref\": \"#/$defs/Circle\"\n              },\n              {\n                \"$ref\": \"#/$defs/Ellipse\"\n              },\n              {\n                \"$ref\": \"#/$defs/Polygon\"\n              }\n            ],\n            \"title\": \"Profile\"\n          },\n          \"material\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Material\"\n          }\n        },\n        \"required\": [\n          \"profile\",\n          \"material\"\n        ],\n        \"title\": \"Structure2D\",\n        \"type\": \"object\"\n      },\n      \"Tabulated\": {\n        \"additionalProperties\": false,\n        \"description\": \"Tabulated n, k data, linearly interpolated (no extrapolation).\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"tabulated\",\n            \"default\": \"tabulated\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"wavelength_nm\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"Wavelength Nm\",\n            \"type\": \"array\"\n          },\n          \"n_real\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"N Real\",\n            \"type\": \"array\"\n          },\n          \"n_imag\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"N Imag\",\n            \"type\": \"array\"\n          },\n          \"source\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Citation / provenance of the data.\",\n            \"title\": \"Source\"\n          }\n        },\n        \"required\": [\n          \"wavelength_nm\",\n          \"n_real\",\n          \"n_imag\"\n        ],\n        \"title\": \"Tabulated\",\n        \"type\": \"object\"\n      }\n    },\n    \"additionalProperties\": false,\n    \"description\": \"Band structure of a photonic crystal along a k-path.\",\n    \"properties\": {\n      \"kind\": {\n        \"const\": \"bands\",\n        \"default\": \"bands\",\n        \"title\": \"Kind\",\n        \"type\": \"string\"\n      },\n      \"dimension\": {\n        \"default\": 2,\n        \"enum\": [\n          2,\n          3\n        ],\n        \"title\": \"Dimension\",\n        \"type\": \"integer\"\n      },\n      \"lattice_vectors_nm\": {\n        \"items\": {\n          \"maxItems\": 3,\n          \"minItems\": 3,\n          \"prefixItems\": [\n            {\n              \"type\": \"number\"\n            },\n            {\n              \"type\": \"number\"\n            },\n            {\n              \"type\": \"number\"\n            }\n          ],\n          \"type\": \"array\"\n        },\n        \"maxItems\": 3,\n        \"minItems\": 2,\n        \"title\": \"Lattice Vectors Nm\",\n        \"type\": \"array\"\n      },\n      \"background\": {\n        \"discriminator\": {\n          \"mapping\": {\n            \"constant_index\": \"#/$defs/ConstantIndex\",\n            \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n            \"drude\": \"#/$defs/Drude\",\n            \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n            \"library\": \"#/$defs/LibraryMaterial\",\n            \"tabulated\": \"#/$defs/Tabulated\"\n          },\n          \"propertyName\": \"kind\"\n        },\n        \"oneOf\": [\n          {\n            \"$ref\": \"#/$defs/ConstantIndex\"\n          },\n          {\n            \"$ref\": \"#/$defs/ConstantPermittivity\"\n          },\n          {\n            \"$ref\": \"#/$defs/Drude\"\n          },\n          {\n            \"$ref\": \"#/$defs/DrudeLorentz\"\n          },\n          {\n            \"$ref\": \"#/$defs/Tabulated\"\n          },\n          {\n            \"$ref\": \"#/$defs/LibraryMaterial\"\n          }\n        ],\n        \"title\": \"Background\"\n      },\n      \"structures_2d\": {\n        \"description\": \"Unit-cell inclusions for 2D crystals.\",\n        \"items\": {\n          \"$ref\": \"#/$defs/Structure2D\"\n        },\n        \"title\": \"Structures 2D\",\n        \"type\": \"array\"\n      },\n      \"structures\": {\n        \"description\": \"Unit-cell inclusions for 3D crystals.\",\n        \"items\": {\n          \"$ref\": \"#/$defs/Structure\"\n        },\n        \"title\": \"Structures\",\n        \"type\": \"array\"\n      },\n      \"k_path\": {\n        \"items\": {\n          \"$ref\": \"#/$defs/KPoint\"\n        },\n        \"minItems\": 2,\n        \"title\": \"K Path\",\n        \"type\": \"array\"\n      },\n      \"points_per_segment\": {\n        \"default\": 16,\n        \"minimum\": 1,\n        \"title\": \"Points Per Segment\",\n        \"type\": \"integer\"\n      },\n      \"num_bands\": {\n        \"default\": 8,\n        \"minimum\": 1,\n        \"title\": \"Num Bands\",\n        \"type\": \"integer\"\n      },\n      \"polarization\": {\n        \"default\": \"both\",\n        \"description\": \"2D only: TE = E in plane, TM = E along z.\",\n        \"enum\": [\n          \"te\",\n          \"tm\",\n          \"both\"\n        ],\n        \"title\": \"Polarization\",\n        \"type\": \"string\"\n      },\n      \"options\": {\n        \"additionalProperties\": {\n          \"additionalProperties\": true,\n          \"type\": \"object\"\n        },\n        \"title\": \"Options\",\n        \"type\": \"object\"\n      }\n    },\n    \"required\": [\n      \"lattice_vectors_nm\",\n      \"background\",\n      \"k_path\"\n    ],\n    \"title\": \"BandProblem\",\n    \"type\": \"object\"\n  },\n  \"conventions\": \"Lightsmith conventions (fixed; changing them needs a schema version bump):\\n- Lengths in nm. Wavelengths are vacuum wavelengths in nm.\\n- Time dependence exp(-i omega t): absorbing materials have Im(eps) > 0 and Im(n) > 0.\\n- Cross sections in nm^2; efficiencies Q = C / (pi r_eq^2), r_eq = volume-equivalent radius of all particles.\\n- layer_stack / periodic: layers listed from the superstrate (incidence side) to the substrate; light travels +z.\\n  R is measured in the superstrate, T in the substrate.\\n- mode: cross-section in the xy plane, propagation along +z.\\n- device: ports are planes whose normal is the axis where size_nm is zero; direction is into the device.\\n- problem.options[<method or backend name>] holds solver options, validated by that backend.\\n- Materials: {\\\"kind\\\": \\\"constant_index\\\", \\\"n_real\\\": .., \\\"n_imag\\\": ..}, {\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\"},\\n  drude, drude_lorentz, tabulated, constant_permittivity. FDTD needs dispersive models (fit_drude_lorentz).\\n- Results carry provenance and warnings: read the warnings before trusting the numbers.\\n\",\n  \"backends\": [\n    {\n      \"name\": \"lightsmith-pwe\",\n      \"method\": \"pwe\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 0\n    }\n  ],\n  \"example\": {\n    \"kind\": \"bands\",\n    \"lattice_vectors_nm\": [\n      [\n        500,\n        0,\n        0\n      ],\n      [\n        0,\n        500,\n        0\n      ]\n    ],\n    \"background\": {\n      \"kind\": \"constant_index\",\n      \"n_real\": 1.0\n    },\n    \"structures_2d\": [\n      {\n        \"profile\": {\n          \"kind\": \"circle\",\n          \"radius_nm\": 100\n        },\n        \"material\": {\n          \"kind\": \"constant_permittivity\",\n          \"eps_real\": 8.9\n        }\n      }\n    ],\n    \"k_path\": [\n      {\n        \"label\": \"G\",\n        \"reduced\": [\n          0,\n          0,\n          0\n        ]\n      },\n      {\n        \"label\": \"X\",\n        \"reduced\": [\n          0.5,\n          0,\n          0\n        ]\n      },\n      {\n        \"label\": \"M\",\n        \"reduced\": [\n          0.5,\n          0.5,\n          0\n        ]\n      },\n      {\n        \"label\": \"G\",\n        \"reduced\": [\n          0,\n          0,\n          0\n        ]\n      }\n    ],\n    \"points_per_segment\": 8,\n    \"num_bands\": 6,\n    \"polarization\": \"tm\"\n  }\n}",
+   "images": [],
+   "error": null,
+   "duration_s": 0.012,
+   "started_at": 1794268254.066949,
+   "source": "mcp"
+  },
+  {
+   "name": "estimate",
+   "arguments": {
+    "problem": {
+     "kind": "bands",
+     "lattice_vectors_nm": [
+      [
+       1000,
+       0,
+       0
+      ],
+      [
+       500,
+       866.0254037844,
+       0
+      ]
+     ],
+     "background": {
+      "kind": "constant_permittivity",
+      "eps_real": 13
+     },
+     "structures_2d": [
+      {
+       "profile": {
+        "kind": "circle",
+        "radius_nm": 450
+       },
+       "material": {
+        "kind": "constant_permittivity",
+        "eps_real": 1
+       }
+      }
+     ],
+     "k_path": [
+      {
+       "label": "G",
+       "reduced": [
+        0,
+        0,
+        0
+       ]
+      },
+      {
+       "label": "M",
+       "reduced": [
+        0,
+        0.5,
+        0
+       ]
+      },
+      {
+       "label": "K",
+       "reduced": [
+        0.333333333333,
+        0.666666666667,
+        0
+       ]
+      },
+      {
+       "label": "G",
+       "reduced": [
+        0,
+        0,
+        0
+       ]
+      }
+     ],
+     "points_per_segment": 16,
+     "num_bands": 10,
+     "polarization": "both"
+    }
+   },
+   "ok": true,
+   "result": {
+    "kind": "bands",
+    "estimate": {
+     "backend": "lightsmith-pwe",
+     "method": "pwe",
+     "framework": "torch",
+     "device": "cuda:0",
+     "gpu_name": "NVIDIA GeForce RTX 5070",
+     "solver": {
+      "te": "lobpcg",
+      "tm": "dense"
+     },
+     "num_plane_waves": {
+      "te": 1024,
+      "tm": 349
+     },
+     "matrix_size": {
+      "te": 1024,
+      "tm": 349
+     },
+     "grid": {
+      "te": [
+       32,
+       32
+      ]
+     },
+     "precision": "double",
+     "k_points": 49,
+     "polarizations": [
+      "te",
+      "tm"
+     ],
+     "memory_bytes": 194881600,
+     "eigensolves": 98
+    },
+    "budget_check": {
+     "ok": true,
+     "estimated_runtime_s": 0.099,
+     "runtime_basis": "rough",
+     "memory_gib": 0.1815,
+     "budget": {
+      "max_memory_gib": 8.0,
+      "max_runtime_s": 1800.0
+     },
+     "runtime_note": "order-of-magnitude guess; this backend reports no run time of its own"
+    },
+    "runs_on": "this machine"
+   },
+   "text": "{\n  \"kind\": \"bands\",\n  \"estimate\": {\n    \"backend\": \"lightsmith-pwe\",\n    \"method\": \"pwe\",\n    \"framework\": \"torch\",\n    \"device\": \"cuda:0\",\n    \"gpu_name\": \"NVIDIA GeForce RTX 5070\",\n    \"solver\": {\n      \"te\": \"lobpcg\",\n      \"tm\": \"dense\"\n    },\n    \"num_plane_waves\": {\n      \"te\": 1024,\n      \"tm\": 349\n    },\n    \"matrix_size\": {\n      \"te\": 1024,\n      \"tm\": 349\n    },\n    \"grid\": {\n      \"te\": [\n        32,\n        32\n      ]\n    },\n    \"precision\": \"double\",\n    \"k_points\": 49,\n    \"polarizations\": [\n      \"te\",\n      \"tm\"\n    ],\n    \"memory_bytes\": 194881600,\n    \"eigensolves\": 98\n  },\n  \"budget_check\": {\n    \"ok\": true,\n    \"estimated_runtime_s\": 0.099,\n    \"runtime_basis\": \"rough\",\n    \"memory_gib\": 0.1815,\n    \"budget\": {\n      \"max_memory_gib\": 8.0,\n      \"max_runtime_s\": 1800.0\n    },\n    \"runtime_note\": \"order-of-magnitude guess; this backend reports no run time of its own\"\n  },\n  \"runs_on\": \"this machine\"\n}",
+   "images": [],
+   "error": null,
+   "duration_s": 2.982,
+   "started_at": 1794268260.8616936,
+   "source": "mcp"
+  },
+  {
+   "name": "list_backends",
+   "arguments": {
+    "kind": "bands"
+   },
+   "ok": true,
+   "result": {
+    "kinds": [
+     "scattering",
+     "layer_stack",
+     "periodic",
+     "mode",
+     "device",
+     "bands",
+     "circuit",
+     "optimization",
+     "emission"
+    ],
+    "auto_order": {
+     "scattering": [
+      "mie",
+      "tmatrix",
+      "bem",
+      "dda",
+      "fdtd"
+     ],
+     "layer_stack": [
+      "tmm",
+      "rcwa",
+      "fdtd"
+     ],
+     "periodic": [
+      "rcwa",
+      "fdfd",
+      "fdtd"
+     ],
+     "mode": [
+      "fde"
+     ],
+     "device": [
+      "eme",
+      "bpm",
+      "fdfd",
+      "fdtd"
+     ],
+     "bands": [
+      "pwe",
+      "fdfd"
+     ],
+     "circuit": [
+      "circuit"
+     ],
+     "optimization": [
+      "inverse"
+     ],
+     "emission": [
+      "mie",
+      "fdtd"
+     ]
+    },
+    "backends": [
+     {
+      "name": "lightsmith-pwe",
+      "method": "pwe",
+      "problem_kinds": [
+       "bands"
+      ],
+      "license": "MIT",
+      "gpu": true,
+      "differentiable": true,
+      "available": true,
+      "unavailable_reason": null,
+      "citation": "Ho, Chan & Soukoulis, PRL 65, 3152 (1990); Johnson & Joannopoulos, Opt. Express 8, 173 (2001); Farjadpour et al., Opt. Lett. 31, 2972 (2006)",
+      "options_key": "problem.options['pwe'] or ['lightsmith-pwe']",
+      "options_schema": {
+       "additionalProperties": false,
+       "properties": {
+        "solver": {
+         "default": "auto",
+         "description": "dense: Ho-Chan-Soukoulis matrices + batched eigh. lobpcg: matrix-free FFT operators with subpixel-smoothed eps. auto: dense for TM (matrix <= 2500), lobpcg for TE and 3D; setting only num_plane_waves forces dense, setting only resolution forces lobpcg.",
+         "enum": [
+          "auto",
+          "dense",
+          "lobpcg"
+         ],
+         "title": "Solver",
+         "type": "string"
+        },
+        "num_plane_waves": {
+         "anyOf": [
+          {
+           "minimum": 1,
+           "type": "integer"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "description": "Dense basis size (completed to a full |G| shell). Default 400 (2D) / 600 (3D) per unit-cell area/volume in a^d.",
+         "title": "Num Plane Waves"
+        },
+        "resolution": {
+         "anyOf": [
+          {
+           "minimum": 4,
+           "type": "integer"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "description": "lobpcg grid points per lattice constant a (default 32 in 2D, 16 in 3D).",
+         "title": "Resolution"
+        },
+        "eps_fourier": {
+         "default": "auto",
+         "description": "Dense eps_hat: analytic shape transforms (needs non-overlapping inclusions) or a supersampled raster. auto = analytic when valid.",
+         "enum": [
+          "auto",
+          "analytic",
+          "raster"
+         ],
+         "title": "Eps Fourier",
+         "type": "string"
+        },
+        "subsamples": {
+         "anyOf": [
+          {
+           "minimum": 1,
+           "type": "integer"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "description": "Raster supersampling per axis (default 4 in 2D, 2 in 3D).",
+         "title": "Subsamples"
+        },
+        "reference_wavelength_nm": {
+         "anyOf": [
+          {
+           "exclusiveMinimum": 0,
+           "type": "number"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "description": "Vacuum wavelength at which materials are evaluated. Needed for dispersive materials (default 2a, i.e. a/lambda = 0.5, with a warning).",
+         "title": "Reference Wavelength Nm"
+        },
+        "precision": {
+         "default": "auto",
+         "description": "auto = double, except single for the dense solver on a GPU (~1e-5 in a/lambda).",
+         "enum": [
+          "auto",
+          "single",
+          "double"
+         ],
+         "title": "Precision",
+         "type": "string"
+        },
+        "tol": {
+         "anyOf": [
+          {
+           "exclusiveMinimum": 0,
+           "type": "number"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "description": "LOBPCG relative residual (default 1e-6 double, 1e-4 single).",
+         "title": "Tol"
+        },
+        "max_iter": {
+         "default": 400,
+         "description": "LOBPCG iterations per k-point.",
+         "minimum": 1,
+         "title": "Max Iter",
+         "type": "integer"
+        },
+        "extra_bands": {
+         "anyOf": [
+          {
+           "minimum": 0,
+           "type": "integer"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "description": "LOBPCG block padding (default max(2, num_bands/4)).",
+         "title": "Extra Bands"
+        }
+       },
+       "title": "PWEOptions",
+       "type": "object"
+      }
+     }
+    ]
+   },
+   "text": "{\n  \"kinds\": [\n    \"scattering\",\n    \"layer_stack\",\n    \"periodic\",\n    \"mode\",\n    \"device\",\n    \"bands\",\n    \"circuit\",\n    \"optimization\",\n    \"emission\"\n  ],\n  \"auto_order\": {\n    \"scattering\": [\n      \"mie\",\n      \"tmatrix\",\n      \"bem\",\n      \"dda\",\n      \"fdtd\"\n    ],\n    \"layer_stack\": [\n      \"tmm\",\n      \"rcwa\",\n      \"fdtd\"\n    ],\n    \"periodic\": [\n      \"rcwa\",\n      \"fdfd\",\n      \"fdtd\"\n    ],\n    \"mode\": [\n      \"fde\"\n    ],\n    \"device\": [\n      \"eme\",\n      \"bpm\",\n      \"fdfd\",\n      \"fdtd\"\n    ],\n    \"bands\": [\n      \"pwe\",\n      \"fdfd\"\n    ],\n    \"circuit\": [\n      \"circuit\"\n    ],\n    \"optimization\": [\n      \"inverse\"\n    ],\n    \"emission\": [\n      \"mie\",\n      \"fdtd\"\n    ]\n  },\n  \"backends\": [\n    {\n      \"name\": \"lightsmith-pwe\",\n      \"method\": \"pwe\",\n      \"problem_kinds\": [\n        \"bands\"\n      ],\n      \"license\": \"MIT\",\n      \"gpu\": true,\n      \"differentiable\": true,\n      \"available\": true,\n      \"unavailable_reason\": null,\n      \"citation\": \"Ho, Chan & Soukoulis, PRL 65, 3152 (1990); Johnson & Joannopoulos, Opt. Express 8, 173 (2001); Farjadpour et al., Opt. Lett. 31, 2972 (2006)\",\n      \"options_key\": \"problem.options['pwe'] or ['lightsmith-pwe']\",\n      \"options_schema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"solver\": {\n            \"default\": \"auto\",\n            \"description\": \"dense: Ho-Chan-Soukoulis matrices + batched eigh. lobpcg: matrix-free FFT operators with subpixel-smoothed eps. auto: dense for TM (matrix <= 2500), lobpcg for TE and 3D; setting only num_plane_waves forces dense, setting only resolution forces lobpcg.\",\n            \"enum\": [\n              \"auto\",\n              \"dense\",\n              \"lobpcg\"\n            ],\n            \"title\": \"Solver\",\n            \"type\": \"string\"\n          },\n          \"num_plane_waves\": {\n            \"anyOf\": [\n              {\n                \"minimum\": 1,\n                \"type\": \"integer\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Dense basis size (completed to a full |G| shell). Default 400 (2D) / 600 (3D) per unit-cell area/volume in a^d.\",\n            \"title\": \"Num Plane Waves\"\n          },\n          \"resolution\": {\n            \"anyOf\": [\n              {\n                \"minimum\": 4,\n                \"type\": \"integer\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"lobpcg grid points per lattice constant a (default 32 in 2D, 16 in 3D).\",\n            \"title\": \"Resolution\"\n          },\n          \"eps_fourier\": {\n            \"default\": \"auto\",\n            \"description\": \"Dense eps_hat: analytic shape transforms (needs non-overlapping inclusions) or a supersampled raster. auto = analytic when valid.\",\n            \"enum\": [\n              \"auto\",\n              \"analytic\",\n              \"raster\"\n            ],\n            \"title\": \"Eps Fourier\",\n            \"type\": \"string\"\n          },\n          \"subsamples\": {\n            \"anyOf\": [\n              {\n                \"minimum\": 1,\n                \"type\": \"integer\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Raster supersampling per axis (default 4 in 2D, 2 in 3D).\",\n            \"title\": \"Subsamples\"\n          },\n          \"reference_wavelength_nm\": {\n            \"anyOf\": [\n              {\n                \"exclusiveMinimum\": 0,\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Vacuum wavelength at which materials are evaluated. Needed for dispersive materials (default 2a, i.e. a/lambda = 0.5, with a warning).\",\n            \"title\": \"Reference Wavelength Nm\"\n          },\n          \"precision\": {\n            \"default\": \"auto\",\n            \"description\": \"auto = double, except single for the dense solver on a GPU (~1e-5 in a/lambda).\",\n            \"enum\": [\n              \"auto\",\n              \"single\",\n              \"double\"\n            ],\n            \"title\": \"Precision\",\n            \"type\": \"string\"\n          },\n          \"tol\": {\n            \"anyOf\": [\n              {\n                \"exclusiveMinimum\": 0,\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"LOBPCG relative residual (default 1e-6 double, 1e-4 single).\",\n            \"title\": \"Tol\"\n          },\n          \"max_iter\": {\n            \"default\": 400,\n            \"description\": \"LOBPCG iterations per k-point.\",\n            \"minimum\": 1,\n            \"title\": \"Max Iter\",\n            \"type\": \"integer\"\n          },\n          \"extra_bands\": {\n            \"anyOf\": [\n              {\n                \"minimum\": 0,\n                \"type\": \"integer\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"LOBPCG block padding (default max(2, num_bands/4)).\",\n            \"title\": \"Extra Bands\"\n          }\n        },\n        \"title\": \"PWEOptions\",\n        \"type\": \"object\"\n      }\n    }\n  ]\n}",
+   "images": [],
+   "error": null,
+   "duration_s": 0.502,
+   "started_at": 1794268265.9231303,
+   "source": "mcp"
+  },
+  {
+   "name": "solve",
+   "arguments": {
+    "problem": {
+     "kind": "bands",
+     "lattice_vectors_nm": [
+      [
+       1000,
+       0,
+       0
+      ],
+      [
+       500,
+       866.0254037844,
+       0
+      ]
+     ],
+     "background": {
+      "kind": "constant_permittivity",
+      "eps_real": 13
+     },
+     "structures_2d": [
+      {
+       "profile": {
+        "kind": "circle",
+        "radius_nm": 450
+       },
+       "material": {
+        "kind": "constant_permittivity",
+        "eps_real": 1
+       }
+      }
+     ],
+     "k_path": [
+      {
+       "label": "G",
+       "reduced": [
+        0,
+        0,
+        0
+       ]
+      },
+      {
+       "label": "M",
+       "reduced": [
+        0,
+        0.5,
+        0
+       ]
+      },
+      {
+       "label": "K",
+       "reduced": [
+        0.333333333333,
+        0.666666666667,
+        0
+       ]
+      },
+      {
+       "label": "G",
+       "reduced": [
+        0,
+        0,
+        0
+       ]
+      }
+     ],
+     "points_per_segment": 16,
+     "num_bands": 10,
+     "polarization": "both",
+     "options": {
+      "pwe": {
+       "solver": "lobpcg",
+       "resolution": 64
+      }
+     }
+    },
+    "wait_s": 120
+   },
+   "ok": true,
+   "result": {
+    "status": "succeeded",
+    "job_id": "1414a14547ed9a41072dfc8f12ccff09",
+    "job": {
+     "job_id": "1414a14547ed9a41072dfc8f12ccff09",
+     "operation": "solve",
+     "problem_kind": "bands",
+     "status": "succeeded",
+     "progress": 1.0,
+     "stage": "done",
+     "message": null,
+     "method": "auto",
+     "methods": null,
+     "device": "auto",
+     "label": null,
+     "runner": "process",
+     "created_at": "2026-11-09T23:51:09+00:00",
+     "started_at": "2026-11-09T23:51:09+00:00",
+     "finished_at": "2026-11-09T23:51:21+00:00",
+     "elapsed_s": 11.656,
+     "error": null,
+     "resources": {
+      "job": "lightsmith://jobs/1414a14547ed9a41072dfc8f12ccff09",
+      "result": "lightsmith://jobs/1414a14547ed9a41072dfc8f12ccff09/result",
+      "csv": "lightsmith://jobs/1414a14547ed9a41072dfc8f12ccff09/result.csv",
+      "plot": "lightsmith://jobs/1414a14547ed9a41072dfc8f12ccff09/plot.png"
+     },
+     "estimated_runtime_s": 0.008
+    },
+    "summary": {
+     "result_kind": "bands",
+     "method": "pwe",
+     "backend": "lightsmith-pwe",
+     "warnings": [],
+     "provenance": {
+      "device": "cuda:0",
+      "framework": "torch",
+      "gpu_name": "NVIDIA GeForce RTX 5070",
+      "precision": "double",
+      "runtime_s": 8.334484599996358,
+      "grid": [
+       64,
+       64
+      ]
+     },
+     "n_k_points": 49,
+     "k_labels": {
+      "0": "G",
+      "16": "M",
+      "32": "K",
+      "48": "G"
+     },
+     "units": {
+      "frequency": "a/lambda (normalised)"
+     },
+     "per_polarization": {
+      "te": {
+       "bands": 10,
+       "band_ranges": [
+        [
+         2.8635e-10,
+         0.28903
+        ],
+        [
+         0.48816,
+         0.63674
+        ],
+        [
+         0.52072,
+         0.70441
+        ],
+        [
+         0.6483,
+         0.73787
+        ],
+        [
+         0.71367,
+         0.77565
+        ],
+        [
+         0.81059,
+         0.93951
+        ],
+        [
+         0.81671,
+         0.95011
+        ],
+        [
+         0.96273,
+         1.002
+        ],
+        [
+         0.98759,
+         1.0208
+        ],
+        [
+         1.0141,
+         1.1178
+        ]
+       ],
+       "complete_gaps": [
+        {
+         "between_bands": [
+          1,
+          2
+         ],
+         "from": 0.28903,
+         "to": 0.48816,
+         "gap_midgap_ratio": 0.5124
+        },
+        {
+         "between_bands": [
+          5,
+          6
+         ],
+         "from": 0.77565,
+         "to": 0.81059,
+         "gap_midgap_ratio": 0.04405
+        },
+        {
+         "between_bands": [
+          7,
+          8
+         ],
+         "from": 0.95011,
+         "to": 0.96273,
+         "gap_midgap_ratio": 0.0132
+        }
+       ]
+      },
+      "tm": {
+       "bands": 10,
+       "band_ranges": [
+        [
+         0.0,
+         0.26987
+        ],
+        [
+         0.26996,
+         0.38317
+        ],
+        [
+         0.42514,
+         0.47449
+        ],
+        [
+         0.47467,
+         0.55877
+        ],
+        [
+         0.55892,
+         0.65701
+        ],
+        [
+         0.65723,
+         0.67375
+        ],
+        [
+         0.66832,
+         0.76387
+        ],
+        [
+         0.77202,
+         0.87464
+        ],
+        [
+         0.7935,
+         0.87487
+        ],
+        [
+         0.85781,
+         0.90428
+        ]
+       ],
+       "complete_gaps": [
+        {
+         "between_bands": [
+          1,
+          2
+         ],
+         "from": 0.26987,
+         "to": 0.26996,
+         "gap_midgap_ratio": 0.0003338
+        },
+        {
+         "between_bands": [
+          2,
+          3
+         ],
+         "from": 0.38317,
+         "to": 0.42514,
+         "gap_midgap_ratio": 0.1038
+        },
+        {
+         "between_bands": [
+          3,
+          4
+         ],
+         "from": 0.47449,
+         "to": 0.47467,
+         "gap_midgap_ratio": 0.0003793
+        },
+        {
+         "between_bands": [
+          4,
+          5
+         ],
+         "from": 0.55877,
+         "to": 0.55892,
+         "gap_midgap_ratio": 0.0002632
+        },
+        {
+         "between_bands": [
+          5,
+          6
+         ],
+         "from": 0.65701,
+         "to": 0.65723,
+         "gap_midgap_ratio": 0.0003327
+        },
+        {
+         "between_bands": [
+          7,
+          8
+         ],
+         "from": 0.76387,
+         "to": 0.77202,
+         "gap_midgap_ratio": 0.01061
+        }
+       ]
+      }
+     }
+    },
+    "next_step": "Full arrays: read lightsmith://jobs/1414a14547ed9a41072dfc8f12ccff09/result (JSON) or lightsmith://jobs/1414a14547ed9a41072dfc8f12ccff09/result.csv, or call get_result. Check summary.warnings."
+   },
+   "text": "{\"status\": \"succeeded\", \"job_id\": \"1414a14547ed9a41072dfc8f12ccff09\", \"job\": {\"job_id\": \"1414a14547ed9a41072dfc8f12ccff09\", \"operation\": \"solve\", \"problem_kind\": \"bands\", \"status\": \"succeeded\", \"progress\": 1.0, \"stage\": \"done\", \"message\": null, \"method\": \"auto\", \"methods\": null, \"device\": \"auto\", \"label\": null, \"runner\": \"process\", \"created_at\": \"2026-11-09T23:51:09+00:00\", \"started_at\": \"2026-11-09T23:51:09+00:00\", \"finished_at\": \"2026-11-09T23:51:21+00:00\", \"elapsed_s\": 11.656, \"error\": null, \"resources\": {\"job\": \"lightsmith://jobs/1414a14547ed9a41072dfc8f12ccff09\", \"result\": \"lightsmith://jobs/1414a14547ed9a41072dfc8f12ccff09/result\", \"csv\": \"lightsmith://jobs/1414a14547ed9a41072dfc8f12ccff09/result.csv\", \"plot\": \"lightsmith://jobs/1414a14547ed9a41072dfc8f12ccff09/plot.png\"}, \"estimated_runtime_s\": 0.008}, \"summary\": {\"result_kind\": \"bands\", \"method\": \"pwe\", \"backend\": \"lightsmith-pwe\", \"warnings\": [], \"provenance\": {\"device\": \"cuda:0\", \"framework\": \"torch\", \"gpu_name\": \"NVIDIA GeForce RTX 5070\", \"precision\": \"double\", \"runtime_s\": 8.334484599996358, \"grid\": [64, 64]}, \"n_k_points\": 49, \"k_labels\": {\"0\": \"G\", \"16\": \"M\", \"32\": \"K\", \"48\": \"G\"}, \"units\": {\"frequency\": \"a/lambda (normalised)\"}, \"per_polarization\": {\"te\": {\"bands\": 10, \"band_ranges\": [[2.8635e-10, 0.28903], [0.48816, 0.63674], [0.52072, 0.70441], [0.6483, 0.73787], [0.71367, 0.77565], [0.81059, 0.93951], [0.81671, 0.95011], [0.96273, 1.002], [0.98759, 1.0208], [1.0141, 1.1178]], \"complete_gaps\": [{\"between_bands\": [1, 2], \"from\": 0.28903, \"to\": 0.48816, \"gap_midgap_ratio\": 0.5124}, {\"between_bands\": [5, 6], \"from\": 0.77565, \"to\": 0.81059, \"gap_midgap_ratio\": 0.04405}, {\"between_bands\": [7, 8], \"from\": 0.95011, \"to\": 0.96273, \"gap_midgap_ratio\": 0.0132}]}, \"tm\": {\"bands\": 10, \"band_ranges\": [[0.0, 0.26987], [0.26996, 0.38317], [0.42514, 0.47449], [0.47467, 0.55877], [0.55892, 0.65701], [0.65723, 0.67375], [0.66832, 0.76387], [0.77202, 0.87464], [0.7935, 0.87487], [0.85781, 0.90428]], \"complete_gaps\": [{\"between_bands\": [1, 2], \"from\": 0.26987, \"to\": 0.26996, \"gap_midgap_ratio\": 0.0003338}, {\"between_bands\": [2, 3], \"from\": 0.38317, \"to\": 0.42514, \"gap_midgap_ratio\": 0.1038}, {\"between_bands\": [3, 4], \"from\": 0.47449, \"to\": 0.47467, \"gap_midgap_ratio\": 0.0003793}, {\"between_bands\": [4, 5], \"from\": 0.55877, \"to\": 0.55892, \"gap_midgap_ratio\": 0.0002632}, {\"between_bands\": [5, 6], \"from\": 0.65701, \"to\": 0.65723, \"gap_midgap_ratio\": 0.0003327}, {\"between_bands\": [7, 8], \"from\": 0.76387, \"to\": 0.77202, \"gap_midgap_ratio\": 0.01061}]}}}, \"next_step\": \"Full arrays: read lightsmith://jobs/1414a14547ed9a41072dfc8f12ccff09/result (JSON) or lightsmith://jobs/1414a14547ed9a41072dfc8f12ccff09/result.csv, or call get_result. Check summary.warnings.\"}",
+   "images": [],
+   "error": null,
+   "duration_s": 12.633,
+   "started_at": 1794268269.5584936,
+   "source": "mcp"
+  },
+  {
+   "name": "solve",
+   "arguments": {
+    "problem": {
+     "kind": "bands",
+     "lattice_vectors_nm": [
+      [
+       1000,
+       0,
+       0
+      ],
+      [
+       500,
+       866.0254037844,
+       0
+      ]
+     ],
+     "background": {
+      "kind": "constant_permittivity",
+      "eps_real": 13
+     },
+     "structures_2d": [
+      {
+       "profile": {
+        "kind": "circle",
+        "radius_nm": 450
+       },
+       "material": {
+        "kind": "constant_permittivity",
+        "eps_real": 1
+       }
+      }
+     ],
+     "k_path": [
+      {
+       "label": "G",
+       "reduced": [
+        0,
+        0,
+        0
+       ]
+      },
+      {
+       "label": "M",
+       "reduced": [
+        0,
+        0.5,
+        0
+       ]
+      },
+      {
+       "label": "K",
+       "reduced": [
+        0.333333333333,
+        0.666666666667,
+        0
+       ]
+      },
+      {
+       "label": "G",
+       "reduced": [
+        0,
+        0,
+        0
+       ]
+      }
+     ],
+     "points_per_segment": 16,
+     "num_bands": 6,
+     "polarization": "both",
+     "options": {
+      "pwe": {
+       "solver": "lobpcg",
+       "resolution": 128
+      }
+     }
+    },
+    "wait_s": 300
+   },
+   "ok": true,
+   "result": {
+    "status": "succeeded",
+    "job_id": "9050b153124c0110bb0b1d9f1ed5b36f",
+    "job": {
+     "job_id": "9050b153124c0110bb0b1d9f1ed5b36f",
+     "operation": "solve",
+     "problem_kind": "bands",
+     "status": "succeeded",
+     "progress": 1.0,
+     "stage": "done",
+     "message": null,
+     "method": "auto",
+     "methods": null,
+     "device": "auto",
+     "label": null,
+     "runner": "process",
+     "created_at": "2026-11-09T23:51:29+00:00",
+     "started_at": "2026-11-09T23:51:29+00:00",
+     "finished_at": "2026-11-09T23:51:46+00:00",
+     "elapsed_s": 17.484,
+     "error": null,
+     "resources": {
+      "job": "lightsmith://jobs/9050b153124c0110bb0b1d9f1ed5b36f",
+      "result": "lightsmith://jobs/9050b153124c0110bb0b1d9f1ed5b36f/result",
+      "csv": "lightsmith://jobs/9050b153124c0110bb0b1d9f1ed5b36f/result.csv",
+      "plot": "lightsmith://jobs/9050b153124c0110bb0b1d9f1ed5b36f/plot.png"
+     },
+     "estimated_runtime_s": 0.017
+    },
+    "summary": {
+     "result_kind": "bands",
+     "method": "pwe",
+     "backend": "lightsmith-pwe",
+     "warnings": [],
+     "provenance": {
+      "device": "cuda:0",
+      "framework": "torch",
+      "gpu_name": "NVIDIA GeForce RTX 5070",
+      "precision": "double",
+      "runtime_s": 14.000307600013912,
+      "grid": [
+       128,
+       128
+      ]
+     },
+     "n_k_points": 49,
+     "k_labels": {
+      "0": "G",
+      "16": "M",
+      "32": "K",
+      "48": "G"
+     },
+     "units": {
+      "frequency": "a/lambda (normalised)"
+     },
+     "per_polarization": {
+      "te": {
+       "bands": 6,
+       "band_ranges": [
+        [
+         8.7611e-11,
+         0.28857
+        ],
+        [
+         0.48796,
+         0.63564
+        ],
+        [
+         0.52045,
+         0.70481
+        ],
+        [
+         0.64846,
+         0.73711
+        ],
+        [
+         0.71241,
+         0.77437
+        ],
+        [
+         0.81149,
+         0.93818
+        ]
+       ],
+       "complete_gaps": [
+        {
+         "between_bands": [
+          1,
+          2
+         ],
+         "from": 0.28857,
+         "to": 0.48796,
+         "gap_midgap_ratio": 0.5136
+        },
+        {
+         "between_bands": [
+          5,
+          6
+         ],
+         "from": 0.77437,
+         "to": 0.81149,
+         "gap_midgap_ratio": 0.0468
+        }
+       ]
+      },
+      "tm": {
+       "bands": 6,
+       "band_ranges": [
+        [
+         0.0,
+         0.26985
+        ],
+        [
+         0.26986,
+         0.383
+        ],
+        [
+         0.42511,
+         0.47444
+        ],
+        [
+         0.47447,
+         0.5586
+        ],
+        [
+         0.55865,
+         0.6568
+        ],
+        [
+         0.65682,
+         0.67329
+        ]
+       ],
+       "complete_gaps": [
+        {
+         "between_bands": [
+          1,
+          2
+         ],
+         "from": 0.26985,
+         "to": 0.26986,
+         "gap_midgap_ratio": 3.723e-05
+        },
+        {
+         "between_bands": [
+          2,
+          3
+         ],
+         "from": 0.383,
+         "to": 0.42511,
+         "gap_midgap_ratio": 0.1042
+        },
+        {
+         "between_bands": [
+          3,
+          4
+         ],
+         "from": 0.47444,
+         "to": 0.47447,
+         "gap_midgap_ratio": 6.552e-05
+        },
+        {
+         "between_bands": [
+          4,
+          5
+         ],
+         "from": 0.5586,
+         "to": 0.55865,
+         "gap_midgap_ratio": 9.602e-05
+        },
+        {
+         "between_bands": [
+          5,
+          6
+         ],
+         "from": 0.6568,
+         "to": 0.65682,
+         "gap_midgap_ratio": 2.382e-05
+        }
+       ]
+      }
+     }
+    },
+    "next_step": "Full arrays: read lightsmith://jobs/9050b153124c0110bb0b1d9f1ed5b36f/result (JSON) or lightsmith://jobs/9050b153124c0110bb0b1d9f1ed5b36f/result.csv, or call get_result. Check summary.warnings."
+   },
+   "text": "{\"status\": \"succeeded\", \"job_id\": \"9050b153124c0110bb0b1d9f1ed5b36f\", \"job\": {\"job_id\": \"9050b153124c0110bb0b1d9f1ed5b36f\", \"operation\": \"solve\", \"problem_kind\": \"bands\", \"status\": \"succeeded\", \"progress\": 1.0, \"stage\": \"done\", \"message\": null, \"method\": \"auto\", \"methods\": null, \"device\": \"auto\", \"label\": null, \"runner\": \"process\", \"created_at\": \"2026-11-09T23:51:29+00:00\", \"started_at\": \"2026-11-09T23:51:29+00:00\", \"finished_at\": \"2026-11-09T23:51:46+00:00\", \"elapsed_s\": 17.484, \"error\": null, \"resources\": {\"job\": \"lightsmith://jobs/9050b153124c0110bb0b1d9f1ed5b36f\", \"result\": \"lightsmith://jobs/9050b153124c0110bb0b1d9f1ed5b36f/result\", \"csv\": \"lightsmith://jobs/9050b153124c0110bb0b1d9f1ed5b36f/result.csv\", \"plot\": \"lightsmith://jobs/9050b153124c0110bb0b1d9f1ed5b36f/plot.png\"}, \"estimated_runtime_s\": 0.017}, \"summary\": {\"result_kind\": \"bands\", \"method\": \"pwe\", \"backend\": \"lightsmith-pwe\", \"warnings\": [], \"provenance\": {\"device\": \"cuda:0\", \"framework\": \"torch\", \"gpu_name\": \"NVIDIA GeForce RTX 5070\", \"precision\": \"double\", \"runtime_s\": 14.000307600013912, \"grid\": [128, 128]}, \"n_k_points\": 49, \"k_labels\": {\"0\": \"G\", \"16\": \"M\", \"32\": \"K\", \"48\": \"G\"}, \"units\": {\"frequency\": \"a/lambda (normalised)\"}, \"per_polarization\": {\"te\": {\"bands\": 6, \"band_ranges\": [[8.7611e-11, 0.28857], [0.48796, 0.63564], [0.52045, 0.70481], [0.64846, 0.73711], [0.71241, 0.77437], [0.81149, 0.93818]], \"complete_gaps\": [{\"between_bands\": [1, 2], \"from\": 0.28857, \"to\": 0.48796, \"gap_midgap_ratio\": 0.5136}, {\"between_bands\": [5, 6], \"from\": 0.77437, \"to\": 0.81149, \"gap_midgap_ratio\": 0.0468}]}, \"tm\": {\"bands\": 6, \"band_ranges\": [[0.0, 0.26985], [0.26986, 0.383], [0.42511, 0.47444], [0.47447, 0.5586], [0.55865, 0.6568], [0.65682, 0.67329]], \"complete_gaps\": [{\"between_bands\": [1, 2], \"from\": 0.26985, \"to\": 0.26986, \"gap_midgap_ratio\": 3.723e-05}, {\"between_bands\": [2, 3], \"from\": 0.383, \"to\": 0.42511, \"gap_midgap_ratio\": 0.1042}, {\"between_bands\": [3, 4], \"from\": 0.47444, \"to\": 0.47447, \"gap_midgap_ratio\": 6.552e-05}, {\"between_bands\": [4, 5], \"from\": 0.5586, \"to\": 0.55865, \"gap_midgap_ratio\": 9.602e-05}, {\"between_bands\": [5, 6], \"from\": 0.6568, \"to\": 0.65682, \"gap_midgap_ratio\": 2.382e-05}]}}}, \"next_step\": \"Full arrays: read lightsmith://jobs/9050b153124c0110bb0b1d9f1ed5b36f/result (JSON) or lightsmith://jobs/9050b153124c0110bb0b1d9f1ed5b36f/result.csv, or call get_result. Check summary.warnings.\"}",
+   "images": [],
+   "error": null,
+   "duration_s": 17.708,
+   "started_at": 1794268289.0014496,
+   "source": "mcp"
+  }
+ ],
+ "messages": [
+  {
+   "role": "user",
+   "content": "Triangular lattice of air holes (radius 0.45a) in a dielectric with \u03b5 = 13, 2D. Is there a complete band gap (both TE and TM)? Give the gap-to-midgap ratio of the largest complete gap.\n\n---\nReport your result by calling submit_answer with these values:\n- `complete_gap_midgap_ratio` (fraction): largest complete gap / midgap (0 if none)"
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "CAQSlggKEAgTGAI4AUIIdGhpbmtpbmcSDHE2D+/UIZJqt/9doxoMIDuEGFd+1VmqYAuXIjC06rGx/ACo1ry8ekPsMFPX2nb1ht0tO6QHRC8DlX7lSR3lDCRUWzhXyRfXgPm1qDoqswdTDjdOIYnBpJDsKvQ3GnUB6jN30lToOSZYYoGW9RD190WFr5SlFNuA64eBCJnoJL1eyVUataJuxbOYm3b6UqrpV4rH0VGnFClVQSOx36n/7BwU3iQic5zOguawyUslqJnx7w4NI46uSOz74Ft7PNC4sIR9TUCI3rKecwoBjP+hXJ3Ee9mvYjBPN92i4z5WO/oFysxp7rmnuIcGFyRYaPJzLLt8rcaVs9NG+GlQjdq6zuJY8/ubU0d81l8PrJz2/1dWJAkNnh7I1BWf5V4teUwRnhSpcKs2aBEYcmPBujA0sCUh2ZDvO2YhKe/Z+PoN21/6OjvIvwqNvcDJb4huF/prq2Bx7ADJnbn4i2QG9HIRhzJuly67jGvm5mUPTDEF6CdTksENDIxrEvV3oRc8vx2jc+BUJaOx/HuICD+GHcCjJMjwy+FxomqW4jGGK7Q0wV2++mxIjughQvMBO3Iy0T9mdEzPXSzBnz/yuHFobzBfG14YahZ9daQq7oooqDd0jtacUQylEk9qDIAVJXFVN2M2MRyX/SjSGeIWPx5TcT69Xc44RgeW6OVOH92eJUvQQguXO4DFoAIqVap4A3/vW8kOndjt3wGgQazGqORyJ9KxpSoPjCZyxBaSphwLvHGnldJUtSM6PqsWhDcD1tyMO94WYTsG/wwpyoDzsrZisSC3TqOnuHsTshhb6sGu1zHEnIZQfyKRQ3MveDKxqli56jXfoMrSLWJE7KuZToTHsnlUj3dAdZKwlTlJSMCun3sRW/cJmY/c/wB3h4q7wnPSBfQZBPZoA9Ud2ayM8pJ0q0+OjUv+5X8bCY+dVn1P7ef6lZE+UTB3csY/rDLiHozSKTDuPO2A7/REQDPsW1lTaHZJxCkxGclExnr6qH9NmG2XYwRtLGh1qUm+HEXyk1Qxm58QqMiu2FLhQi8gudu1Ugb/86IvupXia+PNH3FRl7bOEmcTFfKmQ0TfpMIh/9hnfwAbFSQfYDsNCUmCiVuVhKz0xrPD5JSkFCx2u5wIH/umswE0AaahkKT7vvph1EmDaWRLtHhDCnrogwCMnfJsIGq8WmVWwbBXhXWAnjy7IFcR4VdX6s3MfwyK6yZZQcqSpJJpQoFG37vPO/VVQYsLWvXK55pp1xJssHqg0EyY/mOUna10uD2CTp/5imtFxnNiFgvPEg5MujPtzmxyMabw/uDWxtJzEoRedhXpfzNxGyJnyUgFig2pRumayY+rdiXtkGcZZqBG/3KxEV/YcCyNcWXL4VFh8RgB",
+     "thinking": "I'm trying to recall the known complete band gap for a triangular lattice of air holes in \u03b5=13, and I think it's around 18.6%, though I'm not sure whether the radius was 0.45a or 0.48a. The figure in the textbook seems to show the TE and TM gaps overlapping at that radius.\n\nI'm checking whether the 18.6% complete gap holds up against what I remember from the book, which gave around 19% for this setup. Then I'll run the simulation to settle the radius and the number.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_01UgSbyPojZXoBUjhYcKipyr",
+     "input": {
+      "kind": "bands"
+     },
+     "name": "get_schema",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_01UgSbyPojZXoBUjhYcKipyr",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\n  \"kind\": \"bands\",\n  \"schema\": {\n    \"$defs\": {\n      \"Ball\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"ball\",\n            \"default\": \"ball\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Radius Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"radius_nm\"\n        ],\n        \"title\": \"Ball\",\n        \"type\": \"object\"\n      },\n      \"Box\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"box\",\n            \"default\": \"box\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"size_nm\": {\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Size Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"size_nm\"\n        ],\n        \"title\": \"Box\",\n        \"type\": \"object\"\n      },\n      \"Circle\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"circle\",\n            \"default\": \"circle\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Radius Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"radius_nm\"\n        ],\n        \"title\": \"Circle\",\n        \"type\": \"object\"\n      },\n      \"ConstantIndex\": {\n        \"additionalProperties\": false,\n        \"description\": \"Wavelength-independent complex refractive index n + ik.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"constant_index\",\n            \"default\": \"constant_index\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"n_real\": {\n            \"description\": \"Real part of the refractive index.\",\n            \"title\": \"N Real\",\n            \"type\": \"number\"\n          },\n          \"n_imag\": {\n            \"default\": 0.0,\n            \"description\": \"Extinction coefficient k (>= 0 for loss).\",\n            \"minimum\": 0,\n            \"title\": \"N Imag\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"n_real\"\n        ],\n        \"title\": \"ConstantIndex\",\n        \"type\": \"object\"\n      },\n      \"ConstantPermittivity\": {\n        \"additionalProperties\": false,\n        \"description\": \"Wavelength-independent complex relative permittivity.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"constant_permittivity\",\n            \"default\": \"constant_permittivity\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_real\": {\n            \"title\": \"Eps Real\",\n            \"type\": \"number\"\n          },\n          \"eps_imag\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Eps Imag\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"eps_real\"\n        ],\n        \"title\": \"ConstantPermittivity\",\n        \"type\": \"object\"\n      },\n      \"Drude\": {\n        \"additionalProperties\": false,\n        \"description\": \"eps(w) = eps_inf - wp^2 / (w^2 + i*gamma*w), energies in eV.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"drude\",\n            \"default\": \"drude\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_inf\": {\n            \"default\": 1.0,\n            \"title\": \"Eps Inf\",\n            \"type\": \"number\"\n          },\n          \"wp_ev\": {\n            \"description\": \"Plasma frequency in eV.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Wp Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"description\": \"Damping rate in eV.\",\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"wp_ev\",\n          \"gamma_ev\"\n        ],\n        \"title\": \"Drude\",\n        \"type\": \"object\"\n      },\n      \"DrudeLorentz\": {\n        \"additionalProperties\": false,\n        \"description\": \"eps(w) = eps_inf - wp^2/(w^2 + i g w) + sum_j d_j w0_j^2 / (w0_j^2 - w^2 - i G_j w).\\n\\nThe form FDTD needs for auxiliary-differential-equation dispersion.\\nFit one to measured data with :func:`lightsmith.materials_fit.fit_drude_lorentz`.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"drude_lorentz\",\n            \"default\": \"drude_lorentz\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_inf\": {\n            \"default\": 1.0,\n            \"title\": \"Eps Inf\",\n            \"type\": \"number\"\n          },\n          \"wp_ev\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Wp Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          },\n          \"poles\": {\n            \"items\": {\n              \"$ref\": \"#/$defs/LorentzPole\"\n            },\n            \"title\": \"Poles\",\n            \"type\": \"array\"\n          }\n        },\n        \"title\": \"DrudeLorentz\",\n        \"type\": \"object\"\n      },\n      \"Ellipse\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"ellipse\",\n            \"default\": \"ellipse\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"semi_axes_nm\": {\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Semi Axes Nm\",\n            \"type\": \"array\"\n          },\n          \"angle_deg\": {\n            \"default\": 0.0,\n            \"title\": \"Angle Deg\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"semi_axes_nm\"\n        ],\n        \"title\": \"Ellipse\",\n        \"type\": \"object\"\n      },\n      \"KPoint\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"label\": {\n            \"title\": \"Label\",\n            \"type\": \"string\"\n          },\n          \"reduced\": {\n            \"description\": \"Coordinates in units of the reciprocal lattice vectors.\",\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Reduced\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"label\",\n          \"reduced\"\n        ],\n        \"title\": \"KPoint\",\n        \"type\": \"object\"\n      },\n      \"LibraryMaterial\": {\n        \"additionalProperties\": false,\n        \"description\": \"Measured n, k bundled with lightsmith, e.g. ``{\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\",\\n\\\"dataset\\\": \\\"Johnson-Christy\\\"}``. Linear interpolation in n and k, no extrapolation.\\n\\nNames and datasets accept aliases (\\\"gold\\\", \\\"JC\\\") and are stored in canonical form;\\nan omitted dataset is filled with the material's default so the spec stays\\nreproducible. See :func:`list_materials`.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"library\",\n            \"default\": \"library\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"name\": {\n            \"description\": \"Material, e.g. 'Au', 'Ag', 'Al', 'Cu', 'Si', 'TiO2', 'SiO2', 'H2O'.\",\n            \"title\": \"Name\",\n            \"type\": \"string\"\n          },\n          \"dataset\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Dataset, e.g. 'Johnson-Christy'; omitted = material default.\",\n            \"title\": \"Dataset\"\n          }\n        },\n        \"required\": [\n          \"name\"\n        ],\n        \"title\": \"LibraryMaterial\",\n        \"type\": \"object\"\n      },\n      \"LorentzPole\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"delta_eps\": {\n            \"description\": \"Oscillator strength (permittivity step).\",\n            \"title\": \"Delta Eps\",\n            \"type\": \"number\"\n          },\n          \"omega0_ev\": {\n            \"description\": \"Resonance energy in eV.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Omega0 Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"description\": \"Damping in eV.\",\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"delta_eps\",\n          \"omega0_ev\",\n          \"gamma_ev\"\n        ],\n        \"title\": \"LorentzPole\",\n        \"type\": \"object\"\n      },\n      \"Polygon\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"polygon\",\n            \"default\": \"polygon\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"vertices_nm\": {\n            \"items\": {\n              \"maxItems\": 2,\n              \"minItems\": 2,\n              \"prefixItems\": [\n                {\n                  \"type\": \"number\"\n                },\n                {\n                  \"type\": \"number\"\n                }\n              ],\n              \"type\": \"array\"\n            },\n            \"minItems\": 3,\n            \"title\": \"Vertices Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"vertices_nm\"\n        ],\n        \"title\": \"Polygon\",\n        \"type\": \"object\"\n      },\n      \"Prism\": {\n        \"additionalProperties\": false,\n        \"description\": \"A 2D profile in the xy plane extruded from z_min to z_max (with optional sidewall angle).\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"prism\",\n            \"default\": \"prism\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"profile\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"circle\": \"#/$defs/Circle\",\n                \"ellipse\": \"#/$defs/Ellipse\",\n                \"polygon\": \"#/$defs/Polygon\",\n                \"rectangle\": \"#/$defs/Rectangle\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/Rectangle\"\n              },\n              {\n                \"$ref\": \"#/$defs/Circle\"\n              },\n              {\n                \"$ref\": \"#/$defs/Ellipse\"\n              },\n              {\n                \"$ref\": \"#/$defs/Polygon\"\n              }\n            ],\n            \"title\": \"Profile\"\n          },\n          \"z_min_nm\": {\n            \"title\": \"Z Min Nm\",\n            \"type\": \"number\"\n          },\n          \"z_max_nm\": {\n            \"title\": \"Z Max Nm\",\n            \"type\": \"number\"\n          },\n          \"sidewall_angle_deg\": {\n            \"default\": 0.0,\n            \"description\": \"0 = vertical; positive = narrower at the top.\",\n            \"title\": \"Sidewall Angle Deg\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"profile\",\n          \"z_min_nm\",\n          \"z_max_nm\"\n        ],\n        \"title\": \"Prism\",\n        \"type\": \"object\"\n      },\n      \"Rectangle\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"rectangle\",\n            \"default\": \"rectangle\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"size_nm\": {\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Size Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"size_nm\"\n        ],\n        \"title\": \"Rectangle\",\n        \"type\": \"object\"\n      },\n      \"Structure\": {\n        \"additionalProperties\": false,\n        \"description\": \"A material region. Later structures override earlier ones where they overlap.\",\n        \"properties\": {\n          \"name\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"title\": \"Name\"\n          },\n          \"geometry\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"ball\": \"#/$defs/Ball\",\n                \"box\": \"#/$defs/Box\",\n                \"prism\": \"#/$defs/Prism\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/Prism\"\n              },\n              {\n                \"$ref\": \"#/$defs/Box\"\n              },\n              {\n                \"$ref\": \"#/$defs/Ball\"\n              }\n            ],\n            \"title\": \"Geometry\"\n          },\n          \"material\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Material\"\n          }\n        },\n        \"required\": [\n          \"geometry\",\n          \"material\"\n        ],\n        \"title\": \"Structure\",\n        \"type\": \"object\"\n      },\n      \"Structure2D\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"name\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"title\": \"Name\"\n          },\n          \"profile\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"circle\": \"#/$defs/Circle\",\n                \"ellipse\": \"#/$defs/Ellipse\",\n                \"polygon\": \"#/$defs/Polygon\",\n                \"rectangle\": \"#/$defs/Rectangle\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/Rectangle\"\n              },\n              {\n                \"$ref\": \"#/$defs/Circle\"\n              },\n              {\n                \"$ref\": \"#/$defs/Ellipse\"\n              },\n              {\n                \"$ref\": \"#/$defs/Polygon\"\n              }\n            ],\n            \"title\": \"Profile\"\n          },\n          \"material\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Material\"\n          }\n        },\n        \"required\": [\n          \"profile\",\n          \"material\"\n        ],\n        \"title\": \"Structure2D\",\n        \"type\": \"object\"\n      },\n      \"Tabulated\": {\n        \"additionalProperties\": false,\n        \"description\": \"Tabulated n, k data, linearly interpolated (no extrapolation).\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"tabulated\",\n            \"default\": \"tabulated\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"wavelength_nm\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"Wavelength Nm\",\n            \"type\": \"array\"\n          },\n          \"n_real\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"N Real\",\n            \"type\": \"array\"\n          },\n          \"n_imag\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"N Imag\",\n            \"type\": \"array\"\n          },\n          \"source\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Citation / provenance of the data.\",\n            \"title\": \"Source\"\n          }\n        },\n        \"required\": [\n          \"wavelength_nm\",\n          \"n_real\",\n          \"n_imag\"\n        ],\n        \"title\": \"Tabulated\",\n        \"type\": \"object\"\n      }\n    },\n    \"additionalProperties\": false,\n    \"description\": \"Band structure of a photonic crystal along a k-path.\",\n    \"properties\": {\n      \"kind\": {\n        \"const\": \"bands\",\n        \"default\": \"bands\",\n        \"title\": \"Kind\",\n        \"type\": \"string\"\n      },\n      \"dimension\": {\n        \"default\": 2,\n        \"enum\": [\n          2,\n          3\n        ],\n        \"title\": \"Dimension\",\n        \"type\": \"integer\"\n      },\n      \"lattice_vectors_nm\": {\n        \"items\": {\n          \"maxItems\": 3,\n          \"minItems\": 3,\n          \"prefixItems\": [\n            {\n              \"type\": \"number\"\n            },\n            {\n              \"type\": \"number\"\n            },\n            {\n              \"type\": \"number\"\n            }\n          ],\n          \"type\": \"array\"\n        },\n        \"maxItems\": 3,\n        \"minItems\": 2,\n        \"title\": \"Lattice Vectors Nm\",\n        \"type\": \"array\"\n      },\n      \"background\": {\n        \"discriminator\": {\n          \"mapping\": {\n            \"constant_index\": \"#/$defs/ConstantIndex\",\n            \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n            \"drude\": \"#/$defs/Drude\",\n            \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n            \"library\": \"#/$defs/LibraryMaterial\",\n            \"tabulated\": \"#/$defs/Tabulated\"\n          },\n          \"propertyName\": \"kind\"\n        },\n        \"oneOf\": [\n          {\n            \"$ref\": \"#/$defs/ConstantIndex\"\n          },\n          {\n            \"$ref\": \"#/$defs/ConstantPermittivity\"\n          },\n          {\n            \"$ref\": \"#/$defs/Drude\"\n          },\n          {\n            \"$ref\": \"#/$defs/DrudeLorentz\"\n          },\n          {\n            \"$ref\": \"#/$defs/Tabulated\"\n          },\n          {\n            \"$ref\": \"#/$defs/LibraryMaterial\"\n          }\n        ],\n        \"title\": \"Background\"\n      },\n      \"structures_2d\": {\n        \"description\": \"Unit-cell inclusions for 2D crystals.\",\n        \"items\": {\n          \"$ref\": \"#/$defs/Structure2D\"\n        },\n        \"title\": \"Structures 2D\",\n        \"type\": \"array\"\n      },\n      \"structures\": {\n        \"description\": \"Unit-cell inclusions for 3D crystals.\",\n        \"items\": {\n          \"$ref\": \"#/$defs/Structure\"\n        },\n        \"title\": \"Structures\",\n        \"type\": \"array\"\n      },\n      \"k_path\": {\n        \"items\": {\n          \"$ref\": \"#/$defs/KPoint\"\n        },\n        \"minItems\": 2,\n        \"title\": \"K Path\",\n        \"type\": \"array\"\n      },\n      \"points_per_segment\": {\n        \"default\": 16,\n        \"minimum\": 1,\n        \"title\": \"Points Per Segment\",\n        \"type\": \"integer\"\n      },\n      \"num_bands\": {\n        \"default\": 8,\n        \"minimum\": 1,\n        \"title\": \"Num Bands\",\n        \"type\": \"integer\"\n      },\n      \"polarization\": {\n        \"default\": \"both\",\n        \"description\": \"2D only: TE = E in plane, TM = E along z.\",\n        \"enum\": [\n          \"te\",\n          \"tm\",\n          \"both\"\n        ],\n        \"title\": \"Polarization\",\n        \"type\": \"string\"\n      },\n      \"options\": {\n        \"additionalProperties\": {\n          \"additionalProperties\": true,\n          \"type\": \"object\"\n        },\n        \"title\": \"Options\",\n        \"type\": \"object\"\n      }\n    },\n    \"required\": [\n      \"lattice_vectors_nm\",\n      \"background\",\n      \"k_path\"\n    ],\n    \"title\": \"BandProblem\",\n    \"type\": \"object\"\n  },\n  \"conventions\": \"Lightsmith conventions (fixed; changing them needs a schema version bump):\\n- Lengths in nm. Wavelengths are vacuum wavelengths in nm.\\n- Time dependence exp(-i omega t): absorbing materials have Im(eps) > 0 and Im(n) > 0.\\n- Cross sections in nm^2; efficiencies Q = C / (pi r_eq^2), r_eq = volume-equivalent radius of all particles.\\n- layer_stack / periodic: layers listed from the superstrate (incidence side) to the substrate; light travels +z.\\n  R is measured in the superstrate, T in the substrate.\\n- mode: cross-section in the xy plane, propagation along +z.\\n- device: ports are planes whose normal is the axis where size_nm is zero; direction is into the device.\\n- problem.options[<method or backend name>] holds solver options, validated by that backend.\\n- Materials: {\\\"kind\\\": \\\"constant_index\\\", \\\"n_real\\\": .., \\\"n_imag\\\": ..}, {\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\"},\\n  drude, drude_lorentz, tabulated, constant_permittivity. FDTD needs dispersive models (fit_drude_lorentz).\\n- Results carry provenance and warnings: read the warnings before trusting the numbers.\\n\",\n  \"backends\": [\n    {\n      \"name\": \"lightsmith-pwe\",\n      \"method\": \"pwe\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 0\n    }\n  ],\n  \"example\": {\n    \"kind\": \"bands\",\n    \"lattice_vectors_nm\": [\n      [\n        500,\n        0,\n        0\n      ],\n      [\n        0,\n        500,\n        0\n      ]\n    ],\n    \"background\": {\n      \"kind\": \"constant_index\",\n      \"n_real\": 1.0\n    },\n    \"structures_2d\": [\n      {\n        \"profile\": {\n          \"kind\": \"circle\",\n          \"radius_nm\": 100\n        },\n        \"material\": {\n          \"kind\": \"constant_permittivity\",\n          \"eps_real\": 8.9\n        }\n      }\n    ],\n    \"k_path\": [\n      {\n        \"label\": \"G\",\n        \"reduced\": [\n          0,\n          0,\n          0\n        ]\n      },\n      {\n        \"label\": \"X\",\n        \"reduced\": [\n          0.5,\n          0,\n          0\n        ]\n      },\n      {\n        \"label\": \"M\",\n        \"reduced\": [\n          0.5,\n          0.5,\n          0\n        ]\n      },\n      {\n        \"label\": \"G\",\n        \"reduced\": [\n          0,\n          0,\n          0\n        ]\n      }\n    ],\n    \"points_per_segment\": 8,\n    \"num_bands\": 6,\n    \"polarization\": \"tm\"\n  }\n}"
+      }
+     ],
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "CAQS1QoKEAgTGAI4AUIIdGhpbmtpbmcSDFPOmAc6XAe1deBSnBoMF2/j9zgXYsu0tstBIjAC+zfuDdjr/HwFjrE6658wF0O+r4BYzI28LnmYGcAuuAkwrU6ruGJ9auQ3ugrq5hwq8gkzM43J981bR1bAak/9vZPvVbIo6kf2IxYpYJoqsMbt4AJKlGsYFSSfkROVwW2D1yXjSUWDzeZSX/xUz12M/cSWqrMaSnhCcOkb6Vac57Vh+G98b0vKMaLiT7Er3atU1G0WTUHd2hMdd+4cikLW+EaAQlJziNRvpOvWzYnSbyoAE7oc3Uy43//eelANo92DhkZjiOSvpYhfJMelbDU0gYhW1fZlxIk5PUm67FFit+DCqm4DvBWPRRcQjm7EPEymrL7QUmXVuXFYm9Jzkj0qisnRaOEW3FkveZNVj6o86qLyQFIN9vElI7Qi5ojbpAwMVdW1mRDHnm0bV3ztFGtPWYl2IdUs66YHilISm65DTN+fVG+WfAUAQ2UcPOxtQ3mkPl2dpQGPbRz214Q7Odu8tkEgsJVnLduzkgueVdohXzDN2OG1y9wQ343PX6ALm3m/SzHwR3FDw7GpSISejTn7snO03jfvP9fFqgu+0djk91Y9MkplsXOChyjoIkw9ceniye132PMjSG2X5Hz0Dzo9HNTZBqncZO/Kg6D/fIyLnoMlVZIdr77EYWpNIIIGE+P0Vkfw9GRZnNioH/Nv1lWMNMmJvd9ny9kC+RZ0x3BB8pYxz6QNCNn5de/Wph0OwwxIrPMh9sHZKDI7ki4Tby9RSiXHXytQj4sYSKqj9s2OPO1oMu7q54+YWCjjXrdFH3TPXMCRvH6BIpa1l9LgSpO8vC9IhtynZGB/rHObsU9gWP8fNJlGguqWiWggAZJM+FdjgH5IsvfodK8TQvgRYiItBcXmK5cFikKngr8ZSPvxkAJ6uZXuCSYKbiycq3fKbWTBzgoIsL9FjaP3c+sq/of9AnTlRBjtTURRy55DMZ/Lcwym8OnKlO2iWk3v05VlDrh1+f/ZAWIKgxI5shVGjBsxx57iL3ili6dlFwDdc6n99xwADQCf2V0JGuUnuIU8+QLR7EcQT65TlKiVVfFKM/MYXe4xMAiPB39pi5TS0e8w//1KeoOSW7qxAmrLakKLoEkxeAl7OBFb1PFJSfTgnEuZuymxAyvgnXKag6vGlfibm+lWIFh40z6JjSPj7UmsnCl8DBukvRITbujKa/uLAmdj5+6pWlFbMg/1eWnRy8ZCNQ1NvOSMBcQjZQ9Sln+D3rgKy6Av0WPLQbKA8OB+rtry31T9JaHo3PbbqudVJUwpnsht7AJGmG5XMsRixiGtn3spSnbA+zkEyIE1dI6ZFJMJyigxx8K2hdqypKcFT/PAxdxQGTCT8nOeOMk/CHFQ4BnRG8tQeDgVauTLg4GJdkNB66pyqpdsqkeTGzH+qrngMshNyqSTXPxB/g9EomrpjSkBAsx6b60OzIzKME8KdR1B9CiVbZDHrP9GliICI+FQaHFCHjCFnYHsR2cF8W+QZfQI2oYf+X19588NLv8iaAfPpvY9LjH+TH6S6fVi1aNUwcDvBLtzQK8MPDQoYeCDWkhGApJhtGzRqoXFGuUixUoqSxvriVcaw5df+sGt4obnwa9UDTKzpB2OQGRlUExa+QOY+bpe8iCmWwmNJ08bAeDTReT9iM1/bVH2zLB2njX9xfrfEwi3ItcvlyqJw8DtU0kphvaBHKBWl8R42qNMVNhUfGIceHxWr4NzcoMor/bMRoHihXjYSgRlR0qn24mzej5jFbpAHjZ2QDiJgU2qwaD1d+p4iScYAQ==",
+     "thinking": "I'm working out the reciprocal lattice vectors for a 1000 nm hexagonal lattice, and I've confirmed that M = 0.5 b2 has magnitude 2\u03c0/(a\u221a3). Now I'm checking whether K = (b1 + b2)/3 gives the right point in reciprocal space.\n\nI'm checking whether K = (1/3, 2/3) in the b1, b2 basis lands at the right spot, since the earlier candidate gave a magnitude that was off. With b1 and b2 at 120\u00b0, that combination works out to a magnitude of 2/3 in these units, which looks correct. M = (0, 0.5) also checks out, so I'll move on to comparing resolution and then solve with more bands and k-points.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_01FCmxEYR4mS2WsUMyU7rJtX",
+     "input": {
+      "problem": {
+       "kind": "bands",
+       "lattice_vectors_nm": [
+        [
+         1000,
+         0,
+         0
+        ],
+        [
+         500,
+         866.0254037844,
+         0
+        ]
+       ],
+       "background": {
+        "kind": "constant_permittivity",
+        "eps_real": 13
+       },
+       "structures_2d": [
+        {
+         "profile": {
+          "kind": "circle",
+          "radius_nm": 450
+         },
+         "material": {
+          "kind": "constant_permittivity",
+          "eps_real": 1
+         }
+        }
+       ],
+       "k_path": [
+        {
+         "label": "G",
+         "reduced": [
+          0,
+          0,
+          0
+         ]
+        },
+        {
+         "label": "M",
+         "reduced": [
+          0,
+          0.5,
+          0
+         ]
+        },
+        {
+         "label": "K",
+         "reduced": [
+          0.333333333333,
+          0.666666666667,
+          0
+         ]
+        },
+        {
+         "label": "G",
+         "reduced": [
+          0,
+          0,
+          0
+         ]
+        }
+       ],
+       "points_per_segment": 16,
+       "num_bands": 10,
+       "polarization": "both"
+      }
+     },
+     "name": "estimate",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_01FCmxEYR4mS2WsUMyU7rJtX",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\n  \"kind\": \"bands\",\n  \"estimate\": {\n    \"backend\": \"lightsmith-pwe\",\n    \"method\": \"pwe\",\n    \"framework\": \"torch\",\n    \"device\": \"cuda:0\",\n    \"gpu_name\": \"NVIDIA GeForce RTX 5070\",\n    \"solver\": {\n      \"te\": \"lobpcg\",\n      \"tm\": \"dense\"\n    },\n    \"num_plane_waves\": {\n      \"te\": 1024,\n      \"tm\": 349\n    },\n    \"matrix_size\": {\n      \"te\": 1024,\n      \"tm\": 349\n    },\n    \"grid\": {\n      \"te\": [\n        32,\n        32\n      ]\n    },\n    \"precision\": \"double\",\n    \"k_points\": 49,\n    \"polarizations\": [\n      \"te\",\n      \"tm\"\n    ],\n    \"memory_bytes\": 194881600,\n    \"eigensolves\": 98\n  },\n  \"budget_check\": {\n    \"ok\": true,\n    \"estimated_runtime_s\": 0.099,\n    \"runtime_basis\": \"rough\",\n    \"memory_gib\": 0.1815,\n    \"budget\": {\n      \"max_memory_gib\": 8.0,\n      \"max_runtime_s\": 1800.0\n    },\n    \"runtime_note\": \"order-of-magnitude guess; this backend reports no run time of its own\"\n  },\n  \"runs_on\": \"this machine\"\n}"
+      }
+     ],
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "CAQShAYKEAgTGAI4AUIIdGhpbmtpbmcSDNJbJr9Q5vWXSGd9ABoMLk3uWBS6ZtRuBWbTIjBKXJVDTrGSph2hA5ZhKs7/NU0f6D/bHeP93pboundmc0jAYY3ZwSJTbYgUALymSt8qoQXYVAIg0JkDtiujy+AAcVWcIO0qkxH2rCsvkg54i74lPTao6YVurTc3ttH84UiIZQuzFSImRhmoLj80qJVswZakvPq30rkL/jxu+bmuZL7p1xPgnoCJBHTCmTrBHGQhX66vAsnAbvsDpGvhiITXg/Ku10agGYlC34JeEE3yMidr7qll22pEDJgzst2ofjmw5RMuNvdoqsLtWiZfxj1evwDhGKhBDGNxQ6WWDRldKOCyR2K6P09XNBJa9+aZ92KQ1btfcCQw00jldJ/vJwlwVnf9Wwy8GQ1CYcWraZlWusX99wAlipymBHhlBQVU30dPA5s40zCEPCxkzrco3Vu8UOHjrxTt2m3bmwqEKEn73FJCnXTcl3TI/1GLPZZB0A/1FF1Wj+xKdQWGELXcJZDEG/n/k+Dch4nVJbJ+TTymUYtgtHENXqzpAy0/QzG3XReKoPnrvUK1JmR/zuqltm3t8qt4Lm1GRV+eVbTOOrXTelLfDCuZ6ltHKv6S/skroV4K2Xk0acV6a48DT2aBSrssbQoFjm16p4LRv26G67kTURuOm0+VylhnZIIbl3viUZnBY8hGu6nr52yUDeuP+0EZqw/UTrRAwtCTgijKpXFkmokaU8gMVVWqWqjhk/0LfCFGAba3d0JzECSiib4TKtMG/ELhHfgzrGsVzxBggdmJN3LfNQfS2jyfmtj3zAV23bYKnJa5JZyGabcfb4Ft7IneA9+bdUseRGhUejVgmR15J2BCMzr/b66+O5I0Zuhn1NDTWVIgZMGeloh1zM6x0C6wnXQo3OGCIsAEC4zIPO0tVB4DDPicVLfmbEzXctL//04wThQJig/iJmV40hRZhGohKem+k8ctD31pTQu4B4WUpP+Bxu2MQmzzhA+jah6jXLQcZ1AcGAE=",
+     "thinking": "I want a higher resolution, so I'm checking what options pwe has. I'll look at the discretization settings or list the available backends.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_01JuxPVgyWFBTEyeMHpCgCJL",
+     "input": {
+      "kind": "bands"
+     },
+     "name": "list_backends",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_01JuxPVgyWFBTEyeMHpCgCJL",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\n  \"kinds\": [\n    \"scattering\",\n    \"layer_stack\",\n    \"periodic\",\n    \"mode\",\n    \"device\",\n    \"bands\",\n    \"circuit\",\n    \"optimization\",\n    \"emission\"\n  ],\n  \"auto_order\": {\n    \"scattering\": [\n      \"mie\",\n      \"tmatrix\",\n      \"bem\",\n      \"dda\",\n      \"fdtd\"\n    ],\n    \"layer_stack\": [\n      \"tmm\",\n      \"rcwa\",\n      \"fdtd\"\n    ],\n    \"periodic\": [\n      \"rcwa\",\n      \"fdfd\",\n      \"fdtd\"\n    ],\n    \"mode\": [\n      \"fde\"\n    ],\n    \"device\": [\n      \"eme\",\n      \"bpm\",\n      \"fdfd\",\n      \"fdtd\"\n    ],\n    \"bands\": [\n      \"pwe\",\n      \"fdfd\"\n    ],\n    \"circuit\": [\n      \"circuit\"\n    ],\n    \"optimization\": [\n      \"inverse\"\n    ],\n    \"emission\": [\n      \"mie\",\n      \"fdtd\"\n    ]\n  },\n  \"backends\": [\n    {\n      \"name\": \"lightsmith-pwe\",\n      \"method\": \"pwe\",\n      \"problem_kinds\": [\n        \"bands\"\n      ],\n      \"license\": \"MIT\",\n      \"gpu\": true,\n      \"differentiable\": true,\n      \"available\": true,\n      \"unavailable_reason\": null,\n      \"citation\": \"Ho, Chan & Soukoulis, PRL 65, 3152 (1990); Johnson & Joannopoulos, Opt. Express 8, 173 (2001); Farjadpour et al., Opt. Lett. 31, 2972 (2006)\",\n      \"options_key\": \"problem.options['pwe'] or ['lightsmith-pwe']\",\n      \"options_schema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"solver\": {\n            \"default\": \"auto\",\n            \"description\": \"dense: Ho-Chan-Soukoulis matrices + batched eigh. lobpcg: matrix-free FFT operators with subpixel-smoothed eps. auto: dense for TM (matrix <= 2500), lobpcg for TE and 3D; setting only num_plane_waves forces dense, setting only resolution forces lobpcg.\",\n            \"enum\": [\n              \"auto\",\n              \"dense\",\n              \"lobpcg\"\n            ],\n            \"title\": \"Solver\",\n            \"type\": \"string\"\n          },\n          \"num_plane_waves\": {\n            \"anyOf\": [\n              {\n                \"minimum\": 1,\n                \"type\": \"integer\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Dense basis size (completed to a full |G| shell). Default 400 (2D) / 600 (3D) per unit-cell area/volume in a^d.\",\n            \"title\": \"Num Plane Waves\"\n          },\n          \"resolution\": {\n            \"anyOf\": [\n              {\n                \"minimum\": 4,\n                \"type\": \"integer\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"lobpcg grid points per lattice constant a (default 32 in 2D, 16 in 3D).\",\n            \"title\": \"Resolution\"\n          },\n          \"eps_fourier\": {\n            \"default\": \"auto\",\n            \"description\": \"Dense eps_hat: analytic shape transforms (needs non-overlapping inclusions) or a supersampled raster. auto = analytic when valid.\",\n            \"enum\": [\n              \"auto\",\n              \"analytic\",\n              \"raster\"\n            ],\n            \"title\": \"Eps Fourier\",\n            \"type\": \"string\"\n          },\n          \"subsamples\": {\n            \"anyOf\": [\n              {\n                \"minimum\": 1,\n                \"type\": \"integer\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Raster supersampling per axis (default 4 in 2D, 2 in 3D).\",\n            \"title\": \"Subsamples\"\n          },\n          \"reference_wavelength_nm\": {\n            \"anyOf\": [\n              {\n                \"exclusiveMinimum\": 0,\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Vacuum wavelength at which materials are evaluated. Needed for dispersive materials (default 2a, i.e. a/lambda = 0.5, with a warning).\",\n            \"title\": \"Reference Wavelength Nm\"\n          },\n          \"precision\": {\n            \"default\": \"auto\",\n            \"description\": \"auto = double, except single for the dense solver on a GPU (~1e-5 in a/lambda).\",\n            \"enum\": [\n              \"auto\",\n              \"single\",\n              \"double\"\n            ],\n            \"title\": \"Precision\",\n            \"type\": \"string\"\n          },\n          \"tol\": {\n            \"anyOf\": [\n              {\n                \"exclusiveMinimum\": 0,\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"LOBPCG relative residual (default 1e-6 double, 1e-4 single).\",\n            \"title\": \"Tol\"\n          },\n          \"max_iter\": {\n            \"default\": 400,\n            \"description\": \"LOBPCG iterations per k-point.\",\n            \"minimum\": 1,\n            \"title\": \"Max Iter\",\n            \"type\": \"integer\"\n          },\n          \"extra_bands\": {\n            \"anyOf\": [\n              {\n                \"minimum\": 0,\n                \"type\": \"integer\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"LOBPCG block padding (default max(2, num_bands/4)).\",\n            \"title\": \"Extra Bands\"\n          }\n        },\n        \"title\": \"PWEOptions\",\n        \"type\": \"object\"\n      }\n    }\n  ]\n}"
+      }
+     ],
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "CAQS1gUKEAgTGAI4AUIIdGhpbmtpbmcSDCxPPyo3dj5diAvvHBoMRn3/Y12zHIpp3gxOIjAHdXrQ+QWsjfii25e5b73zpSH85H6LdQDhZNpPcWXj4eby1scDtOH+tsBBQ5k7klcq8wRZEwiTOrLjeGeHAqPdIOoEmnSRAg1FmV4qpU/N6iGn2BDUP1mYOp+IK0Hwaj6X/1hYhjRMPfhlQTUs9AsXjFpcPXAvB5qyH3WmHFBXDu8tsGfBz9tQtVzydioy/4nc0/VVMWpIQByBNf+F3HvPIAh6vkHdtupbmGVDpWLjEI5nrI07y+U/PCRnrfEKo25jgEu4YOj1mJbSsIesbVkgJaG3wEKmVkDWs7KuirdwynK1F00RZlBosDX8PchfYsSnb7lgYLONQzkKOvakfEUyot609RYmeIXuDCIy3MCthGXrlHDntiFFmU52F4vEfDRwQnDSi9JlyExV3LClqKWwqIsuXwCMRRiHTfRe0ZbCIYfXVRlQQZrybv+CXAFfxMuf6jDujJiY9rN36yPYXqHYJ2jQNSm0AMK/a16F+fYvsJfdfOSS2KRabGLOvWx4yr/19zEhHqOKsfDP3jtw8ZIXwGcmfCsQCyKniOqo5wHSLwaJ28dBEUnVv1++PRim95nf8gCi1B8eFG/jVsdVn6DKNHKr1C9TuXJ0GgPTsJLx8DO6ahXhRqiz4XcxwKb3Bg0JdxwUcechZBEbqXu9QUEmwvQM2LwVh1eZFfjhnqBLVgYKcSgOvKNY7N+zfWuqpp9SXq7vzl5C3NRkGoaWBC/7RVRoajQS84n6VaElEmqWs9X9eZZGpZxzrbOiArHIuLtdM2BHQtWCOWauJDwQN9YYU06mBo2MZWztouLEPPM7YEf9xeWNtPcviZU5MVghQMM8+o3TVI7Gu6QzzqZWr1txcY0vF6bu9pzIPc/hJkhTNPtmF24Y/1Hk63YC8Qf3k/Rg8BqoSe8YAQ==",
+     "thinking": "I'm going with lobpcg at resolution 64 for both cases.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_0157y7rUgQqgksrxrAkMWJ2r",
+     "input": {
+      "problem": {
+       "kind": "bands",
+       "lattice_vectors_nm": [
+        [
+         1000,
+         0,
+         0
+        ],
+        [
+         500,
+         866.0254037844,
+         0
+        ]
+       ],
+       "background": {
+        "kind": "constant_permittivity",
+        "eps_real": 13
+       },
+       "structures_2d": [
+        {
+         "profile": {
+          "kind": "circle",
+          "radius_nm": 450
+         },
+         "material": {
+          "kind": "constant_permittivity",
+          "eps_real": 1
+         }
+        }
+       ],
+       "k_path": [
+        {
+         "label": "G",
+         "reduced": [
+          0,
+          0,
+          0
+         ]
+        },
+        {
+         "label": "M",
+         "reduced": [
+          0,
+          0.5,
+          0
+         ]
+        },
+        {
+         "label": "K",
+         "reduced": [
+          0.333333333333,
+          0.666666666667,
+          0
+         ]
+        },
+        {
+         "label": "G",
+         "reduced": [
+          0,
+          0,
+          0
+         ]
+        }
+       ],
+       "points_per_segment": 16,
+       "num_bands": 10,
+       "polarization": "both",
+       "options": {
+        "pwe": {
+         "solver": "lobpcg",
+         "resolution": 64
+        }
+       }
+      },
+      "wait_s": 120
+     },
+     "name": "solve",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_0157y7rUgQqgksrxrAkMWJ2r",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\"status\": \"succeeded\", \"job_id\": \"1414a14547ed9a41072dfc8f12ccff09\", \"job\": {\"job_id\": \"1414a14547ed9a41072dfc8f12ccff09\", \"operation\": \"solve\", \"problem_kind\": \"bands\", \"status\": \"succeeded\", \"progress\": 1.0, \"stage\": \"done\", \"message\": null, \"method\": \"auto\", \"methods\": null, \"device\": \"auto\", \"label\": null, \"runner\": \"process\", \"created_at\": \"2026-11-09T23:51:09+00:00\", \"started_at\": \"2026-11-09T23:51:09+00:00\", \"finished_at\": \"2026-11-09T23:51:21+00:00\", \"elapsed_s\": 11.656, \"error\": null, \"resources\": {\"job\": \"lightsmith://jobs/1414a14547ed9a41072dfc8f12ccff09\", \"result\": \"lightsmith://jobs/1414a14547ed9a41072dfc8f12ccff09/result\", \"csv\": \"lightsmith://jobs/1414a14547ed9a41072dfc8f12ccff09/result.csv\", \"plot\": \"lightsmith://jobs/1414a14547ed9a41072dfc8f12ccff09/plot.png\"}, \"estimated_runtime_s\": 0.008}, \"summary\": {\"result_kind\": \"bands\", \"method\": \"pwe\", \"backend\": \"lightsmith-pwe\", \"warnings\": [], \"provenance\": {\"device\": \"cuda:0\", \"framework\": \"torch\", \"gpu_name\": \"NVIDIA GeForce RTX 5070\", \"precision\": \"double\", \"runtime_s\": 8.334484599996358, \"grid\": [64, 64]}, \"n_k_points\": 49, \"k_labels\": {\"0\": \"G\", \"16\": \"M\", \"32\": \"K\", \"48\": \"G\"}, \"units\": {\"frequency\": \"a/lambda (normalised)\"}, \"per_polarization\": {\"te\": {\"bands\": 10, \"band_ranges\": [[2.8635e-10, 0.28903], [0.48816, 0.63674], [0.52072, 0.70441], [0.6483, 0.73787], [0.71367, 0.77565], [0.81059, 0.93951], [0.81671, 0.95011], [0.96273, 1.002], [0.98759, 1.0208], [1.0141, 1.1178]], \"complete_gaps\": [{\"between_bands\": [1, 2], \"from\": 0.28903, \"to\": 0.48816, \"gap_midgap_ratio\": 0.5124}, {\"between_bands\": [5, 6], \"from\": 0.77565, \"to\": 0.81059, \"gap_midgap_ratio\": 0.04405}, {\"between_bands\": [7, 8], \"from\": 0.95011, \"to\": 0.96273, \"gap_midgap_ratio\": 0.0132}]}, \"tm\": {\"bands\": 10, \"band_ranges\": [[0.0, 0.26987], [0.26996, 0.38317], [0.42514, 0.47449], [0.47467, 0.55877], [0.55892, 0.65701], [0.65723, 0.67375], [0.66832, 0.76387], [0.77202, 0.87464], [0.7935, 0.87487], [0.85781, 0.90428]], \"complete_gaps\": [{\"between_bands\": [1, 2], \"from\": 0.26987, \"to\": 0.26996, \"gap_midgap_ratio\": 0.0003338}, {\"between_bands\": [2, 3], \"from\": 0.38317, \"to\": 0.42514, \"gap_midgap_ratio\": 0.1038}, {\"between_bands\": [3, 4], \"from\": 0.47449, \"to\": 0.47467, \"gap_midgap_ratio\": 0.0003793}, {\"between_bands\": [4, 5], \"from\": 0.55877, \"to\": 0.55892, \"gap_midgap_ratio\": 0.0002632}, {\"between_bands\": [5, 6], \"from\": 0.65701, \"to\": 0.65723, \"gap_midgap_ratio\": 0.0003327}, {\"between_bands\": [7, 8], \"from\": 0.76387, \"to\": 0.77202, \"gap_midgap_ratio\": 0.01061}]}}}, \"next_step\": \"Full arrays: read lightsmith://jobs/1414a14547ed9a41072dfc8f12ccff09/result (JSON) or lightsmith://jobs/1414a14547ed9a41072dfc8f12ccff09/result.csv, or call get_result. Check summary.warnings.\"}"
+      }
+     ],
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "CAQSkQsKEAgTGAI4AUIIdGhpbmtpbmcSDFj3K1Bj7Q9YYeMrWBoMmWyv/iAT5sEq4Xo9IjD8vdhuqQjHdDuTsCaICEBRoxmy2b4xMzjnHb90l+5AK0cunSneEv847aWvzL33pywqrgrBUzu1QGgVq9MxjLldSitlsL0RqVsFrdlAxBN4iAjnNe0497V4nc3VKDgLiW2lZ+a+PJQaHAYF9J+eF91z4vFrR3fdao5eg0JuInCpi4ts86n3myi78kUdxHGurtAWXrgpkidio69pxtCuQbnXlur1GyzbaDsvukd+9ZCKGs9pDyrkbp6K3WSjtstd6xIZiylScQ+X0y8fDYue8polLUM28RnKiRLR48rM+Y0i2CcdBjAQemXmkmEFLS1dHyUnUNrNLZRtHRr53hHiT6eMU0wudUakOvO2Wn8Rg4VbbSwPy3SVs+i3Od9ZA3Rj9JlyIpkRjswlLVl3ZHZb7hnrGS+nh0GUzbcYkvyuQQbXPOHASumsXJKCUgWTbRS5Y3KiRkbeFJ/fCAAheHZ/25KxCRpGZXvGVJJM4rHil3iMRjFOPv9eyW0ADV3T2Xps6oCMMPY0Rc19xSG80DTgNEGPnTKRTgywZkhz+Ogpt07gfWdmjmVwoYvIa8DgV80AFxDABcgHgi+ZzmzNn2htjdwS2OOS/NsFBOG2jNfA5hEYSN+p/3/ngkOEwBcqyDTncVXVpv+RjEdiywjoLVS/lgxnK5gSMDxFH6fRANXZ+7NaQUyvT7CZkiDjwfq8emHj+HGZ/+hLLojxXdGjd4HvBDF8uSpcsCAo5mfxVpdgwY0knNRj9Xlce1UDRXkj9qB4DnXcNl4tVSiosMd+kSTnlAdOHssnL46o76xMZ8bpzhCvvslbjtiCH2Zwfx8bz7DPWthOxZfutV2KrLJe15r9l/Yzmke0kZnaHwREwwY+phqkTdLo0/XIxP4XEy7WUcAzmwwUmgiM7pMEHe32Kc+tZs5rs1xknqpmqll0LNmBE0ZQZM1VCnVwnBpDbMzphxx8A3MyarfMLIahTbvlMUUYrPuUfM4KXkA3ct46h4r91rldAfWHfepbj1dMxwOUiUDthjy5PGFoFuDL7t9dwnlgrlK3pz5PlWxUgc9F6PcKwxbpbBSSFUCfJMUcF3WKzVLx81oOGB3PIQvYHByjOayFjc2JIjVFFiuR/FOK8AEgOinZeN0WqTrcF7zNspqnfHnWh5bCVNF9gwJT1ry36+/fdtXtRQ3+xjsQ5coG/qqwULHUIfoZOVervWc53+d91daHt/Gt4+jtnwCq03UB5RUcowWyhbEBv4ggsEVn9L/HDGGqOVkEHR6cw33rvf+oRzAdubYSciuIz6B2ZF5ZpcddPJ2U1adG04D9YnnKI0R5zIAw6nHU+n56jlzHzbxkJJHncVXx6S1gMq6NBPkWUpP1/SU0tgShTI7BPEgS3eeD4Fo1Uv069tYQ70bs0cGXzf/+/EXHC0Wla3xMFdwrsWTl3Lp2ZZFa2zb7UXLhYR4taC7b74Y8EzcUnQBxc/obkXFddOAhQ0SE6aJKQO+uL6+gzMiJ+eKWVFMUj8wMrzUQ9b8Tpu8XTwO+RKS+zsOFYgP31Js8Fj+G3AwEr4lik65jmT0XPSjTZYOseNrdf2nKLLfEpNKQd6+02NND1RAjFal4RVb6AZPpiMPc7qdEPoRwgrlw5mR9FncHE3uxjLf+pg5k7gc5PRaMwYCJcY8Zot7SQtXcvFl/T34Q8Ygd3dBSF1+F+CVNrDe3tatYeWrE4WbWfLp2EYnjShuAdlfx86tCz1AvVBhwYbkr/x+yPYC3PJJIPgzdDg7M/YbLDhBlh/Pgo+0G1HOsfsgmdYoi7KxskDs5RMh2Z96jMuzenJZDnbmTRj1tgV8r7DUuqjN56FCmtY8YAQ==",
+     "thinking": "I'm checking the band overlap: the TE gap of roughly 0.29 to 0.49 seems wide, and the TM gap at 0.38 to 0.43 sits entirely inside it, so the complete gap is set by the TM window.\n\nThe TM 7-8 gap at 0.764-0.772 doesn't overlap the TE band 5 range in a way that matters, so I'm setting that aside. Then I'm reconsidering the 0.1038 ratio against the known r=0.48a result of 18.6%: a smaller radius should give a smaller gap, so ~10% looks plausible. I want to confirm convergence, so I'm going to run a TM-only calculation at a higher resolution.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_01LHBGoGB8GE4RjCNDCTRmrS",
+     "input": {
+      "problem": {
+       "kind": "bands",
+       "lattice_vectors_nm": [
+        [
+         1000,
+         0,
+         0
+        ],
+        [
+         500,
+         866.0254037844,
+         0
+        ]
+       ],
+       "background": {
+        "kind": "constant_permittivity",
+        "eps_real": 13
+       },
+       "structures_2d": [
+        {
+         "profile": {
+          "kind": "circle",
+          "radius_nm": 450
+         },
+         "material": {
+          "kind": "constant_permittivity",
+          "eps_real": 1
+         }
+        }
+       ],
+       "k_path": [
+        {
+         "label": "G",
+         "reduced": [
+          0,
+          0,
+          0
+         ]
+        },
+        {
+         "label": "M",
+         "reduced": [
+          0,
+          0.5,
+          0
+         ]
+        },
+        {
+         "label": "K",
+         "reduced": [
+          0.333333333333,
+          0.666666666667,
+          0
+         ]
+        },
+        {
+         "label": "G",
+         "reduced": [
+          0,
+          0,
+          0
+         ]
+        }
+       ],
+       "points_per_segment": 16,
+       "num_bands": 6,
+       "polarization": "both",
+       "options": {
+        "pwe": {
+         "solver": "lobpcg",
+         "resolution": 128
+        }
+       }
+      },
+      "wait_s": 300
+     },
+     "name": "solve",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_01LHBGoGB8GE4RjCNDCTRmrS",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\"status\": \"succeeded\", \"job_id\": \"9050b153124c0110bb0b1d9f1ed5b36f\", \"job\": {\"job_id\": \"9050b153124c0110bb0b1d9f1ed5b36f\", \"operation\": \"solve\", \"problem_kind\": \"bands\", \"status\": \"succeeded\", \"progress\": 1.0, \"stage\": \"done\", \"message\": null, \"method\": \"auto\", \"methods\": null, \"device\": \"auto\", \"label\": null, \"runner\": \"process\", \"created_at\": \"2026-11-09T23:51:29+00:00\", \"started_at\": \"2026-11-09T23:51:29+00:00\", \"finished_at\": \"2026-11-09T23:51:46+00:00\", \"elapsed_s\": 17.484, \"error\": null, \"resources\": {\"job\": \"lightsmith://jobs/9050b153124c0110bb0b1d9f1ed5b36f\", \"result\": \"lightsmith://jobs/9050b153124c0110bb0b1d9f1ed5b36f/result\", \"csv\": \"lightsmith://jobs/9050b153124c0110bb0b1d9f1ed5b36f/result.csv\", \"plot\": \"lightsmith://jobs/9050b153124c0110bb0b1d9f1ed5b36f/plot.png\"}, \"estimated_runtime_s\": 0.017}, \"summary\": {\"result_kind\": \"bands\", \"method\": \"pwe\", \"backend\": \"lightsmith-pwe\", \"warnings\": [], \"provenance\": {\"device\": \"cuda:0\", \"framework\": \"torch\", \"gpu_name\": \"NVIDIA GeForce RTX 5070\", \"precision\": \"double\", \"runtime_s\": 14.000307600013912, \"grid\": [128, 128]}, \"n_k_points\": 49, \"k_labels\": {\"0\": \"G\", \"16\": \"M\", \"32\": \"K\", \"48\": \"G\"}, \"units\": {\"frequency\": \"a/lambda (normalised)\"}, \"per_polarization\": {\"te\": {\"bands\": 6, \"band_ranges\": [[8.7611e-11, 0.28857], [0.48796, 0.63564], [0.52045, 0.70481], [0.64846, 0.73711], [0.71241, 0.77437], [0.81149, 0.93818]], \"complete_gaps\": [{\"between_bands\": [1, 2], \"from\": 0.28857, \"to\": 0.48796, \"gap_midgap_ratio\": 0.5136}, {\"between_bands\": [5, 6], \"from\": 0.77437, \"to\": 0.81149, \"gap_midgap_ratio\": 0.0468}]}, \"tm\": {\"bands\": 6, \"band_ranges\": [[0.0, 0.26985], [0.26986, 0.383], [0.42511, 0.47444], [0.47447, 0.5586], [0.55865, 0.6568], [0.65682, 0.67329]], \"complete_gaps\": [{\"between_bands\": [1, 2], \"from\": 0.26985, \"to\": 0.26986, \"gap_midgap_ratio\": 3.723e-05}, {\"between_bands\": [2, 3], \"from\": 0.383, \"to\": 0.42511, \"gap_midgap_ratio\": 0.1042}, {\"between_bands\": [3, 4], \"from\": 0.47444, \"to\": 0.47447, \"gap_midgap_ratio\": 6.552e-05}, {\"between_bands\": [4, 5], \"from\": 0.5586, \"to\": 0.55865, \"gap_midgap_ratio\": 9.602e-05}, {\"between_bands\": [5, 6], \"from\": 0.6568, \"to\": 0.65682, \"gap_midgap_ratio\": 2.382e-05}]}}}, \"next_step\": \"Full arrays: read lightsmith://jobs/9050b153124c0110bb0b1d9f1ed5b36f/result (JSON) or lightsmith://jobs/9050b153124c0110bb0b1d9f1ed5b36f/result.csv, or call get_result. Check summary.warnings.\"}"
+      }
+     ],
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "CAQSlQYKEAgTGAI4AUIIdGhpbmtpbmcSDL7QibKFNGdcDXrd8hoMl1Kl5e1sdBNDogYkIjCvJ7x+wrSq4+jMVrSCvB5QndIuHn/w2AbAA6dP/niCuc5Mne1v9/tzbFAH/DbBbZ8qsgXHpHutPUm+Rxs6MFvY9y37DhLOWpMs9iBrJ8JD/MSGYWjdiyQdszsE4w7XRzqT2jfdBn50TKceMSkGZKMhnEb3dKyeXb7SzgUmNoPFaoz6F0uYeEG4JwDBdz9XMeyBiGt6QRzAUn6DwEWrBi6/pAoEYmOZ9DEnCWakvhFgGcyih69vYVzmOORBATRVB8czXslFDkix7Aqab/f7NEPPeIJi1aBOVnFMXwCtF/osnbLcCv6LamkjTh0QTGPVOjM1E1ZjZIwqkM/vSYiK5ujU05+6NI4Ej4MMRvnVphW3sqfYjDllCoQUC+AVODq/GCfkPULr3/e4abf5U+ZvC5Jf9OuOjsERqBWvEmn80qacwvPgqDsa6eYNxNMR5Vph0J7wk3AtxxW9Jbid3k+PzH06QmHThKu79jjJ8TBuudqBgCvbnkwwg9IRKuM2Z2+v0zfMfG92TuypjhEFgL+84LjDwT2ZXMbWnTYPybzN/7XHB4XAlfsI12Z2aeTpMe8a6OKe03oEwj8gwDXein1o8mwqmCv4L1uSpdEkvDOcUALVCg/mta/FtMTZf8E9oQnXjf94/rPD4dUd9mDTvIbAKxJskcDJFpza8IE5fAiBPNGLO4yt8yxlVaD+ROngLOSmVWgvuAvIeUXb6na0GtySTQMHFxhEAbJ+WiXJdZE9e1wbOAOGduY/WkVDI2wbKEqs5kWm7MRGFHai9vnQyVQFibgi0ITGq8aukMIYwHw8uRTtjVoumrBvAJululNAhhkbgFKp/KPQDUZo+aBEUz+Wby+msasXlPI4FKDOvStPDHp4zr6YDDaT+TxYa+1NkOBkuc3AKyc0bRgMG4+K08f3TxpakglCPB1yf4pWTkulvdmw7LtvGsTonsY3A2COnTuOkzeKbA0ht945eUce8hMspjt9aI8flb8YAQ==",
+     "thinking": "The convergence has settled at 0.1042, and the complete gap runs from 0.383 to 0.4251, with a midgap of 0.4041.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_015FEQhBMjNrguMMDWXyC4Jc",
+     "input": {
+      "values": {
+       "complete_gap_midgap_ratio": 0.104
+      },
+      "declined": false,
+      "concerns": [
+       "The k-path was only \u0393\u2013M\u2013K\u2013\u0393, the edge of the irreducible Brillouin zone, with 16 points per segment. For this high-symmetry lattice the band edges usually lie on that path, so this is the standard approach.",
+       "Polarization naming: TE means E in the plane (H along z) and TM means E along z.",
+       "The solver also listed some very small TM 'gaps' (smaller than 1e-3). These come from bands that touch or are degenerate along the path. They are artifacts of sampling the bands at discrete k-points, not real gaps."
+      ],
+      "summary": "Yes, there is a complete 2D band gap: about 10.4% of the midgap frequency. I set up a triangular lattice of air holes with r = 0.45a in a background with \u03b5 = 13. I then computed the band structure with the plane-wave expansion method for both polarizations along \u0393\u2013M\u2013K\u2013\u0393.\n\n- **TE (E in plane):** there is a large gap between bands 1 and 2, from a/\u03bb \u2248 0.2886 to 0.4880 (gap-to-midgap ratio about 51%).\n- **TM (E along z):** there is a gap between bands 2 and 3, from a/\u03bb \u2248 0.3830 to 0.4251.\n- **Complete gap:** the TM gap lies entirely inside the TE gap, so the complete gap is a/\u03bb \u2248 0.383\u20130.425. The midgap frequency is about 0.404, so the gap-to-midgap ratio is \u0394\u03c9/\u03c9_mid \u2248 0.104 (10.4%).\n\nNo other TE and TM gaps overlap in the first 6\u201310 bands. The result is stable as the grid is refined: 0.1038 at 64 grid points per lattice constant and 0.1042 at 128. As a rough cross-check, I recall Joannopoulos et al. quoting about 19% for r = 0.48a, and a smaller gap at r = 0.45a fits the expected trend."
+     },
+     "name": "submit_answer",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_015FEQhBMjNrguMMDWXyC4Jc",
+     "content": "Answer recorded."
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,1753 @@
+{
+ "task_id": "per-tio2-metasurface",
+ "agent": "claude:claude-opus-5-5:high",
+ "prompt": "Metasurface: square lattice, 400 nm pitch, of TiO2 nanopillars (n = 2.4, lossless), 100 nm radius and 300 nm tall, on a glass substrate (n = 1.46), air above. Total reflectance at 700 nm for unpolarized light at normal incidence?\n\n---\nReport your result by calling submit_answer with these values:\n- `reflectance` (fraction (0-1)): total reflectance (all orders), unpolarized",
+ "answer": {
+  "values": {
+   "reflectance": 0.0399
+  },
+  "declined": false,
+  "concerns": [
+   "I assumed the light comes in from the air side, through the pillars and into the glass. The reflectance is measured in air.",
+   "I treated the glass as a semi-infinite substrate, so the reflection from the back surface of the glass is not included."
+  ],
+  "summary": "At 700 nm and normal incidence, the total reflectance is about 0.040 (4.0%) for unpolarized light. Transmission into the glass is about 96%, and there is no absorption.\n\n**Setup:** I simulated one 400 nm square unit cell with RCWA (rigorous coupled-wave analysis). It holds a TiO2 pillar (n = 2.4, radius 100 nm, height 300 nm) in an air layer, on semi-infinite glass (n = 1.46).\n\n**Polarization:** s and p gave the same result because the lattice has square symmetry and the light hits at normal incidence. Their average, which is the unpolarized value, is the same number.\n\n**Diffraction:** The 400 nm pitch is shorter than the wavelength in glass (700 / 1.46 \u2248 479 nm), so only the zeroth order propagates. The total reflectance is therefore the specular reflectance.\n\n**Convergence:** Increasing the number of Fourier harmonics from 225 (15\u00d715) to 441 (21\u00d721) changed R only from 0.03985 to 0.03994. Energy is conserved to within about 1e-5."
+ },
+ "final_text": "",
+ "stop": "submitted",
+ "error": null,
+ "notes": [],
+ "turns": 5,
+ "usage": {
+  "input_tokens": 12,
+  "output_tokens": 1715,
+  "cache_creation_input_tokens": 20588,
+  "cache_read_input_tokens": 63832
+ },
+ "cost_usd": 0.1500544,
+ "wall_s": 41.41,
+ "grade": {
+  "task_id": "per-tio2-metasurface",
+  "passed": false,
+  "score": 0.75,
+  "checks": [
+   {
+    "name": "value:reflectance",
+    "passed": true,
+    "required": true,
+    "detail": "reported 0.0399, reference 0.0387799 (abs 0.02)"
+   },
+   {
+    "name": "solved_kind",
+    "passed": true,
+    "required": true,
+    "detail": "2 successful periodic solve(s)"
+   },
+   {
+    "name": "estimate_before_solve",
+    "passed": false,
+    "required": true,
+    "detail": "estimates at calls [], first solve at call 1"
+   },
+   {
+    "name": "spec:lattice_a1_nm[0]",
+    "passed": true,
+    "required": true,
+    "detail": "found 400.0"
+   }
+  ]
+ },
+ "reference": {
+  "values": {
+   "reflectance": 0.03877989860831632
+  },
+  "method": "rcwa",
+  "backend": "lightsmith-rcwa",
+  "device": "cuda:0",
+  "runtime_s": 0.499,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "tool_calls": [
+  {
+   "name": "get_schema",
+   "arguments": {
+    "kind": "periodic"
+   },
+   "ok": true,
+   "result": {
+    "kind": "periodic",
+    "schema": {
+     "$defs": {
+      "Circle": {
+       "additionalProperties": false,
+       "properties": {
+        "kind": {
+         "const": "circle",
+         "default": "circle",
+         "title": "Kind",
+         "type": "string"
+        },
+        "center_nm": {
+         "default": [
+          0.0,
+          0.0
+         ],
+         "maxItems": 2,
+         "minItems": 2,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Center Nm",
+         "type": "array"
+        },
+        "radius_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Radius Nm",
+         "type": "number"
+        }
+       },
+       "required": [
+        "radius_nm"
+       ],
+       "title": "Circle",
+       "type": "object"
+      },
+      "ConstantIndex": {
+       "additionalProperties": false,
+       "description": "Wavelength-independent complex refractive index n + ik.",
+       "properties": {
+        "kind": {
+         "const": "constant_index",
+         "default": "constant_index",
+         "title": "Kind",
+         "type": "string"
+        },
+        "n_real": {
+         "description": "Real part of the refractive index.",
+         "title": "N Real",
+         "type": "number"
+        },
+        "n_imag": {
+         "default": 0.0,
+         "description": "Extinction coefficient k (>= 0 for loss).",
+         "minimum": 0,
+         "title": "N Imag",
+         "type": "number"
+        }
+       },
+       "required": [
+        "n_real"
+       ],
+       "title": "ConstantIndex",
+       "type": "object"
+      },
+      "ConstantPermittivity": {
+       "additionalProperties": false,
+       "description": "Wavelength-independent complex relative permittivity.",
+       "properties": {
+        "kind": {
+         "const": "constant_permittivity",
+         "default": "constant_permittivity",
+         "title": "Kind",
+         "type": "string"
+        },
+        "eps_real": {
+         "title": "Eps Real",
+         "type": "number"
+        },
+        "eps_imag": {
+         "default": 0.0,
+         "minimum": 0,
+         "title": "Eps Imag",
+         "type": "number"
+        }
+       },
+       "required": [
+        "eps_real"
+       ],
+       "title": "ConstantPermittivity",
+       "type": "object"
+      },
+      "Drude": {
+       "additionalProperties": false,
+       "description": "eps(w) = eps_inf - wp^2 / (w^2 + i*gamma*w), energies in eV.",
+       "properties": {
+        "kind": {
+         "const": "drude",
+         "default": "drude",
+         "title": "Kind",
+         "type": "string"
+        },
+        "eps_inf": {
+         "default": 1.0,
+         "title": "Eps Inf",
+         "type": "number"
+        },
+        "wp_ev": {
+         "description": "Plasma frequency in eV.",
+         "exclusiveMinimum": 0,
+         "title": "Wp Ev",
+         "type": "number"
+        },
+        "gamma_ev": {
+         "description": "Damping rate in eV.",
+         "minimum": 0,
+         "title": "Gamma Ev",
+         "type": "number"
+        }
+       },
+       "required": [
+        "wp_ev",
+        "gamma_ev"
+       ],
+       "title": "Drude",
+       "type": "object"
+      },
+      "DrudeLorentz": {
+       "additionalProperties": false,
+       "description": "eps(w) = eps_inf - wp^2/(w^2 + i g w) + sum_j d_j w0_j^2 / (w0_j^2 - w^2 - i G_j w).\n\nThe form FDTD needs for auxiliary-differential-equation dispersion.\nFit one to measured data with :func:`lightsmith.materials_fit.fit_drude_lorentz`.",
+       "properties": {
+        "kind": {
+         "const": "drude_lorentz",
+         "default": "drude_lorentz",
+         "title": "Kind",
+         "type": "string"
+        },
+        "eps_inf": {
+         "default": 1.0,
+         "title": "Eps Inf",
+         "type": "number"
+        },
+        "wp_ev": {
+         "default": 0.0,
+         "minimum": 0,
+         "title": "Wp Ev",
+         "type": "number"
+        },
+        "gamma_ev": {
+         "default": 0.0,
+         "minimum": 0,
+         "title": "Gamma Ev",
+         "type": "number"
+        },
+        "poles": {
+         "items": {
+          "$ref": "#/$defs/LorentzPole"
+         },
+         "title": "Poles",
+         "type": "array"
+        }
+       },
+       "title": "DrudeLorentz",
+       "type": "object"
+      },
+      "Ellipse": {
+       "additionalProperties": false,
+       "properties": {
+        "kind": {
+         "const": "ellipse",
+         "default": "ellipse",
+         "title": "Kind",
+         "type": "string"
+        },
+        "center_nm": {
+         "default": [
+          0.0,
+          0.0
+         ],
+         "maxItems": 2,
+         "minItems": 2,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Center Nm",
+         "type": "array"
+        },
+        "semi_axes_nm": {
+         "maxItems": 2,
+         "minItems": 2,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Semi Axes Nm",
+         "type": "array"
+        },
+        "angle_deg": {
+         "default": 0.0,
+         "title": "Angle Deg",
+         "type": "number"
+        }
+       },
+       "required": [
+        "semi_axes_nm"
+       ],
+       "title": "Ellipse",
+       "type": "object"
+      },
+      "Incidence": {
+       "additionalProperties": false,
+       "properties": {
+        "theta_deg": {
+         "default": 0.0,
+         "title": "Theta Deg",
+         "type": "number"
+        },
+        "phi_deg": {
+         "default": 0.0,
+         "title": "Phi Deg",
+         "type": "number"
+        },
+        "polarizations": {
+         "default": [
+          "s",
+          "p"
+         ],
+         "items": {
+          "enum": [
+           "s",
+           "p"
+          ],
+          "type": "string"
+         },
+         "title": "Polarizations",
+         "type": "array"
+        }
+       },
+       "title": "Incidence",
+       "type": "object"
+      },
+      "LibraryMaterial": {
+       "additionalProperties": false,
+       "description": "Measured n, k bundled with lightsmith, e.g. ``{\"kind\": \"library\", \"name\": \"Au\",\n\"dataset\": \"Johnson-Christy\"}``. Linear interpolation in n and k, no extrapolation.\n\nNames and datasets accept aliases (\"gold\", \"JC\") and are stored in canonical form;\nan omitted dataset is filled with the material's default so the spec stays\nreproducible. See :func:`list_materials`.",
+       "properties": {
+        "kind": {
+         "const": "library",
+         "default": "library",
+         "title": "Kind",
+         "type": "string"
+        },
+        "name": {
+         "description": "Material, e.g. 'Au', 'Ag', 'Al', 'Cu', 'Si', 'TiO2', 'SiO2', 'H2O'.",
+         "title": "Name",
+         "type": "string"
+        },
+        "dataset": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "description": "Dataset, e.g. 'Johnson-Christy'; omitted = material default.",
+         "title": "Dataset"
+        }
+       },
+       "required": [
+        "name"
+       ],
+       "title": "LibraryMaterial",
+       "type": "object"
+      },
+      "LorentzPole": {
+       "additionalProperties": false,
+       "properties": {
+        "delta_eps": {
+         "description": "Oscillator strength (permittivity step).",
+         "title": "Delta Eps",
+         "type": "number"
+        },
+        "omega0_ev": {
+         "description": "Resonance energy in eV.",
+         "exclusiveMinimum": 0,
+         "title": "Omega0 Ev",
+         "type": "number"
+        },
+        "gamma_ev": {
+         "description": "Damping in eV.",
+         "minimum": 0,
+         "title": "Gamma Ev",
+         "type": "number"
+        }
+       },
+       "required": [
+        "delta_eps",
+        "omega0_ev",
+        "gamma_ev"
+       ],
+       "title": "LorentzPole",
+       "type": "object"
+      },
+      "PatternedLayer": {
+       "additionalProperties": false,
+       "properties": {
+        "thickness_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Thickness Nm",
+         "type": "number"
+        },
+        "background": {
+         "discriminator": {
+          "mapping": {
+           "constant_index": "#/$defs/ConstantIndex",
+           "constant_permittivity": "#/$defs/ConstantPermittivity",
+           "drude": "#/$defs/Drude",
+           "drude_lorentz": "#/$defs/DrudeLorentz",
+           "library": "#/$defs/LibraryMaterial",
+           "tabulated": "#/$defs/Tabulated"
+          },
+          "propertyName": "kind"
+         },
+         "oneOf": [
+          {
+           "$ref": "#/$defs/ConstantIndex"
+          },
+          {
+           "$ref": "#/$defs/ConstantPermittivity"
+          },
+          {
+           "$ref": "#/$defs/Drude"
+          },
+          {
+           "$ref": "#/$defs/DrudeLorentz"
+          },
+          {
+           "$ref": "#/$defs/Tabulated"
+          },
+          {
+           "$ref": "#/$defs/LibraryMaterial"
+          }
+         ],
+         "title": "Background"
+        },
+        "shapes": {
+         "description": "Inclusions in one unit cell (xy).",
+         "items": {
+          "$ref": "#/$defs/Structure2D"
+         },
+         "title": "Shapes",
+         "type": "array"
+        }
+       },
+       "required": [
+        "thickness_nm",
+        "background"
+       ],
+       "title": "PatternedLayer",
+       "type": "object"
+      },
+      "Polygon": {
+       "additionalProperties": false,
+       "properties": {
+        "kind": {
+         "const": "polygon",
+         "default": "polygon",
+         "title": "Kind",
+         "type": "string"
+        },
+        "vertices_nm": {
+         "items": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+           {
+            "type": "number"
+           },
+           {
+            "type": "number"
+           }
+          ],
+          "type": "array"
+         },
+         "minItems": 3,
+         "title": "Vertices Nm",
+         "type": "array"
+        }
+       },
+       "required": [
+        "vertices_nm"
+       ],
+       "title": "Polygon",
+       "type": "object"
+      },
+      "Rectangle": {
+       "additionalProperties": false,
+       "properties": {
+        "kind": {
+         "const": "rectangle",
+         "default": "rectangle",
+         "title": "Kind",
+         "type": "string"
+        },
+        "center_nm": {
+         "default": [
+          0.0,
+          0.0
+         ],
+         "maxItems": 2,
+         "minItems": 2,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Center Nm",
+         "type": "array"
+        },
+        "size_nm": {
+         "maxItems": 2,
+         "minItems": 2,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Size Nm",
+         "type": "array"
+        }
+       },
+       "required": [
+        "size_nm"
+       ],
+       "title": "Rectangle",
+       "type": "object"
+      },
+      "Structure2D": {
+       "additionalProperties": false,
+       "properties": {
+        "name": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "title": "Name"
+        },
+        "profile": {
+         "discriminator": {
+          "mapping": {
+           "circle": "#/$defs/Circle",
+           "ellipse": "#/$defs/Ellipse",
+           "polygon": "#/$defs/Polygon",
+           "rectangle": "#/$defs/Rectangle"
+          },
+          "propertyName": "kind"
+         },
+         "oneOf": [
+          {
+           "$ref": "#/$defs/Rectangle"
+          },
+          {
+           "$ref": "#/$defs/Circle"
+          },
+          {
+           "$ref": "#/$defs/Ellipse"
+          },
+          {
+           "$ref": "#/$defs/Polygon"
+          }
+         ],
+         "title": "Profile"
+        },
+        "material": {
+         "discriminator": {
+          "mapping": {
+           "constant_index": "#/$defs/ConstantIndex",
+           "constant_permittivity": "#/$defs/ConstantPermittivity",
+           "drude": "#/$defs/Drude",
+           "drude_lorentz": "#/$defs/DrudeLorentz",
+           "library": "#/$defs/LibraryMaterial",
+           "tabulated": "#/$defs/Tabulated"
+          },
+          "propertyName": "kind"
+         },
+         "oneOf": [
+          {
+           "$ref": "#/$defs/ConstantIndex"
+          },
+          {
+           "$ref": "#/$defs/ConstantPermittivity"
+          },
+          {
+           "$ref": "#/$defs/Drude"
+          },
+          {
+           "$ref": "#/$defs/DrudeLorentz"
+          },
+          {
+           "$ref": "#/$defs/Tabulated"
+          },
+          {
+           "$ref": "#/$defs/LibraryMaterial"
+          }
+         ],
+         "title": "Material"
+        }
+       },
+       "required": [
+        "profile",
+        "material"
+       ],
+       "title": "Structure2D",
+       "type": "object"
+      },
+      "Tabulated": {
+       "additionalProperties": false,
+       "description": "Tabulated n, k data, linearly interpolated (no extrapolation).",
+       "properties": {
+        "kind": {
+         "const": "tabulated",
+         "default": "tabulated",
+         "title": "Kind",
+         "type": "string"
+        },
+        "wavelength_nm": {
+         "items": {
+          "type": "number"
+         },
+         "title": "Wavelength Nm",
+         "type": "array"
+        },
+        "n_real": {
+         "items": {
+          "type": "number"
+         },
+         "title": "N Real",
+         "type": "array"
+        },
+        "n_imag": {
+         "items": {
+          "type": "number"
+         },
+         "title": "N Imag",
+         "type": "array"
+        },
+        "source": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "description": "Citation / provenance of the data.",
+         "title": "Source"
+        }
+       },
+       "required": [
+        "wavelength_nm",
+        "n_real",
+        "n_imag"
+       ],
+       "title": "Tabulated",
+       "type": "object"
+      },
+      "WavelengthRange": {
+       "additionalProperties": false,
+       "properties": {
+        "start_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Start Nm",
+         "type": "number"
+        },
+        "stop_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Stop Nm",
+         "type": "number"
+        },
+        "num": {
+         "minimum": 1,
+         "title": "Num",
+         "type": "integer"
+        }
+       },
+       "required": [
+        "start_nm",
+        "stop_nm",
+        "num"
+       ],
+       "title": "WavelengthRange",
+       "type": "object"
+      }
+     },
+     "additionalProperties": false,
+     "description": "A 1D/2D-periodic stack of patterned layers under plane-wave illumination.",
+     "properties": {
+      "kind": {
+       "const": "periodic",
+       "default": "periodic",
+       "title": "Kind",
+       "type": "string"
+      },
+      "lattice_a1_nm": {
+       "maxItems": 2,
+       "minItems": 2,
+       "prefixItems": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "number"
+        }
+       ],
+       "title": "Lattice A1 Nm",
+       "type": "array"
+      },
+      "lattice_a2_nm": {
+       "anyOf": [
+        {
+         "maxItems": 2,
+         "minItems": 2,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "type": "array"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "description": "None for 1D gratings: periodic along a1, invariant perpendicular to it; shapes are sampled along the line through the origin in the a1 direction.",
+       "title": "Lattice A2 Nm"
+      },
+      "superstrate": {
+       "discriminator": {
+        "mapping": {
+         "constant_index": "#/$defs/ConstantIndex",
+         "constant_permittivity": "#/$defs/ConstantPermittivity",
+         "drude": "#/$defs/Drude",
+         "drude_lorentz": "#/$defs/DrudeLorentz",
+         "library": "#/$defs/LibraryMaterial",
+         "tabulated": "#/$defs/Tabulated"
+        },
+        "propertyName": "kind"
+       },
+       "oneOf": [
+        {
+         "$ref": "#/$defs/ConstantIndex"
+        },
+        {
+         "$ref": "#/$defs/ConstantPermittivity"
+        },
+        {
+         "$ref": "#/$defs/Drude"
+        },
+        {
+         "$ref": "#/$defs/DrudeLorentz"
+        },
+        {
+         "$ref": "#/$defs/Tabulated"
+        },
+        {
+         "$ref": "#/$defs/LibraryMaterial"
+        }
+       ],
+       "title": "Superstrate"
+      },
+      "layers": {
+       "description": "From the superstrate side to the substrate side.",
+       "items": {
+        "$ref": "#/$defs/PatternedLayer"
+       },
+       "minItems": 1,
+       "title": "Layers",
+       "type": "array"
+      },
+      "substrate": {
+       "discriminator": {
+        "mapping": {
+         "constant_index": "#/$defs/ConstantIndex",
+         "constant_permittivity": "#/$defs/ConstantPermittivity",
+         "drude": "#/$defs/Drude",
+         "drude_lorentz": "#/$defs/DrudeLorentz",
+         "library": "#/$defs/LibraryMaterial",
+         "tabulated": "#/$defs/Tabulated"
+        },
+        "propertyName": "kind"
+       },
+       "oneOf": [
+        {
+         "$ref": "#/$defs/ConstantIndex"
+        },
+        {
+         "$ref": "#/$defs/ConstantPermittivity"
+        },
+        {
+         "$ref": "#/$defs/Drude"
+        },
+        {
+         "$ref": "#/$defs/DrudeLorentz"
+        },
+        {
+         "$ref": "#/$defs/Tabulated"
+        },
+        {
+         "$ref": "#/$defs/LibraryMaterial"
+        }
+       ],
+       "title": "Substrate"
+      },
+      "wavelengths": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "number"
+         },
+         "type": "array"
+        },
+        {
+         "$ref": "#/$defs/WavelengthRange"
+        }
+       ],
+       "title": "Wavelengths"
+      },
+      "incidence": {
+       "$ref": "#/$defs/Incidence",
+       "default": {
+        "theta_deg": 0.0,
+        "phi_deg": 0.0,
+        "polarizations": [
+         "s",
+         "p"
+        ]
+       }
+      },
+      "options": {
+       "additionalProperties": {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       "title": "Options",
+       "type": "object"
+      }
+     },
+     "required": [
+      "lattice_a1_nm",
+      "superstrate",
+      "layers",
+      "substrate",
+      "wavelengths"
+     ],
+     "title": "PeriodicProblem",
+     "type": "object"
+    },
+    "conventions": "Lightsmith conventions (fixed; changing them needs a schema version bump):\n- Lengths in nm. Wavelengths are vacuum wavelengths in nm.\n- Time dependence exp(-i omega t): absorbing materials have Im(eps) > 0 and Im(n) > 0.\n- Cross sections in nm^2; efficiencies Q = C / (pi r_eq^2), r_eq = volume-equivalent radius of all particles.\n- layer_stack / periodic: layers listed from the superstrate (incidence side) to the substrate; light travels +z.\n  R is measured in the superstrate, T in the substrate.\n- mode: cross-section in the xy plane, propagation along +z.\n- device: ports are planes whose normal is the axis where size_nm is zero; direction is into the device.\n- problem.options[<method or backend name>] holds solver options, validated by that backend.\n- Materials: {\"kind\": \"constant_index\", \"n_real\": .., \"n_imag\": ..}, {\"kind\": \"library\", \"name\": \"Au\"},\n  drude, drude_lorentz, tabulated, constant_permittivity. FDTD needs dispersive models (fit_drude_lorentz).\n- Results carry provenance and warnings: read the warnings before trusting the numbers.\n",
+    "backends": [
+     {
+      "name": "lightsmith-rcwa",
+      "method": "rcwa",
+      "available": true,
+      "gpu": true,
+      "auto_rank": 0
+     },
+     {
+      "name": "lightsmith-fdtd",
+      "method": "fdtd",
+      "available": true,
+      "gpu": true,
+      "auto_rank": 2
+     }
+    ],
+    "example": {
+     "kind": "periodic",
+     "lattice_a1_nm": [
+      400,
+      0
+     ],
+     "lattice_a2_nm": [
+      0,
+      400
+     ],
+     "superstrate": {
+      "kind": "constant_index",
+      "n_real": 1.0
+     },
+     "layers": [
+      {
+       "thickness_nm": 150,
+       "background": {
+        "kind": "constant_index",
+        "n_real": 2.0
+       },
+       "shapes": [
+        {
+         "profile": {
+          "kind": "circle",
+          "radius_nm": 100
+         },
+         "material": {
+          "kind": "constant_index",
+          "n_real": 1.0
+         }
+        }
+       ]
+      }
+     ],
+     "substrate": {
+      "kind": "constant_index",
+      "n_real": 1.45
+     },
+     "wavelengths": [
+      560,
+      600,
+      640
+     ],
+     "incidence": {
+      "polarizations": [
+       "s"
+      ]
+     },
+     "options": {
+      "rcwa": {
+       "harmonics": 3
+      }
+     }
+    }
+   },
+   "text": "{\n  \"kind\": \"periodic\",\n  \"schema\": {\n    \"$defs\": {\n      \"Circle\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"circle\",\n            \"default\": \"circle\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Radius Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"radius_nm\"\n        ],\n        \"title\": \"Circle\",\n        \"type\": \"object\"\n      },\n      \"ConstantIndex\": {\n        \"additionalProperties\": false,\n        \"description\": \"Wavelength-independent complex refractive index n + ik.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"constant_index\",\n            \"default\": \"constant_index\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"n_real\": {\n            \"description\": \"Real part of the refractive index.\",\n            \"title\": \"N Real\",\n            \"type\": \"number\"\n          },\n          \"n_imag\": {\n            \"default\": 0.0,\n            \"description\": \"Extinction coefficient k (>= 0 for loss).\",\n            \"minimum\": 0,\n            \"title\": \"N Imag\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"n_real\"\n        ],\n        \"title\": \"ConstantIndex\",\n        \"type\": \"object\"\n      },\n      \"ConstantPermittivity\": {\n        \"additionalProperties\": false,\n        \"description\": \"Wavelength-independent complex relative permittivity.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"constant_permittivity\",\n            \"default\": \"constant_permittivity\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_real\": {\n            \"title\": \"Eps Real\",\n            \"type\": \"number\"\n          },\n          \"eps_imag\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Eps Imag\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"eps_real\"\n        ],\n        \"title\": \"ConstantPermittivity\",\n        \"type\": \"object\"\n      },\n      \"Drude\": {\n        \"additionalProperties\": false,\n        \"description\": \"eps(w) = eps_inf - wp^2 / (w^2 + i*gamma*w), energies in eV.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"drude\",\n            \"default\": \"drude\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_inf\": {\n            \"default\": 1.0,\n            \"title\": \"Eps Inf\",\n            \"type\": \"number\"\n          },\n          \"wp_ev\": {\n            \"description\": \"Plasma frequency in eV.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Wp Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"description\": \"Damping rate in eV.\",\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"wp_ev\",\n          \"gamma_ev\"\n        ],\n        \"title\": \"Drude\",\n        \"type\": \"object\"\n      },\n      \"DrudeLorentz\": {\n        \"additionalProperties\": false,\n        \"description\": \"eps(w) = eps_inf - wp^2/(w^2 + i g w) + sum_j d_j w0_j^2 / (w0_j^2 - w^2 - i G_j w).\\n\\nThe form FDTD needs for auxiliary-differential-equation dispersion.\\nFit one to measured data with :func:`lightsmith.materials_fit.fit_drude_lorentz`.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"drude_lorentz\",\n            \"default\": \"drude_lorentz\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_inf\": {\n            \"default\": 1.0,\n            \"title\": \"Eps Inf\",\n            \"type\": \"number\"\n          },\n          \"wp_ev\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Wp Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          },\n          \"poles\": {\n            \"items\": {\n              \"$ref\": \"#/$defs/LorentzPole\"\n            },\n            \"title\": \"Poles\",\n            \"type\": \"array\"\n          }\n        },\n        \"title\": \"DrudeLorentz\",\n        \"type\": \"object\"\n      },\n      \"Ellipse\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"ellipse\",\n            \"default\": \"ellipse\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"semi_axes_nm\": {\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Semi Axes Nm\",\n            \"type\": \"array\"\n          },\n          \"angle_deg\": {\n            \"default\": 0.0,\n            \"title\": \"Angle Deg\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"semi_axes_nm\"\n        ],\n        \"title\": \"Ellipse\",\n        \"type\": \"object\"\n      },\n      \"Incidence\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"theta_deg\": {\n            \"default\": 0.0,\n            \"title\": \"Theta Deg\",\n            \"type\": \"number\"\n          },\n          \"phi_deg\": {\n            \"default\": 0.0,\n            \"title\": \"Phi Deg\",\n            \"type\": \"number\"\n          },\n          \"polarizations\": {\n            \"default\": [\n              \"s\",\n              \"p\"\n            ],\n            \"items\": {\n              \"enum\": [\n                \"s\",\n                \"p\"\n              ],\n              \"type\": \"string\"\n            },\n            \"title\": \"Polarizations\",\n            \"type\": \"array\"\n          }\n        },\n        \"title\": \"Incidence\",\n        \"type\": \"object\"\n      },\n      \"LibraryMaterial\": {\n        \"additionalProperties\": false,\n        \"description\": \"Measured n, k bundled with lightsmith, e.g. ``{\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\",\\n\\\"dataset\\\": \\\"Johnson-Christy\\\"}``. Linear interpolation in n and k, no extrapolation.\\n\\nNames and datasets accept aliases (\\\"gold\\\", \\\"JC\\\") and are stored in canonical form;\\nan omitted dataset is filled with the material's default so the spec stays\\nreproducible. See :func:`list_materials`.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"library\",\n            \"default\": \"library\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"name\": {\n            \"description\": \"Material, e.g. 'Au', 'Ag', 'Al', 'Cu', 'Si', 'TiO2', 'SiO2', 'H2O'.\",\n            \"title\": \"Name\",\n            \"type\": \"string\"\n          },\n          \"dataset\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Dataset, e.g. 'Johnson-Christy'; omitted = material default.\",\n            \"title\": \"Dataset\"\n          }\n        },\n        \"required\": [\n          \"name\"\n        ],\n        \"title\": \"LibraryMaterial\",\n        \"type\": \"object\"\n      },\n      \"LorentzPole\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"delta_eps\": {\n            \"description\": \"Oscillator strength (permittivity step).\",\n            \"title\": \"Delta Eps\",\n            \"type\": \"number\"\n          },\n          \"omega0_ev\": {\n            \"description\": \"Resonance energy in eV.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Omega0 Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"description\": \"Damping in eV.\",\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"delta_eps\",\n          \"omega0_ev\",\n          \"gamma_ev\"\n        ],\n        \"title\": \"LorentzPole\",\n        \"type\": \"object\"\n      },\n      \"PatternedLayer\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"thickness_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Thickness Nm\",\n            \"type\": \"number\"\n          },\n          \"background\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Background\"\n          },\n          \"shapes\": {\n            \"description\": \"Inclusions in one unit cell (xy).\",\n            \"items\": {\n              \"$ref\": \"#/$defs/Structure2D\"\n            },\n            \"title\": \"Shapes\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"thickness_nm\",\n          \"background\"\n        ],\n        \"title\": \"PatternedLayer\",\n        \"type\": \"object\"\n      },\n      \"Polygon\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"polygon\",\n            \"default\": \"polygon\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"vertices_nm\": {\n            \"items\": {\n              \"maxItems\": 2,\n              \"minItems\": 2,\n              \"prefixItems\": [\n                {\n                  \"type\": \"number\"\n                },\n                {\n                  \"type\": \"number\"\n                }\n              ],\n              \"type\": \"array\"\n            },\n            \"minItems\": 3,\n            \"title\": \"Vertices Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"vertices_nm\"\n        ],\n        \"title\": \"Polygon\",\n        \"type\": \"object\"\n      },\n      \"Rectangle\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"rectangle\",\n            \"default\": \"rectangle\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"size_nm\": {\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Size Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"size_nm\"\n        ],\n        \"title\": \"Rectangle\",\n        \"type\": \"object\"\n      },\n      \"Structure2D\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"name\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"title\": \"Name\"\n          },\n          \"profile\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"circle\": \"#/$defs/Circle\",\n                \"ellipse\": \"#/$defs/Ellipse\",\n                \"polygon\": \"#/$defs/Polygon\",\n                \"rectangle\": \"#/$defs/Rectangle\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/Rectangle\"\n              },\n              {\n                \"$ref\": \"#/$defs/Circle\"\n              },\n              {\n                \"$ref\": \"#/$defs/Ellipse\"\n              },\n              {\n                \"$ref\": \"#/$defs/Polygon\"\n              }\n            ],\n            \"title\": \"Profile\"\n          },\n          \"material\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Material\"\n          }\n        },\n        \"required\": [\n          \"profile\",\n          \"material\"\n        ],\n        \"title\": \"Structure2D\",\n        \"type\": \"object\"\n      },\n      \"Tabulated\": {\n        \"additionalProperties\": false,\n        \"description\": \"Tabulated n, k data, linearly interpolated (no extrapolation).\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"tabulated\",\n            \"default\": \"tabulated\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"wavelength_nm\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"Wavelength Nm\",\n            \"type\": \"array\"\n          },\n          \"n_real\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"N Real\",\n            \"type\": \"array\"\n          },\n          \"n_imag\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"N Imag\",\n            \"type\": \"array\"\n          },\n          \"source\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Citation / provenance of the data.\",\n            \"title\": \"Source\"\n          }\n        },\n        \"required\": [\n          \"wavelength_nm\",\n          \"n_real\",\n          \"n_imag\"\n        ],\n        \"title\": \"Tabulated\",\n        \"type\": \"object\"\n      },\n      \"WavelengthRange\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"start_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Start Nm\",\n            \"type\": \"number\"\n          },\n          \"stop_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Stop Nm\",\n            \"type\": \"number\"\n          },\n          \"num\": {\n            \"minimum\": 1,\n            \"title\": \"Num\",\n            \"type\": \"integer\"\n          }\n        },\n        \"required\": [\n          \"start_nm\",\n          \"stop_nm\",\n          \"num\"\n        ],\n        \"title\": \"WavelengthRange\",\n        \"type\": \"object\"\n      }\n    },\n    \"additionalProperties\": false,\n    \"description\": \"A 1D/2D-periodic stack of patterned layers under plane-wave illumination.\",\n    \"properties\": {\n      \"kind\": {\n        \"const\": \"periodic\",\n        \"default\": \"periodic\",\n        \"title\": \"Kind\",\n        \"type\": \"string\"\n      },\n      \"lattice_a1_nm\": {\n        \"maxItems\": 2,\n        \"minItems\": 2,\n        \"prefixItems\": [\n          {\n            \"type\": \"number\"\n          },\n          {\n            \"type\": \"number\"\n          }\n        ],\n        \"title\": \"Lattice A1 Nm\",\n        \"type\": \"array\"\n      },\n      \"lattice_a2_nm\": {\n        \"anyOf\": [\n          {\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"type\": \"array\"\n          },\n          {\n            \"type\": \"null\"\n          }\n        ],\n        \"default\": null,\n        \"description\": \"None for 1D gratings: periodic along a1, invariant perpendicular to it; shapes are sampled along the line through the origin in the a1 direction.\",\n        \"title\": \"Lattice A2 Nm\"\n      },\n      \"superstrate\": {\n        \"discriminator\": {\n          \"mapping\": {\n            \"constant_index\": \"#/$defs/ConstantIndex\",\n            \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n            \"drude\": \"#/$defs/Drude\",\n            \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n            \"library\": \"#/$defs/LibraryMaterial\",\n            \"tabulated\": \"#/$defs/Tabulated\"\n          },\n          \"propertyName\": \"kind\"\n        },\n        \"oneOf\": [\n          {\n            \"$ref\": \"#/$defs/ConstantIndex\"\n          },\n          {\n            \"$ref\": \"#/$defs/ConstantPermittivity\"\n          },\n          {\n            \"$ref\": \"#/$defs/Drude\"\n          },\n          {\n            \"$ref\": \"#/$defs/DrudeLorentz\"\n          },\n          {\n            \"$ref\": \"#/$defs/Tabulated\"\n          },\n          {\n            \"$ref\": \"#/$defs/LibraryMaterial\"\n          }\n        ],\n        \"title\": \"Superstrate\"\n      },\n      \"layers\": {\n        \"description\": \"From the superstrate side to the substrate side.\",\n        \"items\": {\n          \"$ref\": \"#/$defs/PatternedLayer\"\n        },\n        \"minItems\": 1,\n        \"title\": \"Layers\",\n        \"type\": \"array\"\n      },\n      \"substrate\": {\n        \"discriminator\": {\n          \"mapping\": {\n            \"constant_index\": \"#/$defs/ConstantIndex\",\n            \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n            \"drude\": \"#/$defs/Drude\",\n            \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n            \"library\": \"#/$defs/LibraryMaterial\",\n            \"tabulated\": \"#/$defs/Tabulated\"\n          },\n          \"propertyName\": \"kind\"\n        },\n        \"oneOf\": [\n          {\n            \"$ref\": \"#/$defs/ConstantIndex\"\n          },\n          {\n            \"$ref\": \"#/$defs/ConstantPermittivity\"\n          },\n          {\n            \"$ref\": \"#/$defs/Drude\"\n          },\n          {\n            \"$ref\": \"#/$defs/DrudeLorentz\"\n          },\n          {\n            \"$ref\": \"#/$defs/Tabulated\"\n          },\n          {\n            \"$ref\": \"#/$defs/LibraryMaterial\"\n          }\n        ],\n        \"title\": \"Substrate\"\n      },\n      \"wavelengths\": {\n        \"anyOf\": [\n          {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"type\": \"array\"\n          },\n          {\n            \"$ref\": \"#/$defs/WavelengthRange\"\n          }\n        ],\n        \"title\": \"Wavelengths\"\n      },\n      \"incidence\": {\n        \"$ref\": \"#/$defs/Incidence\",\n        \"default\": {\n          \"theta_deg\": 0.0,\n          \"phi_deg\": 0.0,\n          \"polarizations\": [\n            \"s\",\n            \"p\"\n          ]\n        }\n      },\n      \"options\": {\n        \"additionalProperties\": {\n          \"additionalProperties\": true,\n          \"type\": \"object\"\n        },\n        \"title\": \"Options\",\n        \"type\": \"object\"\n      }\n    },\n    \"required\": [\n      \"lattice_a1_nm\",\n      \"superstrate\",\n      \"layers\",\n      \"substrate\",\n      \"wavelengths\"\n    ],\n    \"title\": \"PeriodicProblem\",\n    \"type\": \"object\"\n  },\n  \"conventions\": \"Lightsmith conventions (fixed; changing them needs a schema version bump):\\n- Lengths in nm. Wavelengths are vacuum wavelengths in nm.\\n- Time dependence exp(-i omega t): absorbing materials have Im(eps) > 0 and Im(n) > 0.\\n- Cross sections in nm^2; efficiencies Q = C / (pi r_eq^2), r_eq = volume-equivalent radius of all particles.\\n- layer_stack / periodic: layers listed from the superstrate (incidence side) to the substrate; light travels +z.\\n  R is measured in the superstrate, T in the substrate.\\n- mode: cross-section in the xy plane, propagation along +z.\\n- device: ports are planes whose normal is the axis where size_nm is zero; direction is into the device.\\n- problem.options[<method or backend name>] holds solver options, validated by that backend.\\n- Materials: {\\\"kind\\\": \\\"constant_index\\\", \\\"n_real\\\": .., \\\"n_imag\\\": ..}, {\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\"},\\n  drude, drude_lorentz, tabulated, constant_permittivity. FDTD needs dispersive models (fit_drude_lorentz).\\n- Results carry provenance and warnings: read the warnings before trusting the numbers.\\n\",\n  \"backends\": [\n    {\n      \"name\": \"lightsmith-rcwa\",\n      \"method\": \"rcwa\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 0\n    },\n    {\n      \"name\": \"lightsmith-fdtd\",\n      \"method\": \"fdtd\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 2\n    }\n  ],\n  \"example\": {\n    \"kind\": \"periodic\",\n    \"lattice_a1_nm\": [\n      400,\n      0\n    ],\n    \"lattice_a2_nm\": [\n      0,\n      400\n    ],\n    \"superstrate\": {\n      \"kind\": \"constant_index\",\n      \"n_real\": 1.0\n    },\n    \"layers\": [\n      {\n        \"thickness_nm\": 150,\n        \"background\": {\n          \"kind\": \"constant_index\",\n          \"n_real\": 2.0\n        },\n        \"shapes\": [\n          {\n            \"profile\": {\n              \"kind\": \"circle\",\n              \"radius_nm\": 100\n            },\n            \"material\": {\n              \"kind\": \"constant_index\",\n              \"n_real\": 1.0\n            }\n          }\n        ]\n      }\n    ],\n    \"substrate\": {\n      \"kind\": \"constant_index\",\n      \"n_real\": 1.45\n    },\n    \"wavelengths\": [\n      560,\n      600,\n      640\n    ],\n    \"incidence\": {\n      \"polarizations\": [\n        \"s\"\n      ]\n    },\n    \"options\": {\n      \"rcwa\": {\n        \"harmonics\": 3\n      }\n    }\n  }\n}",
+   "images": [],
+   "error": null,
+   "duration_s": 0.012,
+   "started_at": 1794267509.007398,
+   "source": "mcp"
+  },
+  {
+   "name": "solve",
+   "arguments": {
+    "problem": {
+     "kind": "periodic",
+     "lattice_a1_nm": [
+      400,
+      0
+     ],
+     "lattice_a2_nm": [
+      0,
+      400
+     ],
+     "superstrate": {
+      "kind": "constant_index",
+      "n_real": 1.0
+     },
+     "layers": [
+      {
+       "thickness_nm": 300,
+       "background": {
+        "kind": "constant_index",
+        "n_real": 1.0
+       },
+       "shapes": [
+        {
+         "profile": {
+          "kind": "circle",
+          "radius_nm": 100
+         },
+         "material": {
+          "kind": "constant_index",
+          "n_real": 2.4
+         }
+        }
+       ]
+      }
+     ],
+     "substrate": {
+      "kind": "constant_index",
+      "n_real": 1.46
+     },
+     "wavelengths": [
+      700
+     ],
+     "incidence": {
+      "polarizations": [
+       "s",
+       "p"
+      ]
+     }
+    }
+   },
+   "ok": true,
+   "result": {
+    "status": "succeeded",
+    "job_id": "07ac4a9823e62e46085a29564d4d5957",
+    "job": {
+     "job_id": "07ac4a9823e62e46085a29564d4d5957",
+     "operation": "solve",
+     "problem_kind": "periodic",
+     "status": "succeeded",
+     "progress": 1.0,
+     "stage": "done",
+     "message": null,
+     "method": "auto",
+     "methods": null,
+     "device": "auto",
+     "label": null,
+     "runner": "process",
+     "created_at": "2026-11-09T23:38:34+00:00",
+     "started_at": "2026-11-09T23:38:34+00:00",
+     "finished_at": "2026-11-09T23:38:40+00:00",
+     "elapsed_s": 6.156,
+     "error": null,
+     "resources": {
+      "job": "lightsmith://jobs/07ac4a9823e62e46085a29564d4d5957",
+      "result": "lightsmith://jobs/07ac4a9823e62e46085a29564d4d5957/result",
+      "csv": "lightsmith://jobs/07ac4a9823e62e46085a29564d4d5957/result.csv",
+      "plot": "lightsmith://jobs/07ac4a9823e62e46085a29564d4d5957/plot.png"
+     },
+     "estimated_runtime_s": 0.08
+    },
+    "summary": {
+     "result_kind": "spectrum",
+     "method": "rcwa",
+     "backend": "lightsmith-rcwa",
+     "warnings": [],
+     "provenance": {
+      "device": "cuda:0",
+      "framework": "torch",
+      "gpu_name": "NVIDIA GeForce RTX 5070",
+      "precision": "double",
+      "runtime_s": 2.1633310000179335,
+      "harmonics": 225
+     },
+     "n_wavelengths": 1,
+     "wavelength_range_nm": [
+      700.0,
+      700.0
+     ],
+     "angles_deg": [
+      0.0
+     ],
+     "polarizations": [
+      "s",
+      "p"
+     ],
+     "units": {
+      "R/T/A": "power fraction",
+      "wavelength": "nm"
+     },
+     "per_polarization": {
+      "s": [
+       {
+        "angle_deg": 0.0,
+        "R_mean": 0.03985,
+        "T_mean": 0.9602,
+        "A_mean": -2.644e-05,
+        "R_max": {
+         "value": 0.03985,
+         "wavelength_nm": 700.0
+        },
+        "T_min": {
+         "value": 0.9602,
+         "wavelength_nm": 700.0
+        }
+       }
+      ],
+      "p": [
+       {
+        "angle_deg": 0.0,
+        "R_mean": 0.03985,
+        "T_mean": 0.9602,
+        "A_mean": -2.644e-05,
+        "R_max": {
+         "value": 0.03985,
+         "wavelength_nm": 700.0
+        },
+        "T_min": {
+         "value": 0.9602,
+         "wavelength_nm": 700.0
+        }
+       }
+      ]
+     },
+     "max_energy_balance_error": 1.11e-16,
+     "n_diffraction_orders": 1
+    },
+    "next_step": "Full arrays: read lightsmith://jobs/07ac4a9823e62e46085a29564d4d5957/result (JSON) or lightsmith://jobs/07ac4a9823e62e46085a29564d4d5957/result.csv, or call get_result. Check summary.warnings."
+   },
+   "text": "{\"status\": \"succeeded\", \"job_id\": \"07ac4a9823e62e46085a29564d4d5957\", \"job\": {\"job_id\": \"07ac4a9823e62e46085a29564d4d5957\", \"operation\": \"solve\", \"problem_kind\": \"periodic\", \"status\": \"succeeded\", \"progress\": 1.0, \"stage\": \"done\", \"message\": null, \"method\": \"auto\", \"methods\": null, \"device\": \"auto\", \"label\": null, \"runner\": \"process\", \"created_at\": \"2026-11-09T23:38:34+00:00\", \"started_at\": \"2026-11-09T23:38:34+00:00\", \"finished_at\": \"2026-11-09T23:38:40+00:00\", \"elapsed_s\": 6.156, \"error\": null, \"resources\": {\"job\": \"lightsmith://jobs/07ac4a9823e62e46085a29564d4d5957\", \"result\": \"lightsmith://jobs/07ac4a9823e62e46085a29564d4d5957/result\", \"csv\": \"lightsmith://jobs/07ac4a9823e62e46085a29564d4d5957/result.csv\", \"plot\": \"lightsmith://jobs/07ac4a9823e62e46085a29564d4d5957/plot.png\"}, \"estimated_runtime_s\": 0.08}, \"summary\": {\"result_kind\": \"spectrum\", \"method\": \"rcwa\", \"backend\": \"lightsmith-rcwa\", \"warnings\": [], \"provenance\": {\"device\": \"cuda:0\", \"framework\": \"torch\", \"gpu_name\": \"NVIDIA GeForce RTX 5070\", \"precision\": \"double\", \"runtime_s\": 2.1633310000179335, \"harmonics\": 225}, \"n_wavelengths\": 1, \"wavelength_range_nm\": [700.0, 700.0], \"angles_deg\": [0.0], \"polarizations\": [\"s\", \"p\"], \"units\": {\"R/T/A\": \"power fraction\", \"wavelength\": \"nm\"}, \"per_polarization\": {\"s\": [{\"angle_deg\": 0.0, \"R_mean\": 0.03985, \"T_mean\": 0.9602, \"A_mean\": -2.644e-05, \"R_max\": {\"value\": 0.03985, \"wavelength_nm\": 700.0}, \"T_min\": {\"value\": 0.9602, \"wavelength_nm\": 700.0}}], \"p\": [{\"angle_deg\": 0.0, \"R_mean\": 0.03985, \"T_mean\": 0.9602, \"A_mean\": -2.644e-05, \"R_max\": {\"value\": 0.03985, \"wavelength_nm\": 700.0}, \"T_min\": {\"value\": 0.9602, \"wavelength_nm\": 700.0}}]}, \"max_energy_balance_error\": 1.11e-16, \"n_diffraction_orders\": 1}, \"next_step\": \"Full arrays: read lightsmith://jobs/07ac4a9823e62e46085a29564d4d5957/result (JSON) or lightsmith://jobs/07ac4a9823e62e46085a29564d4d5957/result.csv, or call get_result. Check summary.warnings.\"}",
+   "images": [],
+   "error": null,
+   "duration_s": 9.578,
+   "started_at": 1794267511.8274717,
+   "source": "mcp"
+  },
+  {
+   "name": "solve",
+   "arguments": {
+    "problem": {
+     "kind": "periodic",
+     "lattice_a1_nm": [
+      400,
+      0
+     ],
+     "lattice_a2_nm": [
+      0,
+      400
+     ],
+     "superstrate": {
+      "kind": "constant_index",
+      "n_real": 1.0
+     },
+     "layers": [
+      {
+       "thickness_nm": 300,
+       "background": {
+        "kind": "constant_index",
+        "n_real": 1.0
+       },
+       "shapes": [
+        {
+         "profile": {
+          "kind": "circle",
+          "radius_nm": 100
+         },
+         "material": {
+          "kind": "constant_index",
+          "n_real": 2.4
+         }
+        }
+       ]
+      }
+     ],
+     "substrate": {
+      "kind": "constant_index",
+      "n_real": 1.46
+     },
+     "wavelengths": [
+      700
+     ],
+     "incidence": {
+      "polarizations": [
+       "s",
+       "p"
+      ]
+     },
+     "options": {
+      "rcwa": {
+       "harmonics": 11
+      }
+     }
+    }
+   },
+   "ok": false,
+   "result": {
+    "status": "failed",
+    "job_id": "00056ef313109ed304debf15a2182aad",
+    "job": {
+     "job_id": "00056ef313109ed304debf15a2182aad",
+     "operation": "solve",
+     "problem_kind": "periodic",
+     "status": "failed",
+     "progress": 0.1,
+     "stage": "solving",
+     "message": "solving with lightsmith-rcwa",
+     "method": "auto",
+     "methods": null,
+     "device": "auto",
+     "label": null,
+     "runner": "process",
+     "created_at": "2026-11-09T23:38:44+00:00",
+     "started_at": "2026-11-09T23:38:44+00:00",
+     "finished_at": "2026-11-09T23:38:49+00:00",
+     "elapsed_s": 4.735,
+     "error": {
+      "error": "WorkerCrashed",
+      "message": "the solver process died without reporting an error"
+     },
+     "resources": {
+      "job": "lightsmith://jobs/00056ef313109ed304debf15a2182aad"
+     },
+     "estimated_runtime_s": 0.432
+    },
+    "next_step": "The job did not succeed; see job.error, fix the problem and solve again."
+   },
+   "text": "{\"status\": \"failed\", \"job_id\": \"00056ef313109ed304debf15a2182aad\", \"job\": {\"job_id\": \"00056ef313109ed304debf15a2182aad\", \"operation\": \"solve\", \"problem_kind\": \"periodic\", \"status\": \"failed\", \"progress\": 0.1, \"stage\": \"solving\", \"message\": \"solving with lightsmith-rcwa\", \"method\": \"auto\", \"methods\": null, \"device\": \"auto\", \"label\": null, \"runner\": \"process\", \"created_at\": \"2026-11-09T23:38:44+00:00\", \"started_at\": \"2026-11-09T23:38:44+00:00\", \"finished_at\": \"2026-11-09T23:38:49+00:00\", \"elapsed_s\": 4.735, \"error\": {\"error\": \"WorkerCrashed\", \"message\": \"the solver process died without reporting an error\"}, \"resources\": {\"job\": \"lightsmith://jobs/00056ef313109ed304debf15a2182aad\"}, \"estimated_runtime_s\": 0.432}, \"next_step\": \"The job did not succeed; see job.error, fix the problem and solve again.\"}",
+   "images": [],
+   "error": "{\"status\": \"failed\", \"job_id\": \"00056ef313109ed304debf15a2182aad\", \"job\": {\"job_id\": \"00056ef313109ed304debf15a2182aad\", \"operation\": \"solve\", \"problem_kind\": \"periodic\", \"status\": \"failed\", \"progress\": 0.1, \"stage\": \"solving\", \"message\": \"solving with lightsmith-rcwa\", \"method\": \"auto\", \"methods\": null, \"device\": \"auto\", \"label\": null, \"runner\": \"process\", \"created_at\": \"2026-11-09T23:38:44+00:00\", \"started_at\": \"2026-11-09T23:38:44+00:00\", \"finished_at\": \"2026-11-09T23:38:49+00:00\", \"elapsed_s\": 4.735, \"error\": {\"error\": \"WorkerCrashed\", \"message\": \"the solver process died without reporting an error\"}, \"resources\": {\"job\": \"lightsmith://jobs/00056ef313109ed304debf15a2182aad\"}, \"estimated_runtime_s\": 0.432}, \"next_step\": \"The job did not succeed; see job.error, fix the problem and solve again.\"}",
+   "duration_s": 5.575,
+   "started_at": 1794267524.6892848,
+   "source": "mcp"
+  },
+  {
+   "name": "solve",
+   "arguments": {
+    "problem": {
+     "kind": "periodic",
+     "lattice_a1_nm": [
+      400,
+      0
+     ],
+     "lattice_a2_nm": [
+      0,
+      400
+     ],
+     "superstrate": {
+      "kind": "constant_index",
+      "n_real": 1.0
+     },
+     "layers": [
+      {
+       "thickness_nm": 300,
+       "background": {
+        "kind": "constant_index",
+        "n_real": 1.0
+       },
+       "shapes": [
+        {
+         "profile": {
+          "kind": "circle",
+          "radius_nm": 100
+         },
+         "material": {
+          "kind": "constant_index",
+          "n_real": 2.4
+         }
+        }
+       ]
+      }
+     ],
+     "substrate": {
+      "kind": "constant_index",
+      "n_real": 1.46
+     },
+     "wavelengths": [
+      700
+     ],
+     "incidence": {
+      "polarizations": [
+       "s",
+       "p"
+      ]
+     },
+     "options": {
+      "rcwa": {
+       "harmonics": 10
+      }
+     }
+    },
+    "device": "cpu"
+   },
+   "ok": true,
+   "result": {
+    "status": "succeeded",
+    "job_id": "f6b435ab31135ab68f96fa9758c5e241",
+    "job": {
+     "job_id": "f6b435ab31135ab68f96fa9758c5e241",
+     "operation": "solve",
+     "problem_kind": "periodic",
+     "status": "succeeded",
+     "progress": 1.0,
+     "stage": "done",
+     "message": null,
+     "method": "auto",
+     "methods": null,
+     "device": "cpu",
+     "label": null,
+     "runner": "process",
+     "created_at": "2026-11-09T23:38:53+00:00",
+     "started_at": "2026-11-09T23:38:53+00:00",
+     "finished_at": "2026-11-09T23:39:02+00:00",
+     "elapsed_s": 8.828,
+     "error": null,
+     "resources": {
+      "job": "lightsmith://jobs/f6b435ab31135ab68f96fa9758c5e241",
+      "result": "lightsmith://jobs/f6b435ab31135ab68f96fa9758c5e241/result",
+      "csv": "lightsmith://jobs/f6b435ab31135ab68f96fa9758c5e241/result.csv",
+      "plot": "lightsmith://jobs/f6b435ab31135ab68f96fa9758c5e241/plot.png"
+     },
+     "estimated_runtime_s": 0.301
+    },
+    "summary": {
+     "result_kind": "spectrum",
+     "method": "rcwa",
+     "backend": "lightsmith-rcwa",
+     "warnings": [],
+     "provenance": {
+      "device": "cpu",
+      "framework": "numpy",
+      "precision": "double",
+      "runtime_s": 8.632497899932787,
+      "harmonics": 441
+     },
+     "n_wavelengths": 1,
+     "wavelength_range_nm": [
+      700.0,
+      700.0
+     ],
+     "angles_deg": [
+      0.0
+     ],
+     "polarizations": [
+      "s",
+      "p"
+     ],
+     "units": {
+      "R/T/A": "power fraction",
+      "wavelength": "nm"
+     },
+     "per_polarization": {
+      "s": [
+       {
+        "angle_deg": 0.0,
+        "R_mean": 0.03994,
+        "T_mean": 0.9601,
+        "A_mean": -1.35e-05,
+        "R_max": {
+         "value": 0.03994,
+         "wavelength_nm": 700.0
+        },
+        "T_min": {
+         "value": 0.9601,
+         "wavelength_nm": 700.0
+        }
+       }
+      ],
+      "p": [
+       {
+        "angle_deg": 0.0,
+        "R_mean": 0.03994,
+        "T_mean": 0.9601,
+        "A_mean": -1.35e-05,
+        "R_max": {
+         "value": 0.03994,
+         "wavelength_nm": 700.0
+        },
+        "T_min": {
+         "value": 0.9601,
+         "wavelength_nm": 700.0
+        }
+       }
+      ]
+     },
+     "max_energy_balance_error": 0.0,
+     "n_diffraction_orders": 1
+    },
+    "next_step": "Full arrays: read lightsmith://jobs/f6b435ab31135ab68f96fa9758c5e241/result (JSON) or lightsmith://jobs/f6b435ab31135ab68f96fa9758c5e241/result.csv, or call get_result. Check summary.warnings."
+   },
+   "text": "{\"status\": \"succeeded\", \"job_id\": \"f6b435ab31135ab68f96fa9758c5e241\", \"job\": {\"job_id\": \"f6b435ab31135ab68f96fa9758c5e241\", \"operation\": \"solve\", \"problem_kind\": \"periodic\", \"status\": \"succeeded\", \"progress\": 1.0, \"stage\": \"done\", \"message\": null, \"method\": \"auto\", \"methods\": null, \"device\": \"cpu\", \"label\": null, \"runner\": \"process\", \"created_at\": \"2026-11-09T23:38:53+00:00\", \"started_at\": \"2026-11-09T23:38:53+00:00\", \"finished_at\": \"2026-11-09T23:39:02+00:00\", \"elapsed_s\": 8.828, \"error\": null, \"resources\": {\"job\": \"lightsmith://jobs/f6b435ab31135ab68f96fa9758c5e241\", \"result\": \"lightsmith://jobs/f6b435ab31135ab68f96fa9758c5e241/result\", \"csv\": \"lightsmith://jobs/f6b435ab31135ab68f96fa9758c5e241/result.csv\", \"plot\": \"lightsmith://jobs/f6b435ab31135ab68f96fa9758c5e241/plot.png\"}, \"estimated_runtime_s\": 0.301}, \"summary\": {\"result_kind\": \"spectrum\", \"method\": \"rcwa\", \"backend\": \"lightsmith-rcwa\", \"warnings\": [], \"provenance\": {\"device\": \"cpu\", \"framework\": \"numpy\", \"precision\": \"double\", \"runtime_s\": 8.632497899932787, \"harmonics\": 441}, \"n_wavelengths\": 1, \"wavelength_range_nm\": [700.0, 700.0], \"angles_deg\": [0.0], \"polarizations\": [\"s\", \"p\"], \"units\": {\"R/T/A\": \"power fraction\", \"wavelength\": \"nm\"}, \"per_polarization\": {\"s\": [{\"angle_deg\": 0.0, \"R_mean\": 0.03994, \"T_mean\": 0.9601, \"A_mean\": -1.35e-05, \"R_max\": {\"value\": 0.03994, \"wavelength_nm\": 700.0}, \"T_min\": {\"value\": 0.9601, \"wavelength_nm\": 700.0}}], \"p\": [{\"angle_deg\": 0.0, \"R_mean\": 0.03994, \"T_mean\": 0.9601, \"A_mean\": -1.35e-05, \"R_max\": {\"value\": 0.03994, \"wavelength_nm\": 700.0}, \"T_min\": {\"value\": 0.9601, \"wavelength_nm\": 700.0}}]}, \"max_energy_balance_error\": 0.0, \"n_diffraction_orders\": 1}, \"next_step\": \"Full arrays: read lightsmith://jobs/f6b435ab31135ab68f96fa9758c5e241/result (JSON) or lightsmith://jobs/f6b435ab31135ab68f96fa9758c5e241/result.csv, or call get_result. Check summary.warnings.\"}",
+   "images": [],
+   "error": null,
+   "duration_s": 9.609,
+   "started_at": 1794267533.3688452,
+   "source": "mcp"
+  }
+ ],
+ "messages": [
+  {
+   "role": "user",
+   "content": "Metasurface: square lattice, 400 nm pitch, of TiO2 nanopillars (n = 2.4, lossless), 100 nm radius and 300 nm tall, on a glass substrate (n = 1.46), air above. Total reflectance at 700 nm for unpolarized light at normal incidence?\n\n---\nReport your result by calling submit_answer with these values:\n- `reflectance` (fraction (0-1)): total reflectance (all orders), unpolarized"
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "id": "toolu_018x1YXJ8TwFyYEWkgu3kjhc",
+     "input": {
+      "kind": "periodic"
+     },
+     "name": "get_schema",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_018x1YXJ8TwFyYEWkgu3kjhc",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\n  \"kind\": \"periodic\",\n  \"schema\": {\n    \"$defs\": {\n      \"Circle\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"circle\",\n            \"default\": \"circle\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Radius Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"radius_nm\"\n        ],\n        \"title\": \"Circle\",\n        \"type\": \"object\"\n      },\n      \"ConstantIndex\": {\n        \"additionalProperties\": false,\n        \"description\": \"Wavelength-independent complex refractive index n + ik.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"constant_index\",\n            \"default\": \"constant_index\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"n_real\": {\n            \"description\": \"Real part of the refractive index.\",\n            \"title\": \"N Real\",\n            \"type\": \"number\"\n          },\n          \"n_imag\": {\n            \"default\": 0.0,\n            \"description\": \"Extinction coefficient k (>= 0 for loss).\",\n            \"minimum\": 0,\n            \"title\": \"N Imag\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"n_real\"\n        ],\n        \"title\": \"ConstantIndex\",\n        \"type\": \"object\"\n      },\n      \"ConstantPermittivity\": {\n        \"additionalProperties\": false,\n        \"description\": \"Wavelength-independent complex relative permittivity.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"constant_permittivity\",\n            \"default\": \"constant_permittivity\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_real\": {\n            \"title\": \"Eps Real\",\n            \"type\": \"number\"\n          },\n          \"eps_imag\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Eps Imag\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"eps_real\"\n        ],\n        \"title\": \"ConstantPermittivity\",\n        \"type\": \"object\"\n      },\n      \"Drude\": {\n        \"additionalProperties\": false,\n        \"description\": \"eps(w) = eps_inf - wp^2 / (w^2 + i*gamma*w), energies in eV.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"drude\",\n            \"default\": \"drude\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_inf\": {\n            \"default\": 1.0,\n            \"title\": \"Eps Inf\",\n            \"type\": \"number\"\n          },\n          \"wp_ev\": {\n            \"description\": \"Plasma frequency in eV.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Wp Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"description\": \"Damping rate in eV.\",\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"wp_ev\",\n          \"gamma_ev\"\n        ],\n        \"title\": \"Drude\",\n        \"type\": \"object\"\n      },\n      \"DrudeLorentz\": {\n        \"additionalProperties\": false,\n        \"description\": \"eps(w) = eps_inf - wp^2/(w^2 + i g w) + sum_j d_j w0_j^2 / (w0_j^2 - w^2 - i G_j w).\\n\\nThe form FDTD needs for auxiliary-differential-equation dispersion.\\nFit one to measured data with :func:`lightsmith.materials_fit.fit_drude_lorentz`.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"drude_lorentz\",\n            \"default\": \"drude_lorentz\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_inf\": {\n            \"default\": 1.0,\n            \"title\": \"Eps Inf\",\n            \"type\": \"number\"\n          },\n          \"wp_ev\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Wp Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          },\n          \"poles\": {\n            \"items\": {\n              \"$ref\": \"#/$defs/LorentzPole\"\n            },\n            \"title\": \"Poles\",\n            \"type\": \"array\"\n          }\n        },\n        \"title\": \"DrudeLorentz\",\n        \"type\": \"object\"\n      },\n      \"Ellipse\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"ellipse\",\n            \"default\": \"ellipse\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"semi_axes_nm\": {\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Semi Axes Nm\",\n            \"type\": \"array\"\n          },\n          \"angle_deg\": {\n            \"default\": 0.0,\n            \"title\": \"Angle Deg\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"semi_axes_nm\"\n        ],\n        \"title\": \"Ellipse\",\n        \"type\": \"object\"\n      },\n      \"Incidence\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"theta_deg\": {\n            \"default\": 0.0,\n            \"title\": \"Theta Deg\",\n            \"type\": \"number\"\n          },\n          \"phi_deg\": {\n            \"default\": 0.0,\n            \"title\": \"Phi Deg\",\n            \"type\": \"number\"\n          },\n          \"polarizations\": {\n            \"default\": [\n              \"s\",\n              \"p\"\n            ],\n            \"items\": {\n              \"enum\": [\n                \"s\",\n                \"p\"\n              ],\n              \"type\": \"string\"\n            },\n            \"title\": \"Polarizations\",\n            \"type\": \"array\"\n          }\n        },\n        \"title\": \"Incidence\",\n        \"type\": \"object\"\n      },\n      \"LibraryMaterial\": {\n        \"additionalProperties\": false,\n        \"description\": \"Measured n, k bundled with lightsmith, e.g. ``{\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\",\\n\\\"dataset\\\": \\\"Johnson-Christy\\\"}``. Linear interpolation in n and k, no extrapolation.\\n\\nNames and datasets accept aliases (\\\"gold\\\", \\\"JC\\\") and are stored in canonical form;\\nan omitted dataset is filled with the material's default so the spec stays\\nreproducible. See :func:`list_materials`.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"library\",\n            \"default\": \"library\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"name\": {\n            \"description\": \"Material, e.g. 'Au', 'Ag', 'Al', 'Cu', 'Si', 'TiO2', 'SiO2', 'H2O'.\",\n            \"title\": \"Name\",\n            \"type\": \"string\"\n          },\n          \"dataset\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Dataset, e.g. 'Johnson-Christy'; omitted = material default.\",\n            \"title\": \"Dataset\"\n          }\n        },\n        \"required\": [\n          \"name\"\n        ],\n        \"title\": \"LibraryMaterial\",\n        \"type\": \"object\"\n      },\n      \"LorentzPole\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"delta_eps\": {\n            \"description\": \"Oscillator strength (permittivity step).\",\n            \"title\": \"Delta Eps\",\n            \"type\": \"number\"\n          },\n          \"omega0_ev\": {\n            \"description\": \"Resonance energy in eV.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Omega0 Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"description\": \"Damping in eV.\",\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"delta_eps\",\n          \"omega0_ev\",\n          \"gamma_ev\"\n        ],\n        \"title\": \"LorentzPole\",\n        \"type\": \"object\"\n      },\n      \"PatternedLayer\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"thickness_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Thickness Nm\",\n            \"type\": \"number\"\n          },\n          \"background\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Background\"\n          },\n          \"shapes\": {\n            \"description\": \"Inclusions in one unit cell (xy).\",\n            \"items\": {\n              \"$ref\": \"#/$defs/Structure2D\"\n            },\n            \"title\": \"Shapes\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"thickness_nm\",\n          \"background\"\n        ],\n        \"title\": \"PatternedLayer\",\n        \"type\": \"object\"\n      },\n      \"Polygon\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"polygon\",\n            \"default\": \"polygon\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"vertices_nm\": {\n            \"items\": {\n              \"maxItems\": 2,\n              \"minItems\": 2,\n              \"prefixItems\": [\n                {\n                  \"type\": \"number\"\n                },\n                {\n                  \"type\": \"number\"\n                }\n              ],\n              \"type\": \"array\"\n            },\n            \"minItems\": 3,\n            \"title\": \"Vertices Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"vertices_nm\"\n        ],\n        \"title\": \"Polygon\",\n        \"type\": \"object\"\n      },\n      \"Rectangle\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"rectangle\",\n            \"default\": \"rectangle\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"center_nm\": {\n            \"default\": [\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Center Nm\",\n            \"type\": \"array\"\n          },\n          \"size_nm\": {\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Size Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"size_nm\"\n        ],\n        \"title\": \"Rectangle\",\n        \"type\": \"object\"\n      },\n      \"Structure2D\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"name\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"title\": \"Name\"\n          },\n          \"profile\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"circle\": \"#/$defs/Circle\",\n                \"ellipse\": \"#/$defs/Ellipse\",\n                \"polygon\": \"#/$defs/Polygon\",\n                \"rectangle\": \"#/$defs/Rectangle\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/Rectangle\"\n              },\n              {\n                \"$ref\": \"#/$defs/Circle\"\n              },\n              {\n                \"$ref\": \"#/$defs/Ellipse\"\n              },\n              {\n                \"$ref\": \"#/$defs/Polygon\"\n              }\n            ],\n            \"title\": \"Profile\"\n          },\n          \"material\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Material\"\n          }\n        },\n        \"required\": [\n          \"profile\",\n          \"material\"\n        ],\n        \"title\": \"Structure2D\",\n        \"type\": \"object\"\n      },\n      \"Tabulated\": {\n        \"additionalProperties\": false,\n        \"description\": \"Tabulated n, k data, linearly interpolated (no extrapolation).\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"tabulated\",\n            \"default\": \"tabulated\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"wavelength_nm\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"Wavelength Nm\",\n            \"type\": \"array\"\n          },\n          \"n_real\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"N Real\",\n            \"type\": \"array\"\n          },\n          \"n_imag\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"N Imag\",\n            \"type\": \"array\"\n          },\n          \"source\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Citation / provenance of the data.\",\n            \"title\": \"Source\"\n          }\n        },\n        \"required\": [\n          \"wavelength_nm\",\n          \"n_real\",\n          \"n_imag\"\n        ],\n        \"title\": \"Tabulated\",\n        \"type\": \"object\"\n      },\n      \"WavelengthRange\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"start_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Start Nm\",\n            \"type\": \"number\"\n          },\n          \"stop_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Stop Nm\",\n            \"type\": \"number\"\n          },\n          \"num\": {\n            \"minimum\": 1,\n            \"title\": \"Num\",\n            \"type\": \"integer\"\n          }\n        },\n        \"required\": [\n          \"start_nm\",\n          \"stop_nm\",\n          \"num\"\n        ],\n        \"title\": \"WavelengthRange\",\n        \"type\": \"object\"\n      }\n    },\n    \"additionalProperties\": false,\n    \"description\": \"A 1D/2D-periodic stack of patterned layers under plane-wave illumination.\",\n    \"properties\": {\n      \"kind\": {\n        \"const\": \"periodic\",\n        \"default\": \"periodic\",\n        \"title\": \"Kind\",\n        \"type\": \"string\"\n      },\n      \"lattice_a1_nm\": {\n        \"maxItems\": 2,\n        \"minItems\": 2,\n        \"prefixItems\": [\n          {\n            \"type\": \"number\"\n          },\n          {\n            \"type\": \"number\"\n          }\n        ],\n        \"title\": \"Lattice A1 Nm\",\n        \"type\": \"array\"\n      },\n      \"lattice_a2_nm\": {\n        \"anyOf\": [\n          {\n            \"maxItems\": 2,\n            \"minItems\": 2,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"type\": \"array\"\n          },\n          {\n            \"type\": \"null\"\n          }\n        ],\n        \"default\": null,\n        \"description\": \"None for 1D gratings: periodic along a1, invariant perpendicular to it; shapes are sampled along the line through the origin in the a1 direction.\",\n        \"title\": \"Lattice A2 Nm\"\n      },\n      \"superstrate\": {\n        \"discriminator\": {\n          \"mapping\": {\n            \"constant_index\": \"#/$defs/ConstantIndex\",\n            \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n            \"drude\": \"#/$defs/Drude\",\n            \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n            \"library\": \"#/$defs/LibraryMaterial\",\n            \"tabulated\": \"#/$defs/Tabulated\"\n          },\n          \"propertyName\": \"kind\"\n        },\n        \"oneOf\": [\n          {\n            \"$ref\": \"#/$defs/ConstantIndex\"\n          },\n          {\n            \"$ref\": \"#/$defs/ConstantPermittivity\"\n          },\n          {\n            \"$ref\": \"#/$defs/Drude\"\n          },\n          {\n            \"$ref\": \"#/$defs/DrudeLorentz\"\n          },\n          {\n            \"$ref\": \"#/$defs/Tabulated\"\n          },\n          {\n            \"$ref\": \"#/$defs/LibraryMaterial\"\n          }\n        ],\n        \"title\": \"Superstrate\"\n      },\n      \"layers\": {\n        \"description\": \"From the superstrate side to the substrate side.\",\n        \"items\": {\n          \"$ref\": \"#/$defs/PatternedLayer\"\n        },\n        \"minItems\": 1,\n        \"title\": \"Layers\",\n        \"type\": \"array\"\n      },\n      \"substrate\": {\n        \"discriminator\": {\n          \"mapping\": {\n            \"constant_index\": \"#/$defs/ConstantIndex\",\n            \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n            \"drude\": \"#/$defs/Drude\",\n            \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n            \"library\": \"#/$defs/LibraryMaterial\",\n            \"tabulated\": \"#/$defs/Tabulated\"\n          },\n          \"propertyName\": \"kind\"\n        },\n        \"oneOf\": [\n          {\n            \"$ref\": \"#/$defs/ConstantIndex\"\n          },\n          {\n            \"$ref\": \"#/$defs/ConstantPermittivity\"\n          },\n          {\n            \"$ref\": \"#/$defs/Drude\"\n          },\n          {\n            \"$ref\": \"#/$defs/DrudeLorentz\"\n          },\n          {\n            \"$ref\": \"#/$defs/Tabulated\"\n          },\n          {\n            \"$ref\": \"#/$defs/LibraryMaterial\"\n          }\n        ],\n        \"title\": \"Substrate\"\n      },\n      \"wavelengths\": {\n        \"anyOf\": [\n          {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"type\": \"array\"\n          },\n          {\n            \"$ref\": \"#/$defs/WavelengthRange\"\n          }\n        ],\n        \"title\": \"Wavelengths\"\n      },\n      \"incidence\": {\n        \"$ref\": \"#/$defs/Incidence\",\n        \"default\": {\n          \"theta_deg\": 0.0,\n          \"phi_deg\": 0.0,\n          \"polarizations\": [\n            \"s\",\n            \"p\"\n          ]\n        }\n      },\n      \"options\": {\n        \"additionalProperties\": {\n          \"additionalProperties\": true,\n          \"type\": \"object\"\n        },\n        \"title\": \"Options\",\n        \"type\": \"object\"\n      }\n    },\n    \"required\": [\n      \"lattice_a1_nm\",\n      \"superstrate\",\n      \"layers\",\n      \"substrate\",\n      \"wavelengths\"\n    ],\n    \"title\": \"PeriodicProblem\",\n    \"type\": \"object\"\n  },\n  \"conventions\": \"Lightsmith conventions (fixed; changing them needs a schema version bump):\\n- Lengths in nm. Wavelengths are vacuum wavelengths in nm.\\n- Time dependence exp(-i omega t): absorbing materials have Im(eps) > 0 and Im(n) > 0.\\n- Cross sections in nm^2; efficiencies Q = C / (pi r_eq^2), r_eq = volume-equivalent radius of all particles.\\n- layer_stack / periodic: layers listed from the superstrate (incidence side) to the substrate; light travels +z.\\n  R is measured in the superstrate, T in the substrate.\\n- mode: cross-section in the xy plane, propagation along +z.\\n- device: ports are planes whose normal is the axis where size_nm is zero; direction is into the device.\\n- problem.options[<method or backend name>] holds solver options, validated by that backend.\\n- Materials: {\\\"kind\\\": \\\"constant_index\\\", \\\"n_real\\\": .., \\\"n_imag\\\": ..}, {\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\"},\\n  drude, drude_lorentz, tabulated, constant_permittivity. FDTD needs dispersive models (fit_drude_lorentz).\\n- Results carry provenance and warnings: read the warnings before trusting the numbers.\\n\",\n  \"backends\": [\n    {\n      \"name\": \"lightsmith-rcwa\",\n      \"method\": \"rcwa\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 0\n    },\n    {\n      \"name\": \"lightsmith-fdtd\",\n      \"method\": \"fdtd\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 2\n    }\n  ],\n  \"example\": {\n    \"kind\": \"periodic\",\n    \"lattice_a1_nm\": [\n      400,\n      0\n    ],\n    \"lattice_a2_nm\": [\n      0,\n      400\n    ],\n    \"superstrate\": {\n      \"kind\": \"constant_index\",\n      \"n_real\": 1.0\n    },\n    \"layers\": [\n      {\n        \"thickness_nm\": 150,\n        \"background\": {\n          \"kind\": \"constant_index\",\n          \"n_real\": 2.0\n        },\n        \"shapes\": [\n          {\n            \"profile\": {\n              \"kind\": \"circle\",\n              \"radius_nm\": 100\n            },\n            \"material\": {\n              \"kind\": \"constant_index\",\n              \"n_real\": 1.0\n            }\n          }\n        ]\n      }\n    ],\n    \"substrate\": {\n      \"kind\": \"constant_index\",\n      \"n_real\": 1.45\n    },\n    \"wavelengths\": [\n      560,\n      600,\n      640\n    ],\n    \"incidence\": {\n      \"polarizations\": [\n        \"s\"\n      ]\n    },\n    \"options\": {\n      \"rcwa\": {\n        \"harmonics\": 3\n      }\n    }\n  }\n}"
+      }
+     ],
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "CAQSiAYKEAgTGAI4AUIIdGhpbmtpbmcSDH3+cHLN7/2t5fybyBoM3qECfo/xBZ97UiJUIjDxJ0+BGv5v8zcbFMg3tr0H7vD53N6sS8f3nzbFUGy5kcpIEExrX/Ve1VRXQjeUjXgqpQW3iEUatOnoOLKdAWY2n/46VaYSphq9tpm3COqGEa4DYzU29xogDR3QdlqqGas34a+gGZfq9UfVrpua3B9BchGdlXmJa6J2iNeFsRVM8DKe8Ius93HwWVHsnZNvIEj/Ubx9812MJGYCvZmEwuZO5/w++SjzIbK78lkAygws/XeZGZm5o8ZiYQpa/VdRSnKx9nOFhQQ40QwJvmXoSE/z0RH/lOd71mhycof+Jlm6e67Yi6blodIVUs5yty4YKq99Ho2XaWyBnBPgWA6Y+s/Ht9Mw84i+LsCr2dGYF7cV+rGL8LXisH7iFUINgKb9dMZ2H4hxtPxNHY/5402DFcRf18kdayp0Ip1klRORVbu/qVtMuRtBX2dsHNNADJtydgpXiH0CW86y0duMQuVvcUkdFrACCuj7l8HoXJaK8XxBECcfTu4n/SnhXmyaPRJBOjWYlKrUgcU9DDh7pQxJ5Eoq2y0ZsrlMzAaqnIf9iNDaHnMIlIJts7wCNUSKMV+DlP6vHP+SI5vC9L22gTEj2wNKJ4fJmVW641fe/bekbx5OosSFDQpI+o6VQqKC8HsCpphdvpkAeLIlPTe+zK2YbROoHph+jaTKvWIBlM0WWH+XL31JDOPoUxfbp6T2XPCVIFgS/+D/u4XPzGdx9hF5gD+B2TDxYgHCkP2VWmczZIxQU1gOC3QtPtcM64ojnORmLwzY2KCtOLOmxD/ZjFxCvCoygH2HJthOCEQkms40BNWsjqL7SAAJFQZ2U7mcEow8TU7swaZZ8lwhMIzGkK7gwG80Nnxg43FSgcuxGqMhP1QO/AbwzHXxoJGLyuTExzED2sb2hiFuc/YscIoCoRRWzUm/r2KMRliRo4qQGLqIh7EKcKgSuwNPNwgVOW6jLEplq7Uck5ZCv5RqFBgB",
+     "thinking": "I'm assuming the light comes from air above the structure, so the incidence is from the superstrate. Next I'll look at the RCWA harmonic settings and solve once with the default and once with a higher harmonic count to check convergence.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_01H3LYBeZ4Mwsv9A8fE9qaHR",
+     "input": {
+      "problem": {
+       "kind": "periodic",
+       "lattice_a1_nm": [
+        400,
+        0
+       ],
+       "lattice_a2_nm": [
+        0,
+        400
+       ],
+       "superstrate": {
+        "kind": "constant_index",
+        "n_real": 1.0
+       },
+       "layers": [
+        {
+         "thickness_nm": 300,
+         "background": {
+          "kind": "constant_index",
+          "n_real": 1.0
+         },
+         "shapes": [
+          {
+           "profile": {
+            "kind": "circle",
+            "radius_nm": 100
+           },
+           "material": {
+            "kind": "constant_index",
+            "n_real": 2.4
+           }
+          }
+         ]
+        }
+       ],
+       "substrate": {
+        "kind": "constant_index",
+        "n_real": 1.46
+       },
+       "wavelengths": [
+        700
+       ],
+       "incidence": {
+        "polarizations": [
+         "s",
+         "p"
+        ]
+       }
+      }
+     },
+     "name": "solve",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_01H3LYBeZ4Mwsv9A8fE9qaHR",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\"status\": \"succeeded\", \"job_id\": \"07ac4a9823e62e46085a29564d4d5957\", \"job\": {\"job_id\": \"07ac4a9823e62e46085a29564d4d5957\", \"operation\": \"solve\", \"problem_kind\": \"periodic\", \"status\": \"succeeded\", \"progress\": 1.0, \"stage\": \"done\", \"message\": null, \"method\": \"auto\", \"methods\": null, \"device\": \"auto\", \"label\": null, \"runner\": \"process\", \"created_at\": \"2026-11-09T23:38:34+00:00\", \"started_at\": \"2026-11-09T23:38:34+00:00\", \"finished_at\": \"2026-11-09T23:38:40+00:00\", \"elapsed_s\": 6.156, \"error\": null, \"resources\": {\"job\": \"lightsmith://jobs/07ac4a9823e62e46085a29564d4d5957\", \"result\": \"lightsmith://jobs/07ac4a9823e62e46085a29564d4d5957/result\", \"csv\": \"lightsmith://jobs/07ac4a9823e62e46085a29564d4d5957/result.csv\", \"plot\": \"lightsmith://jobs/07ac4a9823e62e46085a29564d4d5957/plot.png\"}, \"estimated_runtime_s\": 0.08}, \"summary\": {\"result_kind\": \"spectrum\", \"method\": \"rcwa\", \"backend\": \"lightsmith-rcwa\", \"warnings\": [], \"provenance\": {\"device\": \"cuda:0\", \"framework\": \"torch\", \"gpu_name\": \"NVIDIA GeForce RTX 5070\", \"precision\": \"double\", \"runtime_s\": 2.1633310000179335, \"harmonics\": 225}, \"n_wavelengths\": 1, \"wavelength_range_nm\": [700.0, 700.0], \"angles_deg\": [0.0], \"polarizations\": [\"s\", \"p\"], \"units\": {\"R/T/A\": \"power fraction\", \"wavelength\": \"nm\"}, \"per_polarization\": {\"s\": [{\"angle_deg\": 0.0, \"R_mean\": 0.03985, \"T_mean\": 0.9602, \"A_mean\": -2.644e-05, \"R_max\": {\"value\": 0.03985, \"wavelength_nm\": 700.0}, \"T_min\": {\"value\": 0.9602, \"wavelength_nm\": 700.0}}], \"p\": [{\"angle_deg\": 0.0, \"R_mean\": 0.03985, \"T_mean\": 0.9602, \"A_mean\": -2.644e-05, \"R_max\": {\"value\": 0.03985, \"wavelength_nm\": 700.0}, \"T_min\": {\"value\": 0.9602, \"wavelength_nm\": 700.0}}]}, \"max_energy_balance_error\": 1.11e-16, \"n_diffraction_orders\": 1}, \"next_step\": \"Full arrays: read lightsmith://jobs/07ac4a9823e62e46085a29564d4d5957/result (JSON) or lightsmith://jobs/07ac4a9823e62e46085a29564d4d5957/result.csv, or call get_result. Check summary.warnings.\"}"
+      }
+     ],
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "CAQSsQYKEAgTGAI4AUIIdGhpbmtpbmcSDP5auuRqyj+9YmVWjhoMRpu7pOizAWvpWdMVIjDFD50YhRg75kuSOrMWfly21baIsc9FSlYTR9Z8zE6/tWczMDiIIkqJdh3tP4gEvJ8qzgVTWOfncmZHVKOtWKBJRVaQsLHM4oPvDINA/OnSwaekc6/6k21TAY067gO3r8EFRwdj1EAUR/9W5OrAlqcArwjXeFuPqO/dFnIi2GCdTAeCgFfMt+WdSODIWpe7X7LOFGh5LNHwh36o/FBDOxVrCi6e1F83OPZdhLYWsNzUGe5SUZApAMDZ7LxTYjBRwarqKWevTGs6oBl7htV9eFydjXdAbj5tg6agWQ72zxoQcLYD2FXCoK4QrZKgUmTH7FOltosDO0Hw/x3acsyKhLxL8LmynodsC09+mp7dUIy6ajEWZ+7xbZTu5ObJsGNB3NPUan877/o18qXNNKT7+xdMNk2tfk0P6q0szi4srk/AgeUtLtuBXc4w0H27R+q6ApAT4eWK+adMtBe/Ur1oZW29Vu9eE+vegPIVw07Y24M0zG8exfXzwrzBjePs3iY/wWw4gbCUMdFcH/mgO8ibdOalSL51L5m+pOvBevc7+teK4ipbRrXM1EZrKfxr6uTo3MpvGhYgUpDtHP1R7pkidnSRtcgEChXZgH32vuf54NmvbZ5Ii4Mmcm7iwGRk7+XD3aCtpjS7mmslaHllBa8sUzzwPajkCcOqxxDdDnxjK/groNnSVknC1hMi60LVqakpb2XKaCzIddTozSpSbWUpkMsFRbSjHr7jy6Y3ljxWAPC4y+XVIQu00p3EzxRm4onI6vO16AAVzPVYt2xhBQ7OWRCoROSxa/G+WfgKpOPUNV1bD7M3z13Xfl6AoW28NluZQ2EdMm2iBbVfGzSk2K2tSQXjhapQNe56alUbjNmlX8NwsFWBe7S3tzYptK8jX4QGE+3HAI0/91iMK3AGNoMkI4E2BfqMUJQwhNe2cqcWjui9mKl0JMwAukxSzZHNQONmvudaAC9pXoa9EPffm5Z03/yE0QrQL0iW4k1yYKBMDjcVJiCQGek4Vw3wUErzctOnUSYxGAE=",
+     "thinking": "I'm checking whether 225 harmonics, which is a 15x15 grid at order 7, has converged, so I'll try a higher setting of 10 harmonics, a 21x21 grid of 441, through the \"rcwa\" harmonics option.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_01TKmzjhQ76iEYqMcqGoa2PF",
+     "input": {
+      "problem": {
+       "kind": "periodic",
+       "lattice_a1_nm": [
+        400,
+        0
+       ],
+       "lattice_a2_nm": [
+        0,
+        400
+       ],
+       "superstrate": {
+        "kind": "constant_index",
+        "n_real": 1.0
+       },
+       "layers": [
+        {
+         "thickness_nm": 300,
+         "background": {
+          "kind": "constant_index",
+          "n_real": 1.0
+         },
+         "shapes": [
+          {
+           "profile": {
+            "kind": "circle",
+            "radius_nm": 100
+           },
+           "material": {
+            "kind": "constant_index",
+            "n_real": 2.4
+           }
+          }
+         ]
+        }
+       ],
+       "substrate": {
+        "kind": "constant_index",
+        "n_real": 1.46
+       },
+       "wavelengths": [
+        700
+       ],
+       "incidence": {
+        "polarizations": [
+         "s",
+         "p"
+        ]
+       },
+       "options": {
+        "rcwa": {
+         "harmonics": 11
+        }
+       }
+      }
+     },
+     "name": "solve",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_01TKmzjhQ76iEYqMcqGoa2PF",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\"status\": \"failed\", \"job_id\": \"00056ef313109ed304debf15a2182aad\", \"job\": {\"job_id\": \"00056ef313109ed304debf15a2182aad\", \"operation\": \"solve\", \"problem_kind\": \"periodic\", \"status\": \"failed\", \"progress\": 0.1, \"stage\": \"solving\", \"message\": \"solving with lightsmith-rcwa\", \"method\": \"auto\", \"methods\": null, \"device\": \"auto\", \"label\": null, \"runner\": \"process\", \"created_at\": \"2026-11-09T23:38:44+00:00\", \"started_at\": \"2026-11-09T23:38:44+00:00\", \"finished_at\": \"2026-11-09T23:38:49+00:00\", \"elapsed_s\": 4.735, \"error\": {\"error\": \"WorkerCrashed\", \"message\": \"the solver process died without reporting an error\"}, \"resources\": {\"job\": \"lightsmith://jobs/00056ef313109ed304debf15a2182aad\"}, \"estimated_runtime_s\": 0.432}, \"next_step\": \"The job did not succeed; see job.error, fix the problem and solve again.\"}"
+      }
+     ],
+     "is_error": true
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "CAQS7AUKEAgTGAI4AUIIdGhpbmtpbmcSDJH6agobuR854ZcVkxoM3bLJSYpKFoscc6LrIjDCCUoDXJGzw7j0p3fZ/oqwM/TwRVKW/zZp5ujWxy/Ln4cVXnqFrx/1KgUtuhhMVdwqiQX4EYvwik+g5pAaU6p1GWeOeMCpGGCWxGufiBoQ+xlLwMNcLJ85DzwG4ycU/APwv9FiZ8NNQOvBx6vstrCRDS+7X44kcIdZd0sM2nf96ol/iiNk8tvDOBJp5pA+0WDLk63UgSLoSNOYLMkyyexsAdZBp25ld3B1yqp9i4zn3vfKR0RVxAo1QxpdRmz7o/Ymr7HDaoZtzL2zVhqC6oPxL6Qdjkx2AwNwhqKiFmP68n1jz2a8Lf+VsISE3F3uhKSxAHpklg/EIXmy+nnjYDOHccbN0OLn5WP8PQ/PYWw5OJOnJAUCd8+Rkj1WvGlAY6nxXsIyXHzi2bBjITlxT3RVmF0gNL7fSXgKveJZ8vnpzDw/QzUAxgV3Hb0eW5Cen5Pn2SFLrJHObDkl/XBuHaXTTuMKJLk/jUwiIXgPtL/+RAXyUnpkAYH8PbO4088cHiy16MSLarotuzjFKmcZ5eIbxOf01ZoUN6yPAr25/wQyNqPUiwRkRzbJ8eAH1HSFlxSM0PMO0iDUxX33xmDN5y1Q4lA0To6KBFfGx5tTJUD/dypcvBWqvDrOJzofR28oS46Nftlcfh8Orj4VMynGAAvXAu0YnxEH3Rz0BbpuM0OeLP4JEHTDKlqiR5gP1tpUeyLEkmO5ApO3thzEYkedUYpRZO0ePWCF9WX83n0Pf3UaS31+TsmXAeKRkMOzVdxovyssMw834wbbxEsSwTipWcdeo2CYt9msgaM3+zdeKIQY055BW+7Mhz18PbCm8VVRSh3Hjapc4rBjuV1sBXMAOeP7r5oVZCpbWxeFvh0Xs1y5JVCHl6m12a9aXam32YcFupNHsEbA3vXaVXXI93v7TnIrsLzeZMM2MYoyESDSGAE=",
+     "thinking": "I'm wondering whether \"harmonics\" means something different here, so I'll try harmonics set to 9 on the CPU.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_013XAveYDVRXNvkyjQ2CjfUn",
+     "input": {
+      "problem": {
+       "kind": "periodic",
+       "lattice_a1_nm": [
+        400,
+        0
+       ],
+       "lattice_a2_nm": [
+        0,
+        400
+       ],
+       "superstrate": {
+        "kind": "constant_index",
+        "n_real": 1.0
+       },
+       "layers": [
+        {
+         "thickness_nm": 300,
+         "background": {
+          "kind": "constant_index",
+          "n_real": 1.0
+         },
+         "shapes": [
+          {
+           "profile": {
+            "kind": "circle",
+            "radius_nm": 100
+           },
+           "material": {
+            "kind": "constant_index",
+            "n_real": 2.4
+           }
+          }
+         ]
+        }
+       ],
+       "substrate": {
+        "kind": "constant_index",
+        "n_real": 1.46
+       },
+       "wavelengths": [
+        700
+       ],
+       "incidence": {
+        "polarizations": [
+         "s",
+         "p"
+        ]
+       },
+       "options": {
+        "rcwa": {
+         "harmonics": 10
+        }
+       }
+      },
+      "device": "cpu"
+     },
+     "name": "solve",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_013XAveYDVRXNvkyjQ2CjfUn",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\"status\": \"succeeded\", \"job_id\": \"f6b435ab31135ab68f96fa9758c5e241\", \"job\": {\"job_id\": \"f6b435ab31135ab68f96fa9758c5e241\", \"operation\": \"solve\", \"problem_kind\": \"periodic\", \"status\": \"succeeded\", \"progress\": 1.0, \"stage\": \"done\", \"message\": null, \"method\": \"auto\", \"methods\": null, \"device\": \"cpu\", \"label\": null, \"runner\": \"process\", \"created_at\": \"2026-11-09T23:38:53+00:00\", \"started_at\": \"2026-11-09T23:38:53+00:00\", \"finished_at\": \"2026-11-09T23:39:02+00:00\", \"elapsed_s\": 8.828, \"error\": null, \"resources\": {\"job\": \"lightsmith://jobs/f6b435ab31135ab68f96fa9758c5e241\", \"result\": \"lightsmith://jobs/f6b435ab31135ab68f96fa9758c5e241/result\", \"csv\": \"lightsmith://jobs/f6b435ab31135ab68f96fa9758c5e241/result.csv\", \"plot\": \"lightsmith://jobs/f6b435ab31135ab68f96fa9758c5e241/plot.png\"}, \"estimated_runtime_s\": 0.301}, \"summary\": {\"result_kind\": \"spectrum\", \"method\": \"rcwa\", \"backend\": \"lightsmith-rcwa\", \"warnings\": [], \"provenance\": {\"device\": \"cpu\", \"framework\": \"numpy\", \"precision\": \"double\", \"runtime_s\": 8.632497899932787, \"harmonics\": 441}, \"n_wavelengths\": 1, \"wavelength_range_nm\": [700.0, 700.0], \"angles_deg\": [0.0], \"polarizations\": [\"s\", \"p\"], \"units\": {\"R/T/A\": \"power fraction\", \"wavelength\": \"nm\"}, \"per_polarization\": {\"s\": [{\"angle_deg\": 0.0, \"R_mean\": 0.03994, \"T_mean\": 0.9601, \"A_mean\": -1.35e-05, \"R_max\": {\"value\": 0.03994, \"wavelength_nm\": 700.0}, \"T_min\": {\"value\": 0.9601, \"wavelength_nm\": 700.0}}], \"p\": [{\"angle_deg\": 0.0, \"R_mean\": 0.03994, \"T_mean\": 0.9601, \"A_mean\": -1.35e-05, \"R_max\": {\"value\": 0.03994, \"wavelength_nm\": 700.0}, \"T_min\": {\"value\": 0.9601, \"wavelength_nm\": 700.0}}]}, \"max_energy_balance_error\": 0.0, \"n_diffraction_orders\": 1}, \"next_step\": \"Full arrays: read lightsmith://jobs/f6b435ab31135ab68f96fa9758c5e241/result (JSON) or lightsmith://jobs/f6b435ab31135ab68f96fa9758c5e241/result.csv, or call get_result. Check summary.warnings.\"}"
+      }
+     ],
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "CAQSlgYKEAgTGAI4AUIIdGhpbmtpbmcSDE1HPY57Rz/D3hlYXBoM78DDfQUSOGRsAJkRIjBj7KZY9bFtVMpsbzBv2lqZ5apcu01vfqU8i8Dp6InwPxkltZAgAnFP60eYfLBA9FEqswU3nQ0ab7aMGyZm/m4UkLK8mMrMKKX8HzdrJH1reOxGPe1vQI9iByo6geYfjtz+AQI+P3MrwXxWisn10d6Rw1wL5K1TgCFqzLJ9ED4q6W/xDh99RYJgm7OxzCDvWSJnSZTy4DW+0TvSXkDeIlgIxPhfB0R0nvA8RCDOXt2bC3fDTWsjeuz6uOBezIZS0vY2nC9f61cHuxrN8gT/iDqV8ZdHKUxXNu5gaJUjcWaFiF3G7H7pUV/tYiPWpi1yI2C0kQEgZNZ83OA2w0l7ytNZnS0X4E/+jfsm7JuSmcIYoMcV16JedhRLZKStGtRwyqZj+ABbuX9KD5KFfn0w3xFCwDY/tpHiwQFl22lloUs48meQdiY4TpI17hu4TLPyNQgbiqhard/nSHnQECjaZQri+sjSbuXpSj1ey/w+IKmY14NiJg5XzZwN+fIG26U/jHIVWjhfCpCko4y+6C6wIhCDn9PJx4X8btJ3IO2NuCzsICgY9+JjfDUpqSyMcZ8hiUyTG9Dy/hWKODR1HqU06FIetulVUcWZKa+yPlevQ7Zg+XTVv55jSQKrz1Ml1krTiWiUwgUUOiIx4Ee/VnaumKftT2cp3/uCZ5/oEqpsog9H/S9z44ak5pcxQUMZHqUgfl1z6DBO30uw59qxt0T+LPTQIjxS1dnXRtlWI7y0zSod9DGq7GuWF0kpHEYmRBo18eVUaG7ahq/irWBsQKfMsVX63D5veAx/Lo2wUxl0jhds6HeA8wVPSDzhXjcnKPqvG4k9X+fpEWzJCSxQHEWSSQhWZZBFKrBH7pfr0edE3DLM3xjE12JdELtsN/7x208qorHQWXts42+zLiSeKH9Wmyi0jAONz9jhdO+e2cVJ7CDpcgzh+h3BPk3jJCTx4t6bPXTz4iVFO9tYaRqnJqn5UMKD/g7uuruXGAE=",
+     "thinking": "The estimate has converged to about 0.0399. The grating pitch is 400 nm, and 700 nm divided by 1.46 is roughly 479 nm, which exceeds the pitch, so only the zero order propagates. That checks out.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_019x2o9qmUW4Hx5DcAUXk37A",
+     "input": {
+      "values": {
+       "reflectance": 0.0399
+      },
+      "declined": false,
+      "concerns": [
+       "I assumed the light comes in from the air side, through the pillars and into the glass. The reflectance is measured in air.",
+       "I treated the glass as a semi-infinite substrate, so the reflection from the back surface of the glass is not included."
+      ],
+      "summary": "At 700 nm and normal incidence, the total reflectance is about 0.040 (4.0%) for unpolarized light. Transmission into the glass is about 96%, and there is no absorption.\n\n**Setup:** I simulated one 400 nm square unit cell with RCWA (rigorous coupled-wave analysis). It holds a TiO2 pillar (n = 2.4, radius 100 nm, height 300 nm) in an air layer, on semi-infinite glass (n = 1.46).\n\n**Polarization:** s and p gave the same result because the lattice has square symmetry and the light hits at normal incidence. Their average, which is the unpolarized value, is the same number.\n\n**Diffraction:** The 400 nm pitch is shorter than the wavelength in glass (700 / 1.46 \u2248 479 nm), so only the zeroth order propagates. The total reflectance is therefore the specular reflectance.\n\n**Convergence:** Increasing the number of Fourier harmonics from 225 (15\u00d715) to 441 (21\u00d721) changed R only from 0.03985 to 0.03994. Energy is conserved to within about 1e-5."
+     },
+     "name": "submit_answer",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_019x2o9qmUW4Hx5DcAUXk37A",
+     "content": "Answer recorded."
+    }
+   ]
+  }
+ ],
+ "original_grade": {
+  "task_id": "per-tio2-metasurface",
+  "passed": false,
+  "score": 0.75,
+  "checks": [
+   {
+    "name": "value:reflectance",
+    "passed": true,
+    "required": true,
+    "detail": "reported 0.0399, reference 0.0387799 (abs 0.02)"
+   },
+   {
+    "name": "solved_kind",
+    "passed": true,
+    "required": true,
+    "detail": "2 successful periodic solve(s)"
+   },
+   {
+    "name": "estimate_before_solve",
+    "passed": false,
+    "required": true,
+    "detail": "estimates at calls [], first solve at call 1"
+   },
+   {
+    "name": "spec:lattice_a1_nm[0]",
+    "passed": true,
+    "required": true,
+    "detail": "found 400.0"
+   }
+  ]
+ }
+}

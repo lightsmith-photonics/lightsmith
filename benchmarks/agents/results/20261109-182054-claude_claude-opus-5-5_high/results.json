@@ -1,0 +1,1205 @@
+{
+ "meta": {
+  "agent": "claude:claude-opus-5-5:high",
+  "model": "claude-opus-5-5",
+  "fault": null,
+  "started": "2026-11-09T18:20:54",
+  "server_command": [
+   "C:\\Users\\alexg\\Documents\\ChatGPT\\lightsmith\\.venv\\Scripts\\lightsmith-mcp.EXE"
+  ],
+  "transport": "stdio",
+  "server_per_task": true,
+  "lightsmith_version": "0.3.0",
+  "git_commit": "d7027ff",
+  "platform": "Windows 11, Python 3.12.2",
+  "tasks": [
+   "sca-au40-water-peak",
+   "sca-au80-vendor-size-abs",
+   "sca-au-medium-wavelength",
+   "sca-si-sphere-ev",
+   "sca-au-oil-peak",
+   "sca-coreshell-nir",
+   "sca-au-nanorod-peak",
+   "sca-quasistatic-too-big",
+   "sca-ejwt-absorbing",
+   "sca-ejwt-gain-pushback",
+   "sca-au-midir-dataset",
+   "sca-ps-bead-wavenumber",
+   "em-dye-near-gold-sphere",
+   "ls-quarter-wave-ar",
+   "ls-brewster-angle",
+   "ls-bragg-mirror",
+   "ls-gold-film-glass-side",
+   "ls-silver-film-ev",
+   "ls-tir-glass-air",
+   "ls-si-film-wavenumber",
+   "ls-thick-slide-incoherent",
+   "per-grating-first-order",
+   "per-subwavelength-orders",
+   "per-tio2-metasurface",
+   "per-grating-oblique-r0",
+   "mode-si-strip-te0",
+   "mode-si-strip-ng",
+   "mode-si-strip-tm0",
+   "mode-sin-thz",
+   "mode-guided-count",
+   "mode-neff-above-core-pushback",
+   "mode-fiber-fundamental",
+   "dev-mmi-1x2-2d",
+   "dev-width-step-2d",
+   "bands-rods-tm-gap",
+   "bands-gap-wavelengths",
+   "bands-triangular-holes-complete",
+   "bands-no-contrast",
+   "circ-mzi-fsr",
+   "circ-ring-fsr",
+   "circ-splitter-tree",
+   "circ-link-budget-units",
+   "circ-lossless-splitter-pushback",
+   "opt-bend-topology"
+  ],
+  "server": "lightsmith 0.3.0",
+  "tools": [
+   "list_problem_kinds",
+   "get_schema",
+   "list_backends",
+   "check_environment",
+   "validate_problem",
+   "estimate",
+   "get_discretization",
+   "solve",
+   "start_solve",
+   "compare",
+   "get_job",
+   "list_jobs",
+   "cancel_job",
+   "get_result",
+   "search_materials",
+   "get_material",
+   "fit_drude_lorentz"
+  ],
+  "server_instructions": "Lightsmith solves electromagnetics / photonics problems (Mie, T-matrix, BEM, DDA, FDTD, TMM, RCWA, FDE, EME, BPM,\nFDFD, PWE, circuit models, inverse design). Everything is JSON. Units: nm, vacuum wavelengths, exp(-i omega t).\n\nWorkflow:\n1. list_problem_kinds, then get_schema(kind) for the exact JSON Schema and a working example.\n2. Materials: search_materials / get_material; fit_drude_lorentz turns measured data into an FDTD-ready model.\n3. validate_problem, then estimate (memory, run time, budget verdict). Solves over the server's budget are\n   refused with ways to shrink them.\n4. solve (or compare to cross-check methods). Quick problems return a summary at once; longer ones become jobs:\n   poll get_job(job_id, wait_s=...) or cancel_job. start_solve always returns a job id immediately.\n5. Summaries hold the key numbers; full arrays are resources lightsmith://jobs/{job_id}/result (JSON) and\n   .../result.csv, a plot at .../plot.png (or get_result / plot=true). Always read the result's warnings.\n",
+  "wall_s": 2030.7199449000182
+ },
+ "summary": {
+  "tasks": 44,
+  "passed": 33,
+  "mean_score": 0.9132590909090909,
+  "cost_usd": 6.3613,
+  "usage": {
+   "input_tokens": 424,
+   "output_tokens": 70530,
+   "cache_creation_input_tokens": 911148,
+   "cache_read_input_tokens": 1967850
+  }
+ },
+ "results": [
+  {
+   "task_id": "sca-au40-water-peak",
+   "kind": "scattering",
+   "category": "standard",
+   "traps": [],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 2,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 3,
+   "stop": "submitted",
+   "wall_s": 14.79,
+   "usage": {
+    "input_tokens": 8,
+    "output_tokens": 1255,
+    "cache_creation_input_tokens": 1030,
+    "cache_read_input_tokens": 47651
+   },
+   "cost_usd": 0.0398,
+   "notes": []
+  },
+  {
+   "task_id": "sca-au80-vendor-size-abs",
+   "kind": "scattering",
+   "category": "trap",
+   "traps": [
+    "diameter_vs_radius"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 4,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 5,
+   "stop": "submitted",
+   "wall_s": 16.54,
+   "usage": {
+    "input_tokens": 12,
+    "output_tokens": 1420,
+    "cache_creation_input_tokens": 22312,
+    "cache_read_input_tokens": 70077
+   },
+   "cost_usd": 0.154,
+   "notes": []
+  },
+  {
+   "task_id": "sca-au-medium-wavelength",
+   "kind": "scattering",
+   "category": "trap",
+   "traps": [
+    "medium_vs_vacuum_wavelength"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 3,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 3,
+   "stop": "submitted",
+   "wall_s": 14.43,
+   "usage": {
+    "input_tokens": 8,
+    "output_tokens": 1133,
+    "cache_creation_input_tokens": 21471,
+    "cache_read_input_tokens": 28325
+   },
+   "cost_usd": 0.1357,
+   "notes": []
+  },
+  {
+   "task_id": "sca-si-sphere-ev",
+   "kind": "scattering",
+   "category": "trap",
+   "traps": [
+    "photon_energy_units",
+    "diameter_vs_radius"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 4,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 4,
+   "stop": "submitted",
+   "wall_s": 15.65,
+   "usage": {
+    "input_tokens": 10,
+    "output_tokens": 1586,
+    "cache_creation_input_tokens": 23838,
+    "cache_read_input_tokens": 54264
+   },
+   "cost_usd": 0.1618,
+   "notes": []
+  },
+  {
+   "task_id": "sca-au-oil-peak",
+   "kind": "scattering",
+   "category": "standard",
+   "traps": [],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 4,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 5,
+   "stop": "submitted",
+   "wall_s": 17.61,
+   "usage": {
+    "input_tokens": 12,
+    "output_tokens": 1338,
+    "cache_creation_input_tokens": 22286,
+    "cache_read_input_tokens": 69945
+   },
+   "cost_usd": 0.1522,
+   "notes": []
+  },
+  {
+   "task_id": "sca-coreshell-nir",
+   "kind": "scattering",
+   "category": "standard",
+   "traps": [],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 4,
+   "tool_errors": 1,
+   "estimate_calls": 0,
+   "turns": 5,
+   "stop": "submitted",
+   "wall_s": 29.36,
+   "usage": {
+    "input_tokens": 12,
+    "output_tokens": 1353,
+    "cache_creation_input_tokens": 22229,
+    "cache_read_input_tokens": 68597
+   },
+   "cost_usd": 0.152,
+   "notes": []
+  },
+  {
+   "task_id": "sca-au-nanorod-peak",
+   "kind": "scattering",
+   "category": "standard",
+   "traps": [
+    "estimate_first"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 10,
+   "tool_errors": 1,
+   "estimate_calls": 1,
+   "turns": 10,
+   "stop": "submitted",
+   "wall_s": 610.38,
+   "usage": {
+    "input_tokens": 22,
+    "output_tokens": 3967,
+    "cache_creation_input_tokens": 42046,
+    "cache_read_input_tokens": 228512
+   },
+   "cost_usd": 0.3354,
+   "notes": []
+  },
+  {
+   "task_id": "sca-quasistatic-too-big",
+   "kind": "scattering",
+   "category": "warning",
+   "traps": [
+    "check_warnings"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 2,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 3,
+   "stop": "submitted",
+   "wall_s": 13.59,
+   "usage": {
+    "input_tokens": 8,
+    "output_tokens": 1012,
+    "cache_creation_input_tokens": 20802,
+    "cache_read_input_tokens": 28337
+   },
+   "cost_usd": 0.1299,
+   "notes": []
+  },
+  {
+   "task_id": "sca-ejwt-absorbing",
+   "kind": "scattering",
+   "category": "trap",
+   "traps": [
+    "exp_plus_iwt_convention"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 2,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 3,
+   "stop": "submitted",
+   "wall_s": 10.06,
+   "usage": {
+    "input_tokens": 8,
+    "output_tokens": 843,
+    "cache_creation_input_tokens": 20451,
+    "cache_read_input_tokens": 28387
+   },
+   "cost_usd": 0.1248,
+   "notes": []
+  },
+  {
+   "task_id": "sca-ejwt-gain-pushback",
+   "kind": "scattering",
+   "category": "pushback",
+   "traps": [
+    "exp_plus_iwt_convention",
+    "gain"
+   ],
+   "passed": false,
+   "score": 0.5,
+   "failed_checks": [
+    "pushback"
+   ],
+   "tool_calls": 2,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 3,
+   "stop": "submitted",
+   "wall_s": 20.41,
+   "usage": {
+    "input_tokens": 8,
+    "output_tokens": 2115,
+    "cache_creation_input_tokens": 20799,
+    "cache_read_input_tokens": 28755
+   },
+   "cost_usd": 0.1521,
+   "notes": []
+  },
+  {
+   "task_id": "sca-au-midir-dataset",
+   "kind": "scattering",
+   "category": "trap",
+   "traps": [
+    "material_range"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 6,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 4,
+   "stop": "submitted",
+   "wall_s": 22.48,
+   "usage": {
+    "input_tokens": 10,
+    "output_tokens": 2183,
+    "cache_creation_input_tokens": 32644,
+    "cache_read_input_tokens": 59600
+   },
+   "cost_usd": 0.2188,
+   "notes": []
+  },
+  {
+   "task_id": "sca-ps-bead-wavenumber",
+   "kind": "scattering",
+   "category": "trap",
+   "traps": [
+    "wavenumber_units",
+    "diameter_vs_radius"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 3,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 3,
+   "stop": "submitted",
+   "wall_s": 15.49,
+   "usage": {
+    "input_tokens": 8,
+    "output_tokens": 1151,
+    "cache_creation_input_tokens": 21500,
+    "cache_read_input_tokens": 28300
+   },
+   "cost_usd": 0.1362,
+   "notes": []
+  },
+  {
+   "task_id": "em-dye-near-gold-sphere",
+   "kind": "emission",
+   "category": "trap",
+   "traps": [
+    "diameter_vs_radius",
+    "distance_from_surface"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 3,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 4,
+   "stop": "submitted",
+   "wall_s": 18.79,
+   "usage": {
+    "input_tokens": 10,
+    "output_tokens": 1602,
+    "cache_creation_input_tokens": 17563,
+    "cache_read_input_tokens": 42712
+   },
+   "cost_usd": 0.1284,
+   "notes": []
+  },
+  {
+   "task_id": "ls-quarter-wave-ar",
+   "kind": "layer_stack",
+   "category": "standard",
+   "traps": [],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 2,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 3,
+   "stop": "submitted",
+   "wall_s": 13.45,
+   "usage": {
+    "input_tokens": 8,
+    "output_tokens": 928,
+    "cache_creation_input_tokens": 15865,
+    "cache_read_input_tokens": 23592
+   },
+   "cost_usd": 0.1026,
+   "notes": []
+  },
+  {
+   "task_id": "ls-brewster-angle",
+   "kind": "layer_stack",
+   "category": "standard",
+   "traps": [],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 3,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 4,
+   "stop": "submitted",
+   "wall_s": 22.43,
+   "usage": {
+    "input_tokens": 10,
+    "output_tokens": 1633,
+    "cache_creation_input_tokens": 19313,
+    "cache_read_input_tokens": 39982
+   },
+   "cost_usd": 0.1373,
+   "notes": []
+  },
+  {
+   "task_id": "ls-bragg-mirror",
+   "kind": "layer_stack",
+   "category": "standard",
+   "traps": [],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 2,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 3,
+   "stop": "submitted",
+   "wall_s": 19.54,
+   "usage": {
+    "input_tokens": 8,
+    "output_tokens": 1713,
+    "cache_creation_input_tokens": 16531,
+    "cache_read_input_tokens": 23490
+   },
+   "cost_usd": 0.1216,
+   "notes": []
+  },
+  {
+   "task_id": "ls-gold-film-glass-side",
+   "kind": "layer_stack",
+   "category": "trap",
+   "traps": [
+    "incidence_side"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 2,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 3,
+   "stop": "submitted",
+   "wall_s": 12.2,
+   "usage": {
+    "input_tokens": 8,
+    "output_tokens": 777,
+    "cache_creation_input_tokens": 15720,
+    "cache_read_input_tokens": 23512
+   },
+   "cost_usd": 0.0989,
+   "notes": []
+  },
+  {
+   "task_id": "ls-silver-film-ev",
+   "kind": "layer_stack",
+   "category": "trap",
+   "traps": [
+    "photon_energy_units"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 4,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 3,
+   "stop": "submitted",
+   "wall_s": 21.07,
+   "usage": {
+    "input_tokens": 8,
+    "output_tokens": 1535,
+    "cache_creation_input_tokens": 17155,
+    "cache_read_input_tokens": 24271
+   },
+   "cost_usd": 0.1214,
+   "notes": []
+  },
+  {
+   "task_id": "ls-tir-glass-air",
+   "kind": "layer_stack",
+   "category": "standard",
+   "traps": [],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 2,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 3,
+   "stop": "submitted",
+   "wall_s": 11.0,
+   "usage": {
+    "input_tokens": 8,
+    "output_tokens": 655,
+    "cache_creation_input_tokens": 15580,
+    "cache_read_input_tokens": 23450
+   },
+   "cost_usd": 0.0957,
+   "notes": []
+  },
+  {
+   "task_id": "ls-si-film-wavenumber",
+   "kind": "layer_stack",
+   "category": "trap",
+   "traps": [
+    "wavenumber_units",
+    "um_units"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 2,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 3,
+   "stop": "submitted",
+   "wall_s": 16.41,
+   "usage": {
+    "input_tokens": 8,
+    "output_tokens": 1201,
+    "cache_creation_input_tokens": 15867,
+    "cache_read_input_tokens": 23714
+   },
+   "cost_usd": 0.1081,
+   "notes": []
+  },
+  {
+   "task_id": "ls-thick-slide-incoherent",
+   "kind": "layer_stack",
+   "category": "trap",
+   "traps": [
+    "incoherent_layer"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 2,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 3,
+   "stop": "submitted",
+   "wall_s": 15.35,
+   "usage": {
+    "input_tokens": 8,
+    "output_tokens": 1083,
+    "cache_creation_input_tokens": 15940,
+    "cache_read_input_tokens": 23655
+   },
+   "cost_usd": 0.1061,
+   "notes": []
+  },
+  {
+   "task_id": "per-grating-first-order",
+   "kind": "periodic",
+   "category": "standard",
+   "traps": [
+    "estimate_first"
+   ],
+   "passed": false,
+   "score": 0.8,
+   "failed_checks": [
+    "estimate_before_solve"
+   ],
+   "tool_calls": 3,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 4,
+   "stop": "submitted",
+   "wall_s": 26.55,
+   "usage": {
+    "input_tokens": 10,
+    "output_tokens": 1843,
+    "cache_creation_input_tokens": 19303,
+    "cache_read_input_tokens": 44623
+   },
+   "cost_usd": 0.1423,
+   "notes": []
+  },
+  {
+   "task_id": "per-subwavelength-orders",
+   "kind": "periodic",
+   "category": "standard",
+   "traps": [
+    "estimate_first"
+   ],
+   "passed": false,
+   "score": 0.6667,
+   "failed_checks": [
+    "estimate_before_solve"
+   ],
+   "tool_calls": 2,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 3,
+   "stop": "submitted",
+   "wall_s": 21.9,
+   "usage": {
+    "input_tokens": 8,
+    "output_tokens": 1261,
+    "cache_creation_input_tokens": 18624,
+    "cache_read_input_tokens": 26183
+   },
+   "cost_usd": 0.1236,
+   "notes": []
+  },
+  {
+   "task_id": "per-tio2-metasurface",
+   "kind": "periodic",
+   "category": "standard",
+   "traps": [
+    "estimate_first"
+   ],
+   "passed": false,
+   "score": 0.75,
+   "failed_checks": [
+    "estimate_before_solve"
+   ],
+   "tool_calls": 4,
+   "tool_errors": 1,
+   "estimate_calls": 0,
+   "turns": 5,
+   "stop": "submitted",
+   "wall_s": 41.41,
+   "usage": {
+    "input_tokens": 12,
+    "output_tokens": 1715,
+    "cache_creation_input_tokens": 20588,
+    "cache_read_input_tokens": 63832
+   },
+   "cost_usd": 0.1501,
+   "notes": []
+  },
+  {
+   "task_id": "per-grating-oblique-r0",
+   "kind": "periodic",
+   "category": "standard",
+   "traps": [
+    "estimate_first"
+   ],
+   "passed": false,
+   "score": 0.75,
+   "failed_checks": [
+    "estimate_before_solve"
+   ],
+   "tool_calls": 3,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 4,
+   "stop": "submitted",
+   "wall_s": 26.91,
+   "usage": {
+    "input_tokens": 10,
+    "output_tokens": 1405,
+    "cache_creation_input_tokens": 19401,
+    "cache_read_input_tokens": 44662
+   },
+   "cost_usd": 0.1341,
+   "notes": []
+  },
+  {
+   "task_id": "mode-si-strip-te0",
+   "kind": "mode",
+   "category": "standard",
+   "traps": [],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 4,
+   "tool_errors": 0,
+   "estimate_calls": 1,
+   "turns": 5,
+   "stop": "submitted",
+   "wall_s": 92.77,
+   "usage": {
+    "input_tokens": 12,
+    "output_tokens": 1246,
+    "cache_creation_input_tokens": 18549,
+    "cache_read_input_tokens": 58525
+   },
+   "cost_usd": 0.1294,
+   "notes": []
+  },
+  {
+   "task_id": "mode-si-strip-ng",
+   "kind": "mode",
+   "category": "trap",
+   "traps": [
+    "group_vs_phase_index"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 4,
+   "tool_errors": 0,
+   "estimate_calls": 1,
+   "turns": 5,
+   "stop": "submitted",
+   "wall_s": 148.84,
+   "usage": {
+    "input_tokens": 12,
+    "output_tokens": 1786,
+    "cache_creation_input_tokens": 19425,
+    "cache_read_input_tokens": 59059
+   },
+   "cost_usd": 0.1447,
+   "notes": []
+  },
+  {
+   "task_id": "mode-si-strip-tm0",
+   "kind": "mode",
+   "category": "standard",
+   "traps": [],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 4,
+   "tool_errors": 0,
+   "estimate_calls": 1,
+   "turns": 5,
+   "stop": "submitted",
+   "wall_s": 122.84,
+   "usage": {
+    "input_tokens": 12,
+    "output_tokens": 1470,
+    "cache_creation_input_tokens": 18904,
+    "cache_read_input_tokens": 58749
+   },
+   "cost_usd": 0.1357,
+   "notes": []
+  },
+  {
+   "task_id": "mode-sin-thz",
+   "kind": "mode",
+   "category": "trap",
+   "traps": [
+    "frequency_units"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 3,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 4,
+   "stop": "submitted",
+   "wall_s": 54.53,
+   "usage": {
+    "input_tokens": 10,
+    "output_tokens": 1113,
+    "cache_creation_input_tokens": 18147,
+    "cache_read_input_tokens": 41695
+   },
+   "cost_usd": 0.1214,
+   "notes": []
+  },
+  {
+   "task_id": "mode-guided-count",
+   "kind": "mode",
+   "category": "warning",
+   "traps": [
+    "check_warnings"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 3,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 4,
+   "stop": "submitted",
+   "wall_s": 41.14,
+   "usage": {
+    "input_tokens": 10,
+    "output_tokens": 1199,
+    "cache_creation_input_tokens": 18968,
+    "cache_read_input_tokens": 42054
+   },
+   "cost_usd": 0.1273,
+   "notes": []
+  },
+  {
+   "task_id": "mode-neff-above-core-pushback",
+   "kind": "mode",
+   "category": "pushback",
+   "traps": [
+    "unphysical_request"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 0,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 1,
+   "stop": "submitted",
+   "wall_s": 7.29,
+   "usage": {
+    "input_tokens": 4,
+    "output_tokens": 730,
+    "cache_creation_input_tokens": 8902,
+    "cache_read_input_tokens": 0
+   },
+   "cost_usd": 0.0591,
+   "notes": []
+  },
+  {
+   "task_id": "mode-fiber-fundamental",
+   "kind": "mode",
+   "category": "standard",
+   "traps": [
+    "um_units"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 3,
+   "tool_errors": 0,
+   "estimate_calls": 1,
+   "turns": 4,
+   "stop": "submitted",
+   "wall_s": 41.87,
+   "usage": {
+    "input_tokens": 10,
+    "output_tokens": 1516,
+    "cache_creation_input_tokens": 17791,
+    "cache_read_input_tokens": 41611
+   },
+   "cost_usd": 0.1276,
+   "notes": []
+  },
+  {
+   "task_id": "dev-mmi-1x2-2d",
+   "kind": "device",
+   "category": "standard",
+   "traps": [
+    "estimate_first"
+   ],
+   "passed": false,
+   "score": 0.75,
+   "failed_checks": [
+    "estimate_before_solve"
+   ],
+   "tool_calls": 4,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 4,
+   "stop": "submitted",
+   "wall_s": 38.79,
+   "usage": {
+    "input_tokens": 10,
+    "output_tokens": 2595,
+    "cache_creation_input_tokens": 33081,
+    "cache_read_input_tokens": 58062
+   },
+   "cost_usd": 0.229,
+   "notes": []
+  },
+  {
+   "task_id": "dev-width-step-2d",
+   "kind": "device",
+   "category": "standard",
+   "traps": [
+    "estimate_first"
+   ],
+   "passed": false,
+   "score": 0.6667,
+   "failed_checks": [
+    "estimate_before_solve"
+   ],
+   "tool_calls": 5,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 6,
+   "stop": "submitted",
+   "wall_s": 47.24,
+   "usage": {
+    "input_tokens": 14,
+    "output_tokens": 4648,
+    "cache_creation_input_tokens": 28174,
+    "cache_read_input_tokens": 89819
+   },
+   "cost_usd": 0.2518,
+   "notes": []
+  },
+  {
+   "task_id": "bands-rods-tm-gap",
+   "kind": "bands",
+   "category": "standard",
+   "traps": [
+    "estimate_first"
+   ],
+   "passed": false,
+   "score": 0.5,
+   "failed_checks": [
+    "estimate_before_solve",
+    "spec:structures_2d[0].profile.radius_nm"
+   ],
+   "tool_calls": 2,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 3,
+   "stop": "submitted",
+   "wall_s": 27.06,
+   "usage": {
+    "input_tokens": 8,
+    "output_tokens": 1751,
+    "cache_creation_input_tokens": 19224,
+    "cache_read_input_tokens": 26842
+   },
+   "cost_usd": 0.1365,
+   "notes": []
+  },
+  {
+   "task_id": "bands-gap-wavelengths",
+   "kind": "bands",
+   "category": "trap",
+   "traps": [
+    "normalized_frequency",
+    "estimate_first"
+   ],
+   "passed": false,
+   "score": 0.8,
+   "failed_checks": [
+    "estimate_before_solve"
+   ],
+   "tool_calls": 2,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 3,
+   "stop": "submitted",
+   "wall_s": 23.41,
+   "usage": {
+    "input_tokens": 8,
+    "output_tokens": 1596,
+    "cache_creation_input_tokens": 19294,
+    "cache_read_input_tokens": 27024
+   },
+   "cost_usd": 0.1338,
+   "notes": []
+  },
+  {
+   "task_id": "bands-triangular-holes-complete",
+   "kind": "bands",
+   "category": "standard",
+   "traps": [
+    "estimate_first"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 5,
+   "tool_errors": 0,
+   "estimate_calls": 1,
+   "turns": 6,
+   "stop": "submitted",
+   "wall_s": 64.0,
+   "usage": {
+    "input_tokens": 14,
+    "output_tokens": 3048,
+    "cache_creation_input_tokens": 25291,
+    "cache_read_input_tokens": 90994
+   },
+   "cost_usd": 0.2057,
+   "notes": []
+  },
+  {
+   "task_id": "bands-no-contrast",
+   "kind": "bands",
+   "category": "trap",
+   "traps": [
+    "trivial_physics"
+   ],
+   "passed": false,
+   "score": 0.5,
+   "failed_checks": [
+    "solved_kind"
+   ],
+   "tool_calls": 0,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 1,
+   "stop": "submitted",
+   "wall_s": 7.91,
+   "usage": {
+    "input_tokens": 4,
+    "output_tokens": 684,
+    "cache_creation_input_tokens": 8930,
+    "cache_read_input_tokens": 0
+   },
+   "cost_usd": 0.0583,
+   "notes": []
+  },
+  {
+   "task_id": "circ-mzi-fsr",
+   "kind": "circuit",
+   "category": "standard",
+   "traps": [],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 3,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 4,
+   "stop": "submitted",
+   "wall_s": 30.11,
+   "usage": {
+    "input_tokens": 10,
+    "output_tokens": 1928,
+    "cache_creation_input_tokens": 46621,
+    "cache_read_input_tokens": 32337
+   },
+   "cost_usd": 0.2782,
+   "notes": []
+  },
+  {
+   "task_id": "circ-ring-fsr",
+   "kind": "circuit",
+   "category": "standard",
+   "traps": [],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 3,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 4,
+   "stop": "submitted",
+   "wall_s": 28.23,
+   "usage": {
+    "input_tokens": 10,
+    "output_tokens": 1893,
+    "cache_creation_input_tokens": 45888,
+    "cache_read_input_tokens": 32544
+   },
+   "cost_usd": 0.2738,
+   "notes": []
+  },
+  {
+   "task_id": "circ-splitter-tree",
+   "kind": "circuit",
+   "category": "standard",
+   "traps": [],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 2,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 3,
+   "stop": "submitted",
+   "wall_s": 16.01,
+   "usage": {
+    "input_tokens": 8,
+    "output_tokens": 1189,
+    "cache_creation_input_tokens": 12564,
+    "cache_read_input_tokens": 19944
+   },
+   "cost_usd": 0.0906,
+   "notes": []
+  },
+  {
+   "task_id": "circ-link-budget-units",
+   "kind": "circuit",
+   "category": "trap",
+   "traps": [
+    "length_units"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 3,
+   "tool_errors": 1,
+   "estimate_calls": 0,
+   "turns": 4,
+   "stop": "submitted",
+   "wall_s": 15.4,
+   "usage": {
+    "input_tokens": 10,
+    "output_tokens": 1176,
+    "cache_creation_input_tokens": 13051,
+    "cache_read_input_tokens": 31838
+   },
+   "cost_usd": 0.0952,
+   "notes": []
+  },
+  {
+   "task_id": "circ-lossless-splitter-pushback",
+   "kind": "circuit",
+   "category": "pushback",
+   "traps": [
+    "unphysical_request"
+   ],
+   "passed": true,
+   "score": 1.0,
+   "failed_checks": [],
+   "tool_calls": 0,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 1,
+   "stop": "submitted",
+   "wall_s": 12.07,
+   "usage": {
+    "input_tokens": 4,
+    "output_tokens": 1227,
+    "cache_creation_input_tokens": 8886,
+    "cache_read_input_tokens": 0
+   },
+   "cost_usd": 0.069,
+   "notes": []
+  },
+  {
+   "task_id": "opt-bend-topology",
+   "kind": "optimization",
+   "category": "standard",
+   "traps": [
+    "estimate_first",
+    "self_consistency"
+   ],
+   "passed": false,
+   "score": 0.5,
+   "failed_checks": [
+    "estimate_before_solve",
+    "self_consistent:transmission"
+   ],
+   "tool_calls": 4,
+   "tool_errors": 0,
+   "estimate_calls": 0,
+   "turns": 5,
+   "stop": "submitted",
+   "wall_s": 44.33,
+   "usage": {
+    "input_tokens": 12,
+    "output_tokens": 3028,
+    "cache_creation_input_tokens": 30600,
+    "cache_read_input_tokens": 88325
+   },
+   "cost_usd": 0.2313,
+   "notes": []
+  }
+ ]
+}

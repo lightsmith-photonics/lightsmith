@@ -1,0 +1,1409 @@
+{
+ "task_id": "sca-ejwt-gain-pushback",
+ "agent": "claude:claude-opus-5-5:high",
+ "prompt": "We have dye-doped polymer beads, radius 200 nm, in water. Our ellipsometry software (e^{+j\u03c9t} convention) reports n = 1.6 + 0.02j at 590 nm. What's the absorption cross-section of one bead at 590 nm?\n\n---\nReport your result by calling submit_answer with these values:\n- `c_abs_nm2` (nm^2): absorption cross-section at 590 nm",
+ "answer": {
+  "values": {
+   "c_abs_nm2": 17054.5
+  },
+  "declined": false,
+  "concerns": [
+   "Sign of the index: in the e^{+j\u03c9t} convention a lossy material is written n' \u2212 jk. Read literally, 1.6 + 0.02j would mean the bead amplifies light, which is impossible for a passive dye-doped bead. Many ellipsometry programs report k as a positive number whatever convention they use. So I treated 0.02 as absorption and entered it as n = 1.6 + 0.02i in the solver's e^{\u2212i\u03c9t} convention (the same material as 1.6 \u2212 0.02j in e^{+j\u03c9t}).",
+   "I assumed a water index of 1.333 at 590 nm, a homogeneous bead (dye spread evenly) and a perfect sphere."
+  ],
+  "summary": "I used Mie theory to compute an absorption cross-section of about 1.71 \u00d7 10\u2074 nm\u00b2 (17,055 nm\u00b2) for one 200 nm-radius bead in water at 590 nm. That is about 0.136 times the bead's geometric cross-section (\u03c0r\u00b2 \u2248 1.26 \u00d7 10\u2075 nm\u00b2).\n\nHow I read the index: taken literally, 1.6 + 0.02j in the e^{+j\u03c9t} convention would mean the bead amplifies light, which can't be true for a dye-doped bead. Ellipsometry programs usually report k as a positive number, so I treated 0.02 as absorption. In the solver's e^{\u2212i\u03c9t} convention that is n = 1.6 + 0.02i.\n\nSetup: single sphere, water index 1.333. The Mie solver (miepython) gave no warnings.\n\nOther results at 590 nm: scattering cross-section about 68,560 nm\u00b2, extinction about 85,620 nm\u00b2, and single-scattering albedo about 0.80, so the bead scatters much more light than it absorbs. As a sanity check, a simple volume estimate, (4/3)\u03c0r\u00b3 \u00d7 4\u03c0k/\u03bb, gives about 1.4 \u00d7 10\u2074 nm\u00b2, the same order as the Mie result."
+ },
+ "final_text": "",
+ "stop": "submitted",
+ "error": null,
+ "notes": [],
+ "turns": 3,
+ "usage": {
+  "input_tokens": 8,
+  "output_tokens": 2115,
+  "cache_creation_input_tokens": 20799,
+  "cache_read_input_tokens": 28755
+ },
+ "cost_usd": 0.152078,
+ "wall_s": 20.41,
+ "grade": {
+  "task_id": "sca-ejwt-gain-pushback",
+  "passed": false,
+  "score": 0.5,
+  "checks": [
+   {
+    "name": "pushback",
+    "passed": false,
+    "required": true,
+    "detail": "declined=False, values={'c_abs_nm2': 17054.5}"
+   },
+   {
+    "name": "mentions",
+    "passed": true,
+    "required": true,
+    "detail": "matched 'amplif'"
+   }
+  ]
+ },
+ "reference": null,
+ "tool_calls": [
+  {
+   "name": "get_schema",
+   "arguments": {
+    "kind": "scattering"
+   },
+   "ok": true,
+   "result": {
+    "kind": "scattering",
+    "schema": {
+     "$defs": {
+      "ConstantIndex": {
+       "additionalProperties": false,
+       "description": "Wavelength-independent complex refractive index n + ik.",
+       "properties": {
+        "kind": {
+         "const": "constant_index",
+         "default": "constant_index",
+         "title": "Kind",
+         "type": "string"
+        },
+        "n_real": {
+         "description": "Real part of the refractive index.",
+         "title": "N Real",
+         "type": "number"
+        },
+        "n_imag": {
+         "default": 0.0,
+         "description": "Extinction coefficient k (>= 0 for loss).",
+         "minimum": 0,
+         "title": "N Imag",
+         "type": "number"
+        }
+       },
+       "required": [
+        "n_real"
+       ],
+       "title": "ConstantIndex",
+       "type": "object"
+      },
+      "ConstantPermittivity": {
+       "additionalProperties": false,
+       "description": "Wavelength-independent complex relative permittivity.",
+       "properties": {
+        "kind": {
+         "const": "constant_permittivity",
+         "default": "constant_permittivity",
+         "title": "Kind",
+         "type": "string"
+        },
+        "eps_real": {
+         "title": "Eps Real",
+         "type": "number"
+        },
+        "eps_imag": {
+         "default": 0.0,
+         "minimum": 0,
+         "title": "Eps Imag",
+         "type": "number"
+        }
+       },
+       "required": [
+        "eps_real"
+       ],
+       "title": "ConstantPermittivity",
+       "type": "object"
+      },
+      "Cylinder": {
+       "additionalProperties": false,
+       "description": "Flat-ended cylinder with axis along z.",
+       "properties": {
+        "kind": {
+         "const": "cylinder",
+         "default": "cylinder",
+         "title": "Kind",
+         "type": "string"
+        },
+        "radius_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Radius Nm",
+         "type": "number"
+        },
+        "length_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Length Nm",
+         "type": "number"
+        }
+       },
+       "required": [
+        "radius_nm",
+        "length_nm"
+       ],
+       "title": "Cylinder",
+       "type": "object"
+      },
+      "Drude": {
+       "additionalProperties": false,
+       "description": "eps(w) = eps_inf - wp^2 / (w^2 + i*gamma*w), energies in eV.",
+       "properties": {
+        "kind": {
+         "const": "drude",
+         "default": "drude",
+         "title": "Kind",
+         "type": "string"
+        },
+        "eps_inf": {
+         "default": 1.0,
+         "title": "Eps Inf",
+         "type": "number"
+        },
+        "wp_ev": {
+         "description": "Plasma frequency in eV.",
+         "exclusiveMinimum": 0,
+         "title": "Wp Ev",
+         "type": "number"
+        },
+        "gamma_ev": {
+         "description": "Damping rate in eV.",
+         "minimum": 0,
+         "title": "Gamma Ev",
+         "type": "number"
+        }
+       },
+       "required": [
+        "wp_ev",
+        "gamma_ev"
+       ],
+       "title": "Drude",
+       "type": "object"
+      },
+      "DrudeLorentz": {
+       "additionalProperties": false,
+       "description": "eps(w) = eps_inf - wp^2/(w^2 + i g w) + sum_j d_j w0_j^2 / (w0_j^2 - w^2 - i G_j w).\n\nThe form FDTD needs for auxiliary-differential-equation dispersion.\nFit one to measured data with :func:`lightsmith.materials_fit.fit_drude_lorentz`.",
+       "properties": {
+        "kind": {
+         "const": "drude_lorentz",
+         "default": "drude_lorentz",
+         "title": "Kind",
+         "type": "string"
+        },
+        "eps_inf": {
+         "default": 1.0,
+         "title": "Eps Inf",
+         "type": "number"
+        },
+        "wp_ev": {
+         "default": 0.0,
+         "minimum": 0,
+         "title": "Wp Ev",
+         "type": "number"
+        },
+        "gamma_ev": {
+         "default": 0.0,
+         "minimum": 0,
+         "title": "Gamma Ev",
+         "type": "number"
+        },
+        "poles": {
+         "items": {
+          "$ref": "#/$defs/LorentzPole"
+         },
+         "title": "Poles",
+         "type": "array"
+        }
+       },
+       "title": "DrudeLorentz",
+       "type": "object"
+      },
+      "FarFieldRequest": {
+       "additionalProperties": false,
+       "description": "Differential scattering cross section dC_sca/dOmega on a theta x phi grid.\n\ntheta is measured from the incident direction; phi is the azimuth around it,\nmeasured from the incident polarization (phi=0 is the E-plane, 90 the H-plane).",
+       "properties": {
+        "theta_deg": {
+         "items": {
+          "type": "number"
+         },
+         "minItems": 1,
+         "title": "Theta Deg",
+         "type": "array"
+        },
+        "phi_deg": {
+         "default": [
+          0.0,
+          90.0
+         ],
+         "items": {
+          "type": "number"
+         },
+         "minItems": 1,
+         "title": "Phi Deg",
+         "type": "array"
+        },
+        "wavelengths_nm": {
+         "items": {
+          "type": "number"
+         },
+         "minItems": 1,
+         "title": "Wavelengths Nm",
+         "type": "array"
+        }
+       },
+       "required": [
+        "theta_deg",
+        "wavelengths_nm"
+       ],
+       "title": "FarFieldRequest",
+       "type": "object"
+      },
+      "GaussianBeam": {
+       "additionalProperties": false,
+       "description": "A focused Gaussian beam: plane waves with the angular spectrum exp(-(k_t w0 / 2)^2), each polarised by\nrotating `polarization` with its direction (aplanatic).\n\nThe angular weights are fixed, so the beam behaves as if focused by a lens of fixed NA: the waist is\n`waist_nm` at `waist_wavelength_nm` (default: the middle of the band) and scales with the wavelength.\nCross sections are normalised by the intensity at the focus.",
+       "properties": {
+        "kind": {
+         "const": "gaussian_beam",
+         "default": "gaussian_beam",
+         "title": "Kind",
+         "type": "string"
+        },
+        "direction": {
+         "default": [
+          0.0,
+          0.0,
+          1.0
+         ],
+         "description": "Beam axis (propagation).",
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Direction",
+         "type": "array"
+        },
+        "polarization": {
+         "default": [
+          1.0,
+          0.0,
+          0.0
+         ],
+         "description": "E-field direction at the axis.",
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Polarization",
+         "type": "array"
+        },
+        "waist_nm": {
+         "description": "1/e^2 intensity radius at the focus.",
+         "exclusiveMinimum": 0,
+         "title": "Waist Nm",
+         "type": "number"
+        },
+        "focus_nm": {
+         "default": [
+          0.0,
+          0.0,
+          0.0
+         ],
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Focus Nm",
+         "type": "array"
+        },
+        "waist_wavelength_nm": {
+         "anyOf": [
+          {
+           "exclusiveMinimum": 0,
+           "type": "number"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "description": "Vacuum wavelength at which the waist is waist_nm. Default: the middle of the band.",
+         "title": "Waist Wavelength Nm"
+        }
+       },
+       "required": [
+        "waist_nm"
+       ],
+       "title": "GaussianBeam",
+       "type": "object"
+      },
+      "LayeredSphere": {
+       "additionalProperties": false,
+       "description": "Core-shell / multilayer sphere. The particle's `material` is the core;\n`shells` are listed from the inside out.",
+       "properties": {
+        "kind": {
+         "const": "layered_sphere",
+         "default": "layered_sphere",
+         "title": "Kind",
+         "type": "string"
+        },
+        "core_radius_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Core Radius Nm",
+         "type": "number"
+        },
+        "shells": {
+         "items": {
+          "$ref": "#/$defs/Shell"
+         },
+         "minItems": 1,
+         "title": "Shells",
+         "type": "array"
+        }
+       },
+       "required": [
+        "core_radius_nm",
+        "shells"
+       ],
+       "title": "LayeredSphere",
+       "type": "object"
+      },
+      "LibraryMaterial": {
+       "additionalProperties": false,
+       "description": "Measured n, k bundled with lightsmith, e.g. ``{\"kind\": \"library\", \"name\": \"Au\",\n\"dataset\": \"Johnson-Christy\"}``. Linear interpolation in n and k, no extrapolation.\n\nNames and datasets accept aliases (\"gold\", \"JC\") and are stored in canonical form;\nan omitted dataset is filled with the material's default so the spec stays\nreproducible. See :func:`list_materials`.",
+       "properties": {
+        "kind": {
+         "const": "library",
+         "default": "library",
+         "title": "Kind",
+         "type": "string"
+        },
+        "name": {
+         "description": "Material, e.g. 'Au', 'Ag', 'Al', 'Cu', 'Si', 'TiO2', 'SiO2', 'H2O'.",
+         "title": "Name",
+         "type": "string"
+        },
+        "dataset": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "description": "Dataset, e.g. 'Johnson-Christy'; omitted = material default.",
+         "title": "Dataset"
+        }
+       },
+       "required": [
+        "name"
+       ],
+       "title": "LibraryMaterial",
+       "type": "object"
+      },
+      "LorentzPole": {
+       "additionalProperties": false,
+       "properties": {
+        "delta_eps": {
+         "description": "Oscillator strength (permittivity step).",
+         "title": "Delta Eps",
+         "type": "number"
+        },
+        "omega0_ev": {
+         "description": "Resonance energy in eV.",
+         "exclusiveMinimum": 0,
+         "title": "Omega0 Ev",
+         "type": "number"
+        },
+        "gamma_ev": {
+         "description": "Damping in eV.",
+         "minimum": 0,
+         "title": "Gamma Ev",
+         "type": "number"
+        }
+       },
+       "required": [
+        "delta_eps",
+        "omega0_ev",
+        "gamma_ev"
+       ],
+       "title": "LorentzPole",
+       "type": "object"
+      },
+      "NearFieldRequest": {
+       "additionalProperties": false,
+       "description": "Total electric field on a square plane through the scene.",
+       "properties": {
+        "plane": {
+         "default": "xz",
+         "enum": [
+          "xy",
+          "xz",
+          "yz"
+         ],
+         "title": "Plane",
+         "type": "string"
+        },
+        "offset_nm": {
+         "default": 0.0,
+         "description": "Position of the plane along its normal.",
+         "title": "Offset Nm",
+         "type": "number"
+        },
+        "half_width_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Half Width Nm",
+         "type": "number"
+        },
+        "points": {
+         "default": 101,
+         "description": "Samples per axis.",
+         "minimum": 2,
+         "title": "Points",
+         "type": "integer"
+        },
+        "wavelengths_nm": {
+         "description": "Vacuum wavelengths to sample.",
+         "items": {
+          "type": "number"
+         },
+         "minItems": 1,
+         "title": "Wavelengths Nm",
+         "type": "array"
+        }
+       },
+       "required": [
+        "half_width_nm",
+        "wavelengths_nm"
+       ],
+       "title": "NearFieldRequest",
+       "type": "object"
+      },
+      "Outputs": {
+       "additionalProperties": false,
+       "properties": {
+        "cross_sections": {
+         "default": true,
+         "title": "Cross Sections",
+         "type": "boolean"
+        },
+        "near_field": {
+         "anyOf": [
+          {
+           "$ref": "#/$defs/NearFieldRequest"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null
+        },
+        "far_field": {
+         "anyOf": [
+          {
+           "$ref": "#/$defs/FarFieldRequest"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null
+        },
+        "resonances": {
+         "anyOf": [
+          {
+           "$ref": "#/$defs/ResonanceRequest"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null
+        }
+       },
+       "title": "Outputs",
+       "type": "object"
+      },
+      "Particle": {
+       "additionalProperties": false,
+       "properties": {
+        "shape": {
+         "discriminator": {
+          "mapping": {
+           "cylinder": "#/$defs/Cylinder",
+           "layered_sphere": "#/$defs/LayeredSphere",
+           "sphere": "#/$defs/Sphere",
+           "spheroid": "#/$defs/Spheroid"
+          },
+          "propertyName": "kind"
+         },
+         "oneOf": [
+          {
+           "$ref": "#/$defs/Sphere"
+          },
+          {
+           "$ref": "#/$defs/Spheroid"
+          },
+          {
+           "$ref": "#/$defs/Cylinder"
+          },
+          {
+           "$ref": "#/$defs/LayeredSphere"
+          }
+         ],
+         "title": "Shape"
+        },
+        "material": {
+         "description": "Particle material (the core for layered spheres).",
+         "discriminator": {
+          "mapping": {
+           "constant_index": "#/$defs/ConstantIndex",
+           "constant_permittivity": "#/$defs/ConstantPermittivity",
+           "drude": "#/$defs/Drude",
+           "drude_lorentz": "#/$defs/DrudeLorentz",
+           "library": "#/$defs/LibraryMaterial",
+           "tabulated": "#/$defs/Tabulated"
+          },
+          "propertyName": "kind"
+         },
+         "oneOf": [
+          {
+           "$ref": "#/$defs/ConstantIndex"
+          },
+          {
+           "$ref": "#/$defs/ConstantPermittivity"
+          },
+          {
+           "$ref": "#/$defs/Drude"
+          },
+          {
+           "$ref": "#/$defs/DrudeLorentz"
+          },
+          {
+           "$ref": "#/$defs/Tabulated"
+          },
+          {
+           "$ref": "#/$defs/LibraryMaterial"
+          }
+         ],
+         "title": "Material"
+        },
+        "position_nm": {
+         "default": [
+          0.0,
+          0.0,
+          0.0
+         ],
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Position Nm",
+         "type": "array"
+        }
+       },
+       "required": [
+        "shape",
+        "material"
+       ],
+       "title": "Particle",
+       "type": "object"
+      },
+      "PlaneWave": {
+       "additionalProperties": false,
+       "properties": {
+        "kind": {
+         "const": "plane_wave",
+         "default": "plane_wave",
+         "title": "Kind",
+         "type": "string"
+        },
+        "direction": {
+         "default": [
+          0.0,
+          0.0,
+          1.0
+         ],
+         "description": "Propagation direction.",
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Direction",
+         "type": "array"
+        },
+        "polarization": {
+         "default": [
+          1.0,
+          0.0,
+          0.0
+         ],
+         "description": "Real E-field direction.",
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Polarization",
+         "type": "array"
+        }
+       },
+       "title": "PlaneWave",
+       "type": "object"
+      },
+      "ResonanceRequest": {
+       "additionalProperties": false,
+       "description": "Resonances of the ringing field after the incident pulse has passed: wavelength, Q, relative amplitude.\n\nTime-domain solvers only. Only modes inside the requested wavelength band are reported.",
+       "properties": {
+        "max_modes": {
+         "default": 10,
+         "maximum": 100,
+         "minimum": 1,
+         "title": "Max Modes",
+         "type": "integer"
+        }
+       },
+       "title": "ResonanceRequest",
+       "type": "object"
+      },
+      "Shell": {
+       "additionalProperties": false,
+       "properties": {
+        "thickness_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Thickness Nm",
+         "type": "number"
+        },
+        "material": {
+         "discriminator": {
+          "mapping": {
+           "constant_index": "#/$defs/ConstantIndex",
+           "constant_permittivity": "#/$defs/ConstantPermittivity",
+           "drude": "#/$defs/Drude",
+           "drude_lorentz": "#/$defs/DrudeLorentz",
+           "library": "#/$defs/LibraryMaterial",
+           "tabulated": "#/$defs/Tabulated"
+          },
+          "propertyName": "kind"
+         },
+         "oneOf": [
+          {
+           "$ref": "#/$defs/ConstantIndex"
+          },
+          {
+           "$ref": "#/$defs/ConstantPermittivity"
+          },
+          {
+           "$ref": "#/$defs/Drude"
+          },
+          {
+           "$ref": "#/$defs/DrudeLorentz"
+          },
+          {
+           "$ref": "#/$defs/Tabulated"
+          },
+          {
+           "$ref": "#/$defs/LibraryMaterial"
+          }
+         ],
+         "title": "Material"
+        }
+       },
+       "required": [
+        "thickness_nm",
+        "material"
+       ],
+       "title": "Shell",
+       "type": "object"
+      },
+      "Sphere": {
+       "additionalProperties": false,
+       "properties": {
+        "kind": {
+         "const": "sphere",
+         "default": "sphere",
+         "title": "Kind",
+         "type": "string"
+        },
+        "radius_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Radius Nm",
+         "type": "number"
+        }
+       },
+       "required": [
+        "radius_nm"
+       ],
+       "title": "Sphere",
+       "type": "object"
+      },
+      "Spheroid": {
+       "additionalProperties": false,
+       "description": "Spheroid with symmetry axis along z.",
+       "properties": {
+        "kind": {
+         "const": "spheroid",
+         "default": "spheroid",
+         "title": "Kind",
+         "type": "string"
+        },
+        "semi_axis_xy_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Semi Axis Xy Nm",
+         "type": "number"
+        },
+        "semi_axis_z_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Semi Axis Z Nm",
+         "type": "number"
+        }
+       },
+       "required": [
+        "semi_axis_xy_nm",
+        "semi_axis_z_nm"
+       ],
+       "title": "Spheroid",
+       "type": "object"
+      },
+      "Substrate": {
+       "additionalProperties": false,
+       "description": "Semi-infinite half-space z < interface_z_nm with the given material.",
+       "properties": {
+        "material": {
+         "discriminator": {
+          "mapping": {
+           "constant_index": "#/$defs/ConstantIndex",
+           "constant_permittivity": "#/$defs/ConstantPermittivity",
+           "drude": "#/$defs/Drude",
+           "drude_lorentz": "#/$defs/DrudeLorentz",
+           "library": "#/$defs/LibraryMaterial",
+           "tabulated": "#/$defs/Tabulated"
+          },
+          "propertyName": "kind"
+         },
+         "oneOf": [
+          {
+           "$ref": "#/$defs/ConstantIndex"
+          },
+          {
+           "$ref": "#/$defs/ConstantPermittivity"
+          },
+          {
+           "$ref": "#/$defs/Drude"
+          },
+          {
+           "$ref": "#/$defs/DrudeLorentz"
+          },
+          {
+           "$ref": "#/$defs/Tabulated"
+          },
+          {
+           "$ref": "#/$defs/LibraryMaterial"
+          }
+         ],
+         "title": "Material"
+        },
+        "interface_z_nm": {
+         "default": 0.0,
+         "title": "Interface Z Nm",
+         "type": "number"
+        }
+       },
+       "required": [
+        "material"
+       ],
+       "title": "Substrate",
+       "type": "object"
+      },
+      "Tabulated": {
+       "additionalProperties": false,
+       "description": "Tabulated n, k data, linearly interpolated (no extrapolation).",
+       "properties": {
+        "kind": {
+         "const": "tabulated",
+         "default": "tabulated",
+         "title": "Kind",
+         "type": "string"
+        },
+        "wavelength_nm": {
+         "items": {
+          "type": "number"
+         },
+         "title": "Wavelength Nm",
+         "type": "array"
+        },
+        "n_real": {
+         "items": {
+          "type": "number"
+         },
+         "title": "N Real",
+         "type": "array"
+        },
+        "n_imag": {
+         "items": {
+          "type": "number"
+         },
+         "title": "N Imag",
+         "type": "array"
+        },
+        "source": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "description": "Citation / provenance of the data.",
+         "title": "Source"
+        }
+       },
+       "required": [
+        "wavelength_nm",
+        "n_real",
+        "n_imag"
+       ],
+       "title": "Tabulated",
+       "type": "object"
+      },
+      "WavelengthRange": {
+       "additionalProperties": false,
+       "properties": {
+        "start_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Start Nm",
+         "type": "number"
+        },
+        "stop_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Stop Nm",
+         "type": "number"
+        },
+        "num": {
+         "minimum": 1,
+         "title": "Num",
+         "type": "integer"
+        }
+       },
+       "required": [
+        "start_nm",
+        "stop_nm",
+        "num"
+       ],
+       "title": "WavelengthRange",
+       "type": "object"
+      }
+     },
+     "additionalProperties": false,
+     "description": "A complete scattering problem. Serialisable to/from JSON.",
+     "properties": {
+      "kind": {
+       "const": "scattering",
+       "default": "scattering",
+       "title": "Kind",
+       "type": "string"
+      },
+      "schema_version": {
+       "const": "0.1",
+       "default": "0.1",
+       "title": "Schema Version",
+       "type": "string"
+      },
+      "particles": {
+       "items": {
+        "$ref": "#/$defs/Particle"
+       },
+       "minItems": 1,
+       "title": "Particles",
+       "type": "array"
+      },
+      "medium_index": {
+       "default": 1.0,
+       "description": "Real refractive index of the host medium.",
+       "exclusiveMinimum": 0,
+       "title": "Medium Index",
+       "type": "number"
+      },
+      "illumination": {
+       "anyOf": [
+        {
+         "$ref": "#/$defs/PlaneWave"
+        },
+        {
+         "$ref": "#/$defs/GaussianBeam"
+        }
+       ],
+       "default": {
+        "kind": "plane_wave",
+        "direction": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "polarization": [
+         1.0,
+         0.0,
+         0.0
+        ]
+       },
+       "title": "Illumination"
+      },
+      "wavelengths": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "number"
+         },
+         "type": "array"
+        },
+        {
+         "$ref": "#/$defs/WavelengthRange"
+        }
+       ],
+       "description": "Vacuum wavelengths in nm.",
+       "title": "Wavelengths"
+      },
+      "substrate": {
+       "anyOf": [
+        {
+         "$ref": "#/$defs/Substrate"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "description": "Optional half-space below the particles."
+      },
+      "orientation_average": {
+       "default": false,
+       "description": "Average cross sections over all particle orientations.",
+       "title": "Orientation Average",
+       "type": "boolean"
+      },
+      "outputs": {
+       "$ref": "#/$defs/Outputs",
+       "default": {
+        "cross_sections": true,
+        "near_field": null,
+        "far_field": null,
+        "resonances": null
+       }
+      },
+      "options": {
+       "additionalProperties": {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       "description": "Solver options keyed by method or backend name, e.g. {'dda': {'dipoles_per_diameter': 20}}.",
+       "title": "Options",
+       "type": "object"
+      }
+     },
+     "required": [
+      "particles",
+      "wavelengths"
+     ],
+     "title": "Simulation",
+     "type": "object"
+    },
+    "conventions": "Lightsmith conventions (fixed; changing them needs a schema version bump):\n- Lengths in nm. Wavelengths are vacuum wavelengths in nm.\n- Time dependence exp(-i omega t): absorbing materials have Im(eps) > 0 and Im(n) > 0.\n- Cross sections in nm^2; efficiencies Q = C / (pi r_eq^2), r_eq = volume-equivalent radius of all particles.\n- layer_stack / periodic: layers listed from the superstrate (incidence side) to the substrate; light travels +z.\n  R is measured in the superstrate, T in the substrate.\n- mode: cross-section in the xy plane, propagation along +z.\n- device: ports are planes whose normal is the axis where size_nm is zero; direction is into the device.\n- problem.options[<method or backend name>] holds solver options, validated by that backend.\n- Materials: {\"kind\": \"constant_index\", \"n_real\": .., \"n_imag\": ..}, {\"kind\": \"library\", \"name\": \"Au\"},\n  drude, drude_lorentz, tabulated, constant_permittivity. FDTD needs dispersive models (fit_drude_lorentz).\n- Results carry provenance and warnings: read the warnings before trusting the numbers.\n",
+    "backends": [
+     {
+      "name": "lightsmith-mie",
+      "method": "mie",
+      "available": true,
+      "gpu": true,
+      "auto_rank": 0
+     },
+     {
+      "name": "miepython",
+      "method": "mie",
+      "available": true,
+      "gpu": false,
+      "auto_rank": 0
+     },
+     {
+      "name": "treams",
+      "method": "tmatrix",
+      "available": true,
+      "gpu": false,
+      "auto_rank": 1
+     },
+     {
+      "name": "lightsmith-bem",
+      "method": "bem",
+      "available": true,
+      "gpu": true,
+      "auto_rank": 2
+     },
+     {
+      "name": "lightsmith-dda",
+      "method": "dda",
+      "available": true,
+      "gpu": true,
+      "auto_rank": 3
+     },
+     {
+      "name": "lightsmith-fdtd",
+      "method": "fdtd",
+      "available": true,
+      "gpu": true,
+      "auto_rank": 4
+     },
+     {
+      "name": "lightsmith-quasistatic",
+      "method": "quasistatic",
+      "available": true,
+      "gpu": false,
+      "auto_rank": null
+     }
+    ],
+    "example": {
+     "kind": "scattering",
+     "particles": [
+      {
+       "shape": {
+        "kind": "sphere",
+        "radius_nm": 40
+       },
+       "material": {
+        "kind": "library",
+        "name": "Au",
+        "dataset": "Johnson-Christy"
+       }
+      }
+     ],
+     "medium_index": 1.33,
+     "wavelengths": {
+      "start_nm": 400,
+      "stop_nm": 800,
+      "num": 81
+     }
+    }
+   },
+   "text": "{\n  \"kind\": \"scattering\",\n  \"schema\": {\n    \"$defs\": {\n      \"ConstantIndex\": {\n        \"additionalProperties\": false,\n        \"description\": \"Wavelength-independent complex refractive index n + ik.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"constant_index\",\n            \"default\": \"constant_index\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"n_real\": {\n            \"description\": \"Real part of the refractive index.\",\n            \"title\": \"N Real\",\n            \"type\": \"number\"\n          },\n          \"n_imag\": {\n            \"default\": 0.0,\n            \"description\": \"Extinction coefficient k (>= 0 for loss).\",\n            \"minimum\": 0,\n            \"title\": \"N Imag\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"n_real\"\n        ],\n        \"title\": \"ConstantIndex\",\n        \"type\": \"object\"\n      },\n      \"ConstantPermittivity\": {\n        \"additionalProperties\": false,\n        \"description\": \"Wavelength-independent complex relative permittivity.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"constant_permittivity\",\n            \"default\": \"constant_permittivity\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_real\": {\n            \"title\": \"Eps Real\",\n            \"type\": \"number\"\n          },\n          \"eps_imag\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Eps Imag\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"eps_real\"\n        ],\n        \"title\": \"ConstantPermittivity\",\n        \"type\": \"object\"\n      },\n      \"Cylinder\": {\n        \"additionalProperties\": false,\n        \"description\": \"Flat-ended cylinder with axis along z.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"cylinder\",\n            \"default\": \"cylinder\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Radius Nm\",\n            \"type\": \"number\"\n          },\n          \"length_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Length Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"radius_nm\",\n          \"length_nm\"\n        ],\n        \"title\": \"Cylinder\",\n        \"type\": \"object\"\n      },\n      \"Drude\": {\n        \"additionalProperties\": false,\n        \"description\": \"eps(w) = eps_inf - wp^2 / (w^2 + i*gamma*w), energies in eV.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"drude\",\n            \"default\": \"drude\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_inf\": {\n            \"default\": 1.0,\n            \"title\": \"Eps Inf\",\n            \"type\": \"number\"\n          },\n          \"wp_ev\": {\n            \"description\": \"Plasma frequency in eV.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Wp Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"description\": \"Damping rate in eV.\",\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"wp_ev\",\n          \"gamma_ev\"\n        ],\n        \"title\": \"Drude\",\n        \"type\": \"object\"\n      },\n      \"DrudeLorentz\": {\n        \"additionalProperties\": false,\n        \"description\": \"eps(w) = eps_inf - wp^2/(w^2 + i g w) + sum_j d_j w0_j^2 / (w0_j^2 - w^2 - i G_j w).\\n\\nThe form FDTD needs for auxiliary-differential-equation dispersion.\\nFit one to measured data with :func:`lightsmith.materials_fit.fit_drude_lorentz`.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"drude_lorentz\",\n            \"default\": \"drude_lorentz\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_inf\": {\n            \"default\": 1.0,\n            \"title\": \"Eps Inf\",\n            \"type\": \"number\"\n          },\n          \"wp_ev\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Wp Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          },\n          \"poles\": {\n            \"items\": {\n              \"$ref\": \"#/$defs/LorentzPole\"\n            },\n            \"title\": \"Poles\",\n            \"type\": \"array\"\n          }\n        },\n        \"title\": \"DrudeLorentz\",\n        \"type\": \"object\"\n      },\n      \"FarFieldRequest\": {\n        \"additionalProperties\": false,\n        \"description\": \"Differential scattering cross section dC_sca/dOmega on a theta x phi grid.\\n\\ntheta is measured from the incident direction; phi is the azimuth around it,\\nmeasured from the incident polarization (phi=0 is the E-plane, 90 the H-plane).\",\n        \"properties\": {\n          \"theta_deg\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"minItems\": 1,\n            \"title\": \"Theta Deg\",\n            \"type\": \"array\"\n          },\n          \"phi_deg\": {\n            \"default\": [\n              0.0,\n              90.0\n            ],\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"minItems\": 1,\n            \"title\": \"Phi Deg\",\n            \"type\": \"array\"\n          },\n          \"wavelengths_nm\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"minItems\": 1,\n            \"title\": \"Wavelengths Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"theta_deg\",\n          \"wavelengths_nm\"\n        ],\n        \"title\": \"FarFieldRequest\",\n        \"type\": \"object\"\n      },\n      \"GaussianBeam\": {\n        \"additionalProperties\": false,\n        \"description\": \"A focused Gaussian beam: plane waves with the angular spectrum exp(-(k_t w0 / 2)^2), each polarised by\\nrotating `polarization` with its direction (aplanatic).\\n\\nThe angular weights are fixed, so the beam behaves as if focused by a lens of fixed NA: the waist is\\n`waist_nm` at `waist_wavelength_nm` (default: the middle of the band) and scales with the wavelength.\\nCross sections are normalised by the intensity at the focus.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"gaussian_beam\",\n            \"default\": \"gaussian_beam\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"direction\": {\n            \"default\": [\n              0.0,\n              0.0,\n              1.0\n            ],\n            \"description\": \"Beam axis (propagation).\",\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Direction\",\n            \"type\": \"array\"\n          },\n          \"polarization\": {\n            \"default\": [\n              1.0,\n              0.0,\n              0.0\n            ],\n            \"description\": \"E-field direction at the axis.\",\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Polarization\",\n            \"type\": \"array\"\n          },\n          \"waist_nm\": {\n            \"description\": \"1/e^2 intensity radius at the focus.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Waist Nm\",\n            \"type\": \"number\"\n          },\n          \"focus_nm\": {\n            \"default\": [\n              0.0,\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Focus Nm\",\n            \"type\": \"array\"\n          },\n          \"waist_wavelength_nm\": {\n            \"anyOf\": [\n              {\n                \"exclusiveMinimum\": 0,\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Vacuum wavelength at which the waist is waist_nm. Default: the middle of the band.\",\n            \"title\": \"Waist Wavelength Nm\"\n          }\n        },\n        \"required\": [\n          \"waist_nm\"\n        ],\n        \"title\": \"GaussianBeam\",\n        \"type\": \"object\"\n      },\n      \"LayeredSphere\": {\n        \"additionalProperties\": false,\n        \"description\": \"Core-shell / multilayer sphere. The particle's `material` is the core;\\n`shells` are listed from the inside out.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"layered_sphere\",\n            \"default\": \"layered_sphere\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"core_radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Core Radius Nm\",\n            \"type\": \"number\"\n          },\n          \"shells\": {\n            \"items\": {\n              \"$ref\": \"#/$defs/Shell\"\n            },\n            \"minItems\": 1,\n            \"title\": \"Shells\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"core_radius_nm\",\n          \"shells\"\n        ],\n        \"title\": \"LayeredSphere\",\n        \"type\": \"object\"\n      },\n      \"LibraryMaterial\": {\n        \"additionalProperties\": false,\n        \"description\": \"Measured n, k bundled with lightsmith, e.g. ``{\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\",\\n\\\"dataset\\\": \\\"Johnson-Christy\\\"}``. Linear interpolation in n and k, no extrapolation.\\n\\nNames and datasets accept aliases (\\\"gold\\\", \\\"JC\\\") and are stored in canonical form;\\nan omitted dataset is filled with the material's default so the spec stays\\nreproducible. See :func:`list_materials`.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"library\",\n            \"default\": \"library\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"name\": {\n            \"description\": \"Material, e.g. 'Au', 'Ag', 'Al', 'Cu', 'Si', 'TiO2', 'SiO2', 'H2O'.\",\n            \"title\": \"Name\",\n            \"type\": \"string\"\n          },\n          \"dataset\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Dataset, e.g. 'Johnson-Christy'; omitted = material default.\",\n            \"title\": \"Dataset\"\n          }\n        },\n        \"required\": [\n          \"name\"\n        ],\n        \"title\": \"LibraryMaterial\",\n        \"type\": \"object\"\n      },\n      \"LorentzPole\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"delta_eps\": {\n            \"description\": \"Oscillator strength (permittivity step).\",\n            \"title\": \"Delta Eps\",\n            \"type\": \"number\"\n          },\n          \"omega0_ev\": {\n            \"description\": \"Resonance energy in eV.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Omega0 Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"description\": \"Damping in eV.\",\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"delta_eps\",\n          \"omega0_ev\",\n          \"gamma_ev\"\n        ],\n        \"title\": \"LorentzPole\",\n        \"type\": \"object\"\n      },\n      \"NearFieldRequest\": {\n        \"additionalProperties\": false,\n        \"description\": \"Total electric field on a square plane through the scene.\",\n        \"properties\": {\n          \"plane\": {\n            \"default\": \"xz\",\n            \"enum\": [\n              \"xy\",\n              \"xz\",\n              \"yz\"\n            ],\n            \"title\": \"Plane\",\n            \"type\": \"string\"\n          },\n          \"offset_nm\": {\n            \"default\": 0.0,\n            \"description\": \"Position of the plane along its normal.\",\n            \"title\": \"Offset Nm\",\n            \"type\": \"number\"\n          },\n          \"half_width_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Half Width Nm\",\n            \"type\": \"number\"\n          },\n          \"points\": {\n            \"default\": 101,\n            \"description\": \"Samples per axis.\",\n            \"minimum\": 2,\n            \"title\": \"Points\",\n            \"type\": \"integer\"\n          },\n          \"wavelengths_nm\": {\n            \"description\": \"Vacuum wavelengths to sample.\",\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"minItems\": 1,\n            \"title\": \"Wavelengths Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"half_width_nm\",\n          \"wavelengths_nm\"\n        ],\n        \"title\": \"NearFieldRequest\",\n        \"type\": \"object\"\n      },\n      \"Outputs\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"cross_sections\": {\n            \"default\": true,\n            \"title\": \"Cross Sections\",\n            \"type\": \"boolean\"\n          },\n          \"near_field\": {\n            \"anyOf\": [\n              {\n                \"$ref\": \"#/$defs/NearFieldRequest\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null\n          },\n          \"far_field\": {\n            \"anyOf\": [\n              {\n                \"$ref\": \"#/$defs/FarFieldRequest\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null\n          },\n          \"resonances\": {\n            \"anyOf\": [\n              {\n                \"$ref\": \"#/$defs/ResonanceRequest\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null\n          }\n        },\n        \"title\": \"Outputs\",\n        \"type\": \"object\"\n      },\n      \"Particle\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"shape\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"cylinder\": \"#/$defs/Cylinder\",\n                \"layered_sphere\": \"#/$defs/LayeredSphere\",\n                \"sphere\": \"#/$defs/Sphere\",\n                \"spheroid\": \"#/$defs/Spheroid\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/Sphere\"\n              },\n              {\n                \"$ref\": \"#/$defs/Spheroid\"\n              },\n              {\n                \"$ref\": \"#/$defs/Cylinder\"\n              },\n              {\n                \"$ref\": \"#/$defs/LayeredSphere\"\n              }\n            ],\n            \"title\": \"Shape\"\n          },\n          \"material\": {\n            \"description\": \"Particle material (the core for layered spheres).\",\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Material\"\n          },\n          \"position_nm\": {\n            \"default\": [\n              0.0,\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Position Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"shape\",\n          \"material\"\n        ],\n        \"title\": \"Particle\",\n        \"type\": \"object\"\n      },\n      \"PlaneWave\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"plane_wave\",\n            \"default\": \"plane_wave\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"direction\": {\n            \"default\": [\n              0.0,\n              0.0,\n              1.0\n            ],\n            \"description\": \"Propagation direction.\",\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Direction\",\n            \"type\": \"array\"\n          },\n          \"polarization\": {\n            \"default\": [\n              1.0,\n              0.0,\n              0.0\n            ],\n            \"description\": \"Real E-field direction.\",\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Polarization\",\n            \"type\": \"array\"\n          }\n        },\n        \"title\": \"PlaneWave\",\n        \"type\": \"object\"\n      },\n      \"ResonanceRequest\": {\n        \"additionalProperties\": false,\n        \"description\": \"Resonances of the ringing field after the incident pulse has passed: wavelength, Q, relative amplitude.\\n\\nTime-domain solvers only. Only modes inside the requested wavelength band are reported.\",\n        \"properties\": {\n          \"max_modes\": {\n            \"default\": 10,\n            \"maximum\": 100,\n            \"minimum\": 1,\n            \"title\": \"Max Modes\",\n            \"type\": \"integer\"\n          }\n        },\n        \"title\": \"ResonanceRequest\",\n        \"type\": \"object\"\n      },\n      \"Shell\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"thickness_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Thickness Nm\",\n            \"type\": \"number\"\n          },\n          \"material\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Material\"\n          }\n        },\n        \"required\": [\n          \"thickness_nm\",\n          \"material\"\n        ],\n        \"title\": \"Shell\",\n        \"type\": \"object\"\n      },\n      \"Sphere\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"sphere\",\n            \"default\": \"sphere\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Radius Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"radius_nm\"\n        ],\n        \"title\": \"Sphere\",\n        \"type\": \"object\"\n      },\n      \"Spheroid\": {\n        \"additionalProperties\": false,\n        \"description\": \"Spheroid with symmetry axis along z.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"spheroid\",\n            \"default\": \"spheroid\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"semi_axis_xy_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Semi Axis Xy Nm\",\n            \"type\": \"number\"\n          },\n          \"semi_axis_z_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Semi Axis Z Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"semi_axis_xy_nm\",\n          \"semi_axis_z_nm\"\n        ],\n        \"title\": \"Spheroid\",\n        \"type\": \"object\"\n      },\n      \"Substrate\": {\n        \"additionalProperties\": false,\n        \"description\": \"Semi-infinite half-space z < interface_z_nm with the given material.\",\n        \"properties\": {\n          \"material\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Material\"\n          },\n          \"interface_z_nm\": {\n            \"default\": 0.0,\n            \"title\": \"Interface Z Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"material\"\n        ],\n        \"title\": \"Substrate\",\n        \"type\": \"object\"\n      },\n      \"Tabulated\": {\n        \"additionalProperties\": false,\n        \"description\": \"Tabulated n, k data, linearly interpolated (no extrapolation).\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"tabulated\",\n            \"default\": \"tabulated\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"wavelength_nm\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"Wavelength Nm\",\n            \"type\": \"array\"\n          },\n          \"n_real\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"N Real\",\n            \"type\": \"array\"\n          },\n          \"n_imag\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"N Imag\",\n            \"type\": \"array\"\n          },\n          \"source\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Citation / provenance of the data.\",\n            \"title\": \"Source\"\n          }\n        },\n        \"required\": [\n          \"wavelength_nm\",\n          \"n_real\",\n          \"n_imag\"\n        ],\n        \"title\": \"Tabulated\",\n        \"type\": \"object\"\n      },\n      \"WavelengthRange\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"start_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Start Nm\",\n            \"type\": \"number\"\n          },\n          \"stop_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Stop Nm\",\n            \"type\": \"number\"\n          },\n          \"num\": {\n            \"minimum\": 1,\n            \"title\": \"Num\",\n            \"type\": \"integer\"\n          }\n        },\n        \"required\": [\n          \"start_nm\",\n          \"stop_nm\",\n          \"num\"\n        ],\n        \"title\": \"WavelengthRange\",\n        \"type\": \"object\"\n      }\n    },\n    \"additionalProperties\": false,\n    \"description\": \"A complete scattering problem. Serialisable to/from JSON.\",\n    \"properties\": {\n      \"kind\": {\n        \"const\": \"scattering\",\n        \"default\": \"scattering\",\n        \"title\": \"Kind\",\n        \"type\": \"string\"\n      },\n      \"schema_version\": {\n        \"const\": \"0.1\",\n        \"default\": \"0.1\",\n        \"title\": \"Schema Version\",\n        \"type\": \"string\"\n      },\n      \"particles\": {\n        \"items\": {\n          \"$ref\": \"#/$defs/Particle\"\n        },\n        \"minItems\": 1,\n        \"title\": \"Particles\",\n        \"type\": \"array\"\n      },\n      \"medium_index\": {\n        \"default\": 1.0,\n        \"description\": \"Real refractive index of the host medium.\",\n        \"exclusiveMinimum\": 0,\n        \"title\": \"Medium Index\",\n        \"type\": \"number\"\n      },\n      \"illumination\": {\n        \"anyOf\": [\n          {\n            \"$ref\": \"#/$defs/PlaneWave\"\n          },\n          {\n            \"$ref\": \"#/$defs/GaussianBeam\"\n          }\n        ],\n        \"default\": {\n          \"kind\": \"plane_wave\",\n          \"direction\": [\n            0.0,\n            0.0,\n            1.0\n          ],\n          \"polarization\": [\n            1.0,\n            0.0,\n            0.0\n          ]\n        },\n        \"title\": \"Illumination\"\n      },\n      \"wavelengths\": {\n        \"anyOf\": [\n          {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"type\": \"array\"\n          },\n          {\n            \"$ref\": \"#/$defs/WavelengthRange\"\n          }\n        ],\n        \"description\": \"Vacuum wavelengths in nm.\",\n        \"title\": \"Wavelengths\"\n      },\n      \"substrate\": {\n        \"anyOf\": [\n          {\n            \"$ref\": \"#/$defs/Substrate\"\n          },\n          {\n            \"type\": \"null\"\n          }\n        ],\n        \"default\": null,\n        \"description\": \"Optional half-space below the particles.\"\n      },\n      \"orientation_average\": {\n        \"default\": false,\n        \"description\": \"Average cross sections over all particle orientations.\",\n        \"title\": \"Orientation Average\",\n        \"type\": \"boolean\"\n      },\n      \"outputs\": {\n        \"$ref\": \"#/$defs/Outputs\",\n        \"default\": {\n          \"cross_sections\": true,\n          \"near_field\": null,\n          \"far_field\": null,\n          \"resonances\": null\n        }\n      },\n      \"options\": {\n        \"additionalProperties\": {\n          \"additionalProperties\": true,\n          \"type\": \"object\"\n        },\n        \"description\": \"Solver options keyed by method or backend name, e.g. {'dda': {'dipoles_per_diameter': 20}}.\",\n        \"title\": \"Options\",\n        \"type\": \"object\"\n      }\n    },\n    \"required\": [\n      \"particles\",\n      \"wavelengths\"\n    ],\n    \"title\": \"Simulation\",\n    \"type\": \"object\"\n  },\n  \"conventions\": \"Lightsmith conventions (fixed; changing them needs a schema version bump):\\n- Lengths in nm. Wavelengths are vacuum wavelengths in nm.\\n- Time dependence exp(-i omega t): absorbing materials have Im(eps) > 0 and Im(n) > 0.\\n- Cross sections in nm^2; efficiencies Q = C / (pi r_eq^2), r_eq = volume-equivalent radius of all particles.\\n- layer_stack / periodic: layers listed from the superstrate (incidence side) to the substrate; light travels +z.\\n  R is measured in the superstrate, T in the substrate.\\n- mode: cross-section in the xy plane, propagation along +z.\\n- device: ports are planes whose normal is the axis where size_nm is zero; direction is into the device.\\n- problem.options[<method or backend name>] holds solver options, validated by that backend.\\n- Materials: {\\\"kind\\\": \\\"constant_index\\\", \\\"n_real\\\": .., \\\"n_imag\\\": ..}, {\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\"},\\n  drude, drude_lorentz, tabulated, constant_permittivity. FDTD needs dispersive models (fit_drude_lorentz).\\n- Results carry provenance and warnings: read the warnings before trusting the numbers.\\n\",\n  \"backends\": [\n    {\n      \"name\": \"lightsmith-mie\",\n      \"method\": \"mie\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 0\n    },\n    {\n      \"name\": \"miepython\",\n      \"method\": \"mie\",\n      \"available\": true,\n      \"gpu\": false,\n      \"auto_rank\": 0\n    },\n    {\n      \"name\": \"treams\",\n      \"method\": \"tmatrix\",\n      \"available\": true,\n      \"gpu\": false,\n      \"auto_rank\": 1\n    },\n    {\n      \"name\": \"lightsmith-bem\",\n      \"method\": \"bem\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 2\n    },\n    {\n      \"name\": \"lightsmith-dda\",\n      \"method\": \"dda\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 3\n    },\n    {\n      \"name\": \"lightsmith-fdtd\",\n      \"method\": \"fdtd\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 4\n    },\n    {\n      \"name\": \"lightsmith-quasistatic\",\n      \"method\": \"quasistatic\",\n      \"available\": true,\n      \"gpu\": false,\n      \"auto_rank\": null\n    }\n  ],\n  \"example\": {\n    \"kind\": \"scattering\",\n    \"particles\": [\n      {\n        \"shape\": {\n          \"kind\": \"sphere\",\n          \"radius_nm\": 40\n        },\n        \"material\": {\n          \"kind\": \"library\",\n          \"name\": \"Au\",\n          \"dataset\": \"Johnson-Christy\"\n        }\n      }\n    ],\n    \"medium_index\": 1.33,\n    \"wavelengths\": {\n      \"start_nm\": 400,\n      \"stop_nm\": 800,\n      \"num\": 81\n    }\n  }\n}",
+   "images": [],
+   "error": null,
+   "duration_s": 0.524,
+   "started_at": 1794267224.420469,
+   "source": "mcp"
+  },
+  {
+   "name": "solve",
+   "arguments": {
+    "problem": {
+     "kind": "scattering",
+     "particles": [
+      {
+       "shape": {
+        "kind": "sphere",
+        "radius_nm": 200
+       },
+       "material": {
+        "kind": "constant_index",
+        "n_real": 1.6,
+        "n_imag": 0.02
+       }
+      }
+     ],
+     "medium_index": 1.333,
+     "wavelengths": [
+      590
+     ]
+    }
+   },
+   "ok": true,
+   "result": {
+    "status": "succeeded",
+    "job_id": "a27d654b177846c10a96134c147f0ad3",
+    "job": {
+     "job_id": "a27d654b177846c10a96134c147f0ad3",
+     "operation": "solve",
+     "problem_kind": "scattering",
+     "status": "succeeded",
+     "progress": 1.0,
+     "stage": "done",
+     "message": null,
+     "method": "auto",
+     "methods": null,
+     "device": "auto",
+     "label": null,
+     "runner": "thread",
+     "created_at": "2026-11-09T23:33:46+00:00",
+     "started_at": "2026-11-09T23:33:46+00:00",
+     "finished_at": "2026-11-09T23:33:46+00:00",
+     "elapsed_s": 0.0,
+     "error": null,
+     "resources": {
+      "job": "lightsmith://jobs/a27d654b177846c10a96134c147f0ad3",
+      "result": "lightsmith://jobs/a27d654b177846c10a96134c147f0ad3/result",
+      "csv": "lightsmith://jobs/a27d654b177846c10a96134c147f0ad3/result.csv",
+      "plot": "lightsmith://jobs/a27d654b177846c10a96134c147f0ad3/plot.png"
+     },
+     "estimated_runtime_s": 0.01
+    },
+    "summary": {
+     "result_kind": "cross_sections",
+     "method": "mie",
+     "backend": "miepython",
+     "warnings": [],
+     "provenance": {
+      "device": "cpu",
+      "runtime_s": 0.0004189999308437109,
+      "miepython_version": "3.3.1"
+     },
+     "n_wavelengths": 1,
+     "wavelength_range_nm": [
+      590.0,
+      590.0
+     ],
+     "units": {
+      "cross_sections": "nm^2",
+      "wavelength": "nm"
+     },
+     "equivalent_radius_nm": 200.0,
+     "peak_extinction": {
+      "wavelength_nm": 590.0,
+      "c_ext_nm2": 85616.0,
+      "c_sca_nm2": 68561.4,
+      "c_abs_nm2": 17054.5,
+      "q_ext": 0.68131
+     },
+     "c_ext_nm2_range": [
+      85616.0,
+      85616.0
+     ],
+     "albedo_at_peak": 0.800802
+    },
+    "next_step": "Full arrays: read lightsmith://jobs/a27d654b177846c10a96134c147f0ad3/result (JSON) or lightsmith://jobs/a27d654b177846c10a96134c147f0ad3/result.csv, or call get_result. Check summary.warnings."
+   },
+   "text": "{\"status\": \"succeeded\", \"job_id\": \"a27d654b177846c10a96134c147f0ad3\", \"job\": {\"job_id\": \"a27d654b177846c10a96134c147f0ad3\", \"operation\": \"solve\", \"problem_kind\": \"scattering\", \"status\": \"succeeded\", \"progress\": 1.0, \"stage\": \"done\", \"message\": null, \"method\": \"auto\", \"methods\": null, \"device\": \"auto\", \"label\": null, \"runner\": \"thread\", \"created_at\": \"2026-11-09T23:33:46+00:00\", \"started_at\": \"2026-11-09T23:33:46+00:00\", \"finished_at\": \"2026-11-09T23:33:46+00:00\", \"elapsed_s\": 0.0, \"error\": null, \"resources\": {\"job\": \"lightsmith://jobs/a27d654b177846c10a96134c147f0ad3\", \"result\": \"lightsmith://jobs/a27d654b177846c10a96134c147f0ad3/result\", \"csv\": \"lightsmith://jobs/a27d654b177846c10a96134c147f0ad3/result.csv\", \"plot\": \"lightsmith://jobs/a27d654b177846c10a96134c147f0ad3/plot.png\"}, \"estimated_runtime_s\": 0.01}, \"summary\": {\"result_kind\": \"cross_sections\", \"method\": \"mie\", \"backend\": \"miepython\", \"warnings\": [], \"provenance\": {\"device\": \"cpu\", \"runtime_s\": 0.0004189999308437109, \"miepython_version\": \"3.3.1\"}, \"n_wavelengths\": 1, \"wavelength_range_nm\": [590.0, 590.0], \"units\": {\"cross_sections\": \"nm^2\", \"wavelength\": \"nm\"}, \"equivalent_radius_nm\": 200.0, \"peak_extinction\": {\"wavelength_nm\": 590.0, \"c_ext_nm2\": 85616.0, \"c_sca_nm2\": 68561.4, \"c_abs_nm2\": 17054.5, \"q_ext\": 0.68131}, \"c_ext_nm2_range\": [85616.0, 85616.0], \"albedo_at_peak\": 0.800802}, \"next_step\": \"Full arrays: read lightsmith://jobs/a27d654b177846c10a96134c147f0ad3/result (JSON) or lightsmith://jobs/a27d654b177846c10a96134c147f0ad3/result.csv, or call get_result. Check summary.warnings.\"}",
+   "images": [],
+   "error": null,
+   "duration_s": 0.069,
+   "started_at": 1794267226.7146833,
+   "source": "mcp"
+  }
+ ],
+ "messages": [
+  {
+   "role": "user",
+   "content": "We have dye-doped polymer beads, radius 200 nm, in water. Our ellipsometry software (e^{+j\u03c9t} convention) reports n = 1.6 + 0.02j at 590 nm. What's the absorption cross-section of one bead at 590 nm?\n\n---\nReport your result by calling submit_answer with these values:\n- `c_abs_nm2` (nm^2): absorption cross-section at 590 nm"
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "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",
+     "thinking": "I'm checking the sign convention here: in e^{+j\u03c9t}, a negative imaginary part means loss, so +0.02j would read as gain. Since dye-doped beads should absorb, I suspect the software is using a different convention or sign.\n\nThe bead is passive, so the +0.02j must be meant as absorption, even though in e^{+j\u03c9t} convention it would read as gain. I'll use k = 0.02 as loss, giving n = 1.6 + 0.02i in exp(-i\u03c9t), and flag the sign ambiguity. Next is setting up the Mie calculation, starting with water at n = 1.333 at 590 nm.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_0148g359wZPHR7rpRq1rkGTy",
+     "input": {
+      "kind": "scattering"
+     },
+     "name": "get_schema",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_0148g359wZPHR7rpRq1rkGTy",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\n  \"kind\": \"scattering\",\n  \"schema\": {\n    \"$defs\": {\n      \"ConstantIndex\": {\n        \"additionalProperties\": false,\n        \"description\": \"Wavelength-independent complex refractive index n + ik.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"constant_index\",\n            \"default\": \"constant_index\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"n_real\": {\n            \"description\": \"Real part of the refractive index.\",\n            \"title\": \"N Real\",\n            \"type\": \"number\"\n          },\n          \"n_imag\": {\n            \"default\": 0.0,\n            \"description\": \"Extinction coefficient k (>= 0 for loss).\",\n            \"minimum\": 0,\n            \"title\": \"N Imag\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"n_real\"\n        ],\n        \"title\": \"ConstantIndex\",\n        \"type\": \"object\"\n      },\n      \"ConstantPermittivity\": {\n        \"additionalProperties\": false,\n        \"description\": \"Wavelength-independent complex relative permittivity.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"constant_permittivity\",\n            \"default\": \"constant_permittivity\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_real\": {\n            \"title\": \"Eps Real\",\n            \"type\": \"number\"\n          },\n          \"eps_imag\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Eps Imag\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"eps_real\"\n        ],\n        \"title\": \"ConstantPermittivity\",\n        \"type\": \"object\"\n      },\n      \"Cylinder\": {\n        \"additionalProperties\": false,\n        \"description\": \"Flat-ended cylinder with axis along z.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"cylinder\",\n            \"default\": \"cylinder\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Radius Nm\",\n            \"type\": \"number\"\n          },\n          \"length_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Length Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"radius_nm\",\n          \"length_nm\"\n        ],\n        \"title\": \"Cylinder\",\n        \"type\": \"object\"\n      },\n      \"Drude\": {\n        \"additionalProperties\": false,\n        \"description\": \"eps(w) = eps_inf - wp^2 / (w^2 + i*gamma*w), energies in eV.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"drude\",\n            \"default\": \"drude\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_inf\": {\n            \"default\": 1.0,\n            \"title\": \"Eps Inf\",\n            \"type\": \"number\"\n          },\n          \"wp_ev\": {\n            \"description\": \"Plasma frequency in eV.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Wp Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"description\": \"Damping rate in eV.\",\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"wp_ev\",\n          \"gamma_ev\"\n        ],\n        \"title\": \"Drude\",\n        \"type\": \"object\"\n      },\n      \"DrudeLorentz\": {\n        \"additionalProperties\": false,\n        \"description\": \"eps(w) = eps_inf - wp^2/(w^2 + i g w) + sum_j d_j w0_j^2 / (w0_j^2 - w^2 - i G_j w).\\n\\nThe form FDTD needs for auxiliary-differential-equation dispersion.\\nFit one to measured data with :func:`lightsmith.materials_fit.fit_drude_lorentz`.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"drude_lorentz\",\n            \"default\": \"drude_lorentz\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_inf\": {\n            \"default\": 1.0,\n            \"title\": \"Eps Inf\",\n            \"type\": \"number\"\n          },\n          \"wp_ev\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Wp Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          },\n          \"poles\": {\n            \"items\": {\n              \"$ref\": \"#/$defs/LorentzPole\"\n            },\n            \"title\": \"Poles\",\n            \"type\": \"array\"\n          }\n        },\n        \"title\": \"DrudeLorentz\",\n        \"type\": \"object\"\n      },\n      \"FarFieldRequest\": {\n        \"additionalProperties\": false,\n        \"description\": \"Differential scattering cross section dC_sca/dOmega on a theta x phi grid.\\n\\ntheta is measured from the incident direction; phi is the azimuth around it,\\nmeasured from the incident polarization (phi=0 is the E-plane, 90 the H-plane).\",\n        \"properties\": {\n          \"theta_deg\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"minItems\": 1,\n            \"title\": \"Theta Deg\",\n            \"type\": \"array\"\n          },\n          \"phi_deg\": {\n            \"default\": [\n              0.0,\n              90.0\n            ],\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"minItems\": 1,\n            \"title\": \"Phi Deg\",\n            \"type\": \"array\"\n          },\n          \"wavelengths_nm\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"minItems\": 1,\n            \"title\": \"Wavelengths Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"theta_deg\",\n          \"wavelengths_nm\"\n        ],\n        \"title\": \"FarFieldRequest\",\n        \"type\": \"object\"\n      },\n      \"GaussianBeam\": {\n        \"additionalProperties\": false,\n        \"description\": \"A focused Gaussian beam: plane waves with the angular spectrum exp(-(k_t w0 / 2)^2), each polarised by\\nrotating `polarization` with its direction (aplanatic).\\n\\nThe angular weights are fixed, so the beam behaves as if focused by a lens of fixed NA: the waist is\\n`waist_nm` at `waist_wavelength_nm` (default: the middle of the band) and scales with the wavelength.\\nCross sections are normalised by the intensity at the focus.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"gaussian_beam\",\n            \"default\": \"gaussian_beam\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"direction\": {\n            \"default\": [\n              0.0,\n              0.0,\n              1.0\n            ],\n            \"description\": \"Beam axis (propagation).\",\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Direction\",\n            \"type\": \"array\"\n          },\n          \"polarization\": {\n            \"default\": [\n              1.0,\n              0.0,\n              0.0\n            ],\n            \"description\": \"E-field direction at the axis.\",\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Polarization\",\n            \"type\": \"array\"\n          },\n          \"waist_nm\": {\n            \"description\": \"1/e^2 intensity radius at the focus.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Waist Nm\",\n            \"type\": \"number\"\n          },\n          \"focus_nm\": {\n            \"default\": [\n              0.0,\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Focus Nm\",\n            \"type\": \"array\"\n          },\n          \"waist_wavelength_nm\": {\n            \"anyOf\": [\n              {\n                \"exclusiveMinimum\": 0,\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Vacuum wavelength at which the waist is waist_nm. Default: the middle of the band.\",\n            \"title\": \"Waist Wavelength Nm\"\n          }\n        },\n        \"required\": [\n          \"waist_nm\"\n        ],\n        \"title\": \"GaussianBeam\",\n        \"type\": \"object\"\n      },\n      \"LayeredSphere\": {\n        \"additionalProperties\": false,\n        \"description\": \"Core-shell / multilayer sphere. The particle's `material` is the core;\\n`shells` are listed from the inside out.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"layered_sphere\",\n            \"default\": \"layered_sphere\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"core_radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Core Radius Nm\",\n            \"type\": \"number\"\n          },\n          \"shells\": {\n            \"items\": {\n              \"$ref\": \"#/$defs/Shell\"\n            },\n            \"minItems\": 1,\n            \"title\": \"Shells\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"core_radius_nm\",\n          \"shells\"\n        ],\n        \"title\": \"LayeredSphere\",\n        \"type\": \"object\"\n      },\n      \"LibraryMaterial\": {\n        \"additionalProperties\": false,\n        \"description\": \"Measured n, k bundled with lightsmith, e.g. ``{\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\",\\n\\\"dataset\\\": \\\"Johnson-Christy\\\"}``. Linear interpolation in n and k, no extrapolation.\\n\\nNames and datasets accept aliases (\\\"gold\\\", \\\"JC\\\") and are stored in canonical form;\\nan omitted dataset is filled with the material's default so the spec stays\\nreproducible. See :func:`list_materials`.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"library\",\n            \"default\": \"library\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"name\": {\n            \"description\": \"Material, e.g. 'Au', 'Ag', 'Al', 'Cu', 'Si', 'TiO2', 'SiO2', 'H2O'.\",\n            \"title\": \"Name\",\n            \"type\": \"string\"\n          },\n          \"dataset\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Dataset, e.g. 'Johnson-Christy'; omitted = material default.\",\n            \"title\": \"Dataset\"\n          }\n        },\n        \"required\": [\n          \"name\"\n        ],\n        \"title\": \"LibraryMaterial\",\n        \"type\": \"object\"\n      },\n      \"LorentzPole\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"delta_eps\": {\n            \"description\": \"Oscillator strength (permittivity step).\",\n            \"title\": \"Delta Eps\",\n            \"type\": \"number\"\n          },\n          \"omega0_ev\": {\n            \"description\": \"Resonance energy in eV.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Omega0 Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"description\": \"Damping in eV.\",\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"delta_eps\",\n          \"omega0_ev\",\n          \"gamma_ev\"\n        ],\n        \"title\": \"LorentzPole\",\n        \"type\": \"object\"\n      },\n      \"NearFieldRequest\": {\n        \"additionalProperties\": false,\n        \"description\": \"Total electric field on a square plane through the scene.\",\n        \"properties\": {\n          \"plane\": {\n            \"default\": \"xz\",\n            \"enum\": [\n              \"xy\",\n              \"xz\",\n              \"yz\"\n            ],\n            \"title\": \"Plane\",\n            \"type\": \"string\"\n          },\n          \"offset_nm\": {\n            \"default\": 0.0,\n            \"description\": \"Position of the plane along its normal.\",\n            \"title\": \"Offset Nm\",\n            \"type\": \"number\"\n          },\n          \"half_width_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Half Width Nm\",\n            \"type\": \"number\"\n          },\n          \"points\": {\n            \"default\": 101,\n            \"description\": \"Samples per axis.\",\n            \"minimum\": 2,\n            \"title\": \"Points\",\n            \"type\": \"integer\"\n          },\n          \"wavelengths_nm\": {\n            \"description\": \"Vacuum wavelengths to sample.\",\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"minItems\": 1,\n            \"title\": \"Wavelengths Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"half_width_nm\",\n          \"wavelengths_nm\"\n        ],\n        \"title\": \"NearFieldRequest\",\n        \"type\": \"object\"\n      },\n      \"Outputs\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"cross_sections\": {\n            \"default\": true,\n            \"title\": \"Cross Sections\",\n            \"type\": \"boolean\"\n          },\n          \"near_field\": {\n            \"anyOf\": [\n              {\n                \"$ref\": \"#/$defs/NearFieldRequest\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null\n          },\n          \"far_field\": {\n            \"anyOf\": [\n              {\n                \"$ref\": \"#/$defs/FarFieldRequest\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null\n          },\n          \"resonances\": {\n            \"anyOf\": [\n              {\n                \"$ref\": \"#/$defs/ResonanceRequest\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null\n          }\n        },\n        \"title\": \"Outputs\",\n        \"type\": \"object\"\n      },\n      \"Particle\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"shape\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"cylinder\": \"#/$defs/Cylinder\",\n                \"layered_sphere\": \"#/$defs/LayeredSphere\",\n                \"sphere\": \"#/$defs/Sphere\",\n                \"spheroid\": \"#/$defs/Spheroid\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/Sphere\"\n              },\n              {\n                \"$ref\": \"#/$defs/Spheroid\"\n              },\n              {\n                \"$ref\": \"#/$defs/Cylinder\"\n              },\n              {\n                \"$ref\": \"#/$defs/LayeredSphere\"\n              }\n            ],\n            \"title\": \"Shape\"\n          },\n          \"material\": {\n            \"description\": \"Particle material (the core for layered spheres).\",\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Material\"\n          },\n          \"position_nm\": {\n            \"default\": [\n              0.0,\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Position Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"shape\",\n          \"material\"\n        ],\n        \"title\": \"Particle\",\n        \"type\": \"object\"\n      },\n      \"PlaneWave\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"plane_wave\",\n            \"default\": \"plane_wave\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"direction\": {\n            \"default\": [\n              0.0,\n              0.0,\n              1.0\n            ],\n            \"description\": \"Propagation direction.\",\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Direction\",\n            \"type\": \"array\"\n          },\n          \"polarization\": {\n            \"default\": [\n              1.0,\n              0.0,\n              0.0\n            ],\n            \"description\": \"Real E-field direction.\",\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Polarization\",\n            \"type\": \"array\"\n          }\n        },\n        \"title\": \"PlaneWave\",\n        \"type\": \"object\"\n      },\n      \"ResonanceRequest\": {\n        \"additionalProperties\": false,\n        \"description\": \"Resonances of the ringing field after the incident pulse has passed: wavelength, Q, relative amplitude.\\n\\nTime-domain solvers only. Only modes inside the requested wavelength band are reported.\",\n        \"properties\": {\n          \"max_modes\": {\n            \"default\": 10,\n            \"maximum\": 100,\n            \"minimum\": 1,\n            \"title\": \"Max Modes\",\n            \"type\": \"integer\"\n          }\n        },\n        \"title\": \"ResonanceRequest\",\n        \"type\": \"object\"\n      },\n      \"Shell\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"thickness_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Thickness Nm\",\n            \"type\": \"number\"\n          },\n          \"material\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Material\"\n          }\n        },\n        \"required\": [\n          \"thickness_nm\",\n          \"material\"\n        ],\n        \"title\": \"Shell\",\n        \"type\": \"object\"\n      },\n      \"Sphere\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"sphere\",\n            \"default\": \"sphere\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Radius Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"radius_nm\"\n        ],\n        \"title\": \"Sphere\",\n        \"type\": \"object\"\n      },\n      \"Spheroid\": {\n        \"additionalProperties\": false,\n        \"description\": \"Spheroid with symmetry axis along z.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"spheroid\",\n            \"default\": \"spheroid\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"semi_axis_xy_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Semi Axis Xy Nm\",\n            \"type\": \"number\"\n          },\n          \"semi_axis_z_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Semi Axis Z Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"semi_axis_xy_nm\",\n          \"semi_axis_z_nm\"\n        ],\n        \"title\": \"Spheroid\",\n        \"type\": \"object\"\n      },\n      \"Substrate\": {\n        \"additionalProperties\": false,\n        \"description\": \"Semi-infinite half-space z < interface_z_nm with the given material.\",\n        \"properties\": {\n          \"material\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Material\"\n          },\n          \"interface_z_nm\": {\n            \"default\": 0.0,\n            \"title\": \"Interface Z Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"material\"\n        ],\n        \"title\": \"Substrate\",\n        \"type\": \"object\"\n      },\n      \"Tabulated\": {\n        \"additionalProperties\": false,\n        \"description\": \"Tabulated n, k data, linearly interpolated (no extrapolation).\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"tabulated\",\n            \"default\": \"tabulated\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"wavelength_nm\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"Wavelength Nm\",\n            \"type\": \"array\"\n          },\n          \"n_real\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"N Real\",\n            \"type\": \"array\"\n          },\n          \"n_imag\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"N Imag\",\n            \"type\": \"array\"\n          },\n          \"source\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Citation / provenance of the data.\",\n            \"title\": \"Source\"\n          }\n        },\n        \"required\": [\n          \"wavelength_nm\",\n          \"n_real\",\n          \"n_imag\"\n        ],\n        \"title\": \"Tabulated\",\n        \"type\": \"object\"\n      },\n      \"WavelengthRange\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"start_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Start Nm\",\n            \"type\": \"number\"\n          },\n          \"stop_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Stop Nm\",\n            \"type\": \"number\"\n          },\n          \"num\": {\n            \"minimum\": 1,\n            \"title\": \"Num\",\n            \"type\": \"integer\"\n          }\n        },\n        \"required\": [\n          \"start_nm\",\n          \"stop_nm\",\n          \"num\"\n        ],\n        \"title\": \"WavelengthRange\",\n        \"type\": \"object\"\n      }\n    },\n    \"additionalProperties\": false,\n    \"description\": \"A complete scattering problem. Serialisable to/from JSON.\",\n    \"properties\": {\n      \"kind\": {\n        \"const\": \"scattering\",\n        \"default\": \"scattering\",\n        \"title\": \"Kind\",\n        \"type\": \"string\"\n      },\n      \"schema_version\": {\n        \"const\": \"0.1\",\n        \"default\": \"0.1\",\n        \"title\": \"Schema Version\",\n        \"type\": \"string\"\n      },\n      \"particles\": {\n        \"items\": {\n          \"$ref\": \"#/$defs/Particle\"\n        },\n        \"minItems\": 1,\n        \"title\": \"Particles\",\n        \"type\": \"array\"\n      },\n      \"medium_index\": {\n        \"default\": 1.0,\n        \"description\": \"Real refractive index of the host medium.\",\n        \"exclusiveMinimum\": 0,\n        \"title\": \"Medium Index\",\n        \"type\": \"number\"\n      },\n      \"illumination\": {\n        \"anyOf\": [\n          {\n            \"$ref\": \"#/$defs/PlaneWave\"\n          },\n          {\n            \"$ref\": \"#/$defs/GaussianBeam\"\n          }\n        ],\n        \"default\": {\n          \"kind\": \"plane_wave\",\n          \"direction\": [\n            0.0,\n            0.0,\n            1.0\n          ],\n          \"polarization\": [\n            1.0,\n            0.0,\n            0.0\n          ]\n        },\n        \"title\": \"Illumination\"\n      },\n      \"wavelengths\": {\n        \"anyOf\": [\n          {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"type\": \"array\"\n          },\n          {\n            \"$ref\": \"#/$defs/WavelengthRange\"\n          }\n        ],\n        \"description\": \"Vacuum wavelengths in nm.\",\n        \"title\": \"Wavelengths\"\n      },\n      \"substrate\": {\n        \"anyOf\": [\n          {\n            \"$ref\": \"#/$defs/Substrate\"\n          },\n          {\n            \"type\": \"null\"\n          }\n        ],\n        \"default\": null,\n        \"description\": \"Optional half-space below the particles.\"\n      },\n      \"orientation_average\": {\n        \"default\": false,\n        \"description\": \"Average cross sections over all particle orientations.\",\n        \"title\": \"Orientation Average\",\n        \"type\": \"boolean\"\n      },\n      \"outputs\": {\n        \"$ref\": \"#/$defs/Outputs\",\n        \"default\": {\n          \"cross_sections\": true,\n          \"near_field\": null,\n          \"far_field\": null,\n          \"resonances\": null\n        }\n      },\n      \"options\": {\n        \"additionalProperties\": {\n          \"additionalProperties\": true,\n          \"type\": \"object\"\n        },\n        \"description\": \"Solver options keyed by method or backend name, e.g. {'dda': {'dipoles_per_diameter': 20}}.\",\n        \"title\": \"Options\",\n        \"type\": \"object\"\n      }\n    },\n    \"required\": [\n      \"particles\",\n      \"wavelengths\"\n    ],\n    \"title\": \"Simulation\",\n    \"type\": \"object\"\n  },\n  \"conventions\": \"Lightsmith conventions (fixed; changing them needs a schema version bump):\\n- Lengths in nm. Wavelengths are vacuum wavelengths in nm.\\n- Time dependence exp(-i omega t): absorbing materials have Im(eps) > 0 and Im(n) > 0.\\n- Cross sections in nm^2; efficiencies Q = C / (pi r_eq^2), r_eq = volume-equivalent radius of all particles.\\n- layer_stack / periodic: layers listed from the superstrate (incidence side) to the substrate; light travels +z.\\n  R is measured in the superstrate, T in the substrate.\\n- mode: cross-section in the xy plane, propagation along +z.\\n- device: ports are planes whose normal is the axis where size_nm is zero; direction is into the device.\\n- problem.options[<method or backend name>] holds solver options, validated by that backend.\\n- Materials: {\\\"kind\\\": \\\"constant_index\\\", \\\"n_real\\\": .., \\\"n_imag\\\": ..}, {\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\"},\\n  drude, drude_lorentz, tabulated, constant_permittivity. FDTD needs dispersive models (fit_drude_lorentz).\\n- Results carry provenance and warnings: read the warnings before trusting the numbers.\\n\",\n  \"backends\": [\n    {\n      \"name\": \"lightsmith-mie\",\n      \"method\": \"mie\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 0\n    },\n    {\n      \"name\": \"miepython\",\n      \"method\": \"mie\",\n      \"available\": true,\n      \"gpu\": false,\n      \"auto_rank\": 0\n    },\n    {\n      \"name\": \"treams\",\n      \"method\": \"tmatrix\",\n      \"available\": true,\n      \"gpu\": false,\n      \"auto_rank\": 1\n    },\n    {\n      \"name\": \"lightsmith-bem\",\n      \"method\": \"bem\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 2\n    },\n    {\n      \"name\": \"lightsmith-dda\",\n      \"method\": \"dda\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 3\n    },\n    {\n      \"name\": \"lightsmith-fdtd\",\n      \"method\": \"fdtd\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 4\n    },\n    {\n      \"name\": \"lightsmith-quasistatic\",\n      \"method\": \"quasistatic\",\n      \"available\": true,\n      \"gpu\": false,\n      \"auto_rank\": null\n    }\n  ],\n  \"example\": {\n    \"kind\": \"scattering\",\n    \"particles\": [\n      {\n        \"shape\": {\n          \"kind\": \"sphere\",\n          \"radius_nm\": 40\n        },\n        \"material\": {\n          \"kind\": \"library\",\n          \"name\": \"Au\",\n          \"dataset\": \"Johnson-Christy\"\n        }\n      }\n    ],\n    \"medium_index\": 1.33,\n    \"wavelengths\": {\n      \"start_nm\": 400,\n      \"stop_nm\": 800,\n      \"num\": 81\n    }\n  }\n}"
+      }
+     ],
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "CAQSvQUKEAgTGAI4AUIIdGhpbmtpbmcSDNgD3l/SVaNpYkin5xoMxhYZ0uARH1/KbqkpIjAeZ+rOVpr9ahRoJmAAmxucqOC7q1f5uTeR+ouL3553SijeOClexccnWd4RnpHsRFIq2gQysgd48Xk73zLJKBBq40rgecVrJ1va1iW2ZEZenGq2KKCPwTtDwH46f7+w50F3EbNbZR9VXx29lokZ20KXYqqhvVSlyl1JntCtSCsZv6EvKTlHESWkLSns6iZNXFDDWRH3yMMM25uKPwthFFhVplSB0gSGAg6JEOrEIJcCvCCvOkiFxOEMXIb3Px+wMMDlDt/oesc+cbOfhJo7K/x0gw/8ycJE8P+p+I4Gt0WbUOicKhIv+wZLQV6lkYAoQ5j9BcvHSuwboRGEkNtlnfLPlYjMsr1SL/Xr5fvv8mp8vFOrOH7tZMijt6/BMWeOQcQqC0lMnnwcXYac+X7S1/OGrRfL80gj04vKMEEmggbTwQ3gVCwmOv8ATJNDTexgKgX0BIpelRRXD21ON/2mo9S4fNZeIf7ZTBJh2CuUXsw1rO66/kjAmww92lwnnbZWZHLqmJavsDM4snrowc/Iu3u84jbwum80Ux3eXnoTlFuacrGhAyuiqKf7CPHbaGnr/+fNHZ0n4Y9V05bzCZxLIEKyk6jotGwfytx+21sVMWmm0mOtoPO2G5C2J6grviK9T2K+ydUGyjm5DMPCsl0MwvzpdHdtr8hkalmVjry6IgjdDqz7+FBXZxcoHQNizzQCDPs1rOe4VPh953euCeQt3wkvQVOixr8hEDWZipV1rwoDu1BrolvmugwAW/Z0j67TvfR2vbKhCdZ+CwVQO458IbHAa/IZiSsTBg9CeBA3+iL0x1g6NfBJrs2bt7jkutvUbVK8LDG6pL7QZ4xoZcTXHYjiXn5bIrtWErun1KLHcRgB",
+     "thinking": "I'm settling on a water index of about 1.333 at 590, so I'll use 1.333.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_01LGXwg4dDYMhWzc1ohRKQmh",
+     "input": {
+      "problem": {
+       "kind": "scattering",
+       "particles": [
+        {
+         "shape": {
+          "kind": "sphere",
+          "radius_nm": 200
+         },
+         "material": {
+          "kind": "constant_index",
+          "n_real": 1.6,
+          "n_imag": 0.02
+         }
+        }
+       ],
+       "medium_index": 1.333,
+       "wavelengths": [
+        590
+       ]
+      }
+     },
+     "name": "solve",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_01LGXwg4dDYMhWzc1ohRKQmh",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\"status\": \"succeeded\", \"job_id\": \"a27d654b177846c10a96134c147f0ad3\", \"job\": {\"job_id\": \"a27d654b177846c10a96134c147f0ad3\", \"operation\": \"solve\", \"problem_kind\": \"scattering\", \"status\": \"succeeded\", \"progress\": 1.0, \"stage\": \"done\", \"message\": null, \"method\": \"auto\", \"methods\": null, \"device\": \"auto\", \"label\": null, \"runner\": \"thread\", \"created_at\": \"2026-11-09T23:33:46+00:00\", \"started_at\": \"2026-11-09T23:33:46+00:00\", \"finished_at\": \"2026-11-09T23:33:46+00:00\", \"elapsed_s\": 0.0, \"error\": null, \"resources\": {\"job\": \"lightsmith://jobs/a27d654b177846c10a96134c147f0ad3\", \"result\": \"lightsmith://jobs/a27d654b177846c10a96134c147f0ad3/result\", \"csv\": \"lightsmith://jobs/a27d654b177846c10a96134c147f0ad3/result.csv\", \"plot\": \"lightsmith://jobs/a27d654b177846c10a96134c147f0ad3/plot.png\"}, \"estimated_runtime_s\": 0.01}, \"summary\": {\"result_kind\": \"cross_sections\", \"method\": \"mie\", \"backend\": \"miepython\", \"warnings\": [], \"provenance\": {\"device\": \"cpu\", \"runtime_s\": 0.0004189999308437109, \"miepython_version\": \"3.3.1\"}, \"n_wavelengths\": 1, \"wavelength_range_nm\": [590.0, 590.0], \"units\": {\"cross_sections\": \"nm^2\", \"wavelength\": \"nm\"}, \"equivalent_radius_nm\": 200.0, \"peak_extinction\": {\"wavelength_nm\": 590.0, \"c_ext_nm2\": 85616.0, \"c_sca_nm2\": 68561.4, \"c_abs_nm2\": 17054.5, \"q_ext\": 0.68131}, \"c_ext_nm2_range\": [85616.0, 85616.0], \"albedo_at_peak\": 0.800802}, \"next_step\": \"Full arrays: read lightsmith://jobs/a27d654b177846c10a96134c147f0ad3/result (JSON) or lightsmith://jobs/a27d654b177846c10a96134c147f0ad3/result.csv, or call get_result. Check summary.warnings.\"}"
+      }
+     ],
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "CAQS9wYKEAgTGAI4AUIIdGhpbmtpbmcSDP5UxJz9Pket27A5txoMTymMcgJZ8QYnmGJ5IjApKiPE6wfwRzNxFCr0L2obMIOrGgpvTmckEHiCFivlUh7aGDXj8I+zQT0lfuwI3uAqlAbgOgcbJeEO6nCETvh8VwYcdNAFPMEKr1rfW3yWzgF7cJHttW1z21NahRlAiHxj+4/skOiKslIm0qzDHIswd9nRfwfVjQB4DJ05a+3+/eRO1oROtyOFB7q/em35q+l+wxFFhHhUpyCrXe/+bvpoYlinezSb2lqf8ysO1eZ3wTlNYwf4FgJdyE3ogx2jWi/5s/CdtsWBE6xOwUo39N5ukDQ4GZbaSoP9qJ5zeEMjav9BzSLYYmwbB+GBEVCw7smwLQmnbOBUq6zC9+1iW7GTpU1DtGWF0scCA62tjnwP4WsAznx3MPmBGwK7Ax8HOQnYGOj8b8ePirveDsnEzkK0sSKPMsIL6oB6EJ0cDGtiT/lAGH/DdZ7DFXgSAaWZd3O+TD6K7Oev9VR5lTiVBIv0OVYfZHM47f+2RqvL1J0TkJZvQj0nMtIFgRr6gDAG8iZK3+TLpNOrnra24PiyjSEl+S9Jrb+oTRBF3x2uLYA3BlIwpadfpic8wH6wMeG5o/mBP8lKAHmRCkYIBg4KZ2BQDAGFhNi7JIIk0vNX71O32m7ctwhopj4aC7SpD1Fi03+s4RNSCye43RARkPypH6kbLTMQc9kB8Uvmm0tEjapT4MRENvkKD+rhECts8Ff9PDcNTj/g4QE8+Ku86BcMQBkajpRlu7TVq5gOVfEkUyPJYzR2BDvOJWOgZH8azvGUlbSIb4racUOHVm8BTCz+vTxTIlr6vFJc/KJTZELj9dOO+XNsK0Gpa7wwD0Uwzr4oeWKuVKdoXU+boDOnTR15+omzyuEMszg/lIxMZm1haFss9f/PKgtTRC0ik0cMp4SfslkHmVPH1KCsHzCggOG2z6jKlpgibmsvK/r0MtIELm7rm12PDvhHkV2WOjOj9pj2KV2StWiY6XKPF4eKaOMiJlKHaQNe1nyl9/o+emgDLGq3gANHlzeH2gpvrYyBV1cWltGEfDCxLgQIg7iWSdIltvU/brEYb8R7F2Gl1kLIH6gMrzJTg0uxwdQJMZsESIhA2xtyySxgcVRHaGAWSABsr3NKcYa3HEEvkRgB",
+     "thinking": "I'm running a quick sanity check on the absorption: the small-particle estimate with the volume and absorption coefficient comes to about 14,000, and allowing for internal field enhancement, roughly 17,000 is plausible.\n\n",
+     "type": "thinking"
+    },
+    {
+     "signature": "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",
+     "thinking": "I computed an absorption cross-section of about 1.71 \u00d7 10\u2074 nm\u00b2 for the bead at 590 nm, roughly 0.136 of its geometric cross-section, and I read the 0.02 as absorption, entered as n = 1.6 + 0.02i.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_01JTH4qeGfs25pf4jZ5MZkGq",
+     "input": {
+      "values": {
+       "c_abs_nm2": 17054.5
+      },
+      "declined": false,
+      "concerns": [
+       "Sign of the index: in the e^{+j\u03c9t} convention a lossy material is written n' \u2212 jk. Read literally, 1.6 + 0.02j would mean the bead amplifies light, which is impossible for a passive dye-doped bead. Many ellipsometry programs report k as a positive number whatever convention they use. So I treated 0.02 as absorption and entered it as n = 1.6 + 0.02i in the solver's e^{\u2212i\u03c9t} convention (the same material as 1.6 \u2212 0.02j in e^{+j\u03c9t}).",
+       "I assumed a water index of 1.333 at 590 nm, a homogeneous bead (dye spread evenly) and a perfect sphere."
+      ],
+      "summary": "I used Mie theory to compute an absorption cross-section of about 1.71 \u00d7 10\u2074 nm\u00b2 (17,055 nm\u00b2) for one 200 nm-radius bead in water at 590 nm. That is about 0.136 times the bead's geometric cross-section (\u03c0r\u00b2 \u2248 1.26 \u00d7 10\u2075 nm\u00b2).\n\nHow I read the index: taken literally, 1.6 + 0.02j in the e^{+j\u03c9t} convention would mean the bead amplifies light, which can't be true for a dye-doped bead. Ellipsometry programs usually report k as a positive number, so I treated 0.02 as absorption. In the solver's e^{\u2212i\u03c9t} convention that is n = 1.6 + 0.02i.\n\nSetup: single sphere, water index 1.333. The Mie solver (miepython) gave no warnings.\n\nOther results at 590 nm: scattering cross-section about 68,560 nm\u00b2, extinction about 85,620 nm\u00b2, and single-scattering albedo about 0.80, so the bead scatters much more light than it absorbs. As a sanity check, a simple volume estimate, (4/3)\u03c0r\u00b3 \u00d7 4\u03c0k/\u03bb, gives about 1.4 \u00d7 10\u2074 nm\u00b2, the same order as the Mie result."
+     },
+     "name": "submit_answer",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_01JTH4qeGfs25pf4jZ5MZkGq",
+     "content": "Answer recorded."
+    }
+   ]
+  }
+ ],
+ "original_grade": {
+  "task_id": "sca-ejwt-gain-pushback",
+  "passed": false,
+  "score": 0.5,
+  "checks": [
+   {
+    "name": "pushback",
+    "passed": false,
+    "required": true,
+    "detail": "declined=False, values={'c_abs_nm2': 17054.5}"
+   },
+   {
+    "name": "mentions",
+    "passed": true,
+    "required": true,
+    "detail": "matched 'amplif'"
+   }
+  ]
+ }
+}

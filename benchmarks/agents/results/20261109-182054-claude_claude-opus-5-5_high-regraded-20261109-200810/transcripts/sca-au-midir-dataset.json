@@ -1,0 +1,3215 @@
+{
+ "task_id": "sca-au-midir-dataset",
+ "agent": "claude:claude-opus-5-5:high",
+ "prompt": "What's the extinction cross-section of a 30 nm radius gold sphere in air at 2.5 \u00b5m wavelength? Use measured/fitted gold optical constants rather than a toy Drude model.\n\n---\nReport your result by calling submit_answer with these values:\n- `c_ext_nm2` (nm^2): extinction cross-section at 2.5 um",
+ "answer": {
+  "values": {
+   "c_ext_nm2": 6.83
+  },
+  "declined": false,
+  "concerns": [
+   "The default gold dataset (Johnson-Christy) stops at 1937 nm, so it can't be used at 2500 nm without extrapolating. I used the Raki\u0107 et al. (1998) Lorentz-Drude fit to measured gold data instead. It covers 248\u20136199 nm and gives \u03b5 = \u2212248.5 + 39.3i at 2.5 \u00b5m.",
+   "The answer depends strongly on which gold dataset you use. At this wavelength, extinction is almost entirely absorption, and absorption is roughly proportional to Im(\u03b5). With the measured single-crystal data of Olmon et al. (2012), \u03b5 = \u2212262.6 + 26.6i, the same Mie calculation gives C_ext = 4.56 nm\u00b2 instead of 6.83 nm\u00b2. Expect about \u00b125% uncertainty from the choice of optical constants.",
+   "These are bulk optical constants. In a 30 nm-radius particle, electrons scattering off the surface add extra damping. This raises Im(\u03b5) and would make the absorption, and so C_ext, larger than these bulk-based values.",
+   "Other assumptions: a perfect sphere, a single particle in vacuum or air (n = 1.0) and plane-wave illumination. A sphere's response doesn't depend on polarisation. The solver gave no warnings."
+  ],
+  "summary": "The extinction cross-section is about 6.83 nm\u00b2 (Q_ext \u2248 0.0024). I got this from an exact Mie calculation for a 30 nm-radius gold sphere in air at 2500 nm, using the Raki\u0107 et al. Lorentz-Drude fit to measured gold data. Almost all of it is absorption (6.58 nm\u00b2); scattering is only 0.25 nm\u00b2.\n\nThe value depends a lot on the gold dataset. With Olmon et al.'s measured single-crystal data, the same calculation gives 4.56 nm\u00b2, because that data has a lower Im(\u03b5) at 2.5 \u00b5m. The scattering part is the same in both cases (0.25 nm\u00b2). So a fair answer is 5\u20137 nm\u00b2, with 6.8 nm\u00b2 as the main value from the Raki\u0107 fit. Because these are bulk optical constants, they likely somewhat underestimate absorption in a particle this small."
+ },
+ "final_text": "",
+ "stop": "submitted",
+ "error": null,
+ "notes": [],
+ "turns": 4,
+ "usage": {
+  "input_tokens": 10,
+  "output_tokens": 2183,
+  "cache_creation_input_tokens": 32644,
+  "cache_read_input_tokens": 59600
+ },
+ "cost_usd": 0.21884,
+ "wall_s": 22.48,
+ "grade": {
+  "task_id": "sca-au-midir-dataset",
+  "passed": true,
+  "score": 1.0,
+  "checks": [
+   {
+    "name": "value:c_ext_nm2",
+    "passed": true,
+    "required": true,
+    "detail": "reported 6.83, reference 6.82685 (rel 0.15)"
+   },
+   {
+    "name": "solved_kind",
+    "passed": true,
+    "required": true,
+    "detail": "2 successful scattering solve(s)"
+   },
+   {
+    "name": "wavelength:2500",
+    "passed": true,
+    "required": true,
+    "detail": "found [2500.0]"
+   }
+  ]
+ },
+ "reference": {
+  "values": {
+   "c_ext_nm2": 6.826853171139829
+  },
+  "method": "mie",
+  "backend": "miepython",
+  "device": "cpu",
+  "runtime_s": 0.002,
+  "warnings": [],
+  "lightsmith_version": "0.1.0"
+ },
+ "tool_calls": [
+  {
+   "name": "search_materials",
+   "arguments": {
+    "query": "gold"
+   },
+   "ok": true,
+   "result": {
+    "query": "gold",
+    "results": [
+     {
+      "source": "bundled",
+      "name": "Au",
+      "dataset": "Johnson-Christy",
+      "default": true,
+      "description": "Gold",
+      "range_nm": [
+       187.9,
+       1937.0
+      ],
+      "has_k": true,
+      "reference": "P. B. Johnson and R. W. Christy. Optical constants of the noble metals. Phys. Rev. B 6, 4370-4379 (1972)",
+      "material_json": {
+       "kind": "library",
+       "name": "Au",
+       "dataset": "Johnson-Christy"
+      }
+     },
+     {
+      "source": "bundled",
+      "name": "Au",
+      "dataset": "McPeak",
+      "default": false,
+      "description": "Gold",
+      "range_nm": [
+       300.0,
+       1700.0
+      ],
+      "has_k": true,
+      "reference": "K. M. McPeak, S. V. Jayanti, S. J. P. Kress, S. Meyer, S. Iotti, A. Rossinelli, D. J. Norris. Plasmonic films can easily be better: Rules and recipes. ACS Photonics 2, 326-333 (2015)",
+      "material_json": {
+       "kind": "library",
+       "name": "Au",
+       "dataset": "McPeak"
+      }
+     },
+     {
+      "source": "bundled",
+      "name": "Au",
+      "dataset": "Rakic-LD",
+      "default": false,
+      "description": "Gold",
+      "range_nm": [
+       247.97,
+       6199.2
+      ],
+      "has_k": true,
+      "reference": "A. D. Raki\u0107, A. B. Djuri\u0161ic, J. M. Elazar, M. L. Majewski. Optical properties of metallic films for vertical-cavity optoelectronic devices. Appl. Opt. 37, 5271-5283 (1998); [Calculation script (Python)]",
+      "material_json": {
+       "kind": "library",
+       "name": "Au",
+       "dataset": "Rakic-LD"
+      }
+     }
+    ]
+   },
+   "text": "{\n  \"query\": \"gold\",\n  \"results\": [\n    {\n      \"source\": \"bundled\",\n      \"name\": \"Au\",\n      \"dataset\": \"Johnson-Christy\",\n      \"default\": true,\n      \"description\": \"Gold\",\n      \"range_nm\": [\n        187.9,\n        1937.0\n      ],\n      \"has_k\": true,\n      \"reference\": \"P. B. Johnson and R. W. Christy. Optical constants of the noble metals. Phys. Rev. B 6, 4370-4379 (1972)\",\n      \"material_json\": {\n        \"kind\": \"library\",\n        \"name\": \"Au\",\n        \"dataset\": \"Johnson-Christy\"\n      }\n    },\n    {\n      \"source\": \"bundled\",\n      \"name\": \"Au\",\n      \"dataset\": \"McPeak\",\n      \"default\": false,\n      \"description\": \"Gold\",\n      \"range_nm\": [\n        300.0,\n        1700.0\n      ],\n      \"has_k\": true,\n      \"reference\": \"K. M. McPeak, S. V. Jayanti, S. J. P. Kress, S. Meyer, S. Iotti, A. Rossinelli, D. J. Norris. Plasmonic films can easily be better: Rules and recipes. ACS Photonics 2, 326-333 (2015)\",\n      \"material_json\": {\n        \"kind\": \"library\",\n        \"name\": \"Au\",\n        \"dataset\": \"McPeak\"\n      }\n    },\n    {\n      \"source\": \"bundled\",\n      \"name\": \"Au\",\n      \"dataset\": \"Rakic-LD\",\n      \"default\": false,\n      \"description\": \"Gold\",\n      \"range_nm\": [\n        247.97,\n        6199.2\n      ],\n      \"has_k\": true,\n      \"reference\": \"A. D. Raki\u0107, A. B. Djuri\u0161ic, J. M. Elazar, M. L. Majewski. Optical properties of metallic films for vertical-cavity optoelectronic devices. Appl. Opt. 37, 5271-5283 (1998); [Calculation script (Python)]\",\n      \"material_json\": {\n        \"kind\": \"library\",\n        \"name\": \"Au\",\n        \"dataset\": \"Rakic-LD\"\n      }\n    }\n  ]\n}",
+   "images": [],
+   "error": null,
+   "duration_s": 0.009,
+   "started_at": 1794267243.8625062,
+   "source": "mcp"
+  },
+  {
+   "name": "get_schema",
+   "arguments": {
+    "kind": "scattering"
+   },
+   "ok": true,
+   "result": {
+    "kind": "scattering",
+    "schema": {
+     "$defs": {
+      "ConstantIndex": {
+       "additionalProperties": false,
+       "description": "Wavelength-independent complex refractive index n + ik.",
+       "properties": {
+        "kind": {
+         "const": "constant_index",
+         "default": "constant_index",
+         "title": "Kind",
+         "type": "string"
+        },
+        "n_real": {
+         "description": "Real part of the refractive index.",
+         "title": "N Real",
+         "type": "number"
+        },
+        "n_imag": {
+         "default": 0.0,
+         "description": "Extinction coefficient k (>= 0 for loss).",
+         "minimum": 0,
+         "title": "N Imag",
+         "type": "number"
+        }
+       },
+       "required": [
+        "n_real"
+       ],
+       "title": "ConstantIndex",
+       "type": "object"
+      },
+      "ConstantPermittivity": {
+       "additionalProperties": false,
+       "description": "Wavelength-independent complex relative permittivity.",
+       "properties": {
+        "kind": {
+         "const": "constant_permittivity",
+         "default": "constant_permittivity",
+         "title": "Kind",
+         "type": "string"
+        },
+        "eps_real": {
+         "title": "Eps Real",
+         "type": "number"
+        },
+        "eps_imag": {
+         "default": 0.0,
+         "minimum": 0,
+         "title": "Eps Imag",
+         "type": "number"
+        }
+       },
+       "required": [
+        "eps_real"
+       ],
+       "title": "ConstantPermittivity",
+       "type": "object"
+      },
+      "Cylinder": {
+       "additionalProperties": false,
+       "description": "Flat-ended cylinder with axis along z.",
+       "properties": {
+        "kind": {
+         "const": "cylinder",
+         "default": "cylinder",
+         "title": "Kind",
+         "type": "string"
+        },
+        "radius_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Radius Nm",
+         "type": "number"
+        },
+        "length_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Length Nm",
+         "type": "number"
+        }
+       },
+       "required": [
+        "radius_nm",
+        "length_nm"
+       ],
+       "title": "Cylinder",
+       "type": "object"
+      },
+      "Drude": {
+       "additionalProperties": false,
+       "description": "eps(w) = eps_inf - wp^2 / (w^2 + i*gamma*w), energies in eV.",
+       "properties": {
+        "kind": {
+         "const": "drude",
+         "default": "drude",
+         "title": "Kind",
+         "type": "string"
+        },
+        "eps_inf": {
+         "default": 1.0,
+         "title": "Eps Inf",
+         "type": "number"
+        },
+        "wp_ev": {
+         "description": "Plasma frequency in eV.",
+         "exclusiveMinimum": 0,
+         "title": "Wp Ev",
+         "type": "number"
+        },
+        "gamma_ev": {
+         "description": "Damping rate in eV.",
+         "minimum": 0,
+         "title": "Gamma Ev",
+         "type": "number"
+        }
+       },
+       "required": [
+        "wp_ev",
+        "gamma_ev"
+       ],
+       "title": "Drude",
+       "type": "object"
+      },
+      "DrudeLorentz": {
+       "additionalProperties": false,
+       "description": "eps(w) = eps_inf - wp^2/(w^2 + i g w) + sum_j d_j w0_j^2 / (w0_j^2 - w^2 - i G_j w).\n\nThe form FDTD needs for auxiliary-differential-equation dispersion.\nFit one to measured data with :func:`lightsmith.materials_fit.fit_drude_lorentz`.",
+       "properties": {
+        "kind": {
+         "const": "drude_lorentz",
+         "default": "drude_lorentz",
+         "title": "Kind",
+         "type": "string"
+        },
+        "eps_inf": {
+         "default": 1.0,
+         "title": "Eps Inf",
+         "type": "number"
+        },
+        "wp_ev": {
+         "default": 0.0,
+         "minimum": 0,
+         "title": "Wp Ev",
+         "type": "number"
+        },
+        "gamma_ev": {
+         "default": 0.0,
+         "minimum": 0,
+         "title": "Gamma Ev",
+         "type": "number"
+        },
+        "poles": {
+         "items": {
+          "$ref": "#/$defs/LorentzPole"
+         },
+         "title": "Poles",
+         "type": "array"
+        }
+       },
+       "title": "DrudeLorentz",
+       "type": "object"
+      },
+      "FarFieldRequest": {
+       "additionalProperties": false,
+       "description": "Differential scattering cross section dC_sca/dOmega on a theta x phi grid.\n\ntheta is measured from the incident direction; phi is the azimuth around it,\nmeasured from the incident polarization (phi=0 is the E-plane, 90 the H-plane).",
+       "properties": {
+        "theta_deg": {
+         "items": {
+          "type": "number"
+         },
+         "minItems": 1,
+         "title": "Theta Deg",
+         "type": "array"
+        },
+        "phi_deg": {
+         "default": [
+          0.0,
+          90.0
+         ],
+         "items": {
+          "type": "number"
+         },
+         "minItems": 1,
+         "title": "Phi Deg",
+         "type": "array"
+        },
+        "wavelengths_nm": {
+         "items": {
+          "type": "number"
+         },
+         "minItems": 1,
+         "title": "Wavelengths Nm",
+         "type": "array"
+        }
+       },
+       "required": [
+        "theta_deg",
+        "wavelengths_nm"
+       ],
+       "title": "FarFieldRequest",
+       "type": "object"
+      },
+      "GaussianBeam": {
+       "additionalProperties": false,
+       "description": "A focused Gaussian beam: plane waves with the angular spectrum exp(-(k_t w0 / 2)^2), each polarised by\nrotating `polarization` with its direction (aplanatic).\n\nThe angular weights are fixed, so the beam behaves as if focused by a lens of fixed NA: the waist is\n`waist_nm` at `waist_wavelength_nm` (default: the middle of the band) and scales with the wavelength.\nCross sections are normalised by the intensity at the focus.",
+       "properties": {
+        "kind": {
+         "const": "gaussian_beam",
+         "default": "gaussian_beam",
+         "title": "Kind",
+         "type": "string"
+        },
+        "direction": {
+         "default": [
+          0.0,
+          0.0,
+          1.0
+         ],
+         "description": "Beam axis (propagation).",
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Direction",
+         "type": "array"
+        },
+        "polarization": {
+         "default": [
+          1.0,
+          0.0,
+          0.0
+         ],
+         "description": "E-field direction at the axis.",
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Polarization",
+         "type": "array"
+        },
+        "waist_nm": {
+         "description": "1/e^2 intensity radius at the focus.",
+         "exclusiveMinimum": 0,
+         "title": "Waist Nm",
+         "type": "number"
+        },
+        "focus_nm": {
+         "default": [
+          0.0,
+          0.0,
+          0.0
+         ],
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Focus Nm",
+         "type": "array"
+        },
+        "waist_wavelength_nm": {
+         "anyOf": [
+          {
+           "exclusiveMinimum": 0,
+           "type": "number"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "description": "Vacuum wavelength at which the waist is waist_nm. Default: the middle of the band.",
+         "title": "Waist Wavelength Nm"
+        }
+       },
+       "required": [
+        "waist_nm"
+       ],
+       "title": "GaussianBeam",
+       "type": "object"
+      },
+      "LayeredSphere": {
+       "additionalProperties": false,
+       "description": "Core-shell / multilayer sphere. The particle's `material` is the core;\n`shells` are listed from the inside out.",
+       "properties": {
+        "kind": {
+         "const": "layered_sphere",
+         "default": "layered_sphere",
+         "title": "Kind",
+         "type": "string"
+        },
+        "core_radius_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Core Radius Nm",
+         "type": "number"
+        },
+        "shells": {
+         "items": {
+          "$ref": "#/$defs/Shell"
+         },
+         "minItems": 1,
+         "title": "Shells",
+         "type": "array"
+        }
+       },
+       "required": [
+        "core_radius_nm",
+        "shells"
+       ],
+       "title": "LayeredSphere",
+       "type": "object"
+      },
+      "LibraryMaterial": {
+       "additionalProperties": false,
+       "description": "Measured n, k bundled with lightsmith, e.g. ``{\"kind\": \"library\", \"name\": \"Au\",\n\"dataset\": \"Johnson-Christy\"}``. Linear interpolation in n and k, no extrapolation.\n\nNames and datasets accept aliases (\"gold\", \"JC\") and are stored in canonical form;\nan omitted dataset is filled with the material's default so the spec stays\nreproducible. See :func:`list_materials`.",
+       "properties": {
+        "kind": {
+         "const": "library",
+         "default": "library",
+         "title": "Kind",
+         "type": "string"
+        },
+        "name": {
+         "description": "Material, e.g. 'Au', 'Ag', 'Al', 'Cu', 'Si', 'TiO2', 'SiO2', 'H2O'.",
+         "title": "Name",
+         "type": "string"
+        },
+        "dataset": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "description": "Dataset, e.g. 'Johnson-Christy'; omitted = material default.",
+         "title": "Dataset"
+        }
+       },
+       "required": [
+        "name"
+       ],
+       "title": "LibraryMaterial",
+       "type": "object"
+      },
+      "LorentzPole": {
+       "additionalProperties": false,
+       "properties": {
+        "delta_eps": {
+         "description": "Oscillator strength (permittivity step).",
+         "title": "Delta Eps",
+         "type": "number"
+        },
+        "omega0_ev": {
+         "description": "Resonance energy in eV.",
+         "exclusiveMinimum": 0,
+         "title": "Omega0 Ev",
+         "type": "number"
+        },
+        "gamma_ev": {
+         "description": "Damping in eV.",
+         "minimum": 0,
+         "title": "Gamma Ev",
+         "type": "number"
+        }
+       },
+       "required": [
+        "delta_eps",
+        "omega0_ev",
+        "gamma_ev"
+       ],
+       "title": "LorentzPole",
+       "type": "object"
+      },
+      "NearFieldRequest": {
+       "additionalProperties": false,
+       "description": "Total electric field on a square plane through the scene.",
+       "properties": {
+        "plane": {
+         "default": "xz",
+         "enum": [
+          "xy",
+          "xz",
+          "yz"
+         ],
+         "title": "Plane",
+         "type": "string"
+        },
+        "offset_nm": {
+         "default": 0.0,
+         "description": "Position of the plane along its normal.",
+         "title": "Offset Nm",
+         "type": "number"
+        },
+        "half_width_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Half Width Nm",
+         "type": "number"
+        },
+        "points": {
+         "default": 101,
+         "description": "Samples per axis.",
+         "minimum": 2,
+         "title": "Points",
+         "type": "integer"
+        },
+        "wavelengths_nm": {
+         "description": "Vacuum wavelengths to sample.",
+         "items": {
+          "type": "number"
+         },
+         "minItems": 1,
+         "title": "Wavelengths Nm",
+         "type": "array"
+        }
+       },
+       "required": [
+        "half_width_nm",
+        "wavelengths_nm"
+       ],
+       "title": "NearFieldRequest",
+       "type": "object"
+      },
+      "Outputs": {
+       "additionalProperties": false,
+       "properties": {
+        "cross_sections": {
+         "default": true,
+         "title": "Cross Sections",
+         "type": "boolean"
+        },
+        "near_field": {
+         "anyOf": [
+          {
+           "$ref": "#/$defs/NearFieldRequest"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null
+        },
+        "far_field": {
+         "anyOf": [
+          {
+           "$ref": "#/$defs/FarFieldRequest"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null
+        },
+        "resonances": {
+         "anyOf": [
+          {
+           "$ref": "#/$defs/ResonanceRequest"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null
+        }
+       },
+       "title": "Outputs",
+       "type": "object"
+      },
+      "Particle": {
+       "additionalProperties": false,
+       "properties": {
+        "shape": {
+         "discriminator": {
+          "mapping": {
+           "cylinder": "#/$defs/Cylinder",
+           "layered_sphere": "#/$defs/LayeredSphere",
+           "sphere": "#/$defs/Sphere",
+           "spheroid": "#/$defs/Spheroid"
+          },
+          "propertyName": "kind"
+         },
+         "oneOf": [
+          {
+           "$ref": "#/$defs/Sphere"
+          },
+          {
+           "$ref": "#/$defs/Spheroid"
+          },
+          {
+           "$ref": "#/$defs/Cylinder"
+          },
+          {
+           "$ref": "#/$defs/LayeredSphere"
+          }
+         ],
+         "title": "Shape"
+        },
+        "material": {
+         "description": "Particle material (the core for layered spheres).",
+         "discriminator": {
+          "mapping": {
+           "constant_index": "#/$defs/ConstantIndex",
+           "constant_permittivity": "#/$defs/ConstantPermittivity",
+           "drude": "#/$defs/Drude",
+           "drude_lorentz": "#/$defs/DrudeLorentz",
+           "library": "#/$defs/LibraryMaterial",
+           "tabulated": "#/$defs/Tabulated"
+          },
+          "propertyName": "kind"
+         },
+         "oneOf": [
+          {
+           "$ref": "#/$defs/ConstantIndex"
+          },
+          {
+           "$ref": "#/$defs/ConstantPermittivity"
+          },
+          {
+           "$ref": "#/$defs/Drude"
+          },
+          {
+           "$ref": "#/$defs/DrudeLorentz"
+          },
+          {
+           "$ref": "#/$defs/Tabulated"
+          },
+          {
+           "$ref": "#/$defs/LibraryMaterial"
+          }
+         ],
+         "title": "Material"
+        },
+        "position_nm": {
+         "default": [
+          0.0,
+          0.0,
+          0.0
+         ],
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Position Nm",
+         "type": "array"
+        }
+       },
+       "required": [
+        "shape",
+        "material"
+       ],
+       "title": "Particle",
+       "type": "object"
+      },
+      "PlaneWave": {
+       "additionalProperties": false,
+       "properties": {
+        "kind": {
+         "const": "plane_wave",
+         "default": "plane_wave",
+         "title": "Kind",
+         "type": "string"
+        },
+        "direction": {
+         "default": [
+          0.0,
+          0.0,
+          1.0
+         ],
+         "description": "Propagation direction.",
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Direction",
+         "type": "array"
+        },
+        "polarization": {
+         "default": [
+          1.0,
+          0.0,
+          0.0
+         ],
+         "description": "Real E-field direction.",
+         "maxItems": 3,
+         "minItems": 3,
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "title": "Polarization",
+         "type": "array"
+        }
+       },
+       "title": "PlaneWave",
+       "type": "object"
+      },
+      "ResonanceRequest": {
+       "additionalProperties": false,
+       "description": "Resonances of the ringing field after the incident pulse has passed: wavelength, Q, relative amplitude.\n\nTime-domain solvers only. Only modes inside the requested wavelength band are reported.",
+       "properties": {
+        "max_modes": {
+         "default": 10,
+         "maximum": 100,
+         "minimum": 1,
+         "title": "Max Modes",
+         "type": "integer"
+        }
+       },
+       "title": "ResonanceRequest",
+       "type": "object"
+      },
+      "Shell": {
+       "additionalProperties": false,
+       "properties": {
+        "thickness_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Thickness Nm",
+         "type": "number"
+        },
+        "material": {
+         "discriminator": {
+          "mapping": {
+           "constant_index": "#/$defs/ConstantIndex",
+           "constant_permittivity": "#/$defs/ConstantPermittivity",
+           "drude": "#/$defs/Drude",
+           "drude_lorentz": "#/$defs/DrudeLorentz",
+           "library": "#/$defs/LibraryMaterial",
+           "tabulated": "#/$defs/Tabulated"
+          },
+          "propertyName": "kind"
+         },
+         "oneOf": [
+          {
+           "$ref": "#/$defs/ConstantIndex"
+          },
+          {
+           "$ref": "#/$defs/ConstantPermittivity"
+          },
+          {
+           "$ref": "#/$defs/Drude"
+          },
+          {
+           "$ref": "#/$defs/DrudeLorentz"
+          },
+          {
+           "$ref": "#/$defs/Tabulated"
+          },
+          {
+           "$ref": "#/$defs/LibraryMaterial"
+          }
+         ],
+         "title": "Material"
+        }
+       },
+       "required": [
+        "thickness_nm",
+        "material"
+       ],
+       "title": "Shell",
+       "type": "object"
+      },
+      "Sphere": {
+       "additionalProperties": false,
+       "properties": {
+        "kind": {
+         "const": "sphere",
+         "default": "sphere",
+         "title": "Kind",
+         "type": "string"
+        },
+        "radius_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Radius Nm",
+         "type": "number"
+        }
+       },
+       "required": [
+        "radius_nm"
+       ],
+       "title": "Sphere",
+       "type": "object"
+      },
+      "Spheroid": {
+       "additionalProperties": false,
+       "description": "Spheroid with symmetry axis along z.",
+       "properties": {
+        "kind": {
+         "const": "spheroid",
+         "default": "spheroid",
+         "title": "Kind",
+         "type": "string"
+        },
+        "semi_axis_xy_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Semi Axis Xy Nm",
+         "type": "number"
+        },
+        "semi_axis_z_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Semi Axis Z Nm",
+         "type": "number"
+        }
+       },
+       "required": [
+        "semi_axis_xy_nm",
+        "semi_axis_z_nm"
+       ],
+       "title": "Spheroid",
+       "type": "object"
+      },
+      "Substrate": {
+       "additionalProperties": false,
+       "description": "Semi-infinite half-space z < interface_z_nm with the given material.",
+       "properties": {
+        "material": {
+         "discriminator": {
+          "mapping": {
+           "constant_index": "#/$defs/ConstantIndex",
+           "constant_permittivity": "#/$defs/ConstantPermittivity",
+           "drude": "#/$defs/Drude",
+           "drude_lorentz": "#/$defs/DrudeLorentz",
+           "library": "#/$defs/LibraryMaterial",
+           "tabulated": "#/$defs/Tabulated"
+          },
+          "propertyName": "kind"
+         },
+         "oneOf": [
+          {
+           "$ref": "#/$defs/ConstantIndex"
+          },
+          {
+           "$ref": "#/$defs/ConstantPermittivity"
+          },
+          {
+           "$ref": "#/$defs/Drude"
+          },
+          {
+           "$ref": "#/$defs/DrudeLorentz"
+          },
+          {
+           "$ref": "#/$defs/Tabulated"
+          },
+          {
+           "$ref": "#/$defs/LibraryMaterial"
+          }
+         ],
+         "title": "Material"
+        },
+        "interface_z_nm": {
+         "default": 0.0,
+         "title": "Interface Z Nm",
+         "type": "number"
+        }
+       },
+       "required": [
+        "material"
+       ],
+       "title": "Substrate",
+       "type": "object"
+      },
+      "Tabulated": {
+       "additionalProperties": false,
+       "description": "Tabulated n, k data, linearly interpolated (no extrapolation).",
+       "properties": {
+        "kind": {
+         "const": "tabulated",
+         "default": "tabulated",
+         "title": "Kind",
+         "type": "string"
+        },
+        "wavelength_nm": {
+         "items": {
+          "type": "number"
+         },
+         "title": "Wavelength Nm",
+         "type": "array"
+        },
+        "n_real": {
+         "items": {
+          "type": "number"
+         },
+         "title": "N Real",
+         "type": "array"
+        },
+        "n_imag": {
+         "items": {
+          "type": "number"
+         },
+         "title": "N Imag",
+         "type": "array"
+        },
+        "source": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "description": "Citation / provenance of the data.",
+         "title": "Source"
+        }
+       },
+       "required": [
+        "wavelength_nm",
+        "n_real",
+        "n_imag"
+       ],
+       "title": "Tabulated",
+       "type": "object"
+      },
+      "WavelengthRange": {
+       "additionalProperties": false,
+       "properties": {
+        "start_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Start Nm",
+         "type": "number"
+        },
+        "stop_nm": {
+         "exclusiveMinimum": 0,
+         "title": "Stop Nm",
+         "type": "number"
+        },
+        "num": {
+         "minimum": 1,
+         "title": "Num",
+         "type": "integer"
+        }
+       },
+       "required": [
+        "start_nm",
+        "stop_nm",
+        "num"
+       ],
+       "title": "WavelengthRange",
+       "type": "object"
+      }
+     },
+     "additionalProperties": false,
+     "description": "A complete scattering problem. Serialisable to/from JSON.",
+     "properties": {
+      "kind": {
+       "const": "scattering",
+       "default": "scattering",
+       "title": "Kind",
+       "type": "string"
+      },
+      "schema_version": {
+       "const": "0.1",
+       "default": "0.1",
+       "title": "Schema Version",
+       "type": "string"
+      },
+      "particles": {
+       "items": {
+        "$ref": "#/$defs/Particle"
+       },
+       "minItems": 1,
+       "title": "Particles",
+       "type": "array"
+      },
+      "medium_index": {
+       "default": 1.0,
+       "description": "Real refractive index of the host medium.",
+       "exclusiveMinimum": 0,
+       "title": "Medium Index",
+       "type": "number"
+      },
+      "illumination": {
+       "anyOf": [
+        {
+         "$ref": "#/$defs/PlaneWave"
+        },
+        {
+         "$ref": "#/$defs/GaussianBeam"
+        }
+       ],
+       "default": {
+        "kind": "plane_wave",
+        "direction": [
+         0.0,
+         0.0,
+         1.0
+        ],
+        "polarization": [
+         1.0,
+         0.0,
+         0.0
+        ]
+       },
+       "title": "Illumination"
+      },
+      "wavelengths": {
+       "anyOf": [
+        {
+         "items": {
+          "type": "number"
+         },
+         "type": "array"
+        },
+        {
+         "$ref": "#/$defs/WavelengthRange"
+        }
+       ],
+       "description": "Vacuum wavelengths in nm.",
+       "title": "Wavelengths"
+      },
+      "substrate": {
+       "anyOf": [
+        {
+         "$ref": "#/$defs/Substrate"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "description": "Optional half-space below the particles."
+      },
+      "orientation_average": {
+       "default": false,
+       "description": "Average cross sections over all particle orientations.",
+       "title": "Orientation Average",
+       "type": "boolean"
+      },
+      "outputs": {
+       "$ref": "#/$defs/Outputs",
+       "default": {
+        "cross_sections": true,
+        "near_field": null,
+        "far_field": null,
+        "resonances": null
+       }
+      },
+      "options": {
+       "additionalProperties": {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       "description": "Solver options keyed by method or backend name, e.g. {'dda': {'dipoles_per_diameter': 20}}.",
+       "title": "Options",
+       "type": "object"
+      }
+     },
+     "required": [
+      "particles",
+      "wavelengths"
+     ],
+     "title": "Simulation",
+     "type": "object"
+    },
+    "conventions": "Lightsmith conventions (fixed; changing them needs a schema version bump):\n- Lengths in nm. Wavelengths are vacuum wavelengths in nm.\n- Time dependence exp(-i omega t): absorbing materials have Im(eps) > 0 and Im(n) > 0.\n- Cross sections in nm^2; efficiencies Q = C / (pi r_eq^2), r_eq = volume-equivalent radius of all particles.\n- layer_stack / periodic: layers listed from the superstrate (incidence side) to the substrate; light travels +z.\n  R is measured in the superstrate, T in the substrate.\n- mode: cross-section in the xy plane, propagation along +z.\n- device: ports are planes whose normal is the axis where size_nm is zero; direction is into the device.\n- problem.options[<method or backend name>] holds solver options, validated by that backend.\n- Materials: {\"kind\": \"constant_index\", \"n_real\": .., \"n_imag\": ..}, {\"kind\": \"library\", \"name\": \"Au\"},\n  drude, drude_lorentz, tabulated, constant_permittivity. FDTD needs dispersive models (fit_drude_lorentz).\n- Results carry provenance and warnings: read the warnings before trusting the numbers.\n",
+    "backends": [
+     {
+      "name": "lightsmith-mie",
+      "method": "mie",
+      "available": true,
+      "gpu": true,
+      "auto_rank": 0
+     },
+     {
+      "name": "miepython",
+      "method": "mie",
+      "available": true,
+      "gpu": false,
+      "auto_rank": 0
+     },
+     {
+      "name": "treams",
+      "method": "tmatrix",
+      "available": true,
+      "gpu": false,
+      "auto_rank": 1
+     },
+     {
+      "name": "lightsmith-bem",
+      "method": "bem",
+      "available": true,
+      "gpu": true,
+      "auto_rank": 2
+     },
+     {
+      "name": "lightsmith-dda",
+      "method": "dda",
+      "available": true,
+      "gpu": true,
+      "auto_rank": 3
+     },
+     {
+      "name": "lightsmith-fdtd",
+      "method": "fdtd",
+      "available": true,
+      "gpu": true,
+      "auto_rank": 4
+     },
+     {
+      "name": "lightsmith-quasistatic",
+      "method": "quasistatic",
+      "available": true,
+      "gpu": false,
+      "auto_rank": null
+     }
+    ],
+    "example": {
+     "kind": "scattering",
+     "particles": [
+      {
+       "shape": {
+        "kind": "sphere",
+        "radius_nm": 40
+       },
+       "material": {
+        "kind": "library",
+        "name": "Au",
+        "dataset": "Johnson-Christy"
+       }
+      }
+     ],
+     "medium_index": 1.33,
+     "wavelengths": {
+      "start_nm": 400,
+      "stop_nm": 800,
+      "num": 81
+     }
+    }
+   },
+   "text": "{\n  \"kind\": \"scattering\",\n  \"schema\": {\n    \"$defs\": {\n      \"ConstantIndex\": {\n        \"additionalProperties\": false,\n        \"description\": \"Wavelength-independent complex refractive index n + ik.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"constant_index\",\n            \"default\": \"constant_index\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"n_real\": {\n            \"description\": \"Real part of the refractive index.\",\n            \"title\": \"N Real\",\n            \"type\": \"number\"\n          },\n          \"n_imag\": {\n            \"default\": 0.0,\n            \"description\": \"Extinction coefficient k (>= 0 for loss).\",\n            \"minimum\": 0,\n            \"title\": \"N Imag\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"n_real\"\n        ],\n        \"title\": \"ConstantIndex\",\n        \"type\": \"object\"\n      },\n      \"ConstantPermittivity\": {\n        \"additionalProperties\": false,\n        \"description\": \"Wavelength-independent complex relative permittivity.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"constant_permittivity\",\n            \"default\": \"constant_permittivity\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_real\": {\n            \"title\": \"Eps Real\",\n            \"type\": \"number\"\n          },\n          \"eps_imag\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Eps Imag\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"eps_real\"\n        ],\n        \"title\": \"ConstantPermittivity\",\n        \"type\": \"object\"\n      },\n      \"Cylinder\": {\n        \"additionalProperties\": false,\n        \"description\": \"Flat-ended cylinder with axis along z.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"cylinder\",\n            \"default\": \"cylinder\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Radius Nm\",\n            \"type\": \"number\"\n          },\n          \"length_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Length Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"radius_nm\",\n          \"length_nm\"\n        ],\n        \"title\": \"Cylinder\",\n        \"type\": \"object\"\n      },\n      \"Drude\": {\n        \"additionalProperties\": false,\n        \"description\": \"eps(w) = eps_inf - wp^2 / (w^2 + i*gamma*w), energies in eV.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"drude\",\n            \"default\": \"drude\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_inf\": {\n            \"default\": 1.0,\n            \"title\": \"Eps Inf\",\n            \"type\": \"number\"\n          },\n          \"wp_ev\": {\n            \"description\": \"Plasma frequency in eV.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Wp Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"description\": \"Damping rate in eV.\",\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"wp_ev\",\n          \"gamma_ev\"\n        ],\n        \"title\": \"Drude\",\n        \"type\": \"object\"\n      },\n      \"DrudeLorentz\": {\n        \"additionalProperties\": false,\n        \"description\": \"eps(w) = eps_inf - wp^2/(w^2 + i g w) + sum_j d_j w0_j^2 / (w0_j^2 - w^2 - i G_j w).\\n\\nThe form FDTD needs for auxiliary-differential-equation dispersion.\\nFit one to measured data with :func:`lightsmith.materials_fit.fit_drude_lorentz`.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"drude_lorentz\",\n            \"default\": \"drude_lorentz\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_inf\": {\n            \"default\": 1.0,\n            \"title\": \"Eps Inf\",\n            \"type\": \"number\"\n          },\n          \"wp_ev\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Wp Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          },\n          \"poles\": {\n            \"items\": {\n              \"$ref\": \"#/$defs/LorentzPole\"\n            },\n            \"title\": \"Poles\",\n            \"type\": \"array\"\n          }\n        },\n        \"title\": \"DrudeLorentz\",\n        \"type\": \"object\"\n      },\n      \"FarFieldRequest\": {\n        \"additionalProperties\": false,\n        \"description\": \"Differential scattering cross section dC_sca/dOmega on a theta x phi grid.\\n\\ntheta is measured from the incident direction; phi is the azimuth around it,\\nmeasured from the incident polarization (phi=0 is the E-plane, 90 the H-plane).\",\n        \"properties\": {\n          \"theta_deg\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"minItems\": 1,\n            \"title\": \"Theta Deg\",\n            \"type\": \"array\"\n          },\n          \"phi_deg\": {\n            \"default\": [\n              0.0,\n              90.0\n            ],\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"minItems\": 1,\n            \"title\": \"Phi Deg\",\n            \"type\": \"array\"\n          },\n          \"wavelengths_nm\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"minItems\": 1,\n            \"title\": \"Wavelengths Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"theta_deg\",\n          \"wavelengths_nm\"\n        ],\n        \"title\": \"FarFieldRequest\",\n        \"type\": \"object\"\n      },\n      \"GaussianBeam\": {\n        \"additionalProperties\": false,\n        \"description\": \"A focused Gaussian beam: plane waves with the angular spectrum exp(-(k_t w0 / 2)^2), each polarised by\\nrotating `polarization` with its direction (aplanatic).\\n\\nThe angular weights are fixed, so the beam behaves as if focused by a lens of fixed NA: the waist is\\n`waist_nm` at `waist_wavelength_nm` (default: the middle of the band) and scales with the wavelength.\\nCross sections are normalised by the intensity at the focus.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"gaussian_beam\",\n            \"default\": \"gaussian_beam\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"direction\": {\n            \"default\": [\n              0.0,\n              0.0,\n              1.0\n            ],\n            \"description\": \"Beam axis (propagation).\",\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Direction\",\n            \"type\": \"array\"\n          },\n          \"polarization\": {\n            \"default\": [\n              1.0,\n              0.0,\n              0.0\n            ],\n            \"description\": \"E-field direction at the axis.\",\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Polarization\",\n            \"type\": \"array\"\n          },\n          \"waist_nm\": {\n            \"description\": \"1/e^2 intensity radius at the focus.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Waist Nm\",\n            \"type\": \"number\"\n          },\n          \"focus_nm\": {\n            \"default\": [\n              0.0,\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Focus Nm\",\n            \"type\": \"array\"\n          },\n          \"waist_wavelength_nm\": {\n            \"anyOf\": [\n              {\n                \"exclusiveMinimum\": 0,\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Vacuum wavelength at which the waist is waist_nm. Default: the middle of the band.\",\n            \"title\": \"Waist Wavelength Nm\"\n          }\n        },\n        \"required\": [\n          \"waist_nm\"\n        ],\n        \"title\": \"GaussianBeam\",\n        \"type\": \"object\"\n      },\n      \"LayeredSphere\": {\n        \"additionalProperties\": false,\n        \"description\": \"Core-shell / multilayer sphere. The particle's `material` is the core;\\n`shells` are listed from the inside out.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"layered_sphere\",\n            \"default\": \"layered_sphere\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"core_radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Core Radius Nm\",\n            \"type\": \"number\"\n          },\n          \"shells\": {\n            \"items\": {\n              \"$ref\": \"#/$defs/Shell\"\n            },\n            \"minItems\": 1,\n            \"title\": \"Shells\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"core_radius_nm\",\n          \"shells\"\n        ],\n        \"title\": \"LayeredSphere\",\n        \"type\": \"object\"\n      },\n      \"LibraryMaterial\": {\n        \"additionalProperties\": false,\n        \"description\": \"Measured n, k bundled with lightsmith, e.g. ``{\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\",\\n\\\"dataset\\\": \\\"Johnson-Christy\\\"}``. Linear interpolation in n and k, no extrapolation.\\n\\nNames and datasets accept aliases (\\\"gold\\\", \\\"JC\\\") and are stored in canonical form;\\nan omitted dataset is filled with the material's default so the spec stays\\nreproducible. See :func:`list_materials`.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"library\",\n            \"default\": \"library\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"name\": {\n            \"description\": \"Material, e.g. 'Au', 'Ag', 'Al', 'Cu', 'Si', 'TiO2', 'SiO2', 'H2O'.\",\n            \"title\": \"Name\",\n            \"type\": \"string\"\n          },\n          \"dataset\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Dataset, e.g. 'Johnson-Christy'; omitted = material default.\",\n            \"title\": \"Dataset\"\n          }\n        },\n        \"required\": [\n          \"name\"\n        ],\n        \"title\": \"LibraryMaterial\",\n        \"type\": \"object\"\n      },\n      \"LorentzPole\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"delta_eps\": {\n            \"description\": \"Oscillator strength (permittivity step).\",\n            \"title\": \"Delta Eps\",\n            \"type\": \"number\"\n          },\n          \"omega0_ev\": {\n            \"description\": \"Resonance energy in eV.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Omega0 Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"description\": \"Damping in eV.\",\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"delta_eps\",\n          \"omega0_ev\",\n          \"gamma_ev\"\n        ],\n        \"title\": \"LorentzPole\",\n        \"type\": \"object\"\n      },\n      \"NearFieldRequest\": {\n        \"additionalProperties\": false,\n        \"description\": \"Total electric field on a square plane through the scene.\",\n        \"properties\": {\n          \"plane\": {\n            \"default\": \"xz\",\n            \"enum\": [\n              \"xy\",\n              \"xz\",\n              \"yz\"\n            ],\n            \"title\": \"Plane\",\n            \"type\": \"string\"\n          },\n          \"offset_nm\": {\n            \"default\": 0.0,\n            \"description\": \"Position of the plane along its normal.\",\n            \"title\": \"Offset Nm\",\n            \"type\": \"number\"\n          },\n          \"half_width_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Half Width Nm\",\n            \"type\": \"number\"\n          },\n          \"points\": {\n            \"default\": 101,\n            \"description\": \"Samples per axis.\",\n            \"minimum\": 2,\n            \"title\": \"Points\",\n            \"type\": \"integer\"\n          },\n          \"wavelengths_nm\": {\n            \"description\": \"Vacuum wavelengths to sample.\",\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"minItems\": 1,\n            \"title\": \"Wavelengths Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"half_width_nm\",\n          \"wavelengths_nm\"\n        ],\n        \"title\": \"NearFieldRequest\",\n        \"type\": \"object\"\n      },\n      \"Outputs\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"cross_sections\": {\n            \"default\": true,\n            \"title\": \"Cross Sections\",\n            \"type\": \"boolean\"\n          },\n          \"near_field\": {\n            \"anyOf\": [\n              {\n                \"$ref\": \"#/$defs/NearFieldRequest\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null\n          },\n          \"far_field\": {\n            \"anyOf\": [\n              {\n                \"$ref\": \"#/$defs/FarFieldRequest\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null\n          },\n          \"resonances\": {\n            \"anyOf\": [\n              {\n                \"$ref\": \"#/$defs/ResonanceRequest\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null\n          }\n        },\n        \"title\": \"Outputs\",\n        \"type\": \"object\"\n      },\n      \"Particle\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"shape\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"cylinder\": \"#/$defs/Cylinder\",\n                \"layered_sphere\": \"#/$defs/LayeredSphere\",\n                \"sphere\": \"#/$defs/Sphere\",\n                \"spheroid\": \"#/$defs/Spheroid\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/Sphere\"\n              },\n              {\n                \"$ref\": \"#/$defs/Spheroid\"\n              },\n              {\n                \"$ref\": \"#/$defs/Cylinder\"\n              },\n              {\n                \"$ref\": \"#/$defs/LayeredSphere\"\n              }\n            ],\n            \"title\": \"Shape\"\n          },\n          \"material\": {\n            \"description\": \"Particle material (the core for layered spheres).\",\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Material\"\n          },\n          \"position_nm\": {\n            \"default\": [\n              0.0,\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Position Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"shape\",\n          \"material\"\n        ],\n        \"title\": \"Particle\",\n        \"type\": \"object\"\n      },\n      \"PlaneWave\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"plane_wave\",\n            \"default\": \"plane_wave\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"direction\": {\n            \"default\": [\n              0.0,\n              0.0,\n              1.0\n            ],\n            \"description\": \"Propagation direction.\",\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Direction\",\n            \"type\": \"array\"\n          },\n          \"polarization\": {\n            \"default\": [\n              1.0,\n              0.0,\n              0.0\n            ],\n            \"description\": \"Real E-field direction.\",\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Polarization\",\n            \"type\": \"array\"\n          }\n        },\n        \"title\": \"PlaneWave\",\n        \"type\": \"object\"\n      },\n      \"ResonanceRequest\": {\n        \"additionalProperties\": false,\n        \"description\": \"Resonances of the ringing field after the incident pulse has passed: wavelength, Q, relative amplitude.\\n\\nTime-domain solvers only. Only modes inside the requested wavelength band are reported.\",\n        \"properties\": {\n          \"max_modes\": {\n            \"default\": 10,\n            \"maximum\": 100,\n            \"minimum\": 1,\n            \"title\": \"Max Modes\",\n            \"type\": \"integer\"\n          }\n        },\n        \"title\": \"ResonanceRequest\",\n        \"type\": \"object\"\n      },\n      \"Shell\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"thickness_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Thickness Nm\",\n            \"type\": \"number\"\n          },\n          \"material\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Material\"\n          }\n        },\n        \"required\": [\n          \"thickness_nm\",\n          \"material\"\n        ],\n        \"title\": \"Shell\",\n        \"type\": \"object\"\n      },\n      \"Sphere\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"sphere\",\n            \"default\": \"sphere\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Radius Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"radius_nm\"\n        ],\n        \"title\": \"Sphere\",\n        \"type\": \"object\"\n      },\n      \"Spheroid\": {\n        \"additionalProperties\": false,\n        \"description\": \"Spheroid with symmetry axis along z.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"spheroid\",\n            \"default\": \"spheroid\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"semi_axis_xy_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Semi Axis Xy Nm\",\n            \"type\": \"number\"\n          },\n          \"semi_axis_z_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Semi Axis Z Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"semi_axis_xy_nm\",\n          \"semi_axis_z_nm\"\n        ],\n        \"title\": \"Spheroid\",\n        \"type\": \"object\"\n      },\n      \"Substrate\": {\n        \"additionalProperties\": false,\n        \"description\": \"Semi-infinite half-space z < interface_z_nm with the given material.\",\n        \"properties\": {\n          \"material\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Material\"\n          },\n          \"interface_z_nm\": {\n            \"default\": 0.0,\n            \"title\": \"Interface Z Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"material\"\n        ],\n        \"title\": \"Substrate\",\n        \"type\": \"object\"\n      },\n      \"Tabulated\": {\n        \"additionalProperties\": false,\n        \"description\": \"Tabulated n, k data, linearly interpolated (no extrapolation).\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"tabulated\",\n            \"default\": \"tabulated\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"wavelength_nm\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"Wavelength Nm\",\n            \"type\": \"array\"\n          },\n          \"n_real\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"N Real\",\n            \"type\": \"array\"\n          },\n          \"n_imag\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"N Imag\",\n            \"type\": \"array\"\n          },\n          \"source\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Citation / provenance of the data.\",\n            \"title\": \"Source\"\n          }\n        },\n        \"required\": [\n          \"wavelength_nm\",\n          \"n_real\",\n          \"n_imag\"\n        ],\n        \"title\": \"Tabulated\",\n        \"type\": \"object\"\n      },\n      \"WavelengthRange\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"start_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Start Nm\",\n            \"type\": \"number\"\n          },\n          \"stop_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Stop Nm\",\n            \"type\": \"number\"\n          },\n          \"num\": {\n            \"minimum\": 1,\n            \"title\": \"Num\",\n            \"type\": \"integer\"\n          }\n        },\n        \"required\": [\n          \"start_nm\",\n          \"stop_nm\",\n          \"num\"\n        ],\n        \"title\": \"WavelengthRange\",\n        \"type\": \"object\"\n      }\n    },\n    \"additionalProperties\": false,\n    \"description\": \"A complete scattering problem. Serialisable to/from JSON.\",\n    \"properties\": {\n      \"kind\": {\n        \"const\": \"scattering\",\n        \"default\": \"scattering\",\n        \"title\": \"Kind\",\n        \"type\": \"string\"\n      },\n      \"schema_version\": {\n        \"const\": \"0.1\",\n        \"default\": \"0.1\",\n        \"title\": \"Schema Version\",\n        \"type\": \"string\"\n      },\n      \"particles\": {\n        \"items\": {\n          \"$ref\": \"#/$defs/Particle\"\n        },\n        \"minItems\": 1,\n        \"title\": \"Particles\",\n        \"type\": \"array\"\n      },\n      \"medium_index\": {\n        \"default\": 1.0,\n        \"description\": \"Real refractive index of the host medium.\",\n        \"exclusiveMinimum\": 0,\n        \"title\": \"Medium Index\",\n        \"type\": \"number\"\n      },\n      \"illumination\": {\n        \"anyOf\": [\n          {\n            \"$ref\": \"#/$defs/PlaneWave\"\n          },\n          {\n            \"$ref\": \"#/$defs/GaussianBeam\"\n          }\n        ],\n        \"default\": {\n          \"kind\": \"plane_wave\",\n          \"direction\": [\n            0.0,\n            0.0,\n            1.0\n          ],\n          \"polarization\": [\n            1.0,\n            0.0,\n            0.0\n          ]\n        },\n        \"title\": \"Illumination\"\n      },\n      \"wavelengths\": {\n        \"anyOf\": [\n          {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"type\": \"array\"\n          },\n          {\n            \"$ref\": \"#/$defs/WavelengthRange\"\n          }\n        ],\n        \"description\": \"Vacuum wavelengths in nm.\",\n        \"title\": \"Wavelengths\"\n      },\n      \"substrate\": {\n        \"anyOf\": [\n          {\n            \"$ref\": \"#/$defs/Substrate\"\n          },\n          {\n            \"type\": \"null\"\n          }\n        ],\n        \"default\": null,\n        \"description\": \"Optional half-space below the particles.\"\n      },\n      \"orientation_average\": {\n        \"default\": false,\n        \"description\": \"Average cross sections over all particle orientations.\",\n        \"title\": \"Orientation Average\",\n        \"type\": \"boolean\"\n      },\n      \"outputs\": {\n        \"$ref\": \"#/$defs/Outputs\",\n        \"default\": {\n          \"cross_sections\": true,\n          \"near_field\": null,\n          \"far_field\": null,\n          \"resonances\": null\n        }\n      },\n      \"options\": {\n        \"additionalProperties\": {\n          \"additionalProperties\": true,\n          \"type\": \"object\"\n        },\n        \"description\": \"Solver options keyed by method or backend name, e.g. {'dda': {'dipoles_per_diameter': 20}}.\",\n        \"title\": \"Options\",\n        \"type\": \"object\"\n      }\n    },\n    \"required\": [\n      \"particles\",\n      \"wavelengths\"\n    ],\n    \"title\": \"Simulation\",\n    \"type\": \"object\"\n  },\n  \"conventions\": \"Lightsmith conventions (fixed; changing them needs a schema version bump):\\n- Lengths in nm. Wavelengths are vacuum wavelengths in nm.\\n- Time dependence exp(-i omega t): absorbing materials have Im(eps) > 0 and Im(n) > 0.\\n- Cross sections in nm^2; efficiencies Q = C / (pi r_eq^2), r_eq = volume-equivalent radius of all particles.\\n- layer_stack / periodic: layers listed from the superstrate (incidence side) to the substrate; light travels +z.\\n  R is measured in the superstrate, T in the substrate.\\n- mode: cross-section in the xy plane, propagation along +z.\\n- device: ports are planes whose normal is the axis where size_nm is zero; direction is into the device.\\n- problem.options[<method or backend name>] holds solver options, validated by that backend.\\n- Materials: {\\\"kind\\\": \\\"constant_index\\\", \\\"n_real\\\": .., \\\"n_imag\\\": ..}, {\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\"},\\n  drude, drude_lorentz, tabulated, constant_permittivity. FDTD needs dispersive models (fit_drude_lorentz).\\n- Results carry provenance and warnings: read the warnings before trusting the numbers.\\n\",\n  \"backends\": [\n    {\n      \"name\": \"lightsmith-mie\",\n      \"method\": \"mie\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 0\n    },\n    {\n      \"name\": \"miepython\",\n      \"method\": \"mie\",\n      \"available\": true,\n      \"gpu\": false,\n      \"auto_rank\": 0\n    },\n    {\n      \"name\": \"treams\",\n      \"method\": \"tmatrix\",\n      \"available\": true,\n      \"gpu\": false,\n      \"auto_rank\": 1\n    },\n    {\n      \"name\": \"lightsmith-bem\",\n      \"method\": \"bem\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 2\n    },\n    {\n      \"name\": \"lightsmith-dda\",\n      \"method\": \"dda\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 3\n    },\n    {\n      \"name\": \"lightsmith-fdtd\",\n      \"method\": \"fdtd\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 4\n    },\n    {\n      \"name\": \"lightsmith-quasistatic\",\n      \"method\": \"quasistatic\",\n      \"available\": true,\n      \"gpu\": false,\n      \"auto_rank\": null\n    }\n  ],\n  \"example\": {\n    \"kind\": \"scattering\",\n    \"particles\": [\n      {\n        \"shape\": {\n          \"kind\": \"sphere\",\n          \"radius_nm\": 40\n        },\n        \"material\": {\n          \"kind\": \"library\",\n          \"name\": \"Au\",\n          \"dataset\": \"Johnson-Christy\"\n        }\n      }\n    ],\n    \"medium_index\": 1.33,\n    \"wavelengths\": {\n      \"start_nm\": 400,\n      \"stop_nm\": 800,\n      \"num\": 81\n    }\n  }\n}",
+   "images": [],
+   "error": null,
+   "duration_s": 0.47,
+   "started_at": 1794267243.871943,
+   "source": "mcp"
+  },
+  {
+   "name": "get_material",
+   "arguments": {
+    "material": {
+     "kind": "library",
+     "name": "Au",
+     "dataset": "Rakic-LD"
+    },
+    "wavelengths_nm": [
+     2500
+    ]
+   },
+   "ok": true,
+   "result": {
+    "material_json": {
+     "kind": "library",
+     "name": "Au",
+     "dataset": "Rakic-LD"
+    },
+    "material_json_note": null,
+    "source": "A. D. Raki\u0107, A. B. Djuri\u0161ic, J. M. Elazar, M. L. Majewski. Optical properties of metallic films for vertical-cavity optoelectronic devices. Appl. Opt. 37, 5271-5283 (1998); [Calculation script (Python)] Data: refractiveindex.info database (CC0-1.0), https://refractiveindex.info/?shelf=main&book=Au&page=Rakic-LD (snapshot c5c2f188e8); cite also M. N. Polyanskiy, Sci. Data 11, 94 (2024), doi:10.1038/s41597-023-02898-2.",
+    "range_nm": [
+     247.97,
+     6199.2
+    ],
+    "units": {
+     "wavelength": "nm (vacuum)",
+     "convention": "exp(-i omega t): k > 0 and Im(eps) > 0 mean loss"
+    },
+    "samples": [
+     {
+      "wavelength_nm": 2500.0,
+      "n": 1.24367960199005,
+      "k": 15.81193034825871,
+      "eps_real": -248.47040238577867,
+      "eps_imag": 39.32995048443357
+     }
+    ]
+   },
+   "text": "{\n  \"material_json\": {\n    \"kind\": \"library\",\n    \"name\": \"Au\",\n    \"dataset\": \"Rakic-LD\"\n  },\n  \"material_json_note\": null,\n  \"source\": \"A. D. Raki\u0107, A. B. Djuri\u0161ic, J. M. Elazar, M. L. Majewski. Optical properties of metallic films for vertical-cavity optoelectronic devices. Appl. Opt. 37, 5271-5283 (1998); [Calculation script (Python)] Data: refractiveindex.info database (CC0-1.0), https://refractiveindex.info/?shelf=main&book=Au&page=Rakic-LD (snapshot c5c2f188e8); cite also M. N. Polyanskiy, Sci. Data 11, 94 (2024), doi:10.1038/s41597-023-02898-2.\",\n  \"range_nm\": [\n    247.97,\n    6199.2\n  ],\n  \"units\": {\n    \"wavelength\": \"nm (vacuum)\",\n    \"convention\": \"exp(-i omega t): k > 0 and Im(eps) > 0 mean loss\"\n  },\n  \"samples\": [\n    {\n      \"wavelength_nm\": 2500.0,\n      \"n\": 1.24367960199005,\n      \"k\": 15.81193034825871,\n      \"eps_real\": -248.47040238577867,\n      \"eps_imag\": 39.32995048443357\n    }\n  ]\n}",
+   "images": [],
+   "error": null,
+   "duration_s": 0.012,
+   "started_at": 1794267247.437176,
+   "source": "mcp"
+  },
+  {
+   "name": "get_material",
+   "arguments": {
+    "material": {
+     "refractiveindex": {
+      "shelf": "main",
+      "book": "Au",
+      "page": "Olmon-sc"
+     }
+    },
+    "wavelengths_nm": [
+     2500
+    ]
+   },
+   "ok": true,
+   "result": {
+    "material_json": {
+     "kind": "tabulated",
+     "wavelength_nm": [
+      300.0,
+      310.0,
+      320.0,
+      330.0,
+      340.0,
+      350.0,
+      360.0,
+      370.0,
+      380.0,
+      390.0,
+      400.0,
+      410.0,
+      420.0,
+      430.0,
+      440.0,
+      450.0,
+      460.0,
+      470.0,
+      480.0,
+      490.0,
+      500.0,
+      510.0,
+      520.0,
+      530.0,
+      540.0,
+      550.0,
+      560.0,
+      570.0,
+      580.0,
+      590.0,
+      600.0,
+      610.0,
+      620.0,
+      630.0,
+      640.0,
+      650.0,
+      660.0,
+      670.0,
+      680.0,
+      690.0,
+      700.0,
+      710.0,
+      720.0,
+      730.0,
+      740.0,
+      750.0,
+      760.0,
+      770.0,
+      780.0,
+      790.0,
+      800.0,
+      810.0,
+      820.0,
+      830.0,
+      840.0,
+      850.0,
+      860.0,
+      870.0,
+      880.0,
+      890.0,
+      900.0,
+      910.0,
+      920.0,
+      930.0,
+      940.0,
+      950.0,
+      960.0,
+      970.0,
+      980.0,
+      990.0,
+      1000.0,
+      1010.0,
+      1020.0,
+      1030.0,
+      1040.0,
+      1050.0,
+      1060.0,
+      1070.0,
+      1080.0,
+      1090.0,
+      1100.0,
+      1110.0,
+      1120.0,
+      1130.0,
+      1140.0,
+      1150.0,
+      1160.0,
+      1170.0,
+      1180.0,
+      1190.0,
+      1200.0,
+      1210.0,
+      1220.0,
+      1230.0,
+      1240.0,
+      1250.0,
+      1260.0,
+      1270.0,
+      1280.0,
+      1290.0,
+      1300.0,
+      1310.0,
+      1320.0,
+      1330.0,
+      1340.0,
+      1350.0,
+      1430.0,
+      1440.0,
+      1450.0,
+      1460.0,
+      1470.0,
+      1480.0,
+      1490.0,
+      1500.0,
+      1510.0,
+      1520.0,
+      1530.0,
+      1540.0,
+      1550.0,
+      1560.0,
+      1570.0,
+      1580.0,
+      1590.0,
+      1600.0,
+      1610.0,
+      1620.0,
+      1630.0,
+      1640.0,
+      1650.0,
+      1660.0,
+      1670.0,
+      1680.0,
+      1690.0,
+      1700.0,
+      1710.0,
+      1720.0,
+      1730.0,
+      1740.0,
+      1750.0,
+      1760.0,
+      1770.0,
+      1780.0,
+      1790.0,
+      1800.0,
+      1810.0,
+      1820.0,
+      1830.0,
+      1840.0,
+      1850.0,
+      1860.0,
+      1870.0,
+      1880.0,
+      1890.0,
+      1900.0,
+      1910.0,
+      1920.0,
+      1930.0,
+      1940.0,
+      1950.0,
+      1960.0,
+      1970.0,
+      1980.0,
+      1990.0,
+      2000.0,
+      2007.0000000000002,
+      2019.0000000000002,
+      2025.0,
+      2037.9999999999998,
+      2045.0,
+      2058.0,
+      2064.0,
+      2077.0,
+      2084.0,
+      2098.0,
+      2104.0,
+      2118.0,
+      2125.0,
+      2139.0,
+      2146.0,
+      2153.0,
+      2168.0,
+      2175.0,
+      2190.0,
+      2197.0,
+      2205.0,
+      2220.0,
+      2227.0,
+      2235.0,
+      2243.0,
+      2258.0,
+      2266.0,
+      2274.0,
+      2282.0,
+      2298.0,
+      2307.0,
+      2315.0,
+      2323.0,
+      2340.0,
+      2348.0,
+      2357.0,
+      2365.0,
+      2374.0,
+      2383.0,
+      2392.0,
+      2409.0,
+      2418.0,
+      2427.0,
+      2437.0,
+      2446.0,
+      2455.0,
+      2464.0,
+      2474.0,
+      2483.0,
+      2493.0,
+      2502.0,
+      2512.0,
+      2522.0,
+      2532.0,
+      2542.0,
+      2552.0,
+      2562.0,
+      2572.0,
+      2582.0,
+      2593.0,
+      2603.0,
+      2613.0,
+      2624.0,
+      2635.0,
+      2645.0,
+      2656.0,
+      2667.0,
+      2678.0,
+      2689.0,
+      2701.0,
+      2712.0,
+      2723.0,
+      2735.0,
+      2746.0,
+      2758.0,
+      2770.0,
+      2782.0,
+      2794.0,
+      2806.0,
+      2818.0,
+      2830.0,
+      2843.0,
+      2855.0,
+      2868.0,
+      2881.0,
+      2893.0,
+      2906.0,
+      2919.0,
+      2933.0,
+      2946.0,
+      2959.0,
+      2973.0,
+      2987.0,
+      3001.0,
+      3015.0,
+      3029.0,
+      3043.0,
+      3057.0,
+      3072.0,
+      3086.0,
+      3101.0,
+      3116.0,
+      3131.0,
+      3146.0,
+      3162.0,
+      3177.0,
+      3193.0,
+      3209.0,
+      3224.0,
+      3241.0,
+      3257.0,
+      3273.0,
+      3290.0,
+      3307.0,
+      3324.0,
+      3341.0,
+      3358.0,
+      3376.0,
+      3393.0,
+      3411.0,
+      3429.0,
+      3447.0,
+      3466.0,
+      3485.0,
+      3503.0,
+      3522.0,
+      3542.0,
+      3561.0,
+      3581.0,
+      3601.0,
+      3621.0,
+      3641.0,
+      3662.0,
+      3683.0,
+      3704.0,
+      3725.0,
+      3746.0,
+      3768.0,
+      3790.0,
+      3812.0,
+      3835.0,
+      3858.0,
+      3881.0,
+      3904.0,
+      3928.0,
+      3952.0,
+      3976.0,
+      4001.0000000000005,
+      4026.0,
+      4051.0,
+      4075.9999999999995,
+      4102.0,
+      4128.0,
+      4155.0,
+      4181.0,
+      4209.0,
+      4236.0,
+      4264.0,
+      4292.0,
+      4321.0,
+      4350.0,
+      4379.0,
+      4409.0,
+      4439.0,
+      4470.0,
+      4501.0,
+      4532.0,
+      4564.0,
+      4597.0,
+      4629.0,
+      4663.0,
+      4697.0,
+      4731.0,
+      4766.0,
+      4801.0,
+      4837.0,
+      4873.0,
+      4910.0,
+      4947.0,
+      4986.0,
+      5024.0,
+      5063.0,
+      5103.0,
+      5144.0,
+      5185.0,
+      5227.0,
+      5269.0,
+      5312.0,
+      5356.0,
+      5401.0,
+      5446.0,
+      5493.0,
+      5539.0,
+      5587.0,
+      5636.0,
+      5685.0,
+      5736.0,
+      5787.0,
+      5839.0,
+      5892.0,
+      5946.0,
+      6001.0,
+      6057.0,
+      6114.0,
+      6173.0,
+      6232.0,
+      6292.0,
+      6354.0,
+      6417.0,
+      6481.0,
+      6547.0,
+      6613.0,
+      6682.0,
+      6751.0,
+      6822.0,
+      6895.0,
+      6969.0,
+      7045.0,
+      7122.0,
+      7201.0,
+      7282.0,
+      7365.0,
+      7450.0,
+      7536.0,
+      7625.0,
+      7716.0,
+      7809.0,
+      7904.0,
+      8000.999999999999,
+      8101.000000000001,
+      8204.0,
+      8309.0,
+      8417.0,
+      8528.0,
+      8642.0,
+      8758.0,
+      8878.0,
+      9002.0,
+      9128.0,
+      9259.0,
+      9393.0,
+      9531.0,
+      9673.0,
+      9820.0,
+      9971.0,
+      10130.0,
+      10290.0,
+      10450.0,
+      10630.0,
+      10800.0,
+      10990.0,
+      11170.0,
+      11370.0,
+      11570.0,
+      11780.0,
+      12000.0,
+      12230.0,
+      12460.0,
+      12710.0,
+      12960.0,
+      13230.0,
+      13500.0,
+      13790.0,
+      14090.0,
+      14400.0,
+      14730.0,
+      15070.0,
+      15430.0,
+      15810.0,
+      16200.0,
+      16620.0,
+      17060.0,
+      17520.0,
+      18000.0,
+      18520.0,
+      19060.0,
+      19640.0,
+      20250.0,
+      20910.0,
+      21600.0,
+      22350.0,
+      23150.0,
+      24000.0,
+      24930.0
+     ],
+     "n_real": [
+      1.562,
+      1.609,
+      1.642,
+      1.656,
+      1.65,
+      1.627,
+      1.595,
+      1.566,
+      1.55,
+      1.549,
+      1.554,
+      1.552,
+      1.533,
+      1.503,
+      1.473,
+      1.444,
+      1.399,
+      1.315,
+      1.179,
+      1.003,
+      0.8181,
+      0.6582,
+      0.5376,
+      0.4515,
+      0.3897,
+      0.3437,
+      0.3078,
+      0.279,
+      0.2553,
+      0.2353,
+      0.2184,
+      0.204,
+      0.1916,
+      0.1809,
+      0.1717,
+      0.1638,
+      0.157,
+      0.1511,
+      0.146,
+      0.1417,
+      0.138,
+      0.1348,
+      0.1322,
+      0.13,
+      0.1282,
+      0.1268,
+      0.1257,
+      0.1248,
+      0.1243,
+      0.1239,
+      0.1238,
+      0.1239,
+      0.1241,
+      0.1245,
+      0.1251,
+      0.1258,
+      0.1266,
+      0.1275,
+      0.1286,
+      0.1297,
+      0.1309,
+      0.1323,
+      0.1337,
+      0.1351,
+      0.1367,
+      0.1383,
+      0.14,
+      0.1417,
+      0.1435,
+      0.1453,
+      0.1472,
+      0.1491,
+      0.1511,
+      0.1531,
+      0.1552,
+      0.1573,
+      0.1594,
+      0.1616,
+      0.1638,
+      0.166,
+      0.1683,
+      0.1705,
+      0.1729,
+      0.1752,
+      0.1776,
+      0.18,
+      0.1824,
+      0.1849,
+      0.1874,
+      0.1899,
+      0.1924,
+      0.1949,
+      0.1975,
+      0.2001,
+      0.2027,
+      0.2053,
+      0.2079,
+      0.2106,
+      0.2133,
+      0.216,
+      0.2187,
+      0.2214,
+      0.2241,
+      0.2269,
+      0.2297,
+      0.2325,
+      0.2553,
+      0.2582,
+      0.2611,
+      0.2644,
+      0.2678,
+      0.2712,
+      0.2747,
+      0.2782,
+      0.2818,
+      0.2854,
+      0.2891,
+      0.2928,
+      0.2965,
+      0.3003,
+      0.3042,
+      0.3081,
+      0.312,
+      0.3161,
+      0.3201,
+      0.3242,
+      0.3284,
+      0.3326,
+      0.3369,
+      0.3412,
+      0.3457,
+      0.3501,
+      0.3546,
+      0.3592,
+      0.3639,
+      0.3686,
+      0.3733,
+      0.3782,
+      0.3831,
+      0.3881,
+      0.3931,
+      0.3982,
+      0.4034,
+      0.4087,
+      0.414,
+      0.4194,
+      0.4249,
+      0.4305,
+      0.4361,
+      0.4418,
+      0.4476,
+      0.4535,
+      0.4595,
+      0.4655,
+      0.4717,
+      0.4779,
+      0.4842,
+      0.4906,
+      0.4971,
+      0.5037,
+      0.5104,
+      0.5172,
+      0.5241,
+      0.5294,
+      0.5345,
+      0.541,
+      0.5443,
+      0.551,
+      0.5544,
+      0.5613,
+      0.5647,
+      0.5718,
+      0.5754,
+      0.5827,
+      0.5864,
+      0.5939,
+      0.5977,
+      0.6054,
+      0.6093,
+      0.6133,
+      0.6213,
+      0.6254,
+      0.6336,
+      0.6378,
+      0.6421,
+      0.6507,
+      0.655,
+      0.6594,
+      0.6639,
+      0.6729,
+      0.6775,
+      0.6822,
+      0.6869,
+      0.6964,
+      0.7012,
+      0.7061,
+      0.711,
+      0.7211,
+      0.7262,
+      0.7313,
+      0.7365,
+      0.7418,
+      0.7471,
+      0.7525,
+      0.7634,
+      0.7689,
+      0.7745,
+      0.7802,
+      0.786,
+      0.7918,
+      0.7976,
+      0.8036,
+      0.8096,
+      0.8156,
+      0.8218,
+      0.828,
+      0.8342,
+      0.8406,
+      0.847,
+      0.8535,
+      0.86,
+      0.8667,
+      0.8734,
+      0.8802,
+      0.8871,
+      0.894,
+      0.9011,
+      0.9082,
+      0.9154,
+      0.9227,
+      0.9301,
+      0.9376,
+      0.9451,
+      0.9528,
+      0.9605,
+      0.9683,
+      0.9763,
+      0.9843,
+      0.9924,
+      1.001,
+      1.009,
+      1.017,
+      1.026,
+      1.035,
+      1.043,
+      1.052,
+      1.061,
+      1.07,
+      1.08,
+      1.089,
+      1.098,
+      1.108,
+      1.118,
+      1.128,
+      1.138,
+      1.148,
+      1.158,
+      1.168,
+      1.179,
+      1.189,
+      1.2,
+      1.211,
+      1.222,
+      1.233,
+      1.245,
+      1.256,
+      1.268,
+      1.28,
+      1.292,
+      1.304,
+      1.317,
+      1.329,
+      1.342,
+      1.355,
+      1.368,
+      1.381,
+      1.395,
+      1.409,
+      1.422,
+      1.437,
+      1.451,
+      1.465,
+      1.48,
+      1.495,
+      1.51,
+      1.526,
+      1.541,
+      1.557,
+      1.573,
+      1.59,
+      1.606,
+      1.623,
+      1.64,
+      1.658,
+      1.676,
+      1.694,
+      1.712,
+      1.73,
+      1.749,
+      1.769,
+      1.788,
+      1.808,
+      1.828,
+      1.848,
+      1.869,
+      1.89,
+      1.912,
+      1.934,
+      1.956,
+      1.979,
+      2.002,
+      2.025,
+      2.049,
+      2.073,
+      2.098,
+      2.123,
+      2.149,
+      2.175,
+      2.201,
+      2.228,
+      2.256,
+      2.284,
+      2.312,
+      2.341,
+      2.371,
+      2.401,
+      2.432,
+      2.463,
+      2.495,
+      2.527,
+      2.56,
+      2.594,
+      2.628,
+      2.663,
+      2.699,
+      2.735,
+      2.773,
+      2.81,
+      2.849,
+      2.889,
+      2.929,
+      2.97,
+      3.012,
+      3.055,
+      3.098,
+      3.143,
+      3.189,
+      3.235,
+      3.283,
+      3.331,
+      3.381,
+      3.432,
+      3.483,
+      3.536,
+      3.59,
+      3.646,
+      3.702,
+      3.76,
+      3.82,
+      3.88,
+      3.942,
+      4.006,
+      4.07,
+      4.137,
+      4.205,
+      4.275,
+      4.346,
+      4.419,
+      4.494,
+      4.57,
+      4.649,
+      4.73,
+      4.812,
+      4.897,
+      4.984,
+      5.073,
+      5.164,
+      5.258,
+      5.354,
+      5.452,
+      5.554,
+      5.658,
+      5.764,
+      5.874,
+      5.987,
+      6.102,
+      6.221,
+      6.344,
+      6.469,
+      6.598,
+      6.731,
+      6.868,
+      7.008,
+      7.153,
+      7.302,
+      7.455,
+      7.613,
+      7.775,
+      7.942,
+      8.115,
+      8.292,
+      8.475,
+      8.664,
+      8.858,
+      9.058,
+      9.265,
+      9.478,
+      9.698,
+      9.925,
+      10.16,
+      10.4,
+      10.65,
+      10.91,
+      11.17,
+      11.45,
+      11.73,
+      12.02,
+      12.33,
+      12.64,
+      12.96,
+      13.3,
+      13.64,
+      14.0,
+      14.37,
+      14.75,
+      15.14,
+      15.55,
+      15.97,
+      16.4,
+      16.85,
+      17.32,
+      17.8,
+      18.29,
+      18.81,
+      19.34,
+      19.88,
+      20.45,
+      21.03,
+      21.63,
+      22.25,
+      22.88,
+      23.54,
+      24.21,
+      24.91,
+      25.62,
+      26.35,
+      27.1,
+      27.87
+     ],
+     "n_imag": [
+      1.827,
+      1.836,
+      1.825,
+      1.804,
+      1.784,
+      1.773,
+      1.778,
+      1.8,
+      1.832,
+      1.858,
+      1.869,
+      1.863,
+      1.85,
+      1.841,
+      1.834,
+      1.815,
+      1.774,
+      1.719,
+      1.677,
+      1.68,
+      1.745,
+      1.863,
+      2.007,
+      2.155,
+      2.298,
+      2.434,
+      2.563,
+      2.685,
+      2.803,
+      2.916,
+      3.026,
+      3.133,
+      3.237,
+      3.338,
+      3.438,
+      3.536,
+      3.632,
+      3.726,
+      3.819,
+      3.911,
+      4.002,
+      4.091,
+      4.18,
+      4.268,
+      4.354,
+      4.44,
+      4.525,
+      4.61,
+      4.694,
+      4.777,
+      4.859,
+      4.941,
+      5.023,
+      5.104,
+      5.185,
+      5.265,
+      5.345,
+      5.424,
+      5.503,
+      5.582,
+      5.66,
+      5.738,
+      5.816,
+      5.893,
+      5.97,
+      6.047,
+      6.124,
+      6.2,
+      6.276,
+      6.352,
+      6.428,
+      6.504,
+      6.579,
+      6.654,
+      6.729,
+      6.804,
+      6.878,
+      6.953,
+      7.027,
+      7.101,
+      7.175,
+      7.249,
+      7.323,
+      7.396,
+      7.47,
+      7.543,
+      7.616,
+      7.689,
+      7.762,
+      7.835,
+      7.908,
+      7.981,
+      8.053,
+      8.126,
+      8.198,
+      8.27,
+      8.342,
+      8.414,
+      8.486,
+      8.558,
+      8.63,
+      8.702,
+      8.773,
+      8.845,
+      8.916,
+      8.988,
+      9.556,
+      9.627,
+      9.698,
+      9.762,
+      9.825,
+      9.889,
+      9.952,
+      10.01,
+      10.08,
+      10.14,
+      10.2,
+      10.27,
+      10.33,
+      10.39,
+      10.45,
+      10.51,
+      10.57,
+      10.64,
+      10.7,
+      10.76,
+      10.82,
+      10.88,
+      10.94,
+      11.0,
+      11.06,
+      11.12,
+      11.18,
+      11.24,
+      11.3,
+      11.36,
+      11.42,
+      11.48,
+      11.53,
+      11.59,
+      11.65,
+      11.71,
+      11.77,
+      11.83,
+      11.88,
+      11.94,
+      12.0,
+      12.06,
+      12.11,
+      12.17,
+      12.23,
+      12.29,
+      12.34,
+      12.4,
+      12.46,
+      12.51,
+      12.57,
+      12.62,
+      12.68,
+      12.74,
+      12.79,
+      12.85,
+      12.9,
+      12.95,
+      13.0,
+      13.08,
+      13.13,
+      13.21,
+      13.25,
+      13.34,
+      13.38,
+      13.47,
+      13.51,
+      13.6,
+      13.64,
+      13.73,
+      13.78,
+      13.87,
+      13.92,
+      13.96,
+      14.06,
+      14.1,
+      14.2,
+      14.25,
+      14.3,
+      14.4,
+      14.45,
+      14.5,
+      14.55,
+      14.65,
+      14.7,
+      14.75,
+      14.8,
+      14.91,
+      14.96,
+      15.02,
+      15.07,
+      15.18,
+      15.24,
+      15.29,
+      15.35,
+      15.4,
+      15.46,
+      15.52,
+      15.63,
+      15.69,
+      15.75,
+      15.81,
+      15.87,
+      15.93,
+      15.99,
+      16.05,
+      16.11,
+      16.17,
+      16.24,
+      16.3,
+      16.36,
+      16.43,
+      16.49,
+      16.56,
+      16.62,
+      16.69,
+      16.75,
+      16.82,
+      16.89,
+      16.96,
+      17.03,
+      17.09,
+      17.16,
+      17.23,
+      17.3,
+      17.38,
+      17.45,
+      17.52,
+      17.59,
+      17.67,
+      17.74,
+      17.82,
+      17.89,
+      17.97,
+      18.04,
+      18.12,
+      18.2,
+      18.28,
+      18.36,
+      18.44,
+      18.52,
+      18.6,
+      18.68,
+      18.76,
+      18.85,
+      18.93,
+      19.02,
+      19.1,
+      19.19,
+      19.27,
+      19.36,
+      19.45,
+      19.54,
+      19.63,
+      19.72,
+      19.81,
+      19.91,
+      20.0,
+      20.1,
+      20.19,
+      20.29,
+      20.38,
+      20.48,
+      20.58,
+      20.68,
+      20.78,
+      20.88,
+      20.99,
+      21.09,
+      21.2,
+      21.3,
+      21.41,
+      21.52,
+      21.63,
+      21.74,
+      21.85,
+      21.96,
+      22.07,
+      22.19,
+      22.3,
+      22.42,
+      22.54,
+      22.66,
+      22.78,
+      22.9,
+      23.02,
+      23.15,
+      23.28,
+      23.4,
+      23.53,
+      23.66,
+      23.79,
+      23.93,
+      24.06,
+      24.2,
+      24.33,
+      24.47,
+      24.61,
+      24.75,
+      24.9,
+      25.04,
+      25.19,
+      25.34,
+      25.49,
+      25.64,
+      25.79,
+      25.95,
+      26.11,
+      26.27,
+      26.43,
+      26.59,
+      26.76,
+      26.92,
+      27.09,
+      27.26,
+      27.44,
+      27.61,
+      27.79,
+      27.97,
+      28.15,
+      28.34,
+      28.52,
+      28.71,
+      28.9,
+      29.1,
+      29.3,
+      29.5,
+      29.7,
+      29.9,
+      30.11,
+      30.32,
+      30.53,
+      30.75,
+      30.97,
+      31.19,
+      31.42,
+      31.65,
+      31.88,
+      32.12,
+      32.35,
+      32.6,
+      32.84,
+      33.09,
+      33.34,
+      33.6,
+      33.86,
+      34.13,
+      34.4,
+      34.67,
+      34.95,
+      35.23,
+      35.51,
+      35.8,
+      36.1,
+      36.4,
+      36.71,
+      37.01,
+      37.33,
+      37.65,
+      37.98,
+      38.31,
+      38.64,
+      38.99,
+      39.33,
+      39.69,
+      40.05,
+      40.42,
+      40.79,
+      41.17,
+      41.56,
+      41.95,
+      42.36,
+      42.76,
+      43.18,
+      43.61,
+      44.04,
+      44.48,
+      44.93,
+      45.39,
+      45.86,
+      46.34,
+      46.82,
+      47.32,
+      47.83,
+      48.35,
+      48.88,
+      49.42,
+      49.97,
+      50.53,
+      51.11,
+      51.7,
+      52.3,
+      52.92,
+      53.55,
+      54.2,
+      54.86,
+      55.53,
+      56.23,
+      56.94,
+      57.66,
+      58.41,
+      59.17,
+      59.96,
+      60.76,
+      61.59,
+      62.44,
+      63.31,
+      64.2,
+      65.13,
+      66.07,
+      67.05,
+      68.05,
+      69.08,
+      70.15,
+      71.25,
+      72.38,
+      73.55,
+      74.76,
+      76.01,
+      77.3,
+      78.63,
+      80.02,
+      81.46,
+      82.95,
+      84.49,
+      86.1,
+      87.78,
+      89.52,
+      91.34,
+      93.24,
+      95.23,
+      97.32,
+      99.5,
+      101.8,
+      104.2,
+      106.8,
+      109.5,
+      112.3,
+      115.4,
+      118.6,
+      122.1,
+      125.8
+     ],
+     "source": "R. L. Olmon, B. Slovick, T. W. Johnson, D. Shelton, S.-H. Oh, G. D. Boreman, M. B. Raschke. Optical dielectric function of gold. Phys. Rev. B 86, 235147 (2012) (See Supplemental Material) Data: refractiveindex.info database (CC0 1.0), https://refractiveindex.info/?shelf=main&book=Au&page=Olmon-sc; cite also M. N. Polyanskiy, Sci. Data 11, 94 (2024), doi:10.1038/s41597-023-02898-2."
+    },
+    "material_json_note": "tabulated data: paste material_json into the problem as is",
+    "source": "R. L. Olmon, B. Slovick, T. W. Johnson, D. Shelton, S.-H. Oh, G. D. Boreman, M. B. Raschke. Optical dielectric function of gold. Phys. Rev. B 86, 235147 (2012) (See Supplemental Material) Data: refractiveindex.info database (CC0 1.0), https://refractiveindex.info/?shelf=main&book=Au&page=Olmon-sc; cite also M. N. Polyanskiy, Sci. Data 11, 94 (2024), doi:10.1038/s41597-023-02898-2.",
+    "range_nm": [
+     300.0,
+     24930.0
+    ],
+    "units": {
+     "wavelength": "nm (vacuum)",
+     "convention": "exp(-i omega t): k > 0 and Im(eps) > 0 mean loss"
+    },
+    "samples": [
+     {
+      "wavelength_nm": 2500.0,
+      "n": 0.8204222222222222,
+      "k": 16.224444444444444,
+      "eps_real": -262.55950490814814,
+      "eps_imag": 26.621789530864195
+     }
+    ]
+   },
+   "text": "{\n  \"material_json\": {\n    \"kind\": \"tabulated\",\n    \"wavelength_nm\": [\n      300.0,\n      310.0,\n      320.0,\n      330.0,\n      340.0,\n      350.0,\n      360.0,\n      370.0,\n      380.0,\n      390.0,\n      400.0,\n      410.0,\n      420.0,\n      430.0,\n      440.0,\n      450.0,\n      460.0,\n      470.0,\n      480.0,\n      490.0,\n      500.0,\n      510.0,\n      520.0,\n      530.0,\n      540.0,\n      550.0,\n      560.0,\n      570.0,\n      580.0,\n      590.0,\n      600.0,\n      610.0,\n      620.0,\n      630.0,\n      640.0,\n      650.0,\n      660.0,\n      670.0,\n      680.0,\n      690.0,\n      700.0,\n      710.0,\n      720.0,\n      730.0,\n      740.0,\n      750.0,\n      760.0,\n      770.0,\n      780.0,\n      790.0,\n      800.0,\n      810.0,\n      820.0,\n      830.0,\n      840.0,\n      850.0,\n      860.0,\n      870.0,\n      880.0,\n      890.0,\n      900.0,\n      910.0,\n      920.0,\n      930.0,\n      940.0,\n      950.0,\n      960.0,\n      970.0,\n      980.0,\n      990.0,\n      1000.0,\n      1010.0,\n      1020.0,\n      1030.0,\n      1040.0,\n      1050.0,\n      1060.0,\n      1070.0,\n      1080.0,\n      1090.0,\n      1100.0,\n      1110.0,\n      1120.0,\n      1130.0,\n      1140.0,\n      1150.0,\n      1160.0,\n      1170.0,\n      1180.0,\n      1190.0,\n      1200.0,\n      1210.0,\n      1220.0,\n      1230.0,\n      1240.0,\n      1250.0,\n      1260.0,\n      1270.0,\n      1280.0,\n      1290.0,\n      1300.0,\n      1310.0,\n      1320.0,\n      1330.0,\n      1340.0,\n      1350.0,\n      1430.0,\n      1440.0,\n      1450.0,\n      1460.0,\n      1470.0,\n      1480.0,\n      1490.0,\n      1500.0,\n      1510.0,\n      1520.0,\n      1530.0,\n      1540.0,\n      1550.0,\n      1560.0,\n      1570.0,\n      1580.0,\n      1590.0,\n      1600.0,\n      1610.0,\n      1620.0,\n      1630.0,\n      1640.0,\n      1650.0,\n      1660.0,\n      1670.0,\n      1680.0,\n      1690.0,\n      1700.0,\n      1710.0,\n      1720.0,\n      1730.0,\n      1740.0,\n      1750.0,\n      1760.0,\n      1770.0,\n      1780.0,\n      1790.0,\n      1800.0,\n      1810.0,\n      1820.0,\n      1830.0,\n      1840.0,\n      1850.0,\n      1860.0,\n      1870.0,\n      1880.0,\n      1890.0,\n      1900.0,\n      1910.0,\n      1920.0,\n      1930.0,\n      1940.0,\n      1950.0,\n      1960.0,\n      1970.0,\n      1980.0,\n      1990.0,\n      2000.0,\n      2007.0000000000002,\n      2019.0000000000002,\n      2025.0,\n      2037.9999999999998,\n      2045.0,\n      2058.0,\n      2064.0,\n      2077.0,\n      2084.0,\n      2098.0,\n      2104.0,\n      2118.0,\n      2125.0,\n      2139.0,\n      2146.0,\n      2153.0,\n      2168.0,\n      2175.0,\n      2190.0,\n      2197.0,\n      2205.0,\n      2220.0,\n      2227.0,\n      2235.0,\n      2243.0,\n      2258.0,\n      2266.0,\n      2274.0,\n      2282.0,\n      2298.0,\n      2307.0,\n      2315.0,\n      2323.0,\n      2340.0,\n      2348.0,\n      2357.0,\n      2365.0,\n      2374.0,\n      2383.0,\n      2392.0,\n      2409.0,\n      2418.0,\n      2427.0,\n      2437.0,\n      2446.0,\n      2455.0,\n      2464.0,\n      2474.0,\n      2483.0,\n      2493.0,\n      2502.0,\n      2512.0,\n      2522.0,\n      2532.0,\n      2542.0,\n      2552.0,\n      2562.0,\n      2572.0,\n      2582.0,\n      2593.0,\n      2603.0,\n      2613.0,\n      2624.0,\n      2635.0,\n      2645.0,\n      2656.0,\n      2667.0,\n      2678.0,\n      2689.0,\n      2701.0,\n      2712.0,\n      2723.0,\n      2735.0,\n      2746.0,\n      2758.0,\n      2770.0,\n      2782.0,\n      2794.0,\n      2806.0,\n      2818.0,\n      2830.0,\n      2843.0,\n      2855.0,\n      2868.0,\n      2881.0,\n      2893.0,\n      2906.0,\n      2919.0,\n      2933.0,\n      2946.0,\n      2959.0,\n      2973.0,\n      2987.0,\n      3001.0,\n      3015.0,\n      3029.0,\n      3043.0,\n      3057.0,\n      3072.0,\n      3086.0,\n      3101.0,\n      3116.0,\n      3131.0,\n      3146.0,\n      3162.0,\n      3177.0,\n      3193.0,\n      3209.0,\n      3224.0,\n      3241.0,\n      3257.0,\n      3273.0,\n      3290.0,\n      3307.0,\n      3324.0,\n      3341.0,\n      3358.0,\n      3376.0,\n      3393.0,\n      3411.0,\n      3429.0,\n      3447.0,\n      3466.0,\n      3485.0,\n      3503.0,\n      3522.0,\n      3542.0,\n      3561.0,\n      3581.0,\n      3601.0,\n      3621.0,\n      3641.0,\n      3662.0,\n      3683.0,\n      3704.0,\n      3725.0,\n      3746.0,\n      3768.0,\n      3790.0,\n      3812.0,\n      3835.0,\n      3858.0,\n      3881.0,\n      3904.0,\n      3928.0,\n      3952.0,\n      3976.0,\n      4001.0000000000005,\n      4026.0,\n      4051.0,\n      4075.9999999999995,\n      4102.0,\n      4128.0,\n      4155.0,\n      4181.0,\n      4209.0,\n      4236.0,\n      4264.0,\n      4292.0,\n      4321.0,\n      4350.0,\n      4379.0,\n      4409.0,\n      4439.0,\n      4470.0,\n      4501.0,\n      4532.0,\n      4564.0,\n      4597.0,\n      4629.0,\n      4663.0,\n      4697.0,\n      4731.0,\n      4766.0,\n      4801.0,\n      4837.0,\n      4873.0,\n      4910.0,\n      4947.0,\n      4986.0,\n      5024.0,\n      5063.0,\n      5103.0,\n      5144.0,\n      5185.0,\n      5227.0,\n      5269.0,\n      5312.0,\n      5356.0,\n      5401.0,\n      5446.0,\n      5493.0,\n      5539.0,\n      5587.0,\n      5636.0,\n      5685.0,\n      5736.0,\n      5787.0,\n      5839.0,\n      5892.0,\n      5946.0,\n      6001.0,\n      6057.0,\n      6114.0,\n      6173.0,\n      6232.0,\n      6292.0,\n      6354.0,\n      6417.0,\n      6481.0,\n      6547.0,\n      6613.0,\n      6682.0,\n      6751.0,\n      6822.0,\n      6895.0,\n      6969.0,\n      7045.0,\n      7122.0,\n      7201.0,\n      7282.0,\n      7365.0,\n      7450.0,\n      7536.0,\n      7625.0,\n      7716.0,\n      7809.0,\n      7904.0,\n      8000.999999999999,\n      8101.000000000001,\n      8204.0,\n      8309.0,\n      8417.0,\n      8528.0,\n      8642.0,\n      8758.0,\n      8878.0,\n      9002.0,\n      9128.0,\n      9259.0,\n      9393.0,\n      9531.0,\n      9673.0,\n      9820.0,\n      9971.0,\n      10130.0,\n      10290.0,\n      10450.0,\n      10630.0,\n      10800.0,\n      10990.0,\n      11170.0,\n      11370.0,\n      11570.0,\n      11780.0,\n      12000.0,\n      12230.0,\n      12460.0,\n      12710.0,\n      12960.0,\n      13230.0,\n      13500.0,\n      13790.0,\n      14090.0,\n      14400.0,\n      14730.0,\n      15070.0,\n      15430.0,\n      15810.0,\n      16200.0,\n      16620.0,\n      17060.0,\n      17520.0,\n      18000.0,\n      18520.0,\n      19060.0,\n      19640.0,\n      20250.0,\n      20910.0,\n      21600.0,\n      22350.0,\n      23150.0,\n      24000.0,\n      24930.0\n    ],\n    \"n_real\": [\n      1.562,\n      1.609,\n      1.642,\n      1.656,\n      1.65,\n      1.627,\n      1.595,\n      1.566,\n      1.55,\n      1.549,\n      1.554,\n      1.552,\n      1.533,\n      1.503,\n      1.473,\n      1.444,\n      1.399,\n      1.315,\n      1.179,\n      1.003,\n      0.8181,\n      0.6582,\n      0.5376,\n      0.4515,\n      0.3897,\n      0.3437,\n      0.3078,\n      0.279,\n      0.2553,\n      0.2353,\n      0.2184,\n      0.204,\n      0.1916,\n      0.1809,\n      0.1717,\n      0.1638,\n      0.157,\n      0.1511,\n      0.146,\n      0.1417,\n      0.138,\n      0.1348,\n      0.1322,\n      0.13,\n      0.1282,\n      0.1268,\n      0.1257,\n      0.1248,\n      0.1243,\n      0.1239,\n      0.1238,\n      0.1239,\n      0.1241,\n      0.1245,\n      0.1251,\n      0.1258,\n      0.1266,\n      0.1275,\n      0.1286,\n      0.1297,\n      0.1309,\n      0.1323,\n      0.1337,\n      0.1351,\n      0.1367,\n      0.1383,\n      0.14,\n      0.1417,\n      0.1435,\n      0.1453,\n      0.1472,\n      0.1491,\n      0.1511,\n      0.1531,\n      0.1552,\n      0.1573,\n      0.1594,\n      0.1616,\n      0.1638,\n      0.166,\n      0.1683,\n      0.1705,\n      0.1729,\n      0.1752,\n      0.1776,\n      0.18,\n      0.1824,\n      0.1849,\n      0.1874,\n      0.1899,\n      0.1924,\n      0.1949,\n      0.1975,\n      0.2001,\n      0.2027,\n      0.2053,\n      0.2079,\n      0.2106,\n      0.2133,\n      0.216,\n      0.2187,\n      0.2214,\n      0.2241,\n      0.2269,\n      0.2297,\n      0.2325,\n      0.2553,\n      0.2582,\n      0.2611,\n      0.2644,\n      0.2678,\n      0.2712,\n      0.2747,\n      0.2782,\n      0.2818,\n      0.2854,\n      0.2891,\n      0.2928,\n      0.2965,\n      0.3003,\n      0.3042,\n      0.3081,\n      0.312,\n      0.3161,\n      0.3201,\n      0.3242,\n      0.3284,\n      0.3326,\n      0.3369,\n      0.3412,\n      0.3457,\n      0.3501,\n      0.3546,\n      0.3592,\n      0.3639,\n      0.3686,\n      0.3733,\n      0.3782,\n      0.3831,\n      0.3881,\n      0.3931,\n      0.3982,\n      0.4034,\n      0.4087,\n      0.414,\n      0.4194,\n      0.4249,\n      0.4305,\n      0.4361,\n      0.4418,\n      0.4476,\n      0.4535,\n      0.4595,\n      0.4655,\n      0.4717,\n      0.4779,\n      0.4842,\n      0.4906,\n      0.4971,\n      0.5037,\n      0.5104,\n      0.5172,\n      0.5241,\n      0.5294,\n      0.5345,\n      0.541,\n      0.5443,\n      0.551,\n      0.5544,\n      0.5613,\n      0.5647,\n      0.5718,\n      0.5754,\n      0.5827,\n      0.5864,\n      0.5939,\n      0.5977,\n      0.6054,\n      0.6093,\n      0.6133,\n      0.6213,\n      0.6254,\n      0.6336,\n      0.6378,\n      0.6421,\n      0.6507,\n      0.655,\n      0.6594,\n      0.6639,\n      0.6729,\n      0.6775,\n      0.6822,\n      0.6869,\n      0.6964,\n      0.7012,\n      0.7061,\n      0.711,\n      0.7211,\n      0.7262,\n      0.7313,\n      0.7365,\n      0.7418,\n      0.7471,\n      0.7525,\n      0.7634,\n      0.7689,\n      0.7745,\n      0.7802,\n      0.786,\n      0.7918,\n      0.7976,\n      0.8036,\n      0.8096,\n      0.8156,\n      0.8218,\n      0.828,\n      0.8342,\n      0.8406,\n      0.847,\n      0.8535,\n      0.86,\n      0.8667,\n      0.8734,\n      0.8802,\n      0.8871,\n      0.894,\n      0.9011,\n      0.9082,\n      0.9154,\n      0.9227,\n      0.9301,\n      0.9376,\n      0.9451,\n      0.9528,\n      0.9605,\n      0.9683,\n      0.9763,\n      0.9843,\n      0.9924,\n      1.001,\n      1.009,\n      1.017,\n      1.026,\n      1.035,\n      1.043,\n      1.052,\n      1.061,\n      1.07,\n      1.08,\n      1.089,\n      1.098,\n      1.108,\n      1.118,\n      1.128,\n      1.138,\n      1.148,\n      1.158,\n      1.168,\n      1.179,\n      1.189,\n      1.2,\n      1.211,\n      1.222,\n      1.233,\n      1.245,\n      1.256,\n      1.268,\n      1.28,\n      1.292,\n      1.304,\n      1.317,\n      1.329,\n      1.342,\n      1.355,\n      1.368,\n      1.381,\n      1.395,\n      1.409,\n      1.422,\n      1.437,\n      1.451,\n      1.465,\n      1.48,\n      1.495,\n      1.51,\n      1.526,\n      1.541,\n      1.557,\n      1.573,\n      1.59,\n      1.606,\n      1.623,\n      1.64,\n      1.658,\n      1.676,\n      1.694,\n      1.712,\n      1.73,\n      1.749,\n      1.769,\n      1.788,\n      1.808,\n      1.828,\n      1.848,\n      1.869,\n      1.89,\n      1.912,\n      1.934,\n      1.956,\n      1.979,\n      2.002,\n      2.025,\n      2.049,\n      2.073,\n      2.098,\n      2.123,\n      2.149,\n      2.175,\n      2.201,\n      2.228,\n      2.256,\n      2.284,\n      2.312,\n      2.341,\n      2.371,\n      2.401,\n      2.432,\n      2.463,\n      2.495,\n      2.527,\n      2.56,\n      2.594,\n      2.628,\n      2.663,\n      2.699,\n      2.735,\n      2.773,\n      2.81,\n      2.849,\n      2.889,\n      2.929,\n      2.97,\n      3.012,\n      3.055,\n      3.098,\n      3.143,\n      3.189,\n      3.235,\n      3.283,\n      3.331,\n      3.381,\n      3.432,\n      3.483,\n      3.536,\n      3.59,\n      3.646,\n      3.702,\n      3.76,\n      3.82,\n      3.88,\n      3.942,\n      4.006,\n      4.07,\n      4.137,\n      4.205,\n      4.275,\n      4.346,\n      4.419,\n      4.494,\n      4.57,\n      4.649,\n      4.73,\n      4.812,\n      4.897,\n      4.984,\n      5.073,\n      5.164,\n      5.258,\n      5.354,\n      5.452,\n      5.554,\n      5.658,\n      5.764,\n      5.874,\n      5.987,\n      6.102,\n      6.221,\n      6.344,\n      6.469,\n      6.598,\n      6.731,\n      6.868,\n      7.008,\n      7.153,\n      7.302,\n      7.455,\n      7.613,\n      7.775,\n      7.942,\n      8.115,\n      8.292,\n      8.475,\n      8.664,\n      8.858,\n      9.058,\n      9.265,\n      9.478,\n      9.698,\n      9.925,\n      10.16,\n      10.4,\n      10.65,\n      10.91,\n      11.17,\n      11.45,\n      11.73,\n      12.02,\n      12.33,\n      12.64,\n      12.96,\n      13.3,\n      13.64,\n      14.0,\n      14.37,\n      14.75,\n      15.14,\n      15.55,\n      15.97,\n      16.4,\n      16.85,\n      17.32,\n      17.8,\n      18.29,\n      18.81,\n      19.34,\n      19.88,\n      20.45,\n      21.03,\n      21.63,\n      22.25,\n      22.88,\n      23.54,\n      24.21,\n      24.91,\n      25.62,\n      26.35,\n      27.1,\n      27.87\n    ],\n    \"n_imag\": [\n      1.827,\n      1.836,\n      1.825,\n      1.804,\n      1.784,\n      1.773,\n      1.778,\n      1.8,\n      1.832,\n      1.858,\n      1.869,\n      1.863,\n      1.85,\n      1.841,\n      1.834,\n      1.815,\n      1.774,\n      1.719,\n      1.677,\n      1.68,\n      1.745,\n      1.863,\n      2.007,\n      2.155,\n      2.298,\n      2.434,\n      2.563,\n      2.685,\n      2.803,\n      2.916,\n      3.026,\n      3.133,\n      3.237,\n      3.338,\n      3.438,\n      3.536,\n      3.632,\n      3.726,\n      3.819,\n      3.911,\n      4.002,\n      4.091,\n      4.18,\n      4.268,\n      4.354,\n      4.44,\n      4.525,\n      4.61,\n      4.694,\n      4.777,\n      4.859,\n      4.941,\n      5.023,\n      5.104,\n      5.185,\n      5.265,\n      5.345,\n      5.424,\n      5.503,\n      5.582,\n      5.66,\n      5.738,\n      5.816,\n      5.893,\n      5.97,\n      6.047,\n      6.124,\n      6.2,\n      6.276,\n      6.352,\n      6.428,\n      6.504,\n      6.579,\n      6.654,\n      6.729,\n      6.804,\n      6.878,\n      6.953,\n      7.027,\n      7.101,\n      7.175,\n      7.249,\n      7.323,\n      7.396,\n      7.47,\n      7.543,\n      7.616,\n      7.689,\n      7.762,\n      7.835,\n      7.908,\n      7.981,\n      8.053,\n      8.126,\n      8.198,\n      8.27,\n      8.342,\n      8.414,\n      8.486,\n      8.558,\n      8.63,\n      8.702,\n      8.773,\n      8.845,\n      8.916,\n      8.988,\n      9.556,\n      9.627,\n      9.698,\n      9.762,\n      9.825,\n      9.889,\n      9.952,\n      10.01,\n      10.08,\n      10.14,\n      10.2,\n      10.27,\n      10.33,\n      10.39,\n      10.45,\n      10.51,\n      10.57,\n      10.64,\n      10.7,\n      10.76,\n      10.82,\n      10.88,\n      10.94,\n      11.0,\n      11.06,\n      11.12,\n      11.18,\n      11.24,\n      11.3,\n      11.36,\n      11.42,\n      11.48,\n      11.53,\n      11.59,\n      11.65,\n      11.71,\n      11.77,\n      11.83,\n      11.88,\n      11.94,\n      12.0,\n      12.06,\n      12.11,\n      12.17,\n      12.23,\n      12.29,\n      12.34,\n      12.4,\n      12.46,\n      12.51,\n      12.57,\n      12.62,\n      12.68,\n      12.74,\n      12.79,\n      12.85,\n      12.9,\n      12.95,\n      13.0,\n      13.08,\n      13.13,\n      13.21,\n      13.25,\n      13.34,\n      13.38,\n      13.47,\n      13.51,\n      13.6,\n      13.64,\n      13.73,\n      13.78,\n      13.87,\n      13.92,\n      13.96,\n      14.06,\n      14.1,\n      14.2,\n      14.25,\n      14.3,\n      14.4,\n      14.45,\n      14.5,\n      14.55,\n      14.65,\n      14.7,\n      14.75,\n      14.8,\n      14.91,\n      14.96,\n      15.02,\n      15.07,\n      15.18,\n      15.24,\n      15.29,\n      15.35,\n      15.4,\n      15.46,\n      15.52,\n      15.63,\n      15.69,\n      15.75,\n      15.81,\n      15.87,\n      15.93,\n      15.99,\n      16.05,\n      16.11,\n      16.17,\n      16.24,\n      16.3,\n      16.36,\n      16.43,\n      16.49,\n      16.56,\n      16.62,\n      16.69,\n      16.75,\n      16.82,\n      16.89,\n      16.96,\n      17.03,\n      17.09,\n      17.16,\n      17.23,\n      17.3,\n      17.38,\n      17.45,\n      17.52,\n      17.59,\n      17.67,\n      17.74,\n      17.82,\n      17.89,\n      17.97,\n      18.04,\n      18.12,\n      18.2,\n      18.28,\n      18.36,\n      18.44,\n      18.52,\n      18.6,\n      18.68,\n      18.76,\n      18.85,\n      18.93,\n      19.02,\n      19.1,\n      19.19,\n      19.27,\n      19.36,\n      19.45,\n      19.54,\n      19.63,\n      19.72,\n      19.81,\n      19.91,\n      20.0,\n      20.1,\n      20.19,\n      20.29,\n      20.38,\n      20.48,\n      20.58,\n      20.68,\n      20.78,\n      20.88,\n      20.99,\n      21.09,\n      21.2,\n      21.3,\n      21.41,\n      21.52,\n      21.63,\n      21.74,\n      21.85,\n      21.96,\n      22.07,\n      22.19,\n      22.3,\n      22.42,\n      22.54,\n      22.66,\n      22.78,\n      22.9,\n      23.02,\n      23.15,\n      23.28,\n      23.4,\n      23.53,\n      23.66,\n      23.79,\n      23.93,\n      24.06,\n      24.2,\n      24.33,\n      24.47,\n      24.61,\n      24.75,\n      24.9,\n      25.04,\n      25.19,\n      25.34,\n      25.49,\n      25.64,\n      25.79,\n      25.95,\n      26.11,\n      26.27,\n      26.43,\n      26.59,\n      26.76,\n      26.92,\n      27.09,\n      27.26,\n      27.44,\n      27.61,\n      27.79,\n      27.97,\n      28.15,\n      28.34,\n      28.52,\n      28.71,\n      28.9,\n      29.1,\n      29.3,\n      29.5,\n      29.7,\n      29.9,\n      30.11,\n      30.32,\n      30.53,\n      30.75,\n      30.97,\n      31.19,\n      31.42,\n      31.65,\n      31.88,\n      32.12,\n      32.35,\n      32.6,\n      32.84,\n      33.09,\n      33.34,\n      33.6,\n      33.86,\n      34.13,\n      34.4,\n      34.67,\n      34.95,\n      35.23,\n      35.51,\n      35.8,\n      36.1,\n      36.4,\n      36.71,\n      37.01,\n      37.33,\n      37.65,\n      37.98,\n      38.31,\n      38.64,\n      38.99,\n      39.33,\n      39.69,\n      40.05,\n      40.42,\n      40.79,\n      41.17,\n      41.56,\n      41.95,\n      42.36,\n      42.76,\n      43.18,\n      43.61,\n      44.04,\n      44.48,\n      44.93,\n      45.39,\n      45.86,\n      46.34,\n      46.82,\n      47.32,\n      47.83,\n      48.35,\n      48.88,\n      49.42,\n      49.97,\n      50.53,\n      51.11,\n      51.7,\n      52.3,\n      52.92,\n      53.55,\n      54.2,\n      54.86,\n      55.53,\n      56.23,\n      56.94,\n      57.66,\n      58.41,\n      59.17,\n      59.96,\n      60.76,\n      61.59,\n      62.44,\n      63.31,\n      64.2,\n      65.13,\n      66.07,\n      67.05,\n      68.05,\n      69.08,\n      70.15,\n      71.25,\n      72.38,\n      73.55,\n      74.76,\n      76.01,\n      77.3,\n      78.63,\n      80.02,\n      81.46,\n      82.95,\n      84.49,\n      86.1,\n      87.78,\n      89.52,\n      91.34,\n      93.24,\n      95.23,\n      97.32,\n      99.5,\n      101.8,\n      104.2,\n      106.8,\n      109.5,\n      112.3,\n      115.4,\n      118.6,\n      122.1,\n      125.8\n    ],\n    \"source\": \"R. L. Olmon, B. Slovick, T. W. Johnson, D. Shelton, S.-H. Oh, G. D. Boreman, M. B. Raschke. Optical dielectric function of gold. Phys. Rev. B 86, 235147 (2012) (See Supplemental Material) Data: refractiveindex.info database (CC0 1.0), https://refractiveindex.info/?shelf=main&book=Au&page=Olmon-sc; cite also M. N. Polyanskiy, Sci. Data 11, 94 (2024), doi:10.1038/s41597-023-02898-2.\"\n  },\n  \"material_json_note\": \"tabulated data: paste material_json into the problem as is\",\n  \"source\": \"R. L. Olmon, B. Slovick, T. W. Johnson, D. Shelton, S.-H. Oh, G. D. Boreman, M. B. Raschke. Optical dielectric function of gold. Phys. Rev. B 86, 235147 (2012) (See Supplemental Material) Data: refractiveindex.info database (CC0 1.0), https://refractiveindex.info/?shelf=main&book=Au&page=Olmon-sc; cite also M. N. Polyanskiy, Sci. Data 11, 94 (2024), doi:10.1038/s41597-023-02898-2.\",\n  \"range_nm\": [\n    300.0,\n    24930.0\n  ],\n  \"units\": {\n    \"wavelength\": \"nm (vacuum)\",\n    \"convention\": \"exp(-i omega t): k > 0 and Im(eps) > 0 mean loss\"\n  },\n  \"samples\": [\n    {\n      \"wavelength_nm\": 2500.0,\n      \"n\": 0.8204222222222222,\n      \"k\": 16.224444444444444,\n      \"eps_real\": -262.55950490814814,\n      \"eps_imag\": 26.621789530864195\n    }\n  ]\n}",
+   "images": [],
+   "error": null,
+   "duration_s": 0.022,
+   "started_at": 1794267247.4489427,
+   "source": "mcp"
+  },
+  {
+   "name": "solve",
+   "arguments": {
+    "problem": {
+     "kind": "scattering",
+     "particles": [
+      {
+       "shape": {
+        "kind": "sphere",
+        "radius_nm": 30
+       },
+       "material": {
+        "kind": "library",
+        "name": "Au",
+        "dataset": "Rakic-LD"
+       }
+      }
+     ],
+     "medium_index": 1.0,
+     "wavelengths": [
+      2500
+     ]
+    }
+   },
+   "ok": true,
+   "result": {
+    "status": "succeeded",
+    "job_id": "eb2f7078c241b12c62153b60b5a21cbe",
+    "job": {
+     "job_id": "eb2f7078c241b12c62153b60b5a21cbe",
+     "operation": "solve",
+     "problem_kind": "scattering",
+     "status": "succeeded",
+     "progress": 1.0,
+     "stage": "done",
+     "message": null,
+     "method": "auto",
+     "methods": null,
+     "device": "auto",
+     "label": null,
+     "runner": "thread",
+     "created_at": "2026-11-09T23:34:11+00:00",
+     "started_at": "2026-11-09T23:34:11+00:00",
+     "finished_at": "2026-11-09T23:34:11+00:00",
+     "elapsed_s": 0.0,
+     "error": null,
+     "resources": {
+      "job": "lightsmith://jobs/eb2f7078c241b12c62153b60b5a21cbe",
+      "result": "lightsmith://jobs/eb2f7078c241b12c62153b60b5a21cbe/result",
+      "csv": "lightsmith://jobs/eb2f7078c241b12c62153b60b5a21cbe/result.csv",
+      "plot": "lightsmith://jobs/eb2f7078c241b12c62153b60b5a21cbe/plot.png"
+     },
+     "estimated_runtime_s": 0.01
+    },
+    "summary": {
+     "result_kind": "cross_sections",
+     "method": "mie",
+     "backend": "miepython",
+     "warnings": [],
+     "provenance": {
+      "device": "cpu",
+      "runtime_s": 0.0006470999214798212,
+      "miepython_version": "3.3.1"
+     },
+     "n_wavelengths": 1,
+     "wavelength_range_nm": [
+      2500.0,
+      2500.0
+     ],
+     "units": {
+      "cross_sections": "nm^2",
+      "wavelength": "nm"
+     },
+     "equivalent_radius_nm": 30.0,
+     "peak_extinction": {
+      "wavelength_nm": 2500.0,
+      "c_ext_nm2": 6.82685,
+      "c_sca_nm2": 0.251626,
+      "c_abs_nm2": 6.57523,
+      "q_ext": 0.00241451
+     },
+     "c_ext_nm2_range": [
+      6.82685,
+      6.82685
+     ],
+     "albedo_at_peak": 0.0368582
+    },
+    "next_step": "Full arrays: read lightsmith://jobs/eb2f7078c241b12c62153b60b5a21cbe/result (JSON) or lightsmith://jobs/eb2f7078c241b12c62153b60b5a21cbe/result.csv, or call get_result. Check summary.warnings."
+   },
+   "text": "{\"status\": \"succeeded\", \"job_id\": \"eb2f7078c241b12c62153b60b5a21cbe\", \"job\": {\"job_id\": \"eb2f7078c241b12c62153b60b5a21cbe\", \"operation\": \"solve\", \"problem_kind\": \"scattering\", \"status\": \"succeeded\", \"progress\": 1.0, \"stage\": \"done\", \"message\": null, \"method\": \"auto\", \"methods\": null, \"device\": \"auto\", \"label\": null, \"runner\": \"thread\", \"created_at\": \"2026-11-09T23:34:11+00:00\", \"started_at\": \"2026-11-09T23:34:11+00:00\", \"finished_at\": \"2026-11-09T23:34:11+00:00\", \"elapsed_s\": 0.0, \"error\": null, \"resources\": {\"job\": \"lightsmith://jobs/eb2f7078c241b12c62153b60b5a21cbe\", \"result\": \"lightsmith://jobs/eb2f7078c241b12c62153b60b5a21cbe/result\", \"csv\": \"lightsmith://jobs/eb2f7078c241b12c62153b60b5a21cbe/result.csv\", \"plot\": \"lightsmith://jobs/eb2f7078c241b12c62153b60b5a21cbe/plot.png\"}, \"estimated_runtime_s\": 0.01}, \"summary\": {\"result_kind\": \"cross_sections\", \"method\": \"mie\", \"backend\": \"miepython\", \"warnings\": [], \"provenance\": {\"device\": \"cpu\", \"runtime_s\": 0.0006470999214798212, \"miepython_version\": \"3.3.1\"}, \"n_wavelengths\": 1, \"wavelength_range_nm\": [2500.0, 2500.0], \"units\": {\"cross_sections\": \"nm^2\", \"wavelength\": \"nm\"}, \"equivalent_radius_nm\": 30.0, \"peak_extinction\": {\"wavelength_nm\": 2500.0, \"c_ext_nm2\": 6.82685, \"c_sca_nm2\": 0.251626, \"c_abs_nm2\": 6.57523, \"q_ext\": 0.00241451}, \"c_ext_nm2_range\": [6.82685, 6.82685], \"albedo_at_peak\": 0.0368582}, \"next_step\": \"Full arrays: read lightsmith://jobs/eb2f7078c241b12c62153b60b5a21cbe/result (JSON) or lightsmith://jobs/eb2f7078c241b12c62153b60b5a21cbe/result.csv, or call get_result. Check summary.warnings.\"}",
+   "images": [],
+   "error": null,
+   "duration_s": 0.07,
+   "started_at": 1794267251.776139,
+   "source": "mcp"
+  },
+  {
+   "name": "solve",
+   "arguments": {
+    "problem": {
+     "kind": "scattering",
+     "particles": [
+      {
+       "shape": {
+        "kind": "sphere",
+        "radius_nm": 30
+       },
+       "material": {
+        "kind": "tabulated",
+        "wavelength_nm": [
+         2483.0,
+         2493.0,
+         2502.0,
+         2512.0
+        ],
+        "n_real": [
+         0.8096,
+         0.8156,
+         0.8218,
+         0.828
+        ],
+        "n_imag": [
+         16.11,
+         16.17,
+         16.24,
+         16.3
+        ],
+        "source": "Olmon et al. PRB 86, 235147 (2012), single-crystal, via refractiveindex.info"
+       }
+      }
+     ],
+     "medium_index": 1.0,
+     "wavelengths": [
+      2500
+     ]
+    }
+   },
+   "ok": true,
+   "result": {
+    "status": "succeeded",
+    "job_id": "9e4950afe5b3566729c0827b49336690",
+    "job": {
+     "job_id": "9e4950afe5b3566729c0827b49336690",
+     "operation": "solve",
+     "problem_kind": "scattering",
+     "status": "succeeded",
+     "progress": 1.0,
+     "stage": "done",
+     "message": null,
+     "method": "auto",
+     "methods": null,
+     "device": "auto",
+     "label": null,
+     "runner": "thread",
+     "created_at": "2026-11-09T23:34:11+00:00",
+     "started_at": "2026-11-09T23:34:11+00:00",
+     "finished_at": "2026-11-09T23:34:11+00:00",
+     "elapsed_s": 0.0,
+     "error": null,
+     "resources": {
+      "job": "lightsmith://jobs/9e4950afe5b3566729c0827b49336690",
+      "result": "lightsmith://jobs/9e4950afe5b3566729c0827b49336690/result",
+      "csv": "lightsmith://jobs/9e4950afe5b3566729c0827b49336690/result.csv",
+      "plot": "lightsmith://jobs/9e4950afe5b3566729c0827b49336690/plot.png"
+     },
+     "estimated_runtime_s": 0.01
+    },
+    "summary": {
+     "result_kind": "cross_sections",
+     "method": "mie",
+     "backend": "miepython",
+     "warnings": [],
+     "provenance": {
+      "device": "cpu",
+      "runtime_s": 0.00021399999968707561,
+      "miepython_version": "3.3.1"
+     },
+     "n_wavelengths": 1,
+     "wavelength_range_nm": [
+      2500.0,
+      2500.0
+     ],
+     "units": {
+      "cross_sections": "nm^2",
+      "wavelength": "nm"
+     },
+     "equivalent_radius_nm": 30.0,
+     "peak_extinction": {
+      "wavelength_nm": 2500.0,
+      "c_ext_nm2": 4.55767,
+      "c_sca_nm2": 0.251424,
+      "c_abs_nm2": 4.30625,
+      "q_ext": 0.00161195
+     },
+     "c_ext_nm2_range": [
+      4.55767,
+      4.55767
+     ],
+     "albedo_at_peak": 0.055165
+    },
+    "next_step": "Full arrays: read lightsmith://jobs/9e4950afe5b3566729c0827b49336690/result (JSON) or lightsmith://jobs/9e4950afe5b3566729c0827b49336690/result.csv, or call get_result. Check summary.warnings."
+   },
+   "text": "{\"status\": \"succeeded\", \"job_id\": \"9e4950afe5b3566729c0827b49336690\", \"job\": {\"job_id\": \"9e4950afe5b3566729c0827b49336690\", \"operation\": \"solve\", \"problem_kind\": \"scattering\", \"status\": \"succeeded\", \"progress\": 1.0, \"stage\": \"done\", \"message\": null, \"method\": \"auto\", \"methods\": null, \"device\": \"auto\", \"label\": null, \"runner\": \"thread\", \"created_at\": \"2026-11-09T23:34:11+00:00\", \"started_at\": \"2026-11-09T23:34:11+00:00\", \"finished_at\": \"2026-11-09T23:34:11+00:00\", \"elapsed_s\": 0.0, \"error\": null, \"resources\": {\"job\": \"lightsmith://jobs/9e4950afe5b3566729c0827b49336690\", \"result\": \"lightsmith://jobs/9e4950afe5b3566729c0827b49336690/result\", \"csv\": \"lightsmith://jobs/9e4950afe5b3566729c0827b49336690/result.csv\", \"plot\": \"lightsmith://jobs/9e4950afe5b3566729c0827b49336690/plot.png\"}, \"estimated_runtime_s\": 0.01}, \"summary\": {\"result_kind\": \"cross_sections\", \"method\": \"mie\", \"backend\": \"miepython\", \"warnings\": [], \"provenance\": {\"device\": \"cpu\", \"runtime_s\": 0.00021399999968707561, \"miepython_version\": \"3.3.1\"}, \"n_wavelengths\": 1, \"wavelength_range_nm\": [2500.0, 2500.0], \"units\": {\"cross_sections\": \"nm^2\", \"wavelength\": \"nm\"}, \"equivalent_radius_nm\": 30.0, \"peak_extinction\": {\"wavelength_nm\": 2500.0, \"c_ext_nm2\": 4.55767, \"c_sca_nm2\": 0.251424, \"c_abs_nm2\": 4.30625, \"q_ext\": 0.00161195}, \"c_ext_nm2_range\": [4.55767, 4.55767], \"albedo_at_peak\": 0.055165}, \"next_step\": \"Full arrays: read lightsmith://jobs/9e4950afe5b3566729c0827b49336690/result (JSON) or lightsmith://jobs/9e4950afe5b3566729c0827b49336690/result.csv, or call get_result. Check summary.warnings.\"}",
+   "images": [],
+   "error": null,
+   "duration_s": 0.058,
+   "started_at": 1794267251.8459692,
+   "source": "mcp"
+  }
+ ],
+ "messages": [
+  {
+   "role": "user",
+   "content": "What's the extinction cross-section of a 30 nm radius gold sphere in air at 2.5 \u00b5m wavelength? Use measured/fitted gold optical constants rather than a toy Drude model.\n\n---\nReport your result by calling submit_answer with these values:\n- `c_ext_nm2` (nm^2): extinction cross-section at 2.5 um"
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "CAQS7wUKEAgTGAI4AUIIdGhpbmtpbmcSDDtqaSNJbzxX5B71qBoM/HHOTLF18As2NBUOIjBSseGJgx5h7Y5S1LYmpTwi+n+vVSmV6prjeLVgUucsL2xRYu/Yg5lS7l5dKEWyOesqjAXlETQGZhKQGARPZJuq6PfO/fcUuJ3XbC8Xnc5r2z31GITEnugKcEBQq/RN+ziixpV8UkGiTAjGh8ttQdkB1TfssJU9CoxrjDe3/WX1Rrf+50wJpO/XIQ/lBgR55a1hAb1AeNsnXHUqT0LSZhgkgyr1e0X73Iyef7Xw2x3tQn2vX1R6e1CBsZjSF6TKSZGkRXAofd6T+f4cSVrFTq07/haJnVWDAj43ShPvythXx0Eti1d8tXLm9tIkKEpGUopkFhL/uGRKH7mzNHQdmHefu+whZwHkqiSTAKqwPj07V6SO4CUhSiN4B9oNZ/lex9GE91iWNZPCf0DdgZFU9k8NyaRW8NUCJRv6abDNdBZCZlta+824vC4F+NvWC7J0jlzPXsWAp/+AzLn5x7vxF+VeSk+8+yNuFwgrAcBlAuzXOH59JaPoxO/qA4bJVERkQKPG9VocVwICYTA+UTTlmlzpUVmE5HXqquoSGB/H9DT6O8hCaTjgj4hA0eqt4ffueucPp/F+QmMorn9NvtAj7zatAgsc0JpjdC7jMQR5saehz8B5lRzK9cLnY8GoWWp48WBQKddt7zTBXHjL/WrUPZvno/V8GBLDIegxyInawrusao5U1i7pqmo+FySI0PDXjywlYbP9bHmOAnEIKohU3cw+luUZd0YfUXX8BoYY6PebQNVtkNmGnaG89yGETNBJ60q2AahEr879hnPO0D0E9wLF26znZWk8KzInYRDpgtS92QdtGzSGLv2Vt2gL3wWlU55xxmZxxsOVAhWvnjhu0A9p6ldxn9hwfBn0GaiejbtPb6O9sNuVSyFdpuPzXBJzq8uHQ64pEI51mkZxZWLAdD2KHuDfi6Ou34V4jTh9j7wJGAE=",
+     "thinking": "I need gold optical data out to 2500 nm, and the Johnson-Christy set only reaches about 1937 nm. So I'll look for sources that cover 2.5 \u00b5m, such as Olmon, Babar-Weaver, or Rakic, and start searching for those materials.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_01UtVQmpJEMj2DHUi82bxRa7",
+     "input": {
+      "query": "gold"
+     },
+     "name": "search_materials",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    },
+    {
+     "id": "toolu_01AVvbHHr5fJDHoG66peWvjz",
+     "input": {
+      "kind": "scattering"
+     },
+     "name": "get_schema",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_01UtVQmpJEMj2DHUi82bxRa7",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\n  \"query\": \"gold\",\n  \"results\": [\n    {\n      \"source\": \"bundled\",\n      \"name\": \"Au\",\n      \"dataset\": \"Johnson-Christy\",\n      \"default\": true,\n      \"description\": \"Gold\",\n      \"range_nm\": [\n        187.9,\n        1937.0\n      ],\n      \"has_k\": true,\n      \"reference\": \"P. B. Johnson and R. W. Christy. Optical constants of the noble metals. Phys. Rev. B 6, 4370-4379 (1972)\",\n      \"material_json\": {\n        \"kind\": \"library\",\n        \"name\": \"Au\",\n        \"dataset\": \"Johnson-Christy\"\n      }\n    },\n    {\n      \"source\": \"bundled\",\n      \"name\": \"Au\",\n      \"dataset\": \"McPeak\",\n      \"default\": false,\n      \"description\": \"Gold\",\n      \"range_nm\": [\n        300.0,\n        1700.0\n      ],\n      \"has_k\": true,\n      \"reference\": \"K. M. McPeak, S. V. Jayanti, S. J. P. Kress, S. Meyer, S. Iotti, A. Rossinelli, D. J. Norris. Plasmonic films can easily be better: Rules and recipes. ACS Photonics 2, 326-333 (2015)\",\n      \"material_json\": {\n        \"kind\": \"library\",\n        \"name\": \"Au\",\n        \"dataset\": \"McPeak\"\n      }\n    },\n    {\n      \"source\": \"bundled\",\n      \"name\": \"Au\",\n      \"dataset\": \"Rakic-LD\",\n      \"default\": false,\n      \"description\": \"Gold\",\n      \"range_nm\": [\n        247.97,\n        6199.2\n      ],\n      \"has_k\": true,\n      \"reference\": \"A. D. Raki\u0107, A. B. Djuri\u0161ic, J. M. Elazar, M. L. Majewski. Optical properties of metallic films for vertical-cavity optoelectronic devices. Appl. Opt. 37, 5271-5283 (1998); [Calculation script (Python)]\",\n      \"material_json\": {\n        \"kind\": \"library\",\n        \"name\": \"Au\",\n        \"dataset\": \"Rakic-LD\"\n      }\n    }\n  ]\n}"
+      }
+     ],
+     "is_error": false
+    },
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_01AVvbHHr5fJDHoG66peWvjz",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\n  \"kind\": \"scattering\",\n  \"schema\": {\n    \"$defs\": {\n      \"ConstantIndex\": {\n        \"additionalProperties\": false,\n        \"description\": \"Wavelength-independent complex refractive index n + ik.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"constant_index\",\n            \"default\": \"constant_index\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"n_real\": {\n            \"description\": \"Real part of the refractive index.\",\n            \"title\": \"N Real\",\n            \"type\": \"number\"\n          },\n          \"n_imag\": {\n            \"default\": 0.0,\n            \"description\": \"Extinction coefficient k (>= 0 for loss).\",\n            \"minimum\": 0,\n            \"title\": \"N Imag\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"n_real\"\n        ],\n        \"title\": \"ConstantIndex\",\n        \"type\": \"object\"\n      },\n      \"ConstantPermittivity\": {\n        \"additionalProperties\": false,\n        \"description\": \"Wavelength-independent complex relative permittivity.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"constant_permittivity\",\n            \"default\": \"constant_permittivity\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_real\": {\n            \"title\": \"Eps Real\",\n            \"type\": \"number\"\n          },\n          \"eps_imag\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Eps Imag\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"eps_real\"\n        ],\n        \"title\": \"ConstantPermittivity\",\n        \"type\": \"object\"\n      },\n      \"Cylinder\": {\n        \"additionalProperties\": false,\n        \"description\": \"Flat-ended cylinder with axis along z.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"cylinder\",\n            \"default\": \"cylinder\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Radius Nm\",\n            \"type\": \"number\"\n          },\n          \"length_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Length Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"radius_nm\",\n          \"length_nm\"\n        ],\n        \"title\": \"Cylinder\",\n        \"type\": \"object\"\n      },\n      \"Drude\": {\n        \"additionalProperties\": false,\n        \"description\": \"eps(w) = eps_inf - wp^2 / (w^2 + i*gamma*w), energies in eV.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"drude\",\n            \"default\": \"drude\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_inf\": {\n            \"default\": 1.0,\n            \"title\": \"Eps Inf\",\n            \"type\": \"number\"\n          },\n          \"wp_ev\": {\n            \"description\": \"Plasma frequency in eV.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Wp Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"description\": \"Damping rate in eV.\",\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"wp_ev\",\n          \"gamma_ev\"\n        ],\n        \"title\": \"Drude\",\n        \"type\": \"object\"\n      },\n      \"DrudeLorentz\": {\n        \"additionalProperties\": false,\n        \"description\": \"eps(w) = eps_inf - wp^2/(w^2 + i g w) + sum_j d_j w0_j^2 / (w0_j^2 - w^2 - i G_j w).\\n\\nThe form FDTD needs for auxiliary-differential-equation dispersion.\\nFit one to measured data with :func:`lightsmith.materials_fit.fit_drude_lorentz`.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"drude_lorentz\",\n            \"default\": \"drude_lorentz\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"eps_inf\": {\n            \"default\": 1.0,\n            \"title\": \"Eps Inf\",\n            \"type\": \"number\"\n          },\n          \"wp_ev\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Wp Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"default\": 0.0,\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          },\n          \"poles\": {\n            \"items\": {\n              \"$ref\": \"#/$defs/LorentzPole\"\n            },\n            \"title\": \"Poles\",\n            \"type\": \"array\"\n          }\n        },\n        \"title\": \"DrudeLorentz\",\n        \"type\": \"object\"\n      },\n      \"FarFieldRequest\": {\n        \"additionalProperties\": false,\n        \"description\": \"Differential scattering cross section dC_sca/dOmega on a theta x phi grid.\\n\\ntheta is measured from the incident direction; phi is the azimuth around it,\\nmeasured from the incident polarization (phi=0 is the E-plane, 90 the H-plane).\",\n        \"properties\": {\n          \"theta_deg\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"minItems\": 1,\n            \"title\": \"Theta Deg\",\n            \"type\": \"array\"\n          },\n          \"phi_deg\": {\n            \"default\": [\n              0.0,\n              90.0\n            ],\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"minItems\": 1,\n            \"title\": \"Phi Deg\",\n            \"type\": \"array\"\n          },\n          \"wavelengths_nm\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"minItems\": 1,\n            \"title\": \"Wavelengths Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"theta_deg\",\n          \"wavelengths_nm\"\n        ],\n        \"title\": \"FarFieldRequest\",\n        \"type\": \"object\"\n      },\n      \"GaussianBeam\": {\n        \"additionalProperties\": false,\n        \"description\": \"A focused Gaussian beam: plane waves with the angular spectrum exp(-(k_t w0 / 2)^2), each polarised by\\nrotating `polarization` with its direction (aplanatic).\\n\\nThe angular weights are fixed, so the beam behaves as if focused by a lens of fixed NA: the waist is\\n`waist_nm` at `waist_wavelength_nm` (default: the middle of the band) and scales with the wavelength.\\nCross sections are normalised by the intensity at the focus.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"gaussian_beam\",\n            \"default\": \"gaussian_beam\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"direction\": {\n            \"default\": [\n              0.0,\n              0.0,\n              1.0\n            ],\n            \"description\": \"Beam axis (propagation).\",\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Direction\",\n            \"type\": \"array\"\n          },\n          \"polarization\": {\n            \"default\": [\n              1.0,\n              0.0,\n              0.0\n            ],\n            \"description\": \"E-field direction at the axis.\",\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Polarization\",\n            \"type\": \"array\"\n          },\n          \"waist_nm\": {\n            \"description\": \"1/e^2 intensity radius at the focus.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Waist Nm\",\n            \"type\": \"number\"\n          },\n          \"focus_nm\": {\n            \"default\": [\n              0.0,\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Focus Nm\",\n            \"type\": \"array\"\n          },\n          \"waist_wavelength_nm\": {\n            \"anyOf\": [\n              {\n                \"exclusiveMinimum\": 0,\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Vacuum wavelength at which the waist is waist_nm. Default: the middle of the band.\",\n            \"title\": \"Waist Wavelength Nm\"\n          }\n        },\n        \"required\": [\n          \"waist_nm\"\n        ],\n        \"title\": \"GaussianBeam\",\n        \"type\": \"object\"\n      },\n      \"LayeredSphere\": {\n        \"additionalProperties\": false,\n        \"description\": \"Core-shell / multilayer sphere. The particle's `material` is the core;\\n`shells` are listed from the inside out.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"layered_sphere\",\n            \"default\": \"layered_sphere\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"core_radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Core Radius Nm\",\n            \"type\": \"number\"\n          },\n          \"shells\": {\n            \"items\": {\n              \"$ref\": \"#/$defs/Shell\"\n            },\n            \"minItems\": 1,\n            \"title\": \"Shells\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"core_radius_nm\",\n          \"shells\"\n        ],\n        \"title\": \"LayeredSphere\",\n        \"type\": \"object\"\n      },\n      \"LibraryMaterial\": {\n        \"additionalProperties\": false,\n        \"description\": \"Measured n, k bundled with lightsmith, e.g. ``{\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\",\\n\\\"dataset\\\": \\\"Johnson-Christy\\\"}``. Linear interpolation in n and k, no extrapolation.\\n\\nNames and datasets accept aliases (\\\"gold\\\", \\\"JC\\\") and are stored in canonical form;\\nan omitted dataset is filled with the material's default so the spec stays\\nreproducible. See :func:`list_materials`.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"library\",\n            \"default\": \"library\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"name\": {\n            \"description\": \"Material, e.g. 'Au', 'Ag', 'Al', 'Cu', 'Si', 'TiO2', 'SiO2', 'H2O'.\",\n            \"title\": \"Name\",\n            \"type\": \"string\"\n          },\n          \"dataset\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Dataset, e.g. 'Johnson-Christy'; omitted = material default.\",\n            \"title\": \"Dataset\"\n          }\n        },\n        \"required\": [\n          \"name\"\n        ],\n        \"title\": \"LibraryMaterial\",\n        \"type\": \"object\"\n      },\n      \"LorentzPole\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"delta_eps\": {\n            \"description\": \"Oscillator strength (permittivity step).\",\n            \"title\": \"Delta Eps\",\n            \"type\": \"number\"\n          },\n          \"omega0_ev\": {\n            \"description\": \"Resonance energy in eV.\",\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Omega0 Ev\",\n            \"type\": \"number\"\n          },\n          \"gamma_ev\": {\n            \"description\": \"Damping in eV.\",\n            \"minimum\": 0,\n            \"title\": \"Gamma Ev\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"delta_eps\",\n          \"omega0_ev\",\n          \"gamma_ev\"\n        ],\n        \"title\": \"LorentzPole\",\n        \"type\": \"object\"\n      },\n      \"NearFieldRequest\": {\n        \"additionalProperties\": false,\n        \"description\": \"Total electric field on a square plane through the scene.\",\n        \"properties\": {\n          \"plane\": {\n            \"default\": \"xz\",\n            \"enum\": [\n              \"xy\",\n              \"xz\",\n              \"yz\"\n            ],\n            \"title\": \"Plane\",\n            \"type\": \"string\"\n          },\n          \"offset_nm\": {\n            \"default\": 0.0,\n            \"description\": \"Position of the plane along its normal.\",\n            \"title\": \"Offset Nm\",\n            \"type\": \"number\"\n          },\n          \"half_width_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Half Width Nm\",\n            \"type\": \"number\"\n          },\n          \"points\": {\n            \"default\": 101,\n            \"description\": \"Samples per axis.\",\n            \"minimum\": 2,\n            \"title\": \"Points\",\n            \"type\": \"integer\"\n          },\n          \"wavelengths_nm\": {\n            \"description\": \"Vacuum wavelengths to sample.\",\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"minItems\": 1,\n            \"title\": \"Wavelengths Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"half_width_nm\",\n          \"wavelengths_nm\"\n        ],\n        \"title\": \"NearFieldRequest\",\n        \"type\": \"object\"\n      },\n      \"Outputs\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"cross_sections\": {\n            \"default\": true,\n            \"title\": \"Cross Sections\",\n            \"type\": \"boolean\"\n          },\n          \"near_field\": {\n            \"anyOf\": [\n              {\n                \"$ref\": \"#/$defs/NearFieldRequest\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null\n          },\n          \"far_field\": {\n            \"anyOf\": [\n              {\n                \"$ref\": \"#/$defs/FarFieldRequest\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null\n          },\n          \"resonances\": {\n            \"anyOf\": [\n              {\n                \"$ref\": \"#/$defs/ResonanceRequest\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null\n          }\n        },\n        \"title\": \"Outputs\",\n        \"type\": \"object\"\n      },\n      \"Particle\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"shape\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"cylinder\": \"#/$defs/Cylinder\",\n                \"layered_sphere\": \"#/$defs/LayeredSphere\",\n                \"sphere\": \"#/$defs/Sphere\",\n                \"spheroid\": \"#/$defs/Spheroid\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/Sphere\"\n              },\n              {\n                \"$ref\": \"#/$defs/Spheroid\"\n              },\n              {\n                \"$ref\": \"#/$defs/Cylinder\"\n              },\n              {\n                \"$ref\": \"#/$defs/LayeredSphere\"\n              }\n            ],\n            \"title\": \"Shape\"\n          },\n          \"material\": {\n            \"description\": \"Particle material (the core for layered spheres).\",\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Material\"\n          },\n          \"position_nm\": {\n            \"default\": [\n              0.0,\n              0.0,\n              0.0\n            ],\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Position Nm\",\n            \"type\": \"array\"\n          }\n        },\n        \"required\": [\n          \"shape\",\n          \"material\"\n        ],\n        \"title\": \"Particle\",\n        \"type\": \"object\"\n      },\n      \"PlaneWave\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"plane_wave\",\n            \"default\": \"plane_wave\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"direction\": {\n            \"default\": [\n              0.0,\n              0.0,\n              1.0\n            ],\n            \"description\": \"Propagation direction.\",\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Direction\",\n            \"type\": \"array\"\n          },\n          \"polarization\": {\n            \"default\": [\n              1.0,\n              0.0,\n              0.0\n            ],\n            \"description\": \"Real E-field direction.\",\n            \"maxItems\": 3,\n            \"minItems\": 3,\n            \"prefixItems\": [\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              },\n              {\n                \"type\": \"number\"\n              }\n            ],\n            \"title\": \"Polarization\",\n            \"type\": \"array\"\n          }\n        },\n        \"title\": \"PlaneWave\",\n        \"type\": \"object\"\n      },\n      \"ResonanceRequest\": {\n        \"additionalProperties\": false,\n        \"description\": \"Resonances of the ringing field after the incident pulse has passed: wavelength, Q, relative amplitude.\\n\\nTime-domain solvers only. Only modes inside the requested wavelength band are reported.\",\n        \"properties\": {\n          \"max_modes\": {\n            \"default\": 10,\n            \"maximum\": 100,\n            \"minimum\": 1,\n            \"title\": \"Max Modes\",\n            \"type\": \"integer\"\n          }\n        },\n        \"title\": \"ResonanceRequest\",\n        \"type\": \"object\"\n      },\n      \"Shell\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"thickness_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Thickness Nm\",\n            \"type\": \"number\"\n          },\n          \"material\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Material\"\n          }\n        },\n        \"required\": [\n          \"thickness_nm\",\n          \"material\"\n        ],\n        \"title\": \"Shell\",\n        \"type\": \"object\"\n      },\n      \"Sphere\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"sphere\",\n            \"default\": \"sphere\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"radius_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Radius Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"radius_nm\"\n        ],\n        \"title\": \"Sphere\",\n        \"type\": \"object\"\n      },\n      \"Spheroid\": {\n        \"additionalProperties\": false,\n        \"description\": \"Spheroid with symmetry axis along z.\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"spheroid\",\n            \"default\": \"spheroid\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"semi_axis_xy_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Semi Axis Xy Nm\",\n            \"type\": \"number\"\n          },\n          \"semi_axis_z_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Semi Axis Z Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"semi_axis_xy_nm\",\n          \"semi_axis_z_nm\"\n        ],\n        \"title\": \"Spheroid\",\n        \"type\": \"object\"\n      },\n      \"Substrate\": {\n        \"additionalProperties\": false,\n        \"description\": \"Semi-infinite half-space z < interface_z_nm with the given material.\",\n        \"properties\": {\n          \"material\": {\n            \"discriminator\": {\n              \"mapping\": {\n                \"constant_index\": \"#/$defs/ConstantIndex\",\n                \"constant_permittivity\": \"#/$defs/ConstantPermittivity\",\n                \"drude\": \"#/$defs/Drude\",\n                \"drude_lorentz\": \"#/$defs/DrudeLorentz\",\n                \"library\": \"#/$defs/LibraryMaterial\",\n                \"tabulated\": \"#/$defs/Tabulated\"\n              },\n              \"propertyName\": \"kind\"\n            },\n            \"oneOf\": [\n              {\n                \"$ref\": \"#/$defs/ConstantIndex\"\n              },\n              {\n                \"$ref\": \"#/$defs/ConstantPermittivity\"\n              },\n              {\n                \"$ref\": \"#/$defs/Drude\"\n              },\n              {\n                \"$ref\": \"#/$defs/DrudeLorentz\"\n              },\n              {\n                \"$ref\": \"#/$defs/Tabulated\"\n              },\n              {\n                \"$ref\": \"#/$defs/LibraryMaterial\"\n              }\n            ],\n            \"title\": \"Material\"\n          },\n          \"interface_z_nm\": {\n            \"default\": 0.0,\n            \"title\": \"Interface Z Nm\",\n            \"type\": \"number\"\n          }\n        },\n        \"required\": [\n          \"material\"\n        ],\n        \"title\": \"Substrate\",\n        \"type\": \"object\"\n      },\n      \"Tabulated\": {\n        \"additionalProperties\": false,\n        \"description\": \"Tabulated n, k data, linearly interpolated (no extrapolation).\",\n        \"properties\": {\n          \"kind\": {\n            \"const\": \"tabulated\",\n            \"default\": \"tabulated\",\n            \"title\": \"Kind\",\n            \"type\": \"string\"\n          },\n          \"wavelength_nm\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"Wavelength Nm\",\n            \"type\": \"array\"\n          },\n          \"n_real\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"N Real\",\n            \"type\": \"array\"\n          },\n          \"n_imag\": {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"title\": \"N Imag\",\n            \"type\": \"array\"\n          },\n          \"source\": {\n            \"anyOf\": [\n              {\n                \"type\": \"string\"\n              },\n              {\n                \"type\": \"null\"\n              }\n            ],\n            \"default\": null,\n            \"description\": \"Citation / provenance of the data.\",\n            \"title\": \"Source\"\n          }\n        },\n        \"required\": [\n          \"wavelength_nm\",\n          \"n_real\",\n          \"n_imag\"\n        ],\n        \"title\": \"Tabulated\",\n        \"type\": \"object\"\n      },\n      \"WavelengthRange\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"start_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Start Nm\",\n            \"type\": \"number\"\n          },\n          \"stop_nm\": {\n            \"exclusiveMinimum\": 0,\n            \"title\": \"Stop Nm\",\n            \"type\": \"number\"\n          },\n          \"num\": {\n            \"minimum\": 1,\n            \"title\": \"Num\",\n            \"type\": \"integer\"\n          }\n        },\n        \"required\": [\n          \"start_nm\",\n          \"stop_nm\",\n          \"num\"\n        ],\n        \"title\": \"WavelengthRange\",\n        \"type\": \"object\"\n      }\n    },\n    \"additionalProperties\": false,\n    \"description\": \"A complete scattering problem. Serialisable to/from JSON.\",\n    \"properties\": {\n      \"kind\": {\n        \"const\": \"scattering\",\n        \"default\": \"scattering\",\n        \"title\": \"Kind\",\n        \"type\": \"string\"\n      },\n      \"schema_version\": {\n        \"const\": \"0.1\",\n        \"default\": \"0.1\",\n        \"title\": \"Schema Version\",\n        \"type\": \"string\"\n      },\n      \"particles\": {\n        \"items\": {\n          \"$ref\": \"#/$defs/Particle\"\n        },\n        \"minItems\": 1,\n        \"title\": \"Particles\",\n        \"type\": \"array\"\n      },\n      \"medium_index\": {\n        \"default\": 1.0,\n        \"description\": \"Real refractive index of the host medium.\",\n        \"exclusiveMinimum\": 0,\n        \"title\": \"Medium Index\",\n        \"type\": \"number\"\n      },\n      \"illumination\": {\n        \"anyOf\": [\n          {\n            \"$ref\": \"#/$defs/PlaneWave\"\n          },\n          {\n            \"$ref\": \"#/$defs/GaussianBeam\"\n          }\n        ],\n        \"default\": {\n          \"kind\": \"plane_wave\",\n          \"direction\": [\n            0.0,\n            0.0,\n            1.0\n          ],\n          \"polarization\": [\n            1.0,\n            0.0,\n            0.0\n          ]\n        },\n        \"title\": \"Illumination\"\n      },\n      \"wavelengths\": {\n        \"anyOf\": [\n          {\n            \"items\": {\n              \"type\": \"number\"\n            },\n            \"type\": \"array\"\n          },\n          {\n            \"$ref\": \"#/$defs/WavelengthRange\"\n          }\n        ],\n        \"description\": \"Vacuum wavelengths in nm.\",\n        \"title\": \"Wavelengths\"\n      },\n      \"substrate\": {\n        \"anyOf\": [\n          {\n            \"$ref\": \"#/$defs/Substrate\"\n          },\n          {\n            \"type\": \"null\"\n          }\n        ],\n        \"default\": null,\n        \"description\": \"Optional half-space below the particles.\"\n      },\n      \"orientation_average\": {\n        \"default\": false,\n        \"description\": \"Average cross sections over all particle orientations.\",\n        \"title\": \"Orientation Average\",\n        \"type\": \"boolean\"\n      },\n      \"outputs\": {\n        \"$ref\": \"#/$defs/Outputs\",\n        \"default\": {\n          \"cross_sections\": true,\n          \"near_field\": null,\n          \"far_field\": null,\n          \"resonances\": null\n        }\n      },\n      \"options\": {\n        \"additionalProperties\": {\n          \"additionalProperties\": true,\n          \"type\": \"object\"\n        },\n        \"description\": \"Solver options keyed by method or backend name, e.g. {'dda': {'dipoles_per_diameter': 20}}.\",\n        \"title\": \"Options\",\n        \"type\": \"object\"\n      }\n    },\n    \"required\": [\n      \"particles\",\n      \"wavelengths\"\n    ],\n    \"title\": \"Simulation\",\n    \"type\": \"object\"\n  },\n  \"conventions\": \"Lightsmith conventions (fixed; changing them needs a schema version bump):\\n- Lengths in nm. Wavelengths are vacuum wavelengths in nm.\\n- Time dependence exp(-i omega t): absorbing materials have Im(eps) > 0 and Im(n) > 0.\\n- Cross sections in nm^2; efficiencies Q = C / (pi r_eq^2), r_eq = volume-equivalent radius of all particles.\\n- layer_stack / periodic: layers listed from the superstrate (incidence side) to the substrate; light travels +z.\\n  R is measured in the superstrate, T in the substrate.\\n- mode: cross-section in the xy plane, propagation along +z.\\n- device: ports are planes whose normal is the axis where size_nm is zero; direction is into the device.\\n- problem.options[<method or backend name>] holds solver options, validated by that backend.\\n- Materials: {\\\"kind\\\": \\\"constant_index\\\", \\\"n_real\\\": .., \\\"n_imag\\\": ..}, {\\\"kind\\\": \\\"library\\\", \\\"name\\\": \\\"Au\\\"},\\n  drude, drude_lorentz, tabulated, constant_permittivity. FDTD needs dispersive models (fit_drude_lorentz).\\n- Results carry provenance and warnings: read the warnings before trusting the numbers.\\n\",\n  \"backends\": [\n    {\n      \"name\": \"lightsmith-mie\",\n      \"method\": \"mie\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 0\n    },\n    {\n      \"name\": \"miepython\",\n      \"method\": \"mie\",\n      \"available\": true,\n      \"gpu\": false,\n      \"auto_rank\": 0\n    },\n    {\n      \"name\": \"treams\",\n      \"method\": \"tmatrix\",\n      \"available\": true,\n      \"gpu\": false,\n      \"auto_rank\": 1\n    },\n    {\n      \"name\": \"lightsmith-bem\",\n      \"method\": \"bem\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 2\n    },\n    {\n      \"name\": \"lightsmith-dda\",\n      \"method\": \"dda\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 3\n    },\n    {\n      \"name\": \"lightsmith-fdtd\",\n      \"method\": \"fdtd\",\n      \"available\": true,\n      \"gpu\": true,\n      \"auto_rank\": 4\n    },\n    {\n      \"name\": \"lightsmith-quasistatic\",\n      \"method\": \"quasistatic\",\n      \"available\": true,\n      \"gpu\": false,\n      \"auto_rank\": null\n    }\n  ],\n  \"example\": {\n    \"kind\": \"scattering\",\n    \"particles\": [\n      {\n        \"shape\": {\n          \"kind\": \"sphere\",\n          \"radius_nm\": 40\n        },\n        \"material\": {\n          \"kind\": \"library\",\n          \"name\": \"Au\",\n          \"dataset\": \"Johnson-Christy\"\n        }\n      }\n    ],\n    \"medium_index\": 1.33,\n    \"wavelengths\": {\n      \"start_nm\": 400,\n      \"stop_nm\": 800,\n      \"num\": 81\n    }\n  }\n}"
+      }
+     ],
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "CAQSqQcKEAgTGAI4AUIIdGhpbmtpbmcSDBHH/j6+iOy7BAqBxhoMt7uxk1wkpA1+iAKaIjBGCM0MUIjoozClr5XUnGMGs9es4b8sQ8H8ia7G/alIUhIUDrcLn/xlqh0AJwVi0MkqxgZYDtlYLHoR1DIR6zFk8XlaQsJ2FlAIzRLJ9eqlSWXSYKKljudXeTnaIVfhTGnzscfdh1cUIXtVNHbxyQF6x5ig+edfWTIgQ8MvcCNjop1whlpyt/sA/I77rc2yQNdkhNlin1ZnWl/YEtC0FVvHta4CVVK846OQm1oSy9di6p3vV+eFO6+EnM02K8ItPBZOyOOhED1shX09+aY5Lbpdsd83pRAeK0lcc5Z2Jp5zqBpLZ/TbKoclGGdjIgyQetqwhXcoZchM6FSyskaEBpGapdKhZyI4yp3FTNAGOL/ganVdNfnAtKV4W3mBEbcWpH//QUM3RNcJbzCKGvZ8z+AI5JMGJueqXvVbeWN6tUtUdhvvj62gZvNPOJt0AG0oku9fNotCq8I/Zp76yM/I+A+96qMp4W+gK2QthQ+xUP9ZhoI4h1viiSPl2+pDLRTAwjBwj/q6yVgemB+zNJblMfro3p0ASrp4w5rxFowTOpcxbS5F/3x3PRSnPQnv7P6D+QeKFpX7s/uwLNZUu4GdJaihEO7omCcVE90LxYt08PDnsxmu14HTNUq8VKOwYzDMT48/HHRO1YXuvCjxjKRB58qCizKglSCXRcj/aDxFbqbyeYgkFkypxwYzwhXoS2qN3ovj7pwi2VXzkGuEw04OqA/MWSu6g3t4opp/hwLoPWEO+Z+fgIlorakUn/4F2U6/OKUoQBQyLPp2WipvyH8IinwsdHNl1KGSfRhcR2hU7FSOTL5CaAYotcd5qg8xlbhmcubLI/2BQhOQoZD+1Xs6KYKiVvYluvs0fI/xWsFru6e3bGAmlpkgp2xope4uRDK9vP+bX164E/fuqz0/GXBoNbh0BA0QZprsj6VJaMynJhvjpX1W881DYPoYLxmNEvvrpjG2jhNbMf58zE2iXqSbE8JmDz1jkLgRD0ddMvx3ALEDrMaajacMfafUYywiP0saa/mFhiPp+NEXlALB3xJ0h7SbuEFeu3JTVoX7ikS8GMV+PIzBa1UUvv4sOvuGmIkf572BYzFqRWL/XdTZxqFmHpSRTVBidZPkHX5QrnV5zumpgyR9oi5JOdrq4xMVWWmMTq1oJApUYYNsCpob8a1wiWl5ZWM57cspNYpPGAE=",
+     "thinking": "Johnson-Christy stops short of 2500, so I'll look at Rakic-LD instead, which reaches 6199 nm as a Lorentz-Drude fit to measured data. I could also check refractiveindex.info for the Olmon or Babar-Weaver measurements, and I'm planning to use Rakic-LD and cross-check it against Olmon there.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_013Z3D86VTiqysMjQuPVwaom",
+     "input": {
+      "material": {
+       "kind": "library",
+       "name": "Au",
+       "dataset": "Rakic-LD"
+      },
+      "wavelengths_nm": [
+       2500
+      ]
+     },
+     "name": "get_material",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    },
+    {
+     "id": "toolu_01TtZBh2uu2dgLD7d5UH1siX",
+     "input": {
+      "material": {
+       "refractiveindex": {
+        "shelf": "main",
+        "book": "Au",
+        "page": "Olmon-sc"
+       }
+      },
+      "wavelengths_nm": [
+       2500
+      ]
+     },
+     "name": "get_material",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_013Z3D86VTiqysMjQuPVwaom",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\n  \"material_json\": {\n    \"kind\": \"library\",\n    \"name\": \"Au\",\n    \"dataset\": \"Rakic-LD\"\n  },\n  \"material_json_note\": null,\n  \"source\": \"A. D. Raki\u0107, A. B. Djuri\u0161ic, J. M. Elazar, M. L. Majewski. Optical properties of metallic films for vertical-cavity optoelectronic devices. Appl. Opt. 37, 5271-5283 (1998); [Calculation script (Python)] Data: refractiveindex.info database (CC0-1.0), https://refractiveindex.info/?shelf=main&book=Au&page=Rakic-LD (snapshot c5c2f188e8); cite also M. N. Polyanskiy, Sci. Data 11, 94 (2024), doi:10.1038/s41597-023-02898-2.\",\n  \"range_nm\": [\n    247.97,\n    6199.2\n  ],\n  \"units\": {\n    \"wavelength\": \"nm (vacuum)\",\n    \"convention\": \"exp(-i omega t): k > 0 and Im(eps) > 0 mean loss\"\n  },\n  \"samples\": [\n    {\n      \"wavelength_nm\": 2500.0,\n      \"n\": 1.24367960199005,\n      \"k\": 15.81193034825871,\n      \"eps_real\": -248.47040238577867,\n      \"eps_imag\": 39.32995048443357\n    }\n  ]\n}"
+      }
+     ],
+     "is_error": false
+    },
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_01TtZBh2uu2dgLD7d5UH1siX",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\n  \"material_json\": {\n    \"kind\": \"tabulated\",\n    \"wavelength_nm\": [\n      300.0,\n      310.0,\n      320.0,\n      330.0,\n      340.0,\n      350.0,\n      360.0,\n      370.0,\n      380.0,\n      390.0,\n      400.0,\n      410.0,\n      420.0,\n      430.0,\n      440.0,\n      450.0,\n      460.0,\n      470.0,\n      480.0,\n      490.0,\n      500.0,\n      510.0,\n      520.0,\n      530.0,\n      540.0,\n      550.0,\n      560.0,\n      570.0,\n      580.0,\n      590.0,\n      600.0,\n      610.0,\n      620.0,\n      630.0,\n      640.0,\n      650.0,\n      660.0,\n      670.0,\n      680.0,\n      690.0,\n      700.0,\n      710.0,\n      720.0,\n      730.0,\n      740.0,\n      750.0,\n      760.0,\n      770.0,\n      780.0,\n      790.0,\n      800.0,\n      810.0,\n      820.0,\n      830.0,\n      840.0,\n      850.0,\n      860.0,\n      870.0,\n      880.0,\n      890.0,\n      900.0,\n      910.0,\n      920.0,\n      930.0,\n      940.0,\n      950.0,\n      960.0,\n      970.0,\n      980.0,\n      990.0,\n      1000.0,\n      1010.0,\n      1020.0,\n      1030.0,\n      1040.0,\n      1050.0,\n      1060.0,\n      1070.0,\n      1080.0,\n      1090.0,\n      1100.0,\n      1110.0,\n      1120.0,\n      1130.0,\n      1140.0,\n      1150.0,\n      1160.0,\n      1170.0,\n      1180.0,\n      1190.0,\n      1200.0,\n      1210.0,\n      1220.0,\n      1230.0,\n      1240.0,\n      1250.0,\n      1260.0,\n      1270.0,\n      1280.0,\n      1290.0,\n      1300.0,\n      1310.0,\n      1320.0,\n      1330.0,\n      1340.0,\n      1350.0,\n      1430.0,\n      1440.0,\n      1450.0,\n      1460.0,\n      1470.0,\n      1480.0,\n      1490.0,\n      1500.0,\n      1510.0,\n      1520.0,\n      1530.0,\n      1540.0,\n      1550.0,\n      1560.0,\n      1570.0,\n      1580.0,\n      1590.0,\n      1600.0,\n      1610.0,\n      1620.0,\n      1630.0,\n      1640.0,\n      1650.0,\n      1660.0,\n      1670.0,\n      1680.0,\n      1690.0,\n      1700.0,\n      1710.0,\n      1720.0,\n      1730.0,\n      1740.0,\n      1750.0,\n      1760.0,\n      1770.0,\n      1780.0,\n      1790.0,\n      1800.0,\n      1810.0,\n      1820.0,\n      1830.0,\n      1840.0,\n      1850.0,\n      1860.0,\n      1870.0,\n      1880.0,\n      1890.0,\n      1900.0,\n      1910.0,\n      1920.0,\n      1930.0,\n      1940.0,\n      1950.0,\n      1960.0,\n      1970.0,\n      1980.0,\n      1990.0,\n      2000.0,\n      2007.0000000000002,\n      2019.0000000000002,\n      2025.0,\n      2037.9999999999998,\n      2045.0,\n      2058.0,\n      2064.0,\n      2077.0,\n      2084.0,\n      2098.0,\n      2104.0,\n      2118.0,\n      2125.0,\n      2139.0,\n      2146.0,\n      2153.0,\n      2168.0,\n      2175.0,\n      2190.0,\n      2197.0,\n      2205.0,\n      2220.0,\n      2227.0,\n      2235.0,\n      2243.0,\n      2258.0,\n      2266.0,\n      2274.0,\n      2282.0,\n      2298.0,\n      2307.0,\n      2315.0,\n      2323.0,\n      2340.0,\n      2348.0,\n      2357.0,\n      2365.0,\n      2374.0,\n      2383.0,\n      2392.0,\n      2409.0,\n      2418.0,\n      2427.0,\n      2437.0,\n      2446.0,\n      2455.0,\n      2464.0,\n      2474.0,\n      2483.0,\n      2493.0,\n      2502.0,\n      2512.0,\n      2522.0,\n      2532.0,\n      2542.0,\n      2552.0,\n      2562.0,\n      2572.0,\n      2582.0,\n      2593.0,\n      2603.0,\n      2613.0,\n      2624.0,\n      2635.0,\n      2645.0,\n      2656.0,\n      2667.0,\n      2678.0,\n      2689.0,\n      2701.0,\n      2712.0,\n      2723.0,\n      2735.0,\n      2746.0,\n      2758.0,\n      2770.0,\n      2782.0,\n      2794.0,\n      2806.0,\n      2818.0,\n      2830.0,\n      2843.0,\n      2855.0,\n      2868.0,\n      2881.0,\n      2893.0,\n      2906.0,\n      2919.0,\n      2933.0,\n      2946.0,\n      2959.0,\n      2973.0,\n      2987.0,\n      3001.0,\n      3015.0,\n      3029.0,\n      3043.0,\n      3057.0,\n      3072.0,\n      3086.0,\n      3101.0,\n      3116.0,\n      3131.0,\n      3146.0,\n      3162.0,\n      3177.0,\n      3193.0,\n      3209.0,\n      3224.0,\n      3241.0,\n      3257.0,\n      3273.0,\n      3290.0,\n      3307.0,\n      3324.0,\n      3341.0,\n      3358.0,\n      3376.0,\n      3393.0,\n      3411.0,\n      3429.0,\n      3447.0,\n      3466.0,\n      3485.0,\n      3503.0,\n      3522.0,\n      3542.0,\n      3561.0,\n      3581.0,\n      3601.0,\n      3621.0,\n      3641.0,\n      3662.0,\n      3683.0,\n      3704.0,\n      3725.0,\n      3746.0,\n      3768.0,\n      3790.0,\n      3812.0,\n      3835.0,\n      3858.0,\n      3881.0,\n      3904.0,\n      3928.0,\n      3952.0,\n      3976.0,\n      4001.0000000000005,\n      4026.0,\n      4051.0,\n      4075.9999999999995,\n      4102.0,\n      4128.0,\n      4155.0,\n      4181.0,\n      4209.0,\n      4236.0,\n      4264.0,\n      4292.0,\n      4321.0,\n      4350.0,\n      4379.0,\n      4409.0,\n      4439.0,\n      4470.0,\n      4501.0,\n      4532.0,\n      4564.0,\n      4597.0,\n      4629.0,\n      4663.0,\n      4697.0,\n      4731.0,\n      4766.0,\n      4801.0,\n      4837.0,\n      4873.0,\n      4910.0,\n      4947.0,\n      4986.0,\n      5024.0,\n      5063.0,\n      5103.0,\n      5144.0,\n      5185.0,\n      5227.0,\n      5269.0,\n      5312.0,\n      5356.0,\n      5401.0,\n      5446.0,\n      5493.0,\n      5539.0,\n      5587.0,\n      5636.0,\n      5685.0,\n      5736.0,\n      5787.0,\n      5839.0,\n      5892.0,\n      5946.0,\n      6001.0,\n      6057.0,\n      6114.0,\n      6173.0,\n      6232.0,\n      6292.0,\n      6354.0,\n      6417.0,\n      6481.0,\n      6547.0,\n      6613.0,\n      6682.0,\n      6751.0,\n      6822.0,\n      6895.0,\n      6969.0,\n      7045.0,\n      7122.0,\n      7201.0,\n      7282.0,\n      7365.0,\n      7450.0,\n      7536.0,\n      7625.0,\n      7716.0,\n      7809.0,\n      7904.0,\n      8000.999999999999,\n      8101.000000000001,\n      8204.0,\n      8309.0,\n      8417.0,\n      8528.0,\n      8642.0,\n      8758.0,\n      8878.0,\n      9002.0,\n      9128.0,\n      9259.0,\n      9393.0,\n      9531.0,\n      9673.0,\n      9820.0,\n      9971.0,\n      10130.0,\n      10290.0,\n      10450.0,\n      10630.0,\n      10800.0,\n      10990.0,\n      11170.0,\n      11370.0,\n      11570.0,\n      11780.0,\n      12000.0,\n      12230.0,\n      12460.0,\n      12710.0,\n      12960.0,\n      13230.0,\n      13500.0,\n      13790.0,\n      14090.0,\n      14400.0,\n      14730.0,\n      15070.0,\n      15430.0,\n      15810.0,\n      16200.0,\n      16620.0,\n      17060.0,\n      17520.0,\n      18000.0,\n      18520.0,\n      19060.0,\n      19640.0,\n      20250.0,\n      20910.0,\n      21600.0,\n      22350.0,\n      23150.0,\n      24000.0,\n      24930.0\n    ],\n    \"n_real\": [\n      1.562,\n      1.609,\n      1.642,\n      1.656,\n      1.65,\n      1.627,\n      1.595,\n      1.566,\n      1.55,\n      1.549,\n      1.554,\n      1.552,\n      1.533,\n      1.503,\n      1.473,\n      1.444,\n      1.399,\n      1.315,\n      1.179,\n      1.003,\n      0.8181,\n      0.6582,\n      0.5376,\n      0.4515,\n      0.3897,\n      0.3437,\n      0.3078,\n      0.279,\n      0.2553,\n      0.2353,\n      0.2184,\n      0.204,\n      0.1916,\n      0.1809,\n      0.1717,\n      0.1638,\n      0.157,\n      0.1511,\n      0.146,\n      0.1417,\n      0.138,\n      0.1348,\n      0.1322,\n      0.13,\n      0.1282,\n      0.1268,\n      0.1257,\n      0.1248,\n      0.1243,\n      0.1239,\n      0.1238,\n      0.1239,\n      0.1241,\n      0.1245,\n      0.1251,\n      0.1258,\n      0.1266,\n      0.1275,\n      0.1286,\n      0.1297,\n      0.1309,\n      0.1323,\n      0.1337,\n      0.1351,\n      0.1367,\n      0.1383,\n      0.14,\n      0.1417,\n      0.1435,\n      0.1453,\n      0.1472,\n      0.1491,\n      0.1511,\n      0.1531,\n      0.1552,\n      0.1573,\n      0.1594,\n      0.1616,\n      0.1638,\n      0.166,\n      0.1683,\n      0.1705,\n      0.1729,\n      0.1752,\n      0.1776,\n      0.18,\n      0.1824,\n      0.1849,\n      0.1874,\n      0.1899,\n      0.1924,\n      0.1949,\n      0.1975,\n      0.2001,\n      0.2027,\n      0.2053,\n      0.2079,\n      0.2106,\n      0.2133,\n      0.216,\n      0.2187,\n      0.2214,\n      0.2241,\n      0.2269,\n      0.2297,\n      0.2325,\n      0.2553,\n      0.2582,\n      0.2611,\n      0.2644,\n      0.2678,\n      0.2712,\n      0.2747,\n      0.2782,\n      0.2818,\n      0.2854,\n      0.2891,\n      0.2928,\n      0.2965,\n      0.3003,\n      0.3042,\n      0.3081,\n      0.312,\n      0.3161,\n      0.3201,\n      0.3242,\n      0.3284,\n      0.3326,\n      0.3369,\n      0.3412,\n      0.3457,\n      0.3501,\n      0.3546,\n      0.3592,\n      0.3639,\n      0.3686,\n      0.3733,\n      0.3782,\n      0.3831,\n      0.3881,\n      0.3931,\n      0.3982,\n      0.4034,\n      0.4087,\n      0.414,\n      0.4194,\n      0.4249,\n      0.4305,\n      0.4361,\n      0.4418,\n      0.4476,\n      0.4535,\n      0.4595,\n      0.4655,\n      0.4717,\n      0.4779,\n      0.4842,\n      0.4906,\n      0.4971,\n      0.5037,\n      0.5104,\n      0.5172,\n      0.5241,\n      0.5294,\n      0.5345,\n      0.541,\n      0.5443,\n      0.551,\n      0.5544,\n      0.5613,\n      0.5647,\n      0.5718,\n      0.5754,\n      0.5827,\n      0.5864,\n      0.5939,\n      0.5977,\n      0.6054,\n      0.6093,\n      0.6133,\n      0.6213,\n      0.6254,\n      0.6336,\n      0.6378,\n      0.6421,\n      0.6507,\n      0.655,\n      0.6594,\n      0.6639,\n      0.6729,\n      0.6775,\n      0.6822,\n      0.6869,\n      0.6964,\n      0.7012,\n      0.7061,\n      0.711,\n      0.7211,\n      0.7262,\n      0.7313,\n      0.7365,\n      0.7418,\n      0.7471,\n      0.7525,\n      0.7634,\n      0.7689,\n      0.7745,\n      0.7802,\n      0.786,\n      0.7918,\n      0.7976,\n      0.8036,\n      0.8096,\n      0.8156,\n      0.8218,\n      0.828,\n      0.8342,\n      0.8406,\n      0.847,\n      0.8535,\n      0.86,\n      0.8667,\n      0.8734,\n      0.8802,\n      0.8871,\n      0.894,\n      0.9011,\n      0.9082,\n      0.9154,\n      0.9227,\n      0.9301,\n      0.9376,\n      0.9451,\n      0.9528,\n      0.9605,\n      0.9683,\n      0.9763,\n      0.9843,\n      0.9924,\n      1.001,\n      1.009,\n      1.017,\n      1.026,\n      1.035,\n      1.043,\n      1.052,\n      1.061,\n      1.07,\n      1.08,\n      1.089,\n      1.098,\n      1.108,\n      1.118,\n      1.128,\n      1.138,\n      1.148,\n      1.158,\n      1.168,\n      1.179,\n      1.189,\n      1.2,\n      1.211,\n      1.222,\n      1.233,\n      1.245,\n      1.256,\n      1.268,\n      1.28,\n      1.292,\n      1.304,\n      1.317,\n      1.329,\n      1.342,\n      1.355,\n      1.368,\n      1.381,\n      1.395,\n      1.409,\n      1.422,\n      1.437,\n      1.451,\n      1.465,\n      1.48,\n      1.495,\n      1.51,\n      1.526,\n      1.541,\n      1.557,\n      1.573,\n      1.59,\n      1.606,\n      1.623,\n      1.64,\n      1.658,\n      1.676,\n      1.694,\n      1.712,\n      1.73,\n      1.749,\n      1.769,\n      1.788,\n      1.808,\n      1.828,\n      1.848,\n      1.869,\n      1.89,\n      1.912,\n      1.934,\n      1.956,\n      1.979,\n      2.002,\n      2.025,\n      2.049,\n      2.073,\n      2.098,\n      2.123,\n      2.149,\n      2.175,\n      2.201,\n      2.228,\n      2.256,\n      2.284,\n      2.312,\n      2.341,\n      2.371,\n      2.401,\n      2.432,\n      2.463,\n      2.495,\n      2.527,\n      2.56,\n      2.594,\n      2.628,\n      2.663,\n      2.699,\n      2.735,\n      2.773,\n      2.81,\n      2.849,\n      2.889,\n      2.929,\n      2.97,\n      3.012,\n      3.055,\n      3.098,\n      3.143,\n      3.189,\n      3.235,\n      3.283,\n      3.331,\n      3.381,\n      3.432,\n      3.483,\n      3.536,\n      3.59,\n      3.646,\n      3.702,\n      3.76,\n      3.82,\n      3.88,\n      3.942,\n      4.006,\n      4.07,\n      4.137,\n      4.205,\n      4.275,\n      4.346,\n      4.419,\n      4.494,\n      4.57,\n      4.649,\n      4.73,\n      4.812,\n      4.897,\n      4.984,\n      5.073,\n      5.164,\n      5.258,\n      5.354,\n      5.452,\n      5.554,\n      5.658,\n      5.764,\n      5.874,\n      5.987,\n      6.102,\n      6.221,\n      6.344,\n      6.469,\n      6.598,\n      6.731,\n      6.868,\n      7.008,\n      7.153,\n      7.302,\n      7.455,\n      7.613,\n      7.775,\n      7.942,\n      8.115,\n      8.292,\n      8.475,\n      8.664,\n      8.858,\n      9.058,\n      9.265,\n      9.478,\n      9.698,\n      9.925,\n      10.16,\n      10.4,\n      10.65,\n      10.91,\n      11.17,\n      11.45,\n      11.73,\n      12.02,\n      12.33,\n      12.64,\n      12.96,\n      13.3,\n      13.64,\n      14.0,\n      14.37,\n      14.75,\n      15.14,\n      15.55,\n      15.97,\n      16.4,\n      16.85,\n      17.32,\n      17.8,\n      18.29,\n      18.81,\n      19.34,\n      19.88,\n      20.45,\n      21.03,\n      21.63,\n      22.25,\n      22.88,\n      23.54,\n      24.21,\n      24.91,\n      25.62,\n      26.35,\n      27.1,\n      27.87\n    ],\n    \"n_imag\": [\n      1.827,\n      1.836,\n      1.825,\n      1.804,\n      1.784,\n      1.773,\n      1.778,\n      1.8,\n      1.832,\n      1.858,\n      1.869,\n      1.863,\n      1.85,\n      1.841,\n      1.834,\n      1.815,\n      1.774,\n      1.719,\n      1.677,\n      1.68,\n      1.745,\n      1.863,\n      2.007,\n      2.155,\n      2.298,\n      2.434,\n      2.563,\n      2.685,\n      2.803,\n      2.916,\n      3.026,\n      3.133,\n      3.237,\n      3.338,\n      3.438,\n      3.536,\n      3.632,\n      3.726,\n      3.819,\n      3.911,\n      4.002,\n      4.091,\n      4.18,\n      4.268,\n      4.354,\n      4.44,\n      4.525,\n      4.61,\n      4.694,\n      4.777,\n      4.859,\n      4.941,\n      5.023,\n      5.104,\n      5.185,\n      5.265,\n      5.345,\n      5.424,\n      5.503,\n      5.582,\n      5.66,\n      5.738,\n      5.816,\n      5.893,\n      5.97,\n      6.047,\n      6.124,\n      6.2,\n      6.276,\n      6.352,\n      6.428,\n      6.504,\n      6.579,\n      6.654,\n      6.729,\n      6.804,\n      6.878,\n      6.953,\n      7.027,\n      7.101,\n      7.175,\n      7.249,\n      7.323,\n      7.396,\n      7.47,\n      7.543,\n      7.616,\n      7.689,\n      7.762,\n      7.835,\n      7.908,\n      7.981,\n      8.053,\n      8.126,\n      8.198,\n      8.27,\n      8.342,\n      8.414,\n      8.486,\n      8.558,\n      8.63,\n      8.702,\n      8.773,\n      8.845,\n      8.916,\n      8.988,\n      9.556,\n      9.627,\n      9.698,\n      9.762,\n      9.825,\n      9.889,\n      9.952,\n      10.01,\n      10.08,\n      10.14,\n      10.2,\n      10.27,\n      10.33,\n      10.39,\n      10.45,\n      10.51,\n      10.57,\n      10.64,\n      10.7,\n      10.76,\n      10.82,\n      10.88,\n      10.94,\n      11.0,\n      11.06,\n      11.12,\n      11.18,\n      11.24,\n      11.3,\n      11.36,\n      11.42,\n      11.48,\n      11.53,\n      11.59,\n      11.65,\n      11.71,\n      11.77,\n      11.83,\n      11.88,\n      11.94,\n      12.0,\n      12.06,\n      12.11,\n      12.17,\n      12.23,\n      12.29,\n      12.34,\n      12.4,\n      12.46,\n      12.51,\n      12.57,\n      12.62,\n      12.68,\n      12.74,\n      12.79,\n      12.85,\n      12.9,\n      12.95,\n      13.0,\n      13.08,\n      13.13,\n      13.21,\n      13.25,\n      13.34,\n      13.38,\n      13.47,\n      13.51,\n      13.6,\n      13.64,\n      13.73,\n      13.78,\n      13.87,\n      13.92,\n      13.96,\n      14.06,\n      14.1,\n      14.2,\n      14.25,\n      14.3,\n      14.4,\n      14.45,\n      14.5,\n      14.55,\n      14.65,\n      14.7,\n      14.75,\n      14.8,\n      14.91,\n      14.96,\n      15.02,\n      15.07,\n      15.18,\n      15.24,\n      15.29,\n      15.35,\n      15.4,\n      15.46,\n      15.52,\n      15.63,\n      15.69,\n      15.75,\n      15.81,\n      15.87,\n      15.93,\n      15.99,\n      16.05,\n      16.11,\n      16.17,\n      16.24,\n      16.3,\n      16.36,\n      16.43,\n      16.49,\n      16.56,\n      16.62,\n      16.69,\n      16.75,\n      16.82,\n      16.89,\n      16.96,\n      17.03,\n      17.09,\n      17.16,\n      17.23,\n      17.3,\n      17.38,\n      17.45,\n      17.52,\n      17.59,\n      17.67,\n      17.74,\n      17.82,\n      17.89,\n      17.97,\n      18.04,\n      18.12,\n      18.2,\n      18.28,\n      18.36,\n      18.44,\n      18.52,\n      18.6,\n      18.68,\n      18.76,\n      18.85,\n      18.93,\n      19.02,\n      19.1,\n      19.19,\n      19.27,\n      19.36,\n      19.45,\n      19.54,\n      19.63,\n      19.72,\n      19.81,\n      19.91,\n      20.0,\n      20.1,\n      20.19,\n      20.29,\n      20.38,\n      20.48,\n      20.58,\n      20.68,\n      20.78,\n      20.88,\n      20.99,\n      21.09,\n      21.2,\n      21.3,\n      21.41,\n      21.52,\n      21.63,\n      21.74,\n      21.85,\n      21.96,\n      22.07,\n      22.19,\n      22.3,\n      22.42,\n      22.54,\n      22.66,\n      22.78,\n      22.9,\n      23.02,\n      23.15,\n      23.28,\n      23.4,\n      23.53,\n      23.66,\n      23.79,\n      23.93,\n      24.06,\n      24.2,\n      24.33,\n      24.47,\n      24.61,\n      24.75,\n      24.9,\n      25.04,\n      25.19,\n      25.34,\n      25.49,\n      25.64,\n      25.79,\n      25.95,\n      26.11,\n      26.27,\n      26.43,\n      26.59,\n      26.76,\n      26.92,\n      27.09,\n      27.26,\n      27.44,\n      27.61,\n      27.79,\n      27.97,\n      28.15,\n      28.34,\n      28.52,\n      28.71,\n      28.9,\n      29.1,\n      29.3,\n      29.5,\n      29.7,\n      29.9,\n      30.11,\n      30.32,\n      30.53,\n      30.75,\n      30.97,\n      31.19,\n      31.42,\n      31.65,\n      31.88,\n      32.12,\n      32.35,\n      32.6,\n      32.84,\n      33.09,\n      33.34,\n      33.6,\n      33.86,\n      34.13,\n      34.4,\n      34.67,\n      34.95,\n      35.23,\n      35.51,\n      35.8,\n      36.1,\n      36.4,\n      36.71,\n      37.01,\n      37.33,\n      37.65,\n      37.98,\n      38.31,\n      38.64,\n      38.99,\n      39.33,\n      39.69,\n      40.05,\n      40.42,\n      40.79,\n      41.17,\n      41.56,\n      41.95,\n      42.36,\n      42.76,\n      43.18,\n      43.61,\n      44.04,\n      44.48,\n      44.93,\n      45.39,\n      45.86,\n      46.34,\n      46.82,\n      47.32,\n      47.83,\n      48.35,\n      48.88,\n      49.42,\n      49.97,\n      50.53,\n      51.11,\n      51.7,\n      52.3,\n      52.92,\n      53.55,\n      54.2,\n      54.86,\n      55.53,\n      56.23,\n      56.94,\n      57.66,\n      58.41,\n      59.17,\n      59.96,\n      60.76,\n      61.59,\n      62.44,\n      63.31,\n      64.2,\n      65.13,\n      66.07,\n      67.05,\n      68.05,\n      69.08,\n      70.15,\n      71.25,\n      72.38,\n      73.55,\n      74.76,\n      76.01,\n      77.3,\n      78.63,\n      80.02,\n      81.46,\n      82.95,\n      84.49,\n      86.1,\n      87.78,\n      89.52,\n      91.34,\n      93.24,\n      95.23,\n      97.32,\n      99.5,\n      101.8,\n      104.2,\n      106.8,\n      109.5,\n      112.3,\n      115.4,\n      118.6,\n      122.1,\n      125.8\n    ],\n    \"source\": \"R. L. Olmon, B. Slovick, T. W. Johnson, D. Shelton, S.-H. Oh, G. D. Boreman, M. B. Raschke. Optical dielectric function of gold. Phys. Rev. B 86, 235147 (2012) (See Supplemental Material) Data: refractiveindex.info database (CC0 1.0), https://refractiveindex.info/?shelf=main&book=Au&page=Olmon-sc; cite also M. N. Polyanskiy, Sci. Data 11, 94 (2024), doi:10.1038/s41597-023-02898-2.\"\n  },\n  \"material_json_note\": \"tabulated data: paste material_json into the problem as is\",\n  \"source\": \"R. L. Olmon, B. Slovick, T. W. Johnson, D. Shelton, S.-H. Oh, G. D. Boreman, M. B. Raschke. Optical dielectric function of gold. Phys. Rev. B 86, 235147 (2012) (See Supplemental Material) Data: refractiveindex.info database (CC0 1.0), https://refractiveindex.info/?shelf=main&book=Au&page=Olmon-sc; cite also M. N. Polyanskiy, Sci. Data 11, 94 (2024), doi:10.1038/s41597-023-02898-2.\",\n  \"range_nm\": [\n    300.0,\n    24930.0\n  ],\n  \"units\": {\n    \"wavelength\": \"nm (vacuum)\",\n    \"convention\": \"exp(-i omega t): k > 0 and Im(eps) > 0 mean loss\"\n  },\n  \"samples\": [\n    {\n      \"wavelength_nm\": 2500.0,\n      \"n\": 0.8204222222222222,\n      \"k\": 16.224444444444444,\n      \"eps_real\": -262.55950490814814,\n      \"eps_imag\": 26.621789530864195\n    }\n  ]\n}"
+      }
+     ],
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "CAQSowcKEAgTGAI4AUIIdGhpbmtpbmcSDAa8xJ3m9YXS18vAgBoM1Tca/E03BHIIN4QOIjDDoXVxn2MPz2tPDslskqwlsj+k4Lqq6UWC5CpoI+/50M6PbHzKSPWolih4tbBz8LQqwAY+fmbThLmr5+6BIwTVPXUpm/j2eg2w5f2TVxDXPN5f3kfpISM3k8KfD3/zYiIJV696kSfCIZ/kluw0bBen+9p38Grr/ZRjEBacWPsyvvJUtRlPOb7QmuB1AwbLLYmPswaEVBM4afYOAAk+rJYanuV6rVc8k/7ZXic49+YvFxb9ifh5Qy2fkGP0hscc1xO+Vyj+3weHCOBUl3oZU4rmgLEU6ZZAuGe98auDjFz+tFhhLSVG0gSUZQvL+rhcdjBWKIKSqiJdHS/6ThPICwc8M0HgWkEK8/5fKfudV7lCf//Zf5P1LuSIEp5sGmHalqW7xoLfQfyLuVaqvVduELkYu1PHndqnKUiodEAE87wmF2sWS2jaM5FMIGs43C4JdeDNfMNMP59c3Unpo++awXZKvB/QhrR2S1q0hSbCJ0N5RpmxQpnHoGTSOtTQojfY8dKJ+727y0p3d7hsBEo8eg3ajFapdZTgxEF3tr9Rdn+b0/fTbj8CWh5nkSk0RvTKJo5PQpbsqcDg8kyFFZ+8yEiJWQapFqrSHzyTX34MVWLGFVkzZ3ioXfcElMrMyJYkxrQVD4ZdqEh0LMyQjlR6qY7GPim8ydmGADL5DgmwlAzZhW6OsEoMP8Z/UGX/xbOIcQiG1ZktnX3n+Mva85W0CXpfqM1CwFP63KBwvMh1vDK+5fSAvOuC0ftPpwsQ+XLwGHqEB/zjcU7mkhLA3Urk23ijuzOxQHS2is2wjBFA2R+QwddEOk2F/dmtnYL4hqM1k/Jzvjd1tIaHZWPXx4Z8t1zpddHDdTLW0e+ikmbZP31s7Zj7kKP6z04E9GD7AiSMiQSSv5/oOUY01p7jdWfgOwTJdhy1yEGRLFCRv7uWVE8W3h4miZY917TKQTzI4gmDD5SpyoH7DWfmjS2iZEStN7O1l4cbJHDs1iDmqGzfkL7esthQWbneFXz1dyNNHt4lmRiEU8ni2f+sEqPwjONc0H6JTdx/VqCXxUILBo0uFl+6w4adkGOVA6PKXawFwAQ5uK/eLHBzA9PxjeBdquIb8Vp9QbHI3vqbkmbu+GnTBBKzM2uOaGvtprjeTsXC5Z71Rojy0pheKAPAVcomGoQfrB/ebIBrGAE=",
+     "thinking": "I'm going with the bundled Rakic-LD fit, a Lorentz-Drude model based on measured data, and solving both models to get a range. For Rakic I'll use the library material, and for the tabulated Olmon data I'll pass a trimmed table around 2500. A few points will be passed through as well.\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_01DL587TQXA6KbkCAZzCkNqz",
+     "input": {
+      "problem": {
+       "kind": "scattering",
+       "particles": [
+        {
+         "shape": {
+          "kind": "sphere",
+          "radius_nm": 30
+         },
+         "material": {
+          "kind": "library",
+          "name": "Au",
+          "dataset": "Rakic-LD"
+         }
+        }
+       ],
+       "medium_index": 1.0,
+       "wavelengths": [
+        2500
+       ]
+      }
+     },
+     "name": "solve",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    },
+    {
+     "id": "toolu_01BFAXCZhnL3zLNmdtxeAgAZ",
+     "input": {
+      "problem": {
+       "kind": "scattering",
+       "particles": [
+        {
+         "shape": {
+          "kind": "sphere",
+          "radius_nm": 30
+         },
+         "material": {
+          "kind": "tabulated",
+          "wavelength_nm": [
+           2483.0,
+           2493.0,
+           2502.0,
+           2512.0
+          ],
+          "n_real": [
+           0.8096,
+           0.8156,
+           0.8218,
+           0.828
+          ],
+          "n_imag": [
+           16.11,
+           16.17,
+           16.24,
+           16.3
+          ],
+          "source": "Olmon et al. PRB 86, 235147 (2012), single-crystal, via refractiveindex.info"
+         }
+        }
+       ],
+       "medium_index": 1.0,
+       "wavelengths": [
+        2500
+       ]
+      }
+     },
+     "name": "solve",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_01DL587TQXA6KbkCAZzCkNqz",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\"status\": \"succeeded\", \"job_id\": \"eb2f7078c241b12c62153b60b5a21cbe\", \"job\": {\"job_id\": \"eb2f7078c241b12c62153b60b5a21cbe\", \"operation\": \"solve\", \"problem_kind\": \"scattering\", \"status\": \"succeeded\", \"progress\": 1.0, \"stage\": \"done\", \"message\": null, \"method\": \"auto\", \"methods\": null, \"device\": \"auto\", \"label\": null, \"runner\": \"thread\", \"created_at\": \"2026-11-09T23:34:11+00:00\", \"started_at\": \"2026-11-09T23:34:11+00:00\", \"finished_at\": \"2026-11-09T23:34:11+00:00\", \"elapsed_s\": 0.0, \"error\": null, \"resources\": {\"job\": \"lightsmith://jobs/eb2f7078c241b12c62153b60b5a21cbe\", \"result\": \"lightsmith://jobs/eb2f7078c241b12c62153b60b5a21cbe/result\", \"csv\": \"lightsmith://jobs/eb2f7078c241b12c62153b60b5a21cbe/result.csv\", \"plot\": \"lightsmith://jobs/eb2f7078c241b12c62153b60b5a21cbe/plot.png\"}, \"estimated_runtime_s\": 0.01}, \"summary\": {\"result_kind\": \"cross_sections\", \"method\": \"mie\", \"backend\": \"miepython\", \"warnings\": [], \"provenance\": {\"device\": \"cpu\", \"runtime_s\": 0.0006470999214798212, \"miepython_version\": \"3.3.1\"}, \"n_wavelengths\": 1, \"wavelength_range_nm\": [2500.0, 2500.0], \"units\": {\"cross_sections\": \"nm^2\", \"wavelength\": \"nm\"}, \"equivalent_radius_nm\": 30.0, \"peak_extinction\": {\"wavelength_nm\": 2500.0, \"c_ext_nm2\": 6.82685, \"c_sca_nm2\": 0.251626, \"c_abs_nm2\": 6.57523, \"q_ext\": 0.00241451}, \"c_ext_nm2_range\": [6.82685, 6.82685], \"albedo_at_peak\": 0.0368582}, \"next_step\": \"Full arrays: read lightsmith://jobs/eb2f7078c241b12c62153b60b5a21cbe/result (JSON) or lightsmith://jobs/eb2f7078c241b12c62153b60b5a21cbe/result.csv, or call get_result. Check summary.warnings.\"}"
+      }
+     ],
+     "is_error": false
+    },
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_01BFAXCZhnL3zLNmdtxeAgAZ",
+     "content": [
+      {
+       "type": "text",
+       "text": "{\"status\": \"succeeded\", \"job_id\": \"9e4950afe5b3566729c0827b49336690\", \"job\": {\"job_id\": \"9e4950afe5b3566729c0827b49336690\", \"operation\": \"solve\", \"problem_kind\": \"scattering\", \"status\": \"succeeded\", \"progress\": 1.0, \"stage\": \"done\", \"message\": null, \"method\": \"auto\", \"methods\": null, \"device\": \"auto\", \"label\": null, \"runner\": \"thread\", \"created_at\": \"2026-11-09T23:34:11+00:00\", \"started_at\": \"2026-11-09T23:34:11+00:00\", \"finished_at\": \"2026-11-09T23:34:11+00:00\", \"elapsed_s\": 0.0, \"error\": null, \"resources\": {\"job\": \"lightsmith://jobs/9e4950afe5b3566729c0827b49336690\", \"result\": \"lightsmith://jobs/9e4950afe5b3566729c0827b49336690/result\", \"csv\": \"lightsmith://jobs/9e4950afe5b3566729c0827b49336690/result.csv\", \"plot\": \"lightsmith://jobs/9e4950afe5b3566729c0827b49336690/plot.png\"}, \"estimated_runtime_s\": 0.01}, \"summary\": {\"result_kind\": \"cross_sections\", \"method\": \"mie\", \"backend\": \"miepython\", \"warnings\": [], \"provenance\": {\"device\": \"cpu\", \"runtime_s\": 0.00021399999968707561, \"miepython_version\": \"3.3.1\"}, \"n_wavelengths\": 1, \"wavelength_range_nm\": [2500.0, 2500.0], \"units\": {\"cross_sections\": \"nm^2\", \"wavelength\": \"nm\"}, \"equivalent_radius_nm\": 30.0, \"peak_extinction\": {\"wavelength_nm\": 2500.0, \"c_ext_nm2\": 4.55767, \"c_sca_nm2\": 0.251424, \"c_abs_nm2\": 4.30625, \"q_ext\": 0.00161195}, \"c_ext_nm2_range\": [4.55767, 4.55767], \"albedo_at_peak\": 0.055165}, \"next_step\": \"Full arrays: read lightsmith://jobs/9e4950afe5b3566729c0827b49336690/result (JSON) or lightsmith://jobs/9e4950afe5b3566729c0827b49336690/result.csv, or call get_result. Check summary.warnings.\"}"
+      }
+     ],
+     "is_error": false
+    }
+   ]
+  },
+  {
+   "role": "assistant",
+   "content": [
+    {
+     "signature": "CAQSjwwKEAgTGAI4AUIIdGhpbmtpbmcSDOFPpUKPDlb5L+HfnhoMN2/7Ny6qMMA6xHZBIjCZm62CF9U8oHK7jcNqVaiuU7WA8d+kvgJp3EVFowEzxOOcf8BCHmWyyqCoUfAAXDEqrAuxR+78HiYJuOlE4jXpwgsMqZdOG5fyd40Fai5Ttb7BGJnExQStKOBkBJ/eDGrms8tut2uzmIY/L3GBLSMl/z/xVoXRNiLnvcsFbeJkpbyevAOYYCOwzpvl0qKdobjC0HE4flFFCTmDhKRpnrlx+HmCuDehXPhhkiJbzRiqGANTl28w9JPsf+qJ8tEA8/xueV3lrFiZD239gFoHa/jzjv8CSkHSAsP1W35mUnYViC20ilGafhJSKxll5oqHEuRIxfDPJtzT8UN7EHkspGGQa3THXXdl4kWvI6lG+Tvy7NlV7jmBfwPTO2ArjgvDZuQ6RZyanR7eAAFNR+FjUYU560MO3iTL+Tj4Kjc29+mi9a3RG6u0ygjoo3k4gcnAuzE01djB6On76jGQnXgLZbzeKFohx4GOX4uqh5DIiWaTp3TlkSO16Pn8ahnKqmPsCu5oLQzzxnEbfrnONS5vE3oqnjJljKb74h6QTb5gpxwVB0lUyW4CGxZBLDNCpO3GWt3g69tBvQi4esamOny9bgp61DPzlYOVomvLG8ZvdeTgOV+egiKrxyOOMx2oR2IN8o1ncJAgmeoSlIn3TGDwn+HEBEnDOfva6wCa22iLmn0sfStLz6V3sclwG/4+bjJjwpXmRQYGecQT7V6rxUCLtSlrjdqc7ZTDD4/1b4RMHXvL2ehGk6SvnEeH1nclf/NJqltS7Non0A0bOpDePDq90snyxf4aWSVNoR+VLHgxtFHGMaveIWp9eK54o4yUtox5dk1kNf3mOEl2tKLQKPqHhBu4TXHZT+RvMpuNdpVRxOuOU9ljptJ1rXPZH7LLBaxgFr8d6iAl9qxmHVbZM2rr7820OWZ+k3Idp2vSlHgKNqwcIuSGIIfDZy/5RYCP6oVq3xtjLPd3osvOS84MGuoKwDqlHmbiztnBpWTii/hMDBtsYoMtoMUAdIL0XND80i7rCMJCIXxqiccSKnmGhsvfBehfz5YrSoYURelmkOUJ/bVkLQhuBgzkhbN5yKOr74gqp3+75RZxitH8FPzaJSqaS369ILyAGlBVHnhWaLZSvU3TmDPNPVQDJLkuZ+JNdtX9OCn86LFMPbMbLDO3Y9wT6EU85MGMvBa+fad0vWU1EST4vnJi0VDQZrMqIwKEuEm+fbbg4r3AGHYfhk8+Uc5B9uzG8R9WpJCZdHm+PYKXZyCuL5qeMNcQYt7Oal76q5FackpaixSvHqVDTAPo5wpXSnFXm6eu3TlFpqQr6fGtyywZKFbrCtQuEnTyOoZvUzC9pVMG3JZneKSj4j23VWLTgpRnQlNVCgWRGBLmUWPXSNjZlF6Jrmgcg9jm9eLxJTdDTARufsACUbhh6kA+UYoo/anCCJ7hbwi5ZxHOuJ7c32pi4Vt9+qcw967+L+5th0k4vHbiGwMMIgnE0fFdP5C2tLcWK5XPM2VGyTfGBHzJsIZB5ww3wPDlTbtMU+FQeehyem7maqAF5+PSHTFqgu9GS2Gh1JXzwurXaSd4qGcyVBa07JAMSxsggw9rqixzVI5uDCcl8zoHcBKDMzplX7aujOFhKrxGOyWmPOhc7OMKDtlcecxqfNMkmI99INcAxEVwKKpta1yg9htcpZFAkLmM7Nc42THE6rUyLsf/yTkGkYQ81dhhObYlopA8DdHbE0dFgUUaMQqMN8NVGSX6wdYuaHK2uYhfhaRzxT0l6WBBhhnrWuPvNnIgk4TIUUjn7J+7PWd28Rp14vhRganbIJlIGBaJyR+Jipx0DRo3CTKdDon4jILPPG22+PK1CwOkMbkZ2fKP4jxcKLq5WAcUt3wjwlySEoF+83EgCaPZAytklyjLEPpiJ2pREPICG8DzBzh51Ud2/Ur5uUDhmjZV8Aik0We3QUEmuag98Tn2/cyKJfFDwyNhEJBq5xqa6uTUa3ObCY8sssdz0kxs+wfYfXR0k2sYAQ==",
+     "thinking": "The gap between 6.8 and 4.6 comes down to absorption, which scales with Im(eps). I need to choose which dataset to report: Rakic-LD is a Lorentz-Drude fit to older measurements, while Olmon is a more recent direct measurement in the IR, and the user asked for measured or fitted data.\n\nI'm weighing whether the bundled Rakic-LD fit or the newer Olmon measurement better fits the request, since the bundled set is what the library has and the job of the fit is to cover the 2.5 \u00b5m wavelength. I'll report 6.83 from Rakic-LD and list 4.56 from Olmon as the alternative, and I'll also flag that a 30 nm particle likely absorbs more than bulk data suggests, because surface scattering raises Im(eps).\n\n",
+     "type": "thinking"
+    },
+    {
+     "id": "toolu_018QeZw7yVBYuq43YLuqUiPe",
+     "input": {
+      "values": {
+       "c_ext_nm2": 6.83
+      },
+      "declined": false,
+      "concerns": [
+       "The default gold dataset (Johnson-Christy) stops at 1937 nm, so it can't be used at 2500 nm without extrapolating. I used the Raki\u0107 et al. (1998) Lorentz-Drude fit to measured gold data instead. It covers 248\u20136199 nm and gives \u03b5 = \u2212248.5 + 39.3i at 2.5 \u00b5m.",
+       "The answer depends strongly on which gold dataset you use. At this wavelength, extinction is almost entirely absorption, and absorption is roughly proportional to Im(\u03b5). With the measured single-crystal data of Olmon et al. (2012), \u03b5 = \u2212262.6 + 26.6i, the same Mie calculation gives C_ext = 4.56 nm\u00b2 instead of 6.83 nm\u00b2. Expect about \u00b125% uncertainty from the choice of optical constants.",
+       "These are bulk optical constants. In a 30 nm-radius particle, electrons scattering off the surface add extra damping. This raises Im(\u03b5) and would make the absorption, and so C_ext, larger than these bulk-based values.",
+       "Other assumptions: a perfect sphere, a single particle in vacuum or air (n = 1.0) and plane-wave illumination. A sphere's response doesn't depend on polarisation. The solver gave no warnings."
+      ],
+      "summary": "The extinction cross-section is about 6.83 nm\u00b2 (Q_ext \u2248 0.0024). I got this from an exact Mie calculation for a 30 nm-radius gold sphere in air at 2500 nm, using the Raki\u0107 et al. Lorentz-Drude fit to measured gold data. Almost all of it is absorption (6.58 nm\u00b2); scattering is only 0.25 nm\u00b2.\n\nThe value depends a lot on the gold dataset. With Olmon et al.'s measured single-crystal data, the same calculation gives 4.56 nm\u00b2, because that data has a lower Im(\u03b5) at 2.5 \u00b5m. The scattering part is the same in both cases (0.25 nm\u00b2). So a fair answer is 5\u20137 nm\u00b2, with 6.8 nm\u00b2 as the main value from the Raki\u0107 fit. Because these are bulk optical constants, they likely somewhat underestimate absorption in a particle this small."
+     },
+     "name": "submit_answer",
+     "type": "tool_use",
+     "caller": {
+      "type": "direct"
+     }
+    }
+   ],
+   "stop_reason": "tool_use",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "role": "user",
+   "content": [
+    {
+     "type": "tool_result",
+     "tool_use_id": "toolu_018QeZw7yVBYuq43YLuqUiPe",
+     "content": "Answer recorded."
+    }
+   ]
+  }
+ ],
+ "original_grade": {
+  "task_id": "sca-au-midir-dataset",
+  "passed": true,
+  "score": 1.0,
+  "checks": [
+   {
+    "name": "value:c_ext_nm2",
+    "passed": true,
+    "required": true,
+    "detail": "reported 6.83, reference 6.82685 (rel 0.15)"
+   },
+   {
+    "name": "solved_kind",
+    "passed": true,
+    "required": true,
+    "detail": "2 successful scattering solve(s)"
+   },
+   {
+    "name": "wavelength:2500",
+    "passed": true,
+    "required": true,
+    "detail": "found [2500.0]"
+   }
+  ]
+ }
+}
