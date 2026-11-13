@@ -23,7 +23,7 @@
     "dipoles_per_diameter": 24,
     "precision": "single"
    },
-   "wall_s": 99.56,
+   "wall_s": 1.26,
    "dipoles": [
     7208
    ],
@@ -44,7 +44,7 @@
     "precision": "double",
     "tol": 1e-10
    },
-   "wall_s": 30.83,
+   "wall_s": 2.59,
    "dipoles": [
     7208
    ],
@@ -64,7 +64,7 @@
     "dipoles_per_diameter": 32,
     "precision": "single"
    },
-   "wall_s": 7.1,
+   "wall_s": 1.32,
    "dipoles": [
     17256
    ],
@@ -85,7 +85,7 @@
     "precision": "double",
     "tol": 1e-10
    },
-   "wall_s": 40.7,
+   "wall_s": 3.72,
    "dipoles": [
     17256
    ],
@@ -106,7 +106,7 @@
     "polarizability": "cm_rr",
     "max_iter": 20000
    },
-   "wall_s": 14.85,
+   "wall_s": 1.26,
    "dipoles": [
     2176
    ],
@@ -127,7 +127,7 @@
     "polarizability": "cm_rr",
     "max_iter": 20000
    },
-   "wall_s": 10.0,
+   "wall_s": 1.27,
    "dipoles": [
     7208
    ],
@@ -148,7 +148,7 @@
     "polarizability": "cm_rr",
     "max_iter": 20000
    },
-   "wall_s": 15.24,
+   "wall_s": 1.46,
    "dipoles": [
     17256
    ],
@@ -169,7 +169,7 @@
     "polarizability": "cm_rr",
     "max_iter": 20000
    },
-   "wall_s": 14.72,
+   "wall_s": 2.15,
    "dipoles": [
     57856
    ],
@@ -190,7 +190,7 @@
     "precision": "double",
     "tol": 1e-10
    },
-   "wall_s": 36.65,
+   "wall_s": 5.56,
    "dipoles": [
     2176
    ],
@@ -214,7 +214,7 @@
     "precision": "double",
     "tol": 1e-10
    },
-   "wall_s": 57.67,
+   "wall_s": 5.34,
    "dipoles": [
     7208
    ],
@@ -238,7 +238,7 @@
     "precision": "double",
     "tol": 1e-10
    },
-   "wall_s": 44.17,
+   "wall_s": 7.64,
    "dipoles": [
     17256
    ],
@@ -262,7 +262,7 @@
     "precision": "single",
     "max_iter": 20000
    },
-   "wall_s": 5.9,
+   "wall_s": 1.44,
    "dipoles": [
     24464
    ],
@@ -283,7 +283,7 @@
     "precision": "single",
     "max_iter": 20000
    },
-   "wall_s": 7.16,
+   "wall_s": 1.63,
    "dipoles": [
     33552
    ],
@@ -304,7 +304,7 @@
     "precision": "single",
     "max_iter": 20000
    },
-   "wall_s": 8.81,
+   "wall_s": 1.87,
    "dipoles": [
     44720
    ],
@@ -325,7 +325,7 @@
     "precision": "single",
     "max_iter": 20000
    },
-   "wall_s": 8.95,
+   "wall_s": 2.22,
    "dipoles": [
     57856
    ],
@@ -346,7 +346,7 @@
     "precision": "single",
     "max_iter": 20000
    },
-   "wall_s": 10.52,
+   "wall_s": 3.34,
    "dipoles": [
     92096
    ],
@@ -367,7 +367,7 @@
     "precision": "single",
     "max_iter": 20000
    },
-   "wall_s": 14.94,
+   "wall_s": 4.79,
    "dipoles": [
     137376
    ],
@@ -381,7 +381,22 @@
    "q_abs": 0.19499277932792008
   }
  ],
- "timestamp": "2026-11-01T13:07:32",
+ "timestamp": "2026-11-12T19:49:20",
+ "note": "timed with no other compute jobs on the machine (an interactive desktop with idle applications); machine_state holds the CPU and GPU load sampled before and after",
+ "machine_state": {
+  "before": {
+   "time": "2026-11-12T19:48:19",
+   "cpu_pct": 23.4,
+   "gpu_util_pct": 1.0,
+   "gpu_mem_used_mib": 686.0
+  },
+  "after": {
+   "time": "2026-11-12T19:49:20",
+   "cpu_pct": 11.7,
+   "gpu_util_pct": 1.0,
+   "gpu_mem_used_mib": 1662.0
+  }
+ },
  "doctor": {
   "numpy": "2.4.6",
   "torch": "2.11.0+cu128",

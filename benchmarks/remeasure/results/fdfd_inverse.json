@@ -1,6 +1,6 @@
 {
  "script": "benchmarks/remeasure/fdfd_inverse.py",
- "git_commit": "8c77224449e33dc32a8ae001d218a9a1e4272119",
+ "git_commit": "1aa640406b5ea27eec8c20779341677213bb3d6b",
  "cpu": "AMD Ryzen 5 5600X (AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD)",
  "gpu": "NVIDIA GeForce RTX 5070",
  "precision": "double (complex128) unless stated",
@@ -9,9 +9,9 @@
   "numpy": "2.4.6",
   "scipy": "1.15.3",
   "torch": "2.11.0+cu128",
-  "lightsmith": "0.1.0"
+  "lightsmith": "0.3.0"
  },
- "note": "Timings provisional: a long benchmark was running on the same GPU and the CPU was at ~100% load from other jobs (see snapshots: gpu_util_percent, cpu_load_percent); repeat on an idle machine before quoting speedups.",
+ "note": "Rows 1-3 and 5 and the timings of 2026-11-01 ran while another benchmark shared the GPU and CPU. Row 4 (GPU vs CPU timings) is timed with no other compute jobs on the machine (an interactive desktop with idle applications); machine_state holds the CPU and GPU load sampled before and after.",
  "entries": {
   "1": {
    "row": "Straight guide, |S21| | 1 | 1e-4 bound; 2e-9 reported",
@@ -278,10 +278,11 @@
     }
    ],
    "gpu_snapshot_before": {
-    "time": "2026-11-01T12:48:47-05:00",
-    "gpu_util_percent": 2.0,
-    "mem_used_mib": 2485.0,
-    "mem_total_mib": 12227.0
+    "time": "2026-11-12T10:43:01-05:00",
+    "gpu_util_percent": 1.0,
+    "mem_used_mib": 1836.0,
+    "mem_total_mib": 12227.0,
+    "cpu_load_percent": 23.0
    },
    "agreement_test_config": {
     "configuration": "tests/test_fdfd.py::test_gpu_matches_cpu: straight TE guide, dl=30 nm, port planes 1200 nm apart, 1550 nm; GPU solver torch-block-tridiagonal, double precision",
@@ -298,7 +299,6 @@
     "precision": "double (complex128) on both devices",
     "cpu": "AMD Ryzen 5 5600X, SciPy SuperLU (single-threaded factorisation)",
     "gpu": "NVIDIA GeForce RTX 5070, torch block-tridiagonal LU",
-    "provisional": "GPU shared with a long background benchmark during the measurement; speedups provisional",
     "cases": [
      {
       "dl_nm": 25.0,
@@ -309,28 +309,29 @@
       "unknowns": 20064,
       "block_lu_memory_bytes_estimate": 84750336,
       "cpu_wall_s": [
-       2.2995642000169028,
-       2.8713338999950793,
-       2.854607799992664
+       0.35749690000375267,
+       0.3937331000051927,
+       0.4179673999969964
       ],
       "cpu_solver": "scipy-superlu",
-      "cpu_solver_runtime_s": 2.854193100007251,
+      "cpu_solver_runtime_s": 0.41744050000124844,
       "gpu_snapshot": {
-       "time": "2026-11-01T12:49:15-05:00",
-       "gpu_util_percent": 8.0,
-       "mem_used_mib": 2936.0,
-       "mem_total_mib": 12227.0
+       "time": "2026-11-12T10:43:06-05:00",
+       "gpu_util_percent": 1.0,
+       "mem_used_mib": 2147.0,
+       "mem_total_mib": 12227.0,
+       "cpu_load_percent": 8.0
       },
       "gpu_wall_s": [
-       1.1955758999974933,
-       1.31262670000433,
-       1.2483358999888878
+       0.26317070000368403,
+       0.26795149999816203,
+       0.26545319999422645
       ],
       "gpu_solver": "torch-block-tridiagonal",
-      "gpu_solver_runtime_s": 1.2478483000013512,
-      "cpu_wall_median_s": 2.854607799992664,
-      "gpu_wall_median_s": 1.2483358999888878,
-      "speedup_wall_median": 2.286730518619287,
+      "gpu_solver_runtime_s": 0.2650666999979876,
+      "cpu_wall_median_s": 0.3937331000051927,
+      "gpu_wall_median_s": 0.26545319999422645,
+      "speedup_wall_median": 1.4832486480244211,
       "max_abs_S_gpu_minus_S_cpu": 4.717729110522484e-15,
       "gpu_peak_mem_bytes": 162985984
      },
@@ -343,28 +344,29 @@
       "unknowns": 46168,
       "block_lu_memory_bytes_estimate": 293997824,
       "cpu_wall_s": [
-       8.542906000016956,
-       10.028310699999565,
-       9.246852100011893
+       1.2427293000000645,
+       1.3629580000051646,
+       1.4557450000065728
       ],
       "cpu_solver": "scipy-superlu",
-      "cpu_solver_runtime_s": 9.246411600004649,
+      "cpu_solver_runtime_s": 1.4546579000016209,
       "gpu_snapshot": {
-       "time": "2026-11-01T12:50:01-05:00",
-       "gpu_util_percent": 22.0,
-       "mem_used_mib": 2272.0,
-       "mem_total_mib": 12227.0
+       "time": "2026-11-12T10:43:15-05:00",
+       "gpu_util_percent": 1.0,
+       "mem_used_mib": 2147.0,
+       "mem_total_mib": 12227.0,
+       "cpu_load_percent": 13.0
       },
       "gpu_wall_s": [
-       1.8194640000001527,
-       2.216551499994239,
-       2.9419943999964744
+       0.5516021000003093,
+       0.5702038000017637,
+       0.5593282000045292
       ],
       "gpu_solver": "torch-block-tridiagonal",
-      "gpu_solver_runtime_s": 2.9414892999920994,
-      "cpu_wall_median_s": 9.246852100011893,
-      "gpu_wall_median_s": 2.216551499994239,
-      "speedup_wall_median": 4.171728967288117,
+      "gpu_solver_runtime_s": 0.5587821000008262,
+      "cpu_wall_median_s": 1.3629580000051646,
+      "gpu_wall_median_s": 0.5593282000045292,
+      "speedup_wall_median": 2.436776833340654,
       "max_abs_S_gpu_minus_S_cpu": 3.349140077038837e-14,
       "gpu_peak_mem_bytes": 480200704
      },
@@ -377,28 +379,29 @@
       "unknowns": 93624,
       "block_lu_memory_bytes_estimate": 844862976,
       "cpu_wall_s": [
-       33.971792299998924,
-       41.56653290000395,
-       40.692218999989564
+       3.5948018999988562,
+       3.713331400002062,
+       3.7318650000015623
       ],
       "cpu_solver": "scipy-superlu",
-      "cpu_solver_runtime_s": 40.690166300017154,
+      "cpu_solver_runtime_s": 3.7306674999999814,
       "gpu_snapshot": {
-       "time": "2026-11-01T12:52:38-05:00",
+       "time": "2026-11-12T10:43:33-05:00",
        "gpu_util_percent": 2.0,
-       "mem_used_mib": 2812.0,
-       "mem_total_mib": 12227.0
+       "mem_used_mib": 2147.0,
+       "mem_total_mib": 12227.0,
+       "cpu_load_percent": 29.0
       },
       "gpu_wall_s": [
-       5.606086599989794,
-       6.549008500005584,
-       7.253193799988367
+       1.3968189999941387,
+       1.4015249999938533,
+       1.3967861999990419
       ],
       "gpu_solver": "torch-block-tridiagonal",
-      "gpu_solver_runtime_s": 7.252409599983366,
-      "cpu_wall_median_s": 40.692218999989564,
-      "gpu_wall_median_s": 6.549008500005584,
-      "speedup_wall_median": 6.213493080663259,
+      "gpu_solver_runtime_s": 1.3963294999994105,
+      "cpu_wall_median_s": 3.713331400002062,
+      "gpu_wall_median_s": 1.3968189999941387,
+      "speedup_wall_median": 2.658419881185496,
       "max_abs_S_gpu_minus_S_cpu": 4.585799016419591e-14,
       "gpu_peak_mem_bytes": 1312572416
      },
@@ -411,28 +414,29 @@
       "unknowns": 157680,
       "block_lu_memory_bytes_estimate": 1841702400,
       "cpu_wall_s": [
-       81.82188550001592,
-       79.48810399998911,
-       75.72902030000114
+       8.217587599996477,
+       7.789254300005268,
+       8.014842099997622
       ],
       "cpu_solver": "scipy-superlu",
-      "cpu_solver_runtime_s": 75.72823959999369,
+      "cpu_solver_runtime_s": 8.013184099996579,
       "gpu_snapshot": {
-       "time": "2026-11-01T12:58:27-05:00",
-       "gpu_util_percent": 0.0,
-       "mem_used_mib": 2554.0,
-       "mem_total_mib": 12227.0
+       "time": "2026-11-12T10:44:12-05:00",
+       "gpu_util_percent": 2.0,
+       "mem_used_mib": 2160.0,
+       "mem_total_mib": 12227.0,
+       "cpu_load_percent": 11.0
       },
       "gpu_wall_s": [
-       4.896783400006825,
-       6.043799700011732,
-       5.956086299993331
+       2.2546198000054574,
+       2.2573008999970625,
+       2.2467527000044356
       ],
       "gpu_solver": "torch-block-tridiagonal",
-      "gpu_solver_runtime_s": 5.954615299997386,
-      "cpu_wall_median_s": 79.48810399998911,
-      "gpu_wall_median_s": 5.956086299993331,
-      "speedup_wall_median": 13.34569379897637,
+      "gpu_solver_runtime_s": 2.245880100002978,
+      "cpu_wall_median_s": 8.014842099997622,
+      "gpu_wall_median_s": 2.2546198000054574,
+      "speedup_wall_median": 3.5548530621341223,
       "max_abs_S_gpu_minus_S_cpu": 2.198731041692348e-13,
       "gpu_peak_mem_bytes": 2817390592
      },
@@ -445,47 +449,49 @@
       "unknowns": 238868,
       "block_lu_memory_bytes_estimate": 3432055424,
       "cpu_wall_s": [
-       80.92150209998363,
-       86.02335440000752,
-       83.93876579997595
+       13.927054699997825,
+       14.127241900001536,
+       13.728067699994426
       ],
       "cpu_solver": "scipy-superlu",
-      "cpu_solver_runtime_s": 83.93439720000606,
+      "cpu_solver_runtime_s": 13.726800500000536,
       "gpu_snapshot": {
-       "time": "2026-11-01T13:04:14-05:00",
-       "gpu_util_percent": 33.0,
-       "mem_used_mib": 9762.0,
-       "mem_total_mib": 12227.0
+       "time": "2026-11-12T10:45:19-05:00",
+       "gpu_util_percent": 1.0,
+       "mem_used_mib": 2157.0,
+       "mem_total_mib": 12227.0,
+       "cpu_load_percent": 12.0
       },
       "gpu_wall_s": [
-       49.22454359999392,
-       21.59492139998474,
-       15.68172280001454
+       3.9489331000004313,
+       3.956704500000342,
+       3.9432588999989093
       ],
       "gpu_solver": "torch-block-tridiagonal",
-      "gpu_solver_runtime_s": 15.68051479998394,
-      "cpu_wall_median_s": 83.93876579997595,
-      "gpu_wall_median_s": 21.59492139998474,
-      "speedup_wall_median": 3.886967877550842,
+      "gpu_solver_runtime_s": 3.9424107000013464,
+      "cpu_wall_median_s": 13.927054699997825,
+      "gpu_wall_median_s": 3.9489331000004313,
+      "speedup_wall_median": 3.526789223143918,
       "max_abs_S_gpu_minus_S_cpu": 1.4788112342838141e-13,
       "gpu_peak_mem_bytes": 5213179392
      }
     ]
    },
    "gpu_snapshot_after": {
-    "time": "2026-11-01T13:06:36-05:00",
-    "gpu_util_percent": 0.0,
-    "mem_used_mib": 1511.0,
-    "mem_total_mib": 12227.0
+    "time": "2026-11-12T10:45:37-05:00",
+    "gpu_util_percent": 99.0,
+    "mem_used_mib": 2156.0,
+    "mem_total_mib": 12227.0,
+    "cpu_load_percent": 14.0
    },
    "measured": {
     "max_abs_S_gpu_minus_S_cpu_all_cases": 2.198731041692348e-13,
     "speedup_by_unknowns": {
-     "20064": 2.287,
-     "46168": 4.172,
-     "93624": 6.213,
-     "157680": 13.346,
-     "238868": 3.887
+     "20064": 1.483,
+     "46168": 2.437,
+     "93624": 2.658,
+     "157680": 3.555,
+     "238868": 3.527
     }
    },
    "configuration": "agreement: test_gpu_matches_cpu config + all timing grids; timings: see 'timings'",
@@ -493,9 +499,9 @@
     "agreement_1e-10": true,
     "speedup_2-5x_on_large_grids": true
    },
-   "error_column": "2e-13; speedup 2.3x (20k), 4.2x (46k), 6.2x (94k), 13x (158k), 3.9x (239k) (provisional)",
-   "timestamp": "2026-11-01T13:06:36-05:00",
-   "script_runtime_s": 1374.5129650000017
+   "error_column": "2e-13; speedup 1.5x (20k), 2.4x (46k), 2.7x (94k), 3.6x (158k), 3.5x (239k)",
+   "timestamp": "2026-11-12T10:45:38-05:00",
+   "script_runtime_s": 157.78291300000274
   },
   "5": {
    "row": "Inverse design: 2x2 um Si bend | --- | objective rises monotonically, final >0.8, exported polygons within 0.15 (bound); |S21|^2=0.98 with 100 nm minimum features reported",
@@ -998,5 +1004,5 @@
    "script_runtime_s": 1433.1997147999937
   }
  },
- "timestamp": "2026-11-01T15:38:12-05:00"
+ "timestamp": "2026-11-12T10:45:38-05:00"
 }

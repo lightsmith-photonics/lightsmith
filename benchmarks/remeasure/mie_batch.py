@@ -42,6 +42,9 @@ def timed(s, device, repeats=3):
 
 
 def main():
+    from _machine import NOTE, state
+
+    before = state()
     rows = []
     for n_wl in (9, 10**3, 10**4, 10**5, 10**6):
         s = sim(n_wl)
@@ -53,7 +56,8 @@ def main():
         rows.append(row)
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(json.dumps({"rows": rows, "timestamp": _dt.datetime.now().isoformat(timespec="seconds"),
-                               "note": "shared machine: timings provisional", "doctor": ls.doctor()},
+                               "note": NOTE, "machine_state": {"before": before, "after": state()},
+                               "doctor": ls.doctor()},
                               indent=1, default=str), encoding="utf-8")
 
 

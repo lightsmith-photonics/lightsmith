@@ -191,7 +191,10 @@ def partial(cases):
 
 
 def main():
+    from _machine import NOTE, state
+
     assert torch.cuda.is_available(), "needs a CUDA GPU"
+    before = state()
     cases = []
     done = {}
     if "--resume" in sys.argv and OUT.with_suffix(".partial.json").exists():
@@ -242,13 +245,8 @@ def main():
         "reference": "CPU (NumPy) solution of the same problem",
         "previously_reported": "GPU 2-8x faster",
         "timestamp": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
-        "provisional": True,
-        "provisional_reason": "A long benchmark run (benchmarks/run.py --suite full-paper) and several other "
-                              "workloads were using the GPU and CPU (system CPU load ~100%, see machine_load_*) "
-                              "during these timings; speedups are provisional and should be re-timed on an idle "
-                              "machine. benchmarks/remeasure/fde_eme.py (CPU only) also ran concurrently for "
-                              "part of the 2026-11-01 run. "
-                              "Agreement (max |dR|) values are not affected.",
+        "note": NOTE,
+        "machine_state": {"before": before, "after": state()},
         "hardware": {"gpu": torch.cuda.get_device_name(0), "cpu": "AMD Ryzen 5 5600X (6C/12T)",
                      "platform": platform.platform()},
         "software": {"python": sys.version.split()[0], "numpy": np.__version__, "torch": torch.__version__,
@@ -274,8 +272,7 @@ def main():
     lo, hi = result["measured"]["speedup_end_to_end_range_large_problems"]
     result["reproduced"] = bool(result["agreement_within_bounds"] and lo >= 2 * 0.8 and hi <= 8 * 1.25)
     result["reproduced_note"] = ("agreement bounds are checked strictly; the 2-8x speedup claim is judged against "
-                                 "the end-to-end range on the large (non-test) problems with 20% slack, and is "
-                                 "provisional because of the background GPU/CPU load")
+                                 "the end-to-end range on the large (non-test) problems with 20% slack")
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(result, indent=2))
     OUT.with_suffix(".partial.json").unlink(missing_ok=True)

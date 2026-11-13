@@ -1,0 +1,26 @@
+{
+ "timestamp": "2026-11-12T19:57:13",
+ "command": [
+  "benchmarks/retime.py",
+  "--out",
+  "benchmarks/results/20261112-retime",
+  "--resume"
+ ],
+ "source": "benchmarks\\results\\20261105-bem-reference",
+ "python": "3.12.2 (tags/v3.12.2:6abddd9, Feb  6 2024, 21:26:36) [MSC v.1937 64 bit (AMD64)]",
+ "platform": "Windows-11-10.0.26300-SP0",
+ "cpu": "AMD Ryzen 5 5600X 6-Core Processor",
+ "numpy": "2.4.6",
+ "torch": "2.11.0+cu128",
+ "cuda": "12.8",
+ "gpu": "NVIDIA GeForce RTX 5070",
+ "lightsmith_version": "0.3.0",
+ "git_commit": "1aa640406b5ea27eec8c20779341677213bb3d6b",
+ "git_dirty_src": false,
+ "nvidia_smi": "NVIDIA GeForce RTX 5070, 610.88, 3090 MHz, 250.00 W",
+ "idle_thresholds": {
+  "gpu_util_pct": 10.0,
+  "cpu_pct": 25.0
+ },
+ "bem_every": 5
+}

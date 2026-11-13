@@ -12,7 +12,7 @@ examples/inverse_design_bend.py (the full 2x2 um bend). Rows:
     uv run --no-sync python benchmarks/remeasure/fdfd_inverse.py [--rows 1,2,3,4,5] [--repeats 3]
 
 Results are merged into benchmarks/remeasure/results/fdfd_inverse.json (rows not rerun are kept).
-GPU timings are provisional when another job shares the GPU (nvidia-smi snapshots are recorded).
+GPU and CPU load are recorded with the timings (nvidia-smi snapshots, machine_state).
 """
 
 from __future__ import annotations
@@ -331,7 +331,6 @@ def row4(repeats):
         "repeats": repeats, "precision": "double (complex128) on both devices",
         "cpu": "AMD Ryzen 5 5600X, SciPy SuperLU (single-threaded factorisation)",
         "gpu": torch.cuda.get_device_name(0) + ", torch block-tridiagonal LU",
-        "provisional": "GPU shared with a long background benchmark during the measurement; speedups provisional",
         "cases": timings,
     }
     entry["gpu_snapshot_after"] = gpu_snapshot()
@@ -344,7 +343,7 @@ def row4(repeats):
     entry["reproduced"] = {"agreement_1e-10": bool(max_s_diff < 1e-10),
                            "speedup_2-5x_on_large_grids": bool(sp and max(sp) >= 2) if sp else False}
     entry["error_column"] = f"{max_s_diff:.0e}; speedup " + ", ".join(
-        f"{t['speedup_wall_median']:.2g}x ({t['unknowns'] / 1e3:.0f}k)" for t in ok) + " (provisional)"
+        f"{t['speedup_wall_median']:.2g}x ({t['unknowns'] / 1e3:.0f}k)" for t in ok)
     return entry
 
 
@@ -558,6 +557,8 @@ def row5(iters_full):
 
 
 def main():
+    from _machine import NOTE
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--rows", default="1,2,3,4,5")
     ap.add_argument("--repeats", type=int, default=3)
@@ -578,7 +579,8 @@ def main():
         "precision": "double (complex128) unless stated",
         "versions": {"python": platform.python_version(), "numpy": np.__version__, "scipy": scipy.__version__,
                      "torch": torch.__version__, "lightsmith": getattr(ls, "__version__", "?")},
-        "note": "Timings provisional: a long benchmark was running on the same GPU and the CPU was at ~100% load from other jobs (see snapshots: gpu_util_percent, cpu_load_percent); repeat on an idle machine before quoting speedups.",
+        "note": "Rows 1-3 and 5 and the timings of 2026-11-01 ran while another benchmark shared the GPU and CPU. "
+                "Row 4 (GPU vs CPU timings) is " + NOTE + ".",
     })
     data.setdefault("entries", {})
     fns = {1: row1, 2: row2, 3: row3, 4: lambda: row4(args.repeats), 5: lambda: row5(args.iters)}

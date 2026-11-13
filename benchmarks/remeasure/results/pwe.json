@@ -1,7 +1,7 @@
 {
  "script": "benchmarks/remeasure/pwe.py",
- "timestamp": "2026-11-01T15:09:17-05:00",
- "git_commit": "b01e7ff996820c48097a64e3d955fce42050f15c",
+ "timestamp": "2026-11-12T19:54:21-05:00",
+ "git_commit": "1aa640406b5ea27eec8c20779341677213bb3d6b",
  "cpu": "AMD Ryzen 5 5600X (AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD)",
  "gpu": "NVIDIA GeForce RTX 5070",
  "torch_cpu_threads": 6,
@@ -12,7 +12,21 @@
   "torch": "2.11.0+cu128"
  },
  "repeats": 3,
- "note": "GPU timings provisional: a long benchmark was running on the same GPU (see gpu snapshots).",
+ "note": "timed with no other compute jobs on the machine (an interactive desktop with idle applications); machine_state holds the CPU and GPU load sampled before and after",
+ "machine_state": {
+  "before": {
+   "time": "2026-11-12T19:49:25",
+   "cpu_pct": 7.8,
+   "gpu_util_pct": 2.0,
+   "gpu_mem_used_mib": 682.0
+  },
+  "after": {
+   "time": "2026-11-12T19:54:20",
+   "cpu_pct": 10.5,
+   "gpu_util_pct": 25.0,
+   "gpu_mem_used_mib": 1082.0
+  }
+ },
  "agreement_2d": {
   "configuration": "tests/test_pwe.py::test_gpu_matches_cpu: square lattice a=400 nm, eps=8.9 rods r=0.2a in air, Gamma-X-M-Gamma, 4 points/segment (13 k), 4 bands, TE+TM, default options",
   "estimate_cpu": {
@@ -117,22 +131,22 @@
   "max_abs_diff_tm_a_over_lambda": 3.857300705975564e-05,
   "max_abs_diff_te_a_over_lambda": 3.965720937484887e-11,
   "cpu_wall_s": [
-   50.306740200001514,
-   80.89897020001081,
-   76.39653090000502
+   1.485308500006795,
+   1.4706921000033617,
+   1.4495049999968614
   ],
   "gpu_wall_s": [
-   19.04903490000288,
-   20.178260299988324,
-   9.908697500010021
+   0.9454919999989215,
+   0.9209247000108007,
+   0.9090900999872247
   ],
-  "speedup_wall_median": 4.010519761292131,
+  "speedup_wall_median": 1.596973237862024,
   "gpu_snapshot": {
-   "time": "2026-11-01T14:16:35-05:00",
-   "gpu_util_percent": 100.0,
-   "mem_used_mib": 11688.0,
+   "time": "2026-11-12T19:49:25-05:00",
+   "gpu_util_percent": 2.0,
+   "mem_used_mib": 682.0,
    "mem_total_mib": 12227.0,
-   "cpu_load_percent": 100.0
+   "cpu_load_percent": 8.0
   }
  },
  "cases_3d": [
@@ -198,18 +212,18 @@
     "eigensolves": 19
    },
    "cpu_wall_s": [
-    309.06795739999507,
-    309.03838499999256,
-    254.22685139998794
+    16.107688499992946,
+    16.127943600004073,
+    16.577914699999383
    ],
    "gpu_wall_s": [
-    18.63688100001309,
-    24.216262600006303,
-    26.870913099992322
+    3.12038290000055,
+    3.1388195999898016,
+    3.075432500001625
    ],
-   "cpu_wall_median_s": 309.03838499999256,
-   "gpu_wall_median_s": 24.216262600006303,
-   "speedup_wall_median": 12.761605294118016,
+   "cpu_wall_median_s": 16.127943600004073,
+   "gpu_wall_median_s": 3.12038290000055,
+   "speedup_wall_median": 5.168578381839367,
    "max_abs_diff_a_over_lambda": 4.6060296740729026e-09,
    "gap_cpu": [
     {
@@ -286,7 +300,11 @@
      "frequency": "a/lambda",
      "k_distance": "2 pi / a"
     },
-    "runtime_s": 254.22652440000093
+    "runtime_s": 16.577587000007043,
+    "versions": {
+     "lightsmith": "0.3.0",
+     "numpy": "2.4.6"
+    }
    },
    "provenance_gpu": {
     "framework": "torch",
@@ -338,14 +356,19 @@
      "frequency": "a/lambda",
      "k_distance": "2 pi / a"
     },
-    "runtime_s": 26.870448300003773
+    "runtime_s": 3.0751229000015883,
+    "versions": {
+     "lightsmith": "0.3.0",
+     "numpy": "2.4.6",
+     "torch": "2.11.0+cu128"
+    }
    },
    "gpu_snapshot": {
-    "time": "2026-11-01T14:37:03-05:00",
-    "gpu_util_percent": 0.0,
-    "mem_used_mib": 9741.0,
+    "time": "2026-11-12T19:50:26-05:00",
+    "gpu_util_percent": 1.0,
+    "mem_used_mib": 961.0,
     "mem_total_mib": 12227.0,
-    "cpu_load_percent": 100.0
+    "cpu_load_percent": 24.0
    }
   },
   {
@@ -410,18 +433,18 @@
     "eigensolves": 19
    },
    "cpu_wall_s": [
-    804.6750312999939,
-    497.33362540000235,
-    413.2584549000021
+    67.9297663999896,
+    65.42993480000587,
+    65.8193656999938
    ],
    "gpu_wall_s": [
-    25.65605350001715,
-    27.80147209999268,
-    31.119891999987885
+    4.660654000006616,
+    4.698688600008609,
+    4.636315800002194
    ],
-   "cpu_wall_median_s": 497.33362540000235,
-   "gpu_wall_median_s": 27.80147209999268,
-   "speedup_wall_median": 17.88875148809596,
+   "cpu_wall_median_s": 65.8193656999938,
+   "gpu_wall_median_s": 4.660654000006616,
+   "speedup_wall_median": 14.122345426178464,
    "max_abs_diff_a_over_lambda": 4.318402158172972e-13,
    "gap_cpu": [
     {
@@ -498,7 +521,11 @@
      "frequency": "a/lambda",
      "k_distance": "2 pi / a"
     },
-    "runtime_s": 413.2580559999915
+    "runtime_s": 65.8190692999924,
+    "versions": {
+     "lightsmith": "0.3.0",
+     "numpy": "2.4.6"
+    }
    },
    "provenance_gpu": {
     "framework": "torch",
@@ -550,14 +577,19 @@
      "frequency": "a/lambda",
      "k_distance": "2 pi / a"
     },
-    "runtime_s": 31.11957869998878
+    "runtime_s": 4.636061900004279,
+    "versions": {
+     "lightsmith": "0.3.0",
+     "numpy": "2.4.6",
+     "torch": "2.11.0+cu128"
+    }
    },
    "gpu_snapshot": {
-    "time": "2026-11-01T15:07:20-05:00",
-    "gpu_util_percent": 92.0,
-    "mem_used_mib": 9652.0,
+    "time": "2026-11-12T19:54:00-05:00",
+    "gpu_util_percent": 2.0,
+    "mem_used_mib": 952.0,
     "mem_total_mib": 12227.0,
-    "cpu_load_percent": 100.0
+    "cpu_load_percent": 18.0
    }
   }
  ],
@@ -569,8 +601,8 @@
     "agreement_2d_tm_single": 3.857300705975564e-05,
     "agreement_2d_te_double": 3.965720937484887e-11,
     "speedup_3d": {
-     "16": 12.761605294118016,
-     "24": 17.88875148809596
+     "16": 5.168578381839367,
+     "24": 14.122345426178464
     },
     "basis_3d": {
      "16": {
@@ -611,10 +643,9 @@
    },
    "reproduced": {
     "agreement_within_bounds": true,
-    "speedup_~17x": true
+    "speedup_~17x": false
    },
-   "provisional": "GPU shared with a long background benchmark; speedups provisional",
-   "error_column": "4e-05 (TM, single); 4e-11 (TE); 3D 12.8x (res 16, N={'all': 8192}), 17.9x (res 24, N={'all': 27648}) (provisional)"
+   "error_column": "4e-05 (TM, single); 4e-11 (TE); 3D 5.17x (res 16, N={'all': 8192}), 14.1x (res 24, N={'all': 27648})"
   }
  ]
 }

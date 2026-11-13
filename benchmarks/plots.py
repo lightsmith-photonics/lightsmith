@@ -1,9 +1,11 @@
 """Figures for a benchmark run.
 
     uv run --no-sync --with matplotlib python benchmarks/plots.py benchmarks/results/<dir> [--paper]
+        [--retime benchmarks/results/<retime dir>]
 
 Writes <dir>/figures/*.pdf and *.png; --paper also copies the PDFs to the lightsmith-paper
-repository (sibling folder by default, or $LIGHTSMITH_PAPER_DIR).
+repository (sibling folder by default, or $LIGHTSMITH_PAPER_DIR). --retime takes the wall times of the
+matching CPU/GPU runs in gpu_speedup.pdf from a benchmarks/retime.py directory instead of the run.
 Figures:
     spectra.pdf         Q_ext and Q_abs spectra: reference vs each backend at its finest resolution
     error_vs_cost.pdf   headline error vs wall time, one panel per problem, lines join resolution ladders
@@ -11,7 +13,8 @@ Figures:
     staircase.pdf       Q_abs vs dipoles per diameter for the Drude sphere (or any 1-wavelength sphere)
     regime_map.pdf      cheapest non-reference run meeting each target accuracy, per problem
     family_maps.pdf     the same at one target, on each family's own parameter axes (needs >= 2 problems)
-    gpu_speedup.pdf     CPU/GPU wall time for matching runs, and measured vs estimated memory
+    gpu_speedup.pdf     CPU/GPU wall time for matching runs (re-timed with --retime), and measured vs
+                        estimated memory
 """
 
 from __future__ import annotations
@@ -326,14 +329,19 @@ def family_maps(cheap, suite, out, target=0.05):
     save(fig, out, "family_maps")
 
 
-def gpu_speedup(rows, out):
+def gpu_speedup(rows, out, retimed=None):
+    """Left: CPU/GPU wall-time ratio of matching DDA and FDTD runs, from the run itself or, if `retimed`
+    (rows of a benchmarks/retime.py retime.jsonl) is given, from its re-timed pairs. Right: memory."""
     ok = [r for r in rows if r["status"] == "ok" and r["method"] in ("dda", "fdtd")]
     key = lambda r: (r["problem_id"], r["backend"], r["variant"], r["resolution"])  # noqa: E731
-    cpu = {key(r): r for r in ok if r["device"] == "cpu"}
-    pairs = [(cpu[key(r)], r) for r in ok if r["device"] != "cpu" and key(r) in cpu]
+    timed = ok if retimed is None else [r for r in retimed if r["status"] == "ok" and r["set"] == "pairs"
+                                        and r["method"] in ("dda", "fdtd")]
+    cpu = {key(r): r for r in timed if r["device"] == "cpu"}
+    pairs = [(cpu[key(r)], r) for r in timed if r["device"] != "cpu" and key(r) in cpu]
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(7.0, 2.6))
     for c, g in pairs:
-        n = g["dipoles"] if np.isfinite(g["dipoles"]) else _f(g.get("unknowns"))
+        n = _f(g.get("dipoles"))
+        n = n if np.isfinite(n) else _f(g.get("unknowns"))
         a1.scatter(n, c["wall_s"] / g["wall_s"], color=color(g["method"]), s=10,
                    marker="o" if g["variant"] != "weighted" else "^")
     a1.axhline(1, color="0.7", lw=0.5)
@@ -341,7 +349,7 @@ def gpu_speedup(rows, out):
     a1.set_yscale("log")
     a1.set_xlabel("unknowns (DDA dipoles, FDTD cells)")
     a1.set_ylabel("CPU time / GPU time")
-    a1.set_title("GPU speed-up (matching runs)")
+    a1.set_title("GPU speed-up (matching runs" + (", re-timed)" if retimed is not None else ")"))
     pts = []
     for r in ok:
         e = _f(r.get("est_memory_bytes"))
@@ -377,9 +385,15 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("results", type=Path)
     ap.add_argument("--paper", action="store_true", help="copy PDFs to <lightsmith-paper>/figures/")
+    ap.add_argument("--retime", type=Path, help="benchmarks/retime.py output directory: CPU/GPU wall times for "
+                                                "gpu_speedup.pdf")
     args = ap.parse_args(argv)
     d = args.results
     rows = load_runs(d)
+    retimed = None
+    if args.retime:
+        retimed = [json.loads(line) for line in (args.retime / "retime.jsonl").read_text(encoding="utf-8")
+                   .splitlines() if line.strip()]
     jl = d / "runs.jsonl"
     if rows and "unknowns" not in rows[0] and jl.exists():  # older runs.csv: recover sizes from estimates
         recs = [json.loads(line) for line in jl.read_text(encoding="utf-8").splitlines() if line.strip()]
@@ -394,7 +408,7 @@ def main(argv=None):
     for fn in (lambda: spectra(rows, spec, out), lambda: error_vs_cost(rows, out), lambda: convergence(rows, out),
                lambda: staircase(rows, out), lambda: regime_map(cheap, out),
                lambda: regime_map(cheap, out, "err_ext_max", "regime_map_ext"),
-               lambda: family_maps(cheap, suite, out), lambda: gpu_speedup(rows, out)):
+               lambda: family_maps(cheap, suite, out), lambda: gpu_speedup(rows, out, retimed)):
         try:
             fn()
         except Exception as e:  # noqa: BLE001  keep going: one bad figure should not lose the others
@@ -420,8 +434,12 @@ def main(argv=None):
             fn()
         for f in list(sub.glob("*.pdf")) + [out / f"{n}.pdf" for n in PAPER_WHOLE]:
             shutil.copy2(f, dest / f.name)
-        (dest / "SOURCE.txt").write_text("Generated by benchmarks/plots.py --paper in the lightsmith repository from "
-                                         f"benchmarks/results/{d.resolve().name}\n", encoding="utf-8")
+        src = ("Generated by benchmarks/plots.py --paper in the lightsmith repository from "
+               f"benchmarks/results/{d.resolve().name}")
+        if args.retime:
+            src += (f"; CPU/GPU wall times in gpu_speedup.pdf from benchmarks/results/{args.retime.resolve().name} "
+                    "(benchmarks/retime.py)")
+        (dest / "SOURCE.txt").write_text(src + "\n", encoding="utf-8")
         print(f"[plots] copied PDFs to {dest}")
 
 

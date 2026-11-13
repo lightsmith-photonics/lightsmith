@@ -67,9 +67,16 @@ def run(label, opts, device, far=False):
 
 
 def main():
+    from _machine import NOTE, state
+
+    before = state()
     mie = ls.solve(sim({}).model_copy(update={"options": {}}), "miepython", "cpu")
     ref = {"q_ext": q(mie.c_ext_nm2[0]), "q_abs": q(mie.c_abs_nm2[0]), "q_sca": q(mie.c_sca_nm2[0])}
     print("Mie", ref, flush=True)
+    # untimed warm-up in both precisions (CUDA context, kernels, FFT plans), so the first timed run is not
+    # charged with start-up costs
+    for prec in ("single", "double"):
+        ls.solve(sim({"dipoles_per_diameter": 24, "precision": prec}), "lightsmith-dda", "gpu")
     rows = []
     # 1. precision and tolerance at the plateau
     for npd in (24, 32):
@@ -92,6 +99,7 @@ def main():
     OUT.write_text(json.dumps({"problem": {"radius_nm": R, "wavelength_nm": LAM, "medium_index": N_MED,
                                            "material": DRUDE}, "mie": ref, "runs": rows,
                                "timestamp": _dt.datetime.now().isoformat(timespec="seconds"),
+                               "note": NOTE, "machine_state": {"before": before, "after": state()},
                                "doctor": ls.doctor()}, indent=1, default=str), encoding="utf-8")
 
 

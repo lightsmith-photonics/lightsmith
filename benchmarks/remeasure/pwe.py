@@ -8,7 +8,7 @@
 
     uv run --no-sync python benchmarks/remeasure/pwe.py [--repeats 3] [--resolutions 16]
 
-GPU timings are provisional when another job shares the GPU (nvidia-smi snapshots are recorded).
+GPU and CPU load are recorded with the timings (nvidia-smi snapshots, machine_state).
 """
 
 from __future__ import annotations
@@ -117,6 +117,8 @@ def jsonable(x):
 
 
 def main():
+    from _machine import NOTE, state
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--repeats", type=int, default=3)
     ap.add_argument("--resolutions", default="16")
@@ -131,7 +133,7 @@ def main():
            "versions": {"python": platform.python_version(), "numpy": np.__version__, "scipy": scipy.__version__,
                         "torch": torch.__version__},
            "repeats": args.repeats,
-           "note": "Timings provisional: a long benchmark was running on the same GPU and the CPU was at ~100% load from other jobs (see snapshots: gpu_util_percent, cpu_load_percent); repeat on an idle machine before quoting speedups."}
+           "note": NOTE, "machine_state": {"before": state()}}
     if not have_gpu:
         out["error"] = "no CUDA device"
         json.dump(out, open(OUT, "w"), indent=1)
@@ -214,11 +216,11 @@ def main():
         "previously_reported": {"speedup_3d": "~17x"},
         "reproduced": {"agreement_within_bounds": bool(d_tm <= 2e-4 and d_te <= 1e-6),
                        "speedup_~17x": bool(main_case and 12 <= main_case["speedup_wall_median"] <= 24)},
-        "provisional": "GPU shared with a long background benchmark; speedups provisional",
         "error_column": (f"{d_tm:.0e} (TM, single); {d_te:.0e} (TE); 3D " + ", ".join(
             f"{c['speedup_wall_median']:.3g}x (res {c['resolution']}, N={c['estimate_cpu'].get('matrix_size')})"
-            for c in ok) + " (provisional)"),
+            for c in ok)),
     }
+    out["machine_state"]["after"] = state()
     out.update(timestamp=now(), agreement_2d=agreement, cases_3d=cases, entries=[entry])
     json.dump(jsonable(out), open(OUT, "w"), indent=1, default=str)
     print(json.dumps(jsonable(entry), indent=1, default=str))

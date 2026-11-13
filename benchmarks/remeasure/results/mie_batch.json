@@ -2,42 +2,56 @@
  "rows": [
   {
    "wavelengths": 9,
-   "cpu_s": 0.000847299990709871,
-   "gpu_s": 0.3747204999672249,
-   "speedup": 0.002261151954013673,
+   "cpu_s": 0.000549600001249928,
+   "gpu_s": 0.014960200001951307,
+   "speedup": 0.03673747685045935,
    "max_rel_diff": 3.8841989114294347e-16
   },
   {
    "wavelengths": 1000,
-   "cpu_s": 0.00315869995392859,
-   "gpu_s": 0.3501770000439137,
-   "speedup": 0.009020295317889167,
+   "cpu_s": 0.0013703000004170462,
+   "gpu_s": 0.012483699996664654,
+   "speedup": 0.10976713640852932,
    "max_rel_diff": 1.0568656965604938e-15
   },
   {
    "wavelengths": 10000,
-   "cpu_s": 0.033616599976085126,
-   "gpu_s": 0.33148090000031516,
-   "speedup": 0.1014133845300081,
+   "cpu_s": 0.01235879999876488,
+   "gpu_s": 0.014430299997911789,
+   "speedup": 0.8564478909345837,
    "max_rel_diff": 1.0762326182544779e-15
   },
   {
    "wavelengths": 100000,
-   "cpu_s": 0.7999312999891117,
-   "gpu_s": 0.3462110999971628,
-   "speedup": 2.31053048269009,
+   "cpu_s": 0.26319279999734135,
+   "gpu_s": 0.036966100000427105,
+   "speedup": 7.119842233676272,
    "max_rel_diff": 1.1595101986345517e-15
   },
   {
    "wavelengths": 1000000,
-   "cpu_s": 6.964976600022055,
-   "gpu_s": 1.8795767999836244,
-   "speedup": 3.7056089435040573,
+   "cpu_s": 2.9318459999994957,
+   "gpu_s": 0.35418709999794373,
+   "speedup": 8.277675838607665,
    "max_rel_diff": 1.5448173391222404e-15
   }
  ],
- "timestamp": "2026-11-02T00:16:01",
- "note": "shared machine: timings provisional",
+ "timestamp": "2026-11-12T10:32:47",
+ "note": "timed with no other compute jobs on the machine (an interactive desktop with idle applications); machine_state holds the CPU and GPU load sampled before and after",
+ "machine_state": {
+  "before": {
+   "time": "2026-11-12T10:32:27",
+   "cpu_pct": 20.2,
+   "gpu_util_pct": 1.0,
+   "gpu_mem_used_mib": 1842.0
+  },
+  "after": {
+   "time": "2026-11-12T10:32:47",
+   "cpu_pct": 27.2,
+   "gpu_util_pct": 0.0,
+   "gpu_mem_used_mib": 3402.0
+  }
+ },
  "doctor": {
   "numpy": "2.4.6",
   "torch": "2.11.0+cu128",

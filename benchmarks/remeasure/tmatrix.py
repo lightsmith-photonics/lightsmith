@@ -20,9 +20,9 @@ from __future__ import annotations
 
 import os
 
-# BLAS threads, set before NumPy loads. Default 1: the machine is shared (CPU at 100% load from other jobs
-# during the re-measurement), and oversubscribed multithreaded BLAS made the wrapper's dense solve erratic.
-# Override with LIGHTSMITH_BENCH_THREADS=N.
+# BLAS threads, set before NumPy loads. Default 1, so that both paths are timed single-threaded (on the
+# shared machine of the first measurement, oversubscribed multithreaded BLAS made the wrapper's dense solve
+# erratic). Override with LIGHTSMITH_BENCH_THREADS=N.
 THREADS = os.environ.get("LIGHTSMITH_BENCH_THREADS", "1")
 for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
     os.environ[_v] = THREADS
@@ -61,9 +61,7 @@ def env() -> dict:
         blas = "unknown"
     return {"python": sys.version.split()[0], "platform": platform.platform(), "processor": platform.processor(),
             "cpu_count": os.cpu_count(), "numpy": np.__version__, "treams": _treams_version(), "blas": blas,
-            "lightsmith_commit": commit, "blas_threads_env": THREADS,
-            "cpu_load_note": "shared machine: other jobs (incl. the full-paper benchmark) kept the CPU at ~100% load; "
-                             "absolute times are inflated, ratios are the quantity of interest"}
+            "lightsmith_commit": commit, "blas_threads_env": THREADS}
 
 
 def particle(material, radius, pos):
@@ -114,6 +112,9 @@ def timed(fn, n):
 
 
 def main() -> None:
+    from _machine import NOTE, state
+
+    before = state()
     tr = _treams()  # installs lightsmith's Windows/NumPy-2 integer shim, which treams' own path also needs here
     runs = []
     for label, sim, lam, n in clusters():
@@ -142,14 +143,14 @@ def main() -> None:
         "measured_value": {r["cluster"].split()[0]: round(r["speedup_median"], 2) for r in runs},
         "measured_value_min_time_ratio": {r["cluster"].split()[0]: round(r["speedup_min_time"], 2) for r in runs},
         "headline_dimer_speedup": dimer["speedup_median"],
-        "note": "repeat-to-repeat spread was up to ~7x under the shared CPU load, so the ratio is only "
-                "known to within a factor ~2; re-run on an idle machine before quoting a single number",
+        "note": NOTE,
         "reference": "treams' own cluster path (same lmax, same positions)",
         "previously_reported": "~7x",
         "reproduced": bool(5.0 <= dimer["speedup_median"] <= 9.0),
         "runs": runs,
     }
-    out = {"script": "benchmarks/remeasure/tmatrix.py", "env": env(), "rows": [row]}
+    out = {"script": "benchmarks/remeasure/tmatrix.py", "env": env(), "rows": [row],
+           "machine_state": {"before": before, "after": state()}}
     (HERE / "results").mkdir(exist_ok=True)
     path = HERE / "results" / "tmatrix.json"
     path.write_text(json.dumps(out, indent=2, default=str), encoding="utf-8")

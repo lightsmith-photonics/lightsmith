@@ -8,9 +8,8 @@
     "numpy": "2.4.6",
     "treams": "0.4.7",
     "blas": "unknown",
-    "lightsmith_commit": "b01e7ff996820c48097a64e3d955fce42050f15c",
-    "blas_threads_env": "1",
-    "cpu_load_note": "shared machine: other jobs (incl. the full-paper benchmark) kept the CPU at ~100% load; absolute times are inflated, ratios are the quantity of interest"
+    "lightsmith_commit": "1aa640406b5ea27eec8c20779341677213bb3d6b",
+    "blas_threads_env": "1"
   },
   "rows": [
     {
@@ -20,17 +19,17 @@
       "device": "cpu",
       "precision": "double",
       "measured_value": {
-        "dimer": 16.02,
-        "trimer": 3.32,
-        "tetramer": 12.02
+        "dimer": 14.89,
+        "trimer": 4.85,
+        "tetramer": 8.01
       },
       "measured_value_min_time_ratio": {
-        "dimer": 27.3,
-        "trimer": 11.88,
-        "tetramer": 14.11
+        "dimer": 15.39,
+        "trimer": 5.13,
+        "tetramer": 8.24
       },
-      "headline_dimer_speedup": 16.02157866543311,
-      "note": "repeat-to-repeat spread was up to ~7x under the shared CPU load, so the ratio is only known to within a factor ~2; re-run on an idle machine before quoting a single number",
+      "headline_dimer_speedup": 14.888234973540749,
+      "note": "timed with no other compute jobs on the machine (an interactive desktop with idle applications); machine_state holds the CPU and GPU load sampled before and after",
       "reference": "treams' own cluster path (same lmax, same positions)",
       "previously_reported": "~7x",
       "reproduced": false,
@@ -47,27 +46,27 @@
           "repeats": 7,
           "tmatrix_rel_diff": 1.622527682411197e-08,
           "wrapper_s": [
-            1.6173374999780208,
-            1.531308799982071,
-            1.4108496999833733,
-            2.2178442000003997,
-            2.4999477000092156,
-            0.8330640000058338,
-            0.8652208000130486
+            0.2636008999979822,
+            0.28382930000225315,
+            0.2473208000010345,
+            0.24844860000303015,
+            0.2585620999961975,
+            0.2915378999969107,
+            0.2580785999962245
           ],
           "treams_s": [
-            22.940462500002468,
-            22.743260100018233,
-            28.74020970001584,
-            34.79855690000113,
-            27.14983999999822,
-            22.92631199999596,
-            24.533984399982728
+            3.8194742999985465,
+            3.806050699997286,
+            3.849533299995528,
+            3.824128700005531,
+            3.8826441999990493,
+            3.94409579999774,
+            3.854305699998804
           ],
-          "wrapper_median_s": 1.531308799982071,
-          "treams_median_s": 24.533984399982728,
-          "speedup_median": 16.02157866543311,
-          "speedup_min_time": 27.300735717614693
+          "wrapper_median_s": 0.2585620999961975,
+          "treams_median_s": 3.849533299995528,
+          "speedup_median": 14.888234973540749,
+          "speedup_min_time": 15.389124974451667
         },
         {
           "cluster": "trimer (test_cluster_matches_treams_reference_path)",
@@ -82,27 +81,27 @@
           "repeats": 7,
           "tmatrix_rel_diff": 2.523164780742259e-13,
           "wrapper_s": [
-            0.22045960000832565,
-            1.1372574999986682,
-            1.3662219000107143,
-            1.182635900011519,
-            1.0464858999766875,
-            1.3381626000045799,
-            1.5371571999858133
+            0.12956580000172835,
+            0.13030260000232374,
+            0.13476339999760967,
+            0.12078660000406671,
+            0.12035849999665515,
+            0.151459500004421,
+            0.18360699999902863
           ],
           "treams_s": [
-            3.9287661999987904,
-            3.4128217000106815,
-            4.3384447999997064,
-            4.228918100008741,
-            3.2462349999987055,
-            4.248187499993946,
-            2.61915479999152
+            0.6295889999964857,
+            0.6319877999994787,
+            0.6356470999962767,
+            0.6292958999983966,
+            0.6172227999995812,
+            0.7050095000013243,
+            0.6510062999950605
           ],
-          "wrapper_median_s": 1.182635900011519,
-          "treams_median_s": 3.9287661999987904,
-          "speedup_median": 3.3220420587270554,
-          "speedup_min_time": 11.880429792545245
+          "wrapper_median_s": 0.13030260000232374,
+          "treams_median_s": 0.6319877999994787,
+          "speedup_median": 4.850154946932818,
+          "speedup_min_time": 5.128202827525553
         },
         {
           "cluster": "tetramer (test_tetrahedral_cluster_converges_and_conserves)",
@@ -118,21 +117,35 @@
           "repeats": 3,
           "tmatrix_rel_diff": 3.4771413662948955e-10,
           "wrapper_s": [
-            21.256691999995383,
-            10.788824099989142,
-            14.280492799996864
+            2.9821904999989783,
+            2.890515300001425,
+            3.0886255000004894
           ],
           "treams_s": [
-            152.22971710001002,
-            208.68066250000265,
-            171.5885147000081
+            23.82520690000092,
+            23.90023890000157,
+            23.892641400001594
           ],
-          "wrapper_median_s": 14.280492799996864,
-          "treams_median_s": 171.5885147000081,
-          "speedup_median": 12.015587774397098,
-          "speedup_min_time": 14.109945225649126
+          "wrapper_median_s": 2.9821904999989783,
+          "treams_median_s": 23.892641400001594,
+          "speedup_median": 8.011775706484807,
+          "speedup_min_time": 8.24254654524374
         }
       ]
     }
-  ]
+  ],
+  "machine_state": {
+    "before": {
+      "time": "2026-11-12T10:32:49",
+      "cpu_pct": 33.2,
+      "gpu_util_pct": 0.0,
+      "gpu_mem_used_mib": 1843.0
+    },
+    "after": {
+      "time": "2026-11-12T10:35:49",
+      "cpu_pct": 40.4,
+      "gpu_util_pct": 1.0,
+      "gpu_mem_used_mib": 1848.0
+    }
+  }
 }

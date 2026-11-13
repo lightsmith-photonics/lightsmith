@@ -43,6 +43,9 @@ def timed(s, backend, repeats=3):
 
 
 def main():
+    from _machine import NOTE, state
+
+    before = state()
     cases = [
         ("dda Au r=40 npd=32, 520/600 nm", "lightsmith-dda", AU, 40.0, [520.0, 600.0],
          lambda p: {"dda": {"dipoles_per_diameter": 32, "precision": p, "tol": 1e-5}}),
@@ -65,7 +68,7 @@ def main():
         rows.append(out)
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(json.dumps({"cases": rows, "timestamp": _dt.datetime.now().isoformat(timespec="seconds"),
-                               "note": "GPU shared with a background benchmark: timings provisional",
+                               "note": NOTE, "machine_state": {"before": before, "after": state()},
                                "doctor": ls.doctor()}, indent=1, default=str), encoding="utf-8")
 
 
